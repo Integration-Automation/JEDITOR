@@ -34,7 +34,7 @@ class MainWindow(QMainWindow):
 
     def cmd(self):
         try:
-            exec_result = subprocess.check_output(self.ui.code_edit.toPlainText(), shell=True).decode("utf8")
+            exec_result = subprocess.getoutput(self.ui.code_edit.toPlainText())
             self.ui.console.setPlainText(exec_result)
         except Exception as error:
             self.ui.console.setPlainText(str(error))
