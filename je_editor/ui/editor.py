@@ -58,10 +58,16 @@ class Ui_MainWindow(object):
         self.menubar = QtWidgets.QMenuBar(MainWindow)
         self.menubar.setGeometry(QtCore.QRect(0, 0, 831, 21))
         self.menubar.setObjectName("menubar")
+        self.menuFile = QtWidgets.QMenu(self.menubar)
+        self.menuFile.setObjectName("menuFile")
         MainWindow.setMenuBar(self.menubar)
         self.statusbar = QtWidgets.QStatusBar(MainWindow)
         self.statusbar.setObjectName("statusbar")
         MainWindow.setStatusBar(self.statusbar)
+        self.action_open_file = QtWidgets.QAction(MainWindow)
+        self.action_open_file.setObjectName("action_open_file")
+        self.menuFile.addAction(self.action_open_file)
+        self.menubar.addAction(self.menuFile.menuAction())
 
         self.retranslateUi(MainWindow)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
@@ -69,6 +75,8 @@ class Ui_MainWindow(object):
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
         MainWindow.setWindowTitle(_translate("MainWindow", "je_editor"))
-        self.code_exec_pushbutton.setText(_translate("MainWindow", "text_process"))
+        self.code_exec_pushbutton.setText(_translate("MainWindow", "exec"))
         self.shell_pushbutton.setText(_translate("MainWindow", "run on shell"))
         self.console_label.setText(_translate("MainWindow", "console"))
+        self.menuFile.setTitle(_translate("MainWindow", "File"))
+        self.action_open_file.setText(_translate("MainWindow", "Open"))

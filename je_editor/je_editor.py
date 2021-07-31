@@ -7,10 +7,9 @@ from je_editor.ui.main_window import MainWindow
 from je_editor.utils.exception.je_editor_exceptions import except_hook
 
 
-def start_je_editor():
+def start_je_editor(font=QFont("Times New Roman", 14)):
     sys.excepthook = except_hook
     app = QApplication([])
-    font = QFont("Times New Roman", 14)
     app.setFont(font)
     window = MainWindow()
     window.show()
