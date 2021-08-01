@@ -66,7 +66,10 @@ class Ui_MainWindow(object):
         MainWindow.setStatusBar(self.statusbar)
         self.action_open_file = QtWidgets.QAction(MainWindow)
         self.action_open_file.setObjectName("action_open_file")
+        self.action_save_file = QtWidgets.QAction(MainWindow)
+        self.action_save_file.setObjectName("action_save_file")
         self.menuFile.addAction(self.action_open_file)
+        self.menuFile.addAction(self.action_save_file)
         self.menubar.addAction(self.menuFile.menuAction())
 
         self.retranslateUi(MainWindow)
@@ -80,3 +83,4 @@ class Ui_MainWindow(object):
         self.console_label.setText(_translate("MainWindow", "console"))
         self.menuFile.setTitle(_translate("MainWindow", "File"))
         self.action_open_file.setText(_translate("MainWindow", "Open"))
+        self.action_save_file.setText(_translate("MainWindow", "Save"))

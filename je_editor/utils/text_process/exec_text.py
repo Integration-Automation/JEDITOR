@@ -1,5 +1,7 @@
-from io import StringIO
 from contextlib import redirect_stdout
+from io import StringIO
+
+from je_editor.utils.exception.je_editor_exceptions import JEditorExecException
 
 
 def exec_code(exec_source, show_result_ui_function, show_result_error_function):
@@ -12,4 +14,4 @@ def exec_code(exec_source, show_result_ui_function, show_result_error_function):
 
     except Exception as error:
         show_result_error_function(str(error))
-        raise error
+        raise JEditorExecException(str(error))

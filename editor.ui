@@ -88,6 +88,7 @@
      <string>File</string>
     </property>
     <addaction name="action_open_file"/>
+    <addaction name="action_save_file"/>
    </widget>
    <addaction name="menuFile"/>
   </widget>
@@ -95,6 +96,11 @@
   <action name="action_open_file">
    <property name="text">
     <string>Open</string>
+   </property>
+  </action>
+  <action name="action_save_file">
+   <property name="text">
+    <string>Save</string>
    </property>
   </action>
  </widget>
