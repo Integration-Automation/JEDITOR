@@ -1,5 +1,12 @@
 import sys
 
+from je_editor.utils.exception.je_editor_exception_tag import je_editor_error
+from je_editor.utils.exception.je_editor_exception_tag import je_editor_exec_error
+from je_editor.utils.exception.je_editor_exception_tag import je_editor_open_file_error
+from je_editor.utils.exception.je_editor_exception_tag import je_editor_save_file_error
+from je_editor.utils.exception.je_editor_exception_tag import je_editor_shell_error
+from je_editor.utils.exception.je_editor_exception_tag import je_editor_content_file_error
+
 
 def except_hook(cls, exception, traceback):
     sys.__excepthook__(cls, exception, traceback)
@@ -7,7 +14,7 @@ def except_hook(cls, exception, traceback):
 
 class JEditorException(Exception):
 
-    def __init__(self, message="JEditor error"):
+    def __init__(self, message=je_editor_error):
         self.message = message
         super().__init__(message)
 
@@ -15,21 +22,28 @@ class JEditorException(Exception):
         return f"{self.message}"
 
 
-class JEditorExecException(Exception):
+class JEditorExecException(JEditorException):
 
-    def __init__(self, message="JEditor exec error"):
-        self.message = message
+    def __init__(self, message=je_editor_exec_error):
         super().__init__(message)
 
-    def __str__(self):
-        return f"{self.message}"
 
+class JEditorRunOnShellException(JEditorException):
 
-class JEditorRunOnShellException(Exception):
-
-    def __init__(self, message="JEditor run on shell error"):
-        self.message = message
+    def __init__(self, message=je_editor_shell_error):
         super().__init__(message)
 
-    def __str__(self):
-        return f"{self.message}"
+
+class JEditorSaveFileException(JEditorException):
+    def __init__(self, message=je_editor_save_file_error):
+        super().__init__(message)
+
+
+class JEditorOpenFileException(JEditorException):
+    def __init__(self, message=je_editor_open_file_error):
+        super().__init__(message)
+
+
+class JEditorContentFileException(JEditorException):
+    def __init__(self, message=je_editor_content_file_error):
+        super().__init__(message)
