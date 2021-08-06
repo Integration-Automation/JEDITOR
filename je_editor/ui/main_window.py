@@ -4,7 +4,10 @@ from pathlib import Path
 from PyQt5.QtWidgets import QMainWindow
 
 from je_editor.ui.editor import Ui_MainWindow
+from je_editor.utils.editor_content.content_save import open_content_and_start
+from je_editor.utils.editor_content.content_save import save_content_and_quit
 from je_editor.utils.file.open_file import open_file
+from je_editor.utils.file.open_file import read_file
 from je_editor.utils.file.save_file import SaveThread
 from je_editor.utils.file.save_file import save_file
 from je_editor.utils.file.save_file import write_file
@@ -31,6 +34,12 @@ class MainWindow(QMainWindow):
         self.ui.action_save_file.setShortcut("Ctrl+S")
         self.ui.action_save_file.triggered.connect(self.save_file_connect)
         self.closeEvent = self.close_event
+        self.read_editor_setting()
+
+    def read_editor_setting(self):
+        self.file = open_content_and_start()
+        if self.file is not None:
+            read_file(self.file, self.ui.code_edit_plaintext.setPlainText)
 
     def exec_code_connect(self):
         exec_code(self.ui.code_edit_plaintext.toPlainText(), self.ui.console_plaintext.setPlainText,
@@ -54,4 +63,5 @@ class MainWindow(QMainWindow):
             file_path = Path(self.file[0])
             if file_path.exists() and file_path.is_file():
                 write_file(self.file, self.ui.code_edit_plaintext.toPlainText)
+                save_content_and_quit(self.file)
         sys.exit(0)
