@@ -1,27 +1,27 @@
 import os
 import time
+from pathlib import Path
 from threading import Lock
 from threading import Thread
-from pathlib import Path
 
 from PyQt5.QtWidgets import QFileDialog
 
 from je_editor.utils.exception.je_editor_exceptions import JEditorSaveFileException
 
 cwd = os.getcwd()
+lock = Lock()
 
 
 def write_file(file, source):
-    lock = Lock()
     try:
         lock.acquire()
         if file[0] != "":
             with open(file[0], "w+") as file_to_write:
                 file_to_write.write(source())
-        lock.release()
     except JEditorSaveFileException:
-        lock.release()
         raise JEditorSaveFileException
+    finally:
+        lock.release()
 
 
 def save_file(source):
