@@ -39,9 +39,10 @@ class SaveThread(Thread):
         self.source = source
         self.auto_save = auto_save
         self.setDaemon(True)
+        print("auto save start")
 
     def run(self) -> None:
-        if self.file[0] != "":
+        if self.file is not None and self.file[0] != "":
             self.auto_save = True
             self.path = Path(self.file[0])
         while self.auto_save:

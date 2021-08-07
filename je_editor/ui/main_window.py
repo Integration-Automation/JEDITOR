@@ -37,9 +37,19 @@ class MainWindow(QMainWindow):
         self.read_editor_setting()
 
     def read_editor_setting(self):
-        self.file = open_content_and_start()
+        temp = open_content_and_start()
+        if temp is not None:
+            self.file = [temp]
         if self.file is not None:
             read_file(self.file, self.ui.code_edit_plaintext.setPlainText)
+            self.start_auto_save()
+
+    def start_auto_save(self):
+        if self.auto_save_thread is None and self.file is not None and self.file[0] != "":
+            self.auto_save_thread = SaveThread(self.file, self.ui.code_edit_plaintext.toPlainText)
+            self.auto_save_thread.start()
+        elif self.auto_save_thread is not None:
+            self.auto_save_thread.file = self.file
 
     def exec_code_connect(self):
         exec_code(self.ui.code_edit_plaintext.toPlainText(), self.ui.console_plaintext.setPlainText,
@@ -51,12 +61,11 @@ class MainWindow(QMainWindow):
 
     def open_file_connect(self):
         self.file = open_file(self.ui.code_edit_plaintext.setPlainText)
+        self.start_auto_save()
 
     def save_file_connect(self):
         self.file = save_file(self.ui.code_edit_plaintext.toPlainText)
-        if self.auto_save_thread is None and self.file[0] != "":
-            self.auto_save_thread = SaveThread(self.file, self.ui.code_edit_plaintext.toPlainText)
-            self.auto_save_thread.start()
+        self.start_auto_save()
 
     def close_event(self, q_close_event):
         if self.file is not None:
