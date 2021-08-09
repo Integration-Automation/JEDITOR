@@ -8,7 +8,7 @@ setuptools.setup(
     version="0.0.1",
     author="JE-Chen",
     author_email="zenmailman@gmail.com",
-    description="auto control gui",
+    description="simple editor",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/JE-Chen/je_editor",
