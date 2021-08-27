@@ -5,7 +5,7 @@ with open("README.md", "r") as README:
 
 setuptools.setup(
     name="je_editor",
-    version="0.0.1",
+    version="0.0.3",
     author="JE-Chen",
     author_email="zenmailman@gmail.com",
     description="simple editor",
@@ -14,7 +14,8 @@ setuptools.setup(
     url="https://github.com/JE-Chen/je_editor",
     packages=setuptools.find_packages(),
     install_requires=[
-        "PyQt5"
+        "PyQt5",
+        "PyQT5-stubs"
     ],
     classifiers=[
         "Programming Language :: Python :: 3.5",
