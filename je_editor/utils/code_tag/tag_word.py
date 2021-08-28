@@ -1,24 +1,25 @@
-from je_editor.utils.theme.theme import white_theme_tag_word_foreground_color
+from je_editor.utils.theme.theme import Theme
 
 
-class Highlight(object):
+class HighlightText(object):
 
-    def __init__(self, tkinter_text, word_list, start_position="1.0", end_position="end-1c"):
+    def __init__(self, tkinter_text, word_list, start_position="1.0", end_position="end"):
         self.tkinter_text = tkinter_text
         self.word_list = word_list
         self.start_position = start_position
         self.end_position = end_position
-        self.tkinter_text.bind("<KeyRelease>", self.editor_key_release_event)
-        for word in range(len(self.word_list)):
-            self.tkinter_text.tag_config(self.word_list[word], foreground=white_theme_tag_word_foreground_color)
+        self.theme = Theme()
+        self.tkinter_text.regexp = True
+        self.tkinter_text.bind("<KeyRelease>", self.search)
+        for word in word_list:
+            self.tkinter_text.tag_config(word, foreground=self.theme.tag_word_color)
 
-    def editor_key_release_event(self, event):
-        for word in range(len(self.word_list)):
-            find_word = self.tkinter_text.search(self.word_list[word], self.start_position, self.end_position)
-            # not found
-            if not find_word:
-                break
-            position = "{}+{}c".format(find_word, len(self.word_list[word]))
-            self.tkinter_text.tag_add(self.word_list[word], self.start_position, position)
-
-
+    def search(self, event):
+        position = '1.0'
+        for word in self.word_list:
+            while True:
+                find_word_index = self.tkinter_text.search("\m" + word + "\M", position, self.end_position, regexp=True)
+                if not find_word_index:
+                    break
+                position = '{}+{}c'.format(find_word_index, len(word))
+                self.tkinter_text.tag_add(word, find_word_index, position)
