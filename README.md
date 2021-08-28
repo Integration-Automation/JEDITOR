@@ -1,10 +1,23 @@
 # je_editor
 
 ##install
-* on Windows 
+
+* please check your tkinter version
+  * make sure tkinter is version 8.5 or later
+  ```python
+  """
+  check tkinter version
+  """
+  import tkinter
+  tkinter._test()
+  ```
+
+* on Windows not need install any package
   * if fail to start tkinter
-    * python version 3.7 and up will include new tk
-* on macOS 
+    * python version 3.7 and later will include new tk
+    
+
+* on macOS not need install any package
   * if fail to start tkinter 
     * xcode-select --install
       * download python-tk
