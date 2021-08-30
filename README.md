@@ -5,9 +5,7 @@
 * please check your tkinter version
   * make sure tkinter is version 8.5 or later
   ```python
-  """
-  check tkinter version
-  """
+  # check tkinter version
   import tkinter
   tkinter._test()
   ```

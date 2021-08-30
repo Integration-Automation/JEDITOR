@@ -1,7 +1,7 @@
 from tkinter import *
 from tkinter import ttk
 
-from je_editor.utils.code_tag.tag_word import HighlightText
+from je_editor.utils.code_tag.tag_keyword import HighlightText
 
 
 class editor_main(object):
@@ -24,8 +24,7 @@ class editor_main(object):
         self.code_editor.grid(column=0, row=0, sticky=(N, W, E, S))
         self.scrollbar_x.grid(column=0, row=1)
         self.scrollbar_y.grid(column=1, row=0)
-        word_list = ["print", "int"]
-        HighlightText(self.code_editor, word_list)
+        HighlightText(self.code_editor)
         # set resize
         self.main_frame.columnconfigure(0, weight=1)
         self.main_frame.rowconfigure(0, weight=1)
