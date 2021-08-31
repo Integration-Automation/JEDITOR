@@ -38,7 +38,7 @@ def write_output_content():
 
 
 def save_content_and_quit(file):
-    editor_data["last_file"] = file[0]
+    editor_data["last_file"] = file
     write_output_content()
 
 

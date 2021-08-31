@@ -1,8 +1,7 @@
 import os
 from pathlib import Path
 from threading import Lock
-
-from PyQt5.QtWidgets import QFileDialog
+from tkinter import filedialog
 
 from je_editor.utils.exception.je_editor_exceptions import JEditorOpenFileException
 
@@ -10,21 +9,21 @@ cwd = os.getcwd()
 lock = Lock()
 
 
-def read_file(file, source):
+def read_file(file):
     try:
         lock.acquire()
-        if file[0] != "" and file[0] is not None:
-            file_path = Path(file[0])
+        if file != "" and file is not None:
+            file_path = Path(file)
             if file_path.exists() and file_path.is_file():
-                with open(file[0], "r+") as open_read_file:
-                    source(open_read_file.read())
-        return file
+                with open(file, "r+") as open_read_file:
+                    return [file, open_read_file.read()]
     except JEditorOpenFileException:
         raise JEditorOpenFileException
     finally:
         lock.release()
 
 
-def open_file(source):
-    file = QFileDialog.getOpenFileName(None, "choose file", cwd)
-    return read_file(file, source)
+def open_file():
+    file = filedialog.askopenfilename(title="Open File", initialdir=cwd,
+                                      filetypes=(("je editor files", "*.jee"), ("all files", "*.*")))
+    return read_file(file)

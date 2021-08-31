@@ -1,6 +1,8 @@
+from tkinter import IntVar
+
 from je_editor.utils.code_tag.keyword_list import keyword_list
 from je_editor.utils.theme.theme import Theme
-from tkinter import IntVar
+
 
 class HighlightText(object):
 

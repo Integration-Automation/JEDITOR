@@ -1,7 +1,16 @@
+import tkinter
 from tkinter import *
 from tkinter import ttk
 
 from je_editor.utils.code_tag.tag_keyword import HighlightText
+from je_editor.utils.editor_content.content_save import open_content_and_start
+from je_editor.utils.editor_content.content_save import save_content_and_quit
+from je_editor.utils.file.open_file import open_file
+from je_editor.utils.file.open_file import read_file
+from je_editor.utils.file.save_file import SaveThread
+from je_editor.utils.file.save_file import save_file
+from je_editor.utils.text_process.shell_text import run_on_shell
+from je_editor.utils.text_process.exec_text import exec_code
 
 
 class editor_main(object):
@@ -13,23 +22,109 @@ class editor_main(object):
         # set main window title and add main frame
         self.main_window = main_window
         self.main_window.title("je_editor")
-        self.main_frame = ttk.Frame(self.main_window, padding="3 3 12 12")
-        self.main_frame.grid(column=0, row=0, sticky=(N, W, E, S))
-        # set code edit
-        self.code_editor = Text(self.main_frame)
-        self.scrollbar_x = ttk.Scrollbar(orient="horizontal", command=self.code_editor.xview)
-        self.scrollbar_y = ttk.Scrollbar(orient="vertical", command=self.code_editor.yview)
-        self.code_editor["xscrollcommand"] = self.scrollbar_x.set
-        self.code_editor["yscrollcommand"] = self.scrollbar_y.set
+        self.code_edit_frame = ttk.Frame(self.main_window, padding="3 3 12 12")
+        self.code_edit_frame.grid(column=0, row=0, sticky=(N, W, E, S))
+        self.run_result_frame = ttk.Frame(self.main_window, padding="3 3 12 12")
+        self.run_result_frame.grid(column=0, row=1, sticky=(N, W, E, S))
+        """
+        set code edit
+        Text start and end position
+        """
+        self.start_position = "1.0"
+        self.end_position = "end-1c"
+        self.code_editor = Text(self.code_edit_frame)
+        self.code_editor_scrollbar_y = ttk.Scrollbar(orient="vertical", command=self.code_editor.yview)
+        self.code_editor["yscrollcommand"] = self.code_editor_scrollbar_y.set
         self.code_editor.grid(column=0, row=0, sticky=(N, W, E, S))
-        self.scrollbar_x.grid(column=0, row=1)
-        self.scrollbar_y.grid(column=1, row=0)
-        HighlightText(self.code_editor)
+        self.code_editor_scrollbar_y.grid(column=1, row=0)
+        self.code_editor.configure(state="normal")
+        # run result
+        self.run_result = Text(self.run_result_frame)
+        self.run_result_scrollbar_y = ttk.Scrollbar(orient="vertical", command=self.run_result.yview)
+        self.run_result["yscrollcommand"] = self.run_result_scrollbar_y.set
+        self.run_result.grid(column=0, row=1, sticky=(N, W, E, S))
+        self.run_result_scrollbar_y.grid(column=1, row=1)
+        self.run_result.configure(state="disabled")
+        self.run_result.bind("<1>", lambda event: self.run_result.focus_set())
+        # Menubar
+        # Main menu
+        self.menu = tkinter.Menu(self.main_window)
+        # File menu
+        self.file_menu = tkinter.Menu(self.menu, tearoff=0)
+        self.file_menu.add_command(label="Save File", command=self.save_file_to_open)
+        self.file_menu.add_command(label="Open File", command=self.open_file_to_read)
+        # Function menu
+        self.function_menu = tkinter.Menu(self.menu, tearoff=0)
+        self.function_menu.add_command(label="Run", command=self.exec_code)
+        self.function_menu.add_command(label="Run on shell", command=self.run_on_shell)
+        # add and config
+        self.menu.add_cascade(label="File", menu=self.file_menu)
+        self.menu.add_cascade(label="Function", menu=self.function_menu)
+        self.main_window.config(menu=self.menu)
         # set resize
-        self.main_frame.columnconfigure(0, weight=1)
-        self.main_frame.rowconfigure(0, weight=1)
+        self.code_edit_frame.columnconfigure(0, weight=1)
+        self.code_edit_frame.rowconfigure(0, weight=1)
+        self.run_result_frame.columnconfigure(0, weight=1)
+        self.run_result_frame.rowconfigure(1, weight=1)
         self.main_window.columnconfigure(0, weight=1)
         self.main_window.rowconfigure(0, weight=1)
+        # Highlight word
+        HighlightText(self.code_editor)
+        # Auto save thread
+        self.auto_save = SaveThread
+        # file to output content
+        self.file_to_output_content = open_content_and_start()
+        if self.file_to_output_content is not None:
+            self.open_last_edit_file()
+        # close event
+        self.main_window.protocol("WM_DELETE_WINDOW", self.close_event)
+        # bind
+        self.main_window.bind("<Control-Key-o>", self.open_file_to_read)
+        self.main_window.bind("<Control-Key-s>", self.save_file_to_open)
+        self.main_window.bind("<Control-Key-F5>", self.exec_code)
+        self.main_window.bind("<Control-Key-F6>", self.run_on_shell)
+        # is this test run?
+        self.test_run = False
 
     def start_editor(self):
         self.main_window.mainloop()
+
+    def close_event(self):
+        if self.file_to_output_content is not None:
+            save_content_and_quit(self.file_to_output_content)
+        self.main_window.destroy()
+
+    def open_file_to_read(self, event=None):
+        temp_to_check_file = open_file()
+        if temp_to_check_file is not None:
+            self.file_to_output_content = temp_to_check_file[0]
+            self.code_editor.delete(self.start_position, self.end_position)
+            self.code_editor.insert(self.end_position, temp_to_check_file[1])
+
+    def save_file_to_open(self, event=None):
+        save_file(self.code_editor.get(self.start_position, self.end_position))
+
+    def open_last_edit_file(self):
+        temp_to_check_file = read_file(self.file_to_output_content)
+        if temp_to_check_file is not None:
+            self.code_editor.delete(self.start_position, self.end_position)
+            self.code_editor.insert(self.end_position, temp_to_check_file[1])
+
+    def exec_code(self, event=None):
+        self.run_result.configure(state="normal")
+        self.run_result.delete(self.start_position, self.end_position)
+        self.run_result.insert(self.start_position,
+                               exec_code(self.code_editor.get(self.start_position, self.end_position)))
+        self.run_result.configure(state="disabled")
+
+    def run_on_shell(self, event=None):
+        self.run_result.configure(state="normal")
+        self.run_result.delete(self.start_position, self.end_position)
+        self.run_result.insert(self.start_position,
+                               run_on_shell(self.code_editor.get(self.start_position, self.end_position)))
+        self.run_result.configure(state="disabled")
+
+    # default event
+    def do_test(self, event=None):
+        self.test_run = True
+        print("test")
