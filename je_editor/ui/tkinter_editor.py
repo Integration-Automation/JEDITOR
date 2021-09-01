@@ -9,11 +9,15 @@ from je_editor.utils.file.open_file import open_file
 from je_editor.utils.file.open_file import read_file
 from je_editor.utils.file.save_file import SaveThread
 from je_editor.utils.file.save_file import save_file
-from je_editor.utils.text_process.shell_text import run_on_shell
 from je_editor.utils.text_process.exec_text import exec_code
+from je_editor.utils.text_process.shell_text import run_on_shell
 
 
-class editor_main(object):
+def start_editor():
+    EditorMain().start_editor()
+
+
+class EditorMain(object):
 
     def __init__(self, main_window=Tk()):
         """
@@ -26,13 +30,11 @@ class editor_main(object):
         self.code_edit_frame.grid(column=0, row=0, sticky=(N, W, E, S))
         self.run_result_frame = ttk.Frame(self.main_window, padding="3 3 12 12")
         self.run_result_frame.grid(column=0, row=1, sticky=(N, W, E, S))
-        """
-        set code edit
-        Text start and end position
-        """
+        # Text start and end position
         self.start_position = "1.0"
         self.end_position = "end-1c"
-        self.code_editor = Text(self.code_edit_frame)
+        # set code edit
+        self.code_editor = Text(self.code_edit_frame, undo=True, autoseparators=True, maxundo=-1)
         self.code_editor_scrollbar_y = ttk.Scrollbar(orient="vertical", command=self.code_editor.yview)
         self.code_editor["yscrollcommand"] = self.code_editor_scrollbar_y.set
         self.code_editor.grid(column=0, row=0, sticky=(N, W, E, S))

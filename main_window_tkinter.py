@@ -1,3 +1,3 @@
-from je_editor.ui.tkinter_editor import editor_main
+from je_editor import start_editor
 
-editor_main().start_editor()
+start_editor()
