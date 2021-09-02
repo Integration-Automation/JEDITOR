@@ -1,7 +1,7 @@
 from tkinter import IntVar
 
 from je_editor.utils.code_tag.keyword_list import keyword_list
-from je_editor.utils.theme.theme import Theme
+from je_editor.utils.theme.theme import theme_dict
 
 
 class HighlightText(object):
@@ -10,7 +10,7 @@ class HighlightText(object):
         self.tkinter_text = tkinter_text
         self.start_position = start_position
         self.end_position = end_position
-        self.theme = Theme()
+        self.theme = theme_dict
         self.tkinter_text.regexp = True
         self.tkinter_text.bind("<KeyRelease>", self.search)
 
@@ -21,7 +21,7 @@ class HighlightText(object):
         count_var = IntVar()
         for word in keyword_list:
             position = '1.0'
-            self.tkinter_text.tag_config(word, foreground=self.theme.tag_keyword_color)
+            self.tkinter_text.tag_config(word, foreground=self.theme.get("tag_keyword_color"))
             while self.tkinter_text.compare(position, "<", "end"):
                 find_function_index = self.tkinter_text.search("\m" + word + "\M", position, self.end_position, count=count_var, regexp=True)
                 if not find_function_index:

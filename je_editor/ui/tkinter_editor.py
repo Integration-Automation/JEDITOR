@@ -13,16 +13,81 @@ from je_editor.utils.text_process.exec_text import exec_code
 from je_editor.utils.text_process.shell_text import run_on_shell
 
 
-def start_editor():
-    EditorMain().start_editor()
+def start_editor(use_theme=None):
+    EditorMain(use_theme=use_theme).start_editor()
 
 
 class EditorMain(object):
 
-    def __init__(self, main_window=Tk()):
+    def start_editor(self):
+        if self.auto_save is not None:
+            self.auto_save.start()
+        self.main_window.mainloop()
+
+    def close_event(self):
+        if self.file_to_output_content is not None:
+            save_content_and_quit(self.file_to_output_content)
+        self.main_window.destroy()
+
+    def open_file_to_read(self, event=None):
+        temp_to_check_file = open_file()
+        if temp_to_check_file is not None:
+            self.file_to_output_content = temp_to_check_file[0]
+            self.code_editor.delete(self.start_position, self.end_position)
+            self.code_editor.insert(self.end_position, temp_to_check_file[1])
+            self.current_file = temp_to_check_file[0]
+            if self.current_file is not None and self.auto_save is None:
+                self.auto_save = SaveThread(self.current_file, self.code_editor)
+                self.auto_save.start()
+
+    def save_file_to_open(self, event=None):
+        temp_to_check_file = save_file(self.code_editor.get(self.start_position, self.end_position))
+        if temp_to_check_file is not None:
+            self.current_file = temp_to_check_file[0]
+            if self.current_file is not None and self.auto_save is None:
+                self.auto_save = SaveThread(self.current_file, self.code_editor)
+                self.auto_save.start()
+
+    def open_last_edit_file(self):
+        temp_to_check_file = read_file(self.file_to_output_content)
+        if temp_to_check_file is not None:
+            self.code_editor.delete(self.start_position, self.end_position)
+            self.code_editor.insert(self.end_position, temp_to_check_file[1])
+            return temp_to_check_file[0]
+
+    def exec_code(self, event=None):
+        self.run_result.configure(state="normal")
+        self.run_result.delete(self.start_position, self.end_position)
+        self.run_result.insert(self.start_position,
+                               exec_code(self.code_editor.get(self.start_position, self.end_position)))
+        self.run_result.configure(state="disabled")
+
+    def run_on_shell(self, event=None):
+        self.run_result.configure(state="normal")
+        self.run_result.delete(self.start_position, self.end_position)
+        self.run_result.insert(self.start_position,
+                               run_on_shell(self.code_editor.get(self.start_position, self.end_position)))
+        self.run_result.configure(state="disabled")
+
+    def show_popup_menu(self, event):
+        try:
+            self.popup_menu.tk_popup(event.x_root, event.y_root)
+        finally:
+            self.popup_menu.grab_release()
+
+    # default event
+    def do_test(self, event=None):
+        self.test_run = True
+        print("test")
+
+    def __init__(self, use_theme=None, main_window=Tk()):
         """
         :param main_window: Tk instance
         """
+        # style
+        self.style = ttk.Style()
+        if use_theme is not None:
+            self.style.theme_use(use_theme)
         # set main window title and add main frame
         self.main_window = main_window
         self.main_window.title("je_editor")
@@ -59,6 +124,14 @@ class EditorMain(object):
         self.function_menu = tkinter.Menu(self.menu, tearoff=0)
         self.function_menu.add_command(label="Run", command=self.exec_code)
         self.function_menu.add_command(label="Run on shell", command=self.run_on_shell)
+        # Popup menu
+        self.popup_menu = Menu(self.main_window, tearoff=0)
+        self.popup_menu.add_command(label="Run", command=self.exec_code)
+        self.popup_menu.add_command(label="Run on shell", command=self.run_on_shell)
+        self.popup_menu.add_separator()
+        self.popup_menu.add_command(label="Save File", command=self.save_file_to_open)
+        self.popup_menu.add_command(label="Open File", command=self.open_file_to_read)
+        self.main_window.bind("<Button-3>", self.show_popup_menu)
         # add and config
         self.menu.add_cascade(label="File", menu=self.file_menu)
         self.menu.add_cascade(label="Function", menu=self.function_menu)
@@ -72,12 +145,12 @@ class EditorMain(object):
         self.main_window.rowconfigure(0, weight=1)
         # Highlight word
         HighlightText(self.code_editor)
-        # Auto save thread
-        self.auto_save = SaveThread
+        # current file
+        self.current_file = None
         # file to output content
         self.file_to_output_content = open_content_and_start()
         if self.file_to_output_content is not None:
-            self.open_last_edit_file()
+            self.current_file = self.open_last_edit_file()
         # close event
         self.main_window.protocol("WM_DELETE_WINDOW", self.close_event)
         # bind
@@ -87,46 +160,7 @@ class EditorMain(object):
         self.main_window.bind("<Control-Key-F6>", self.run_on_shell)
         # is this test run?
         self.test_run = False
-
-    def start_editor(self):
-        self.main_window.mainloop()
-
-    def close_event(self):
-        if self.file_to_output_content is not None:
-            save_content_and_quit(self.file_to_output_content)
-        self.main_window.destroy()
-
-    def open_file_to_read(self, event=None):
-        temp_to_check_file = open_file()
-        if temp_to_check_file is not None:
-            self.file_to_output_content = temp_to_check_file[0]
-            self.code_editor.delete(self.start_position, self.end_position)
-            self.code_editor.insert(self.end_position, temp_to_check_file[1])
-
-    def save_file_to_open(self, event=None):
-        save_file(self.code_editor.get(self.start_position, self.end_position))
-
-    def open_last_edit_file(self):
-        temp_to_check_file = read_file(self.file_to_output_content)
-        if temp_to_check_file is not None:
-            self.code_editor.delete(self.start_position, self.end_position)
-            self.code_editor.insert(self.end_position, temp_to_check_file[1])
-
-    def exec_code(self, event=None):
-        self.run_result.configure(state="normal")
-        self.run_result.delete(self.start_position, self.end_position)
-        self.run_result.insert(self.start_position,
-                               exec_code(self.code_editor.get(self.start_position, self.end_position)))
-        self.run_result.configure(state="disabled")
-
-    def run_on_shell(self, event=None):
-        self.run_result.configure(state="normal")
-        self.run_result.delete(self.start_position, self.end_position)
-        self.run_result.insert(self.start_position,
-                               run_on_shell(self.code_editor.get(self.start_position, self.end_position)))
-        self.run_result.configure(state="disabled")
-
-    # default event
-    def do_test(self, event=None):
-        self.test_run = True
-        print("test")
+        # Auto save thread
+        self.auto_save = None
+        if self.current_file is not None:
+            self.auto_save = SaveThread(self.current_file, self.code_editor)

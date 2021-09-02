@@ -24,7 +24,9 @@ def write_file(file, content):
 
 
 def save_file(content):
-    file = filedialog.asksaveasfilename(title="Save File", initialdir=cwd,
+    file = filedialog.asksaveasfilename(title="Save File",
+                                        initialdir=cwd,
+                                        defaultextension="*.*",
                                         filetypes=(("je editor files", "*.jee"), ("all files", "*.*")))
     write_file(file, content)
     return file
@@ -39,14 +41,16 @@ class SaveThread(Thread):
         self.tkinter_text = tkinter_text
         self.auto_save = auto_save
         self.setDaemon(True)
-        print("auto save start")
+        print("auto save init")
 
     def run(self):
-        if self.file is not None and self.file != "":
+        if self.file is not None:
             self.auto_save = True
             self.path = Path(self.file)
         while self.auto_save:
             time.sleep(15)
+            print("auto saved")
             if self.path.exists() and self.path.is_file():
                 write_file(self.file, self.tkinter_text.get("1.0", "end-1c"))
-            self.run()
+            else:
+                break
