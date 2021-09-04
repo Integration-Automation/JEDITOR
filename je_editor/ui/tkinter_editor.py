@@ -25,13 +25,13 @@ class EditorMain(object):
         self.main_window.mainloop()
 
     def close_event(self):
-        if self.file_to_output_content is not None:
-            save_content_and_quit(self.file_to_output_content)
+        if self.current_file is not None:
+            save_content_and_quit(self.current_file)
         self.main_window.destroy()
 
     def open_file_to_read(self, event=None):
         temp_to_check_file = open_file()
-        if temp_to_check_file is not None:
+        if temp_to_check_file is not None and temp_to_check_file != "":
             self.file_to_output_content = temp_to_check_file[0]
             self.code_editor.delete(self.start_position, self.end_position)
             self.code_editor.insert(self.end_position, temp_to_check_file[1])

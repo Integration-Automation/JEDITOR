@@ -28,6 +28,8 @@ def save_file(content):
                                         initialdir=cwd,
                                         defaultextension="*.*",
                                         filetypes=(("all files", "*.*"), ("je editor files", "*.jee")))
+    if len(file) == 0:
+        return ""
     write_file(file, content)
     return file
 
@@ -49,8 +51,8 @@ class SaveThread(Thread):
             self.path = Path(self.file)
         while self.auto_save:
             time.sleep(15)
-            print("auto saved")
             if self.path.exists() and self.path.is_file():
+                print("auto saved")
                 write_file(self.file, self.tkinter_text.get("1.0", "end-1c"))
             else:
                 break

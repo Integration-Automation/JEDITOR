@@ -28,4 +28,6 @@ def open_file():
                                       initialdir=cwd,
                                       defaultextension="*.*",
                                       filetypes=(("all files", "*.*"), ("je editor files", "*.jee")))
+    if len(file) == 0:
+        return ""
     return read_file(file)
