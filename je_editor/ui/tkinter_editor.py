@@ -36,7 +36,9 @@ class EditorMain(object):
             self.code_editor.delete(self.start_position, self.end_position)
             self.code_editor.insert(self.end_position, temp_to_check_file[1])
             self.current_file = temp_to_check_file[0]
-            if self.current_file is not None and self.auto_save is None:
+            if self.auto_save is not None:
+                self.auto_save.file = self.current_file
+            elif self.current_file is not None and self.auto_save is None:
                 self.auto_save = SaveThread(self.current_file, self.code_editor)
                 self.auto_save.start()
 
@@ -44,7 +46,9 @@ class EditorMain(object):
         temp_to_check_file = save_file(self.code_editor.get(self.start_position, self.end_position))
         if temp_to_check_file is not None and temp_to_check_file != "":
             self.current_file = temp_to_check_file[0]
-            if self.current_file is not None and self.auto_save is None:
+            if self.auto_save is not None:
+                self.auto_save.file = self.current_file
+            elif self.current_file is not None and self.auto_save is None:
                 self.auto_save = SaveThread(self.current_file, self.code_editor)
                 self.auto_save.start()
 
