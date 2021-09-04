@@ -27,5 +27,5 @@ def open_file():
     file = filedialog.askopenfilename(title="Open File",
                                       initialdir=cwd,
                                       defaultextension="*.*",
-                                      filetypes=(("je editor files", "*.jee"), ("all files", "*.*")))
+                                      filetypes=(("all files", "*.*"), ("je editor files", "*.jee")))
     return read_file(file)

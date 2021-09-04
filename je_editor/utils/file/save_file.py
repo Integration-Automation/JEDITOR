@@ -27,7 +27,7 @@ def save_file(content):
     file = filedialog.asksaveasfilename(title="Save File",
                                         initialdir=cwd,
                                         defaultextension="*.*",
-                                        filetypes=(("je editor files", "*.jee"), ("all files", "*.*")))
+                                        filetypes=(("all files", "*.*"), ("je editor files", "*.jee")))
     write_file(file, content)
     return file
 

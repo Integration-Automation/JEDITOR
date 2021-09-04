@@ -42,7 +42,7 @@ class EditorMain(object):
 
     def save_file_to_open(self, event=None):
         temp_to_check_file = save_file(self.code_editor.get(self.start_position, self.end_position))
-        if temp_to_check_file is not None:
+        if temp_to_check_file is not None and temp_to_check_file != "":
             self.current_file = temp_to_check_file[0]
             if self.current_file is not None and self.auto_save is None:
                 self.auto_save = SaveThread(self.current_file, self.code_editor)
