@@ -1,5 +1,13 @@
 import tkinter
-from tkinter import *
+from tkinter import DISABLED
+from tkinter import E
+from tkinter import Menu
+from tkinter import N
+from tkinter import NORMAL
+from tkinter import S
+from tkinter import Text
+from tkinter import Tk
+from tkinter import W
 from tkinter import ttk
 
 from je_editor.utils.code_tag.tag_keyword import HighlightText
@@ -10,6 +18,7 @@ from je_editor.utils.file.open_file import read_file
 from je_editor.utils.file.save_file import SaveThread
 from je_editor.utils.file.save_file import save_file
 from je_editor.utils.text_process.exec_text import exec_code
+from je_editor.utils.text_process.process_error import process_error_text
 from je_editor.utils.text_process.shell_text import run_on_shell
 
 
@@ -60,18 +69,24 @@ class EditorMain(object):
             return temp_to_check_file[0]
 
     def exec_code(self, event=None):
-        self.run_result.configure(state="normal")
+        self.run_result.configure(state=NORMAL)
         self.run_result.delete(self.start_position, self.end_position)
-        self.run_result.insert(self.start_position,
-                               exec_code(self.code_editor.get(self.start_position, self.end_position)))
-        self.run_result.configure(state="disabled")
+        temp_result = exec_code(self.code_editor.get(self.start_position, self.end_position))
+        if temp_result[1]:
+            process_error_text(self.run_result, temp_result[0])
+        else:
+            self.run_result.insert(self.start_position, temp_result[0])
+        self.run_result.configure(state=DISABLED)
 
     def run_on_shell(self, event=None):
-        self.run_result.configure(state="normal")
+        self.run_result.configure(state=NORMAL)
         self.run_result.delete(self.start_position, self.end_position)
-        self.run_result.insert(self.start_position,
-                               run_on_shell(self.code_editor.get(self.start_position, self.end_position)))
-        self.run_result.configure(state="disabled")
+        temp_result = run_on_shell(self.code_editor.get(self.start_position, self.end_position))
+        if temp_result[1]:
+            process_error_text(self.run_result, temp_result[0])
+        else:
+            self.run_result.insert(self.start_position, temp_result[0])
+        self.run_result.configure(state=DISABLED)
 
     def show_popup_menu(self, event):
         try:
