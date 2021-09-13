@@ -14,6 +14,9 @@ editor_data = {
 
 
 def read_output_content():
+    """
+    read the editor content
+    """
     try:
         lock.acquire()
         file_path = Path(cwd + "/je_editor_content.json")
@@ -27,6 +30,9 @@ def read_output_content():
 
 
 def write_output_content():
+    """
+    write the editor content
+    """
     try:
         lock.acquire()
         with open(cwd + "/je_editor_content.json", "w+") as file_to_write:
@@ -38,11 +44,17 @@ def write_output_content():
 
 
 def save_content_and_quit(file):
+    """
+    set content data and write
+    """
     editor_data["last_file"] = file
     write_output_content()
 
 
 def open_content_and_start():
+    """
+    read data and set content
+    """
     temp_content = read_output_content()
     if temp_content is not None:
         editor_data["last_file"] = json.loads(temp_content).get("last_file")

@@ -7,14 +7,28 @@ from je_editor.utils.theme.theme import theme_dict
 class HighlightText(object):
 
     def __init__(self, tkinter_text, start_position="1.0", end_position="end"):
+        """
+        :param tkinter_text: want to set highlight's tkinter text
+        :param start_position: search start position
+        :param end_position: search end position
+        """
         self.tkinter_text = tkinter_text
         self.start_position = start_position
         self.end_position = end_position
+        # theme dict on theme
         self.theme = theme_dict
+        # use regexp
         self.tkinter_text.regexp = True
+        # bind to keyboard key release
         self.tkinter_text.bind("<KeyRelease>", self.search)
 
     def search(self, event):
+        """
+        :param event: tkinter event
+        create temp var tag
+        remove tag
+        search all word in keyword_list and tag
+        """
         tag = "temp"
         for tag in self.tkinter_text.tag_names():
             self.tkinter_text.tag_remove(tag, self.start_position, self.end_position)

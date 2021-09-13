@@ -12,6 +12,16 @@ lock = Lock()
 
 
 def write_file(file, content):
+    """
+    :param file: file we want to write
+    :param content: content write in file
+    try
+        lock thread
+        if file not empty string
+            write content to file
+    finally
+        release lock
+    """
     try:
         lock.acquire()
         if file != "":
@@ -24,6 +34,14 @@ def write_file(file, content):
 
 
 def save_file(content):
+    """
+    :param content: content we want to write or ""
+    :return: choose file
+    open tkinter ask save file dialog
+    if not choose
+        len(file) = 0 or ""
+        :return ""
+    """
     file = filedialog.asksaveasfilename(title="Save File",
                                         initialdir=cwd,
                                         defaultextension="*.*",
@@ -37,15 +55,24 @@ def save_file(content):
 class SaveThread(Thread):
 
     def __init__(self, file, tkinter_text, auto_save=False):
+        """
+        :param file: file we want to auto save
+        :param tkinter_text: tkinter text
+        :param auto_save: not need to change
+        """
         super().__init__()
         self.file = file
         self.path = None
         self.tkinter_text = tkinter_text
         self.auto_save = auto_save
+        # set daemon
         self.setDaemon(True)
         print("auto save init")
 
     def run(self):
+        """
+        loop and save current edit file
+        """
         if self.file is not None:
             self.auto_save = True
             self.path = Path(self.file)

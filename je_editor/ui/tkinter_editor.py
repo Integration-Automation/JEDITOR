@@ -28,40 +28,67 @@ def start_editor(use_theme=None):
 
 class EditorMain(object):
 
-    def start_editor(self):
+    def start_auto_save(self):
+        """
+        start auto save
+        """
         if self.auto_save is not None:
+            self.auto_save.file = self.current_file
+        elif self.current_file is not None and self.auto_save is None:
+            self.auto_save = SaveThread(self.current_file, self.code_editor)
             self.auto_save.start()
+
+    def start_editor(self):
+        """
+        start editor and start auto save if auto save not start
+        """
+        self.start_auto_save()
         self.main_window.mainloop()
 
     def close_event(self):
+        """
+        editor close event
+        """
         if self.current_file is not None:
             save_content_and_quit(self.current_file)
         self.main_window.destroy()
 
     def open_file_to_read(self, event=None):
+        """
+        :param event: tkinter event
+        show open file dialog
+        if choose some file
+            open and read it insert content to tkinter code_editor
+            change current file
+            start auto save
+        """
         temp_to_check_file = open_file()
         if temp_to_check_file is not None and temp_to_check_file != "":
             self.file_to_output_content = temp_to_check_file[0]
             self.code_editor.delete(self.start_position, self.end_position)
             self.code_editor.insert(self.end_position, temp_to_check_file[1])
             self.current_file = temp_to_check_file[0]
-            if self.auto_save is not None:
-                self.auto_save.file = self.current_file
-            elif self.current_file is not None and self.auto_save is None:
-                self.auto_save = SaveThread(self.current_file, self.code_editor)
-                self.auto_save.start()
+            self.start_auto_save()
 
     def save_file_to_open(self, event=None):
+        """
+        :param event: tkinter event
+        show save file dialog
+        if saved
+            change current file to new file
+            start auto save
+        """
         temp_to_check_file = save_file(self.code_editor.get(self.start_position, self.end_position))
         if temp_to_check_file is not None and temp_to_check_file != "":
             self.current_file = temp_to_check_file[0]
-            if self.auto_save is not None:
-                self.auto_save.file = self.current_file
-            elif self.current_file is not None and self.auto_save is None:
-                self.auto_save = SaveThread(self.current_file, self.code_editor)
-                self.auto_save.start()
+            self.start_auto_save()
 
     def open_last_edit_file(self):
+        """
+        open last edit file
+        if success open file
+            insert file content to code_editor
+        """
         temp_to_check_file = read_file(self.file_to_output_content)
         if temp_to_check_file is not None:
             self.code_editor.delete(self.start_position, self.end_position)
@@ -69,6 +96,17 @@ class EditorMain(object):
             return temp_to_check_file[0]
 
     def exec_code(self, event=None):
+        """
+        :param event: tkinter event
+        change run_result to editable
+        delete all editable content
+        exec code_editor content to get result
+        if result[1](is_exec_error) True
+            show error text on run_result
+        else
+            show result on run_result
+        set run_result disable
+        """
         self.run_result.configure(state=NORMAL)
         self.run_result.delete(self.start_position, self.end_position)
         temp_result = exec_code(self.code_editor.get(self.start_position, self.end_position))
@@ -79,6 +117,17 @@ class EditorMain(object):
         self.run_result.configure(state=DISABLED)
 
     def run_on_shell(self, event=None):
+        """
+        :param event: tkinter event
+        change run_result to editable
+        delete all editable content
+        run on shell code_editor content to get result
+        if result[1](is_exec_error) True
+            show error text on run_result
+        else
+            show result on run_result
+        set run_result disable
+        """
         self.run_result.configure(state=NORMAL)
         self.run_result.delete(self.start_position, self.end_position)
         temp_result = run_on_shell(self.code_editor.get(self.start_position, self.end_position))
@@ -89,6 +138,13 @@ class EditorMain(object):
         self.run_result.configure(state=DISABLED)
 
     def show_popup_menu(self, event):
+        """
+        :param event: tkinter event bind Button-3
+        try
+            show popup menu
+        finally
+            release popup menu
+        """
         try:
             self.popup_menu.tk_popup(event.x_root, event.y_root)
         finally:

@@ -10,6 +10,18 @@ lock = Lock()
 
 
 def read_file(file):
+    """
+    :param file: the file we want to read it's whole file path
+    :return: read's file and file content
+    try
+        lock thread
+        find file is exist ? and is file ?
+        if both is true
+            try to open it and read
+            return file and content
+    finally
+        release lock
+    """
     try:
         lock.acquire()
         if file != "" and file is not None:
@@ -24,6 +36,13 @@ def read_file(file):
 
 
 def open_file():
+    """
+    :return: read's file and file content or ""
+    open tkinter ask open file dialog
+    if not choose
+        len(file) = 0 or ""
+        :return ""
+    """
     file = filedialog.askopenfilename(title="Open File",
                                       initialdir=cwd,
                                       defaultextension="*.*",
