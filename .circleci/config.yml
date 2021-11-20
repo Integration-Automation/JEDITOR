@@ -15,7 +15,7 @@ jobs:
       # update docker
       - run:
           command: sudo apt-get update
-          name: install python3-tk
+          name: update docker
       # install tkinter
       - run:
           command: sudo apt-get install python3-tk
