@@ -12,6 +12,10 @@ jobs:
       - run:
           command: pip install --user -r requirements.txt
           name: pip requirements.txt
+      # install tkinter
+      - run:
+          command: sudo apt-get install python3-tk
+          name: install python3-tk
       # exec code test
       - run:
           command: python ./circle_ci_test/exec/code_exec_test/execute_test.py
