@@ -1,0 +1,31 @@
+version: 2.1
+
+orbs:
+  python: circleci/python@1.4.0
+
+jobs:
+  build-and-test:
+    executor: python/default
+    steps:
+      - checkout
+      # pip require package
+      - run:
+          command: pip install --user -r requirements.txt
+          name: pip requirements.txt
+      # exec code test
+      - run:
+          command: python ./circle_ci_test/exec/code_exec_test/execute_test.py
+          name: execute_test
+      # run on shell test
+      - run:
+          command: python ./circle_ci_test/exec/shell_exec_test/shell_test.py
+          name: shell_test
+      # save and open file test
+      - run:
+          command: python ./circle_ci_test/file/save_and_open/save_and_open.py
+          name: save_and_open_test
+
+workflows:
+  main:
+    jobs:
+      - build-and-test
