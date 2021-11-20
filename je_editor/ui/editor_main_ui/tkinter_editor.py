@@ -1,25 +1,22 @@
 import tkinter
-from tkinter import DISABLED
 from tkinter import E
 from tkinter import Menu
 from tkinter import N
-from tkinter import NORMAL
 from tkinter import S
 from tkinter import Text
 from tkinter import Tk
 from tkinter import W
 from tkinter import ttk
 
+from je_editor.ui.ui_event.auto_save.start_auto_save.start_auto_save import start_auto_save
+from je_editor.ui.ui_event.close.close_event import close_event
+from je_editor.ui.ui_event.execute.execute_code.exec_code import execute_code
+from je_editor.ui.ui_event.execute.execute_shell_command.run_on_shell import execute_shell_command
+from je_editor.ui.ui_event.open_file.open_file_to_read.open_file_to_read import open_file_to_read
+from je_editor.ui.ui_event.open_file.open_last_edit_file.open_last_edit_file import open_last_edit_file
+from je_editor.ui.ui_event.save_file.save_file_to_open.save_file_to_open import save_file_to_open
 from je_editor.utils.code_tag.tag_keyword import HighlightText
 from je_editor.utils.editor_content.content_save import open_content_and_start
-from je_editor.utils.editor_content.content_save import save_content_and_quit
-from je_editor.utils.file.open_file import open_file
-from je_editor.utils.file.open_file import read_file
-from je_editor.utils.file.save_file import SaveThread
-from je_editor.utils.file.save_file import save_file
-from je_editor.utils.text_process.exec_text import exec_code
-from je_editor.utils.text_process.process_error import process_error_text
-from je_editor.utils.text_process.shell_text import run_on_shell
 
 
 def start_editor(use_theme=None):
@@ -28,114 +25,39 @@ def start_editor(use_theme=None):
 
 class EditorMain(object):
 
+    # start auto save
     def start_auto_save(self):
-        """
-        start auto save
-        """
-        if self.auto_save is not None:
-            self.auto_save.file = self.current_file
-        elif self.current_file is not None and self.auto_save is None:
-            self.auto_save = SaveThread(self.current_file, self.code_editor)
-            self.auto_save.start()
+        self.auto_save = start_auto_save(self.auto_save, self.current_file, self.code_editor)
 
+    # start editor and start auto save if auto save not start
     def start_editor(self):
-        """
-        start editor and start auto save if auto save not start
-        """
         self.start_auto_save()
         self.main_window.mainloop()
 
+    # editor close event
     def close_event(self):
-        """
-        editor close event
-        """
-        if self.current_file is not None:
-            save_content_and_quit(self.current_file)
-        self.main_window.destroy()
+        close_event(self.current_file, self.main_window)
 
+    # editor open file
     def open_file_to_read(self, event=None):
-        """
-        :param event: tkinter event
-        show open file dialog
-        if choose some file
-            open and read it insert content to tkinter code_editor
-            change current file
-            start auto save
-        """
-        temp_to_check_file = open_file()
-        if temp_to_check_file is not None and temp_to_check_file != "":
-            self.file_to_output_content = temp_to_check_file[0]
-            self.code_editor.delete(self.start_position, self.end_position)
-            self.code_editor.insert(self.end_position, temp_to_check_file[1])
-            self.current_file = temp_to_check_file[0]
-            self.start_auto_save()
+        temp = open_file_to_read(self.code_editor)
+        self.file_from_output_content = temp
+        self.current_file = temp
+        self.start_auto_save()
 
+    # save editor file
     def save_file_to_open(self, event=None):
-        """
-        :param event: tkinter event
-        show save file dialog
-        if saved
-            change current file to new file
-            start auto save
-        """
-        temp_to_check_file = save_file(self.code_editor.get(self.start_position, self.end_position))
-        if temp_to_check_file is not None and temp_to_check_file != "":
-            self.current_file = temp_to_check_file[0]
-            self.start_auto_save()
+        self.current_file = save_file_to_open(self.code_editor)
+        self.start_auto_save()
 
     def open_last_edit_file(self):
-        """
-        open last edit file
-        if success open file
-            insert file content to code_editor
-        """
-        temp_to_check_file = read_file(self.file_to_output_content)
-        if temp_to_check_file is not None:
-            self.code_editor.delete(self.start_position, self.end_position)
-            self.code_editor.insert(self.end_position, temp_to_check_file[1])
-            return temp_to_check_file[0]
+        return open_last_edit_file(self.file_from_output_content, self.code_editor)
 
     def exec_code(self, event=None):
-        """
-        :param event: tkinter event
-        change run_result to editable
-        delete all editable content
-        exec code_editor content to get result
-        if result[1](is_exec_error) True
-            show error text on run_result
-        else
-            show result on run_result
-        set run_result disable
-        """
-        self.run_result.configure(state=NORMAL)
-        self.run_result.delete(self.start_position, self.end_position)
-        temp_result = exec_code(self.code_editor.get(self.start_position, self.end_position))
-        if temp_result[1]:
-            process_error_text(self.run_result, temp_result[0])
-        else:
-            self.run_result.insert(self.start_position, temp_result[0])
-        self.run_result.configure(state=DISABLED)
+        execute_code(self.run_result, self.current_file, self.save_file_to_open)
 
     def run_on_shell(self, event=None):
-        """
-        :param event: tkinter event
-        change run_result to editable
-        delete all editable content
-        run on shell code_editor content to get result
-        if result[1](is_exec_error) True
-            show error text on run_result
-        else
-            show result on run_result
-        set run_result disable
-        """
-        self.run_result.configure(state=NORMAL)
-        self.run_result.delete(self.start_position, self.end_position)
-        temp_result = run_on_shell(self.code_editor.get(self.start_position, self.end_position))
-        if temp_result[1]:
-            process_error_text(self.run_result, temp_result[0])
-        else:
-            self.run_result.insert(self.start_position, temp_result[0])
-        self.run_result.configure(state=DISABLED)
+        execute_shell_command(self.run_result, self.code_editor)
 
     def show_popup_menu(self, event):
         """
@@ -223,8 +145,8 @@ class EditorMain(object):
         # current file
         self.current_file = None
         # file to output content
-        self.file_to_output_content = open_content_and_start()
-        if self.file_to_output_content is not None:
+        self.file_from_output_content = open_content_and_start()
+        if self.file_from_output_content is not None:
             self.current_file = self.open_last_edit_file()
         # close event
         self.main_window.protocol("WM_DELETE_WINDOW", self.close_event)
@@ -238,4 +160,4 @@ class EditorMain(object):
         # Auto save thread
         self.auto_save = None
         if self.current_file is not None:
-            self.auto_save = SaveThread(self.current_file, self.code_editor)
+            self.auto_save = start_auto_save(self.auto_save, self.current_file, self.code_editor)
