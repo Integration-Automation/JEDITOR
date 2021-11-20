@@ -12,6 +12,10 @@ jobs:
       - run:
           command: pip install --user -r requirements.txt
           name: pip requirements.txt
+      # update docker
+      - run:
+          command: sudo apt-get update
+          name: install python3-tk
       # install tkinter
       - run:
           command: sudo apt-get install python3-tk
