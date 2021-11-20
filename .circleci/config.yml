@@ -1,25 +1,20 @@
 version: 2.1
 
 orbs:
-  python: circleci/python@1.4.0
+  win: circleci/windows@2.2.0
 
 jobs:
   build-and-test:
-    executor: python/default
+    executor:
+      name: win/default
+      shell: powershell.exe
+
     steps:
       - checkout
       # pip require package
       - run:
           command: pip install --user -r requirements.txt
           name: pip requirements.txt
-      # update docker
-      - run:
-          command: sudo apt-get update
-          name: update docker
-      # install tkinter
-      - run:
-          command: sudo apt-get install python3-tk
-          name: install python3-tk
       # exec code test
       - run:
           command: python ./circle_ci_test/exec/code_exec_test/execute_test.py
