@@ -1,6 +1,6 @@
 # je_editor
 
-##install
+## install
 
 * please check your tkinter version
   * make sure tkinter is version 8.5 or later
