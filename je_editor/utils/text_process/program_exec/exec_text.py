@@ -14,7 +14,7 @@ def exec_code(exec_file_name):
     :param exec_file_name: string file will open to run
     :return: if error return result and True else return result and False
     """
-    reformat_os_file_path = os.path.normpath(exec_file_name)
+    reformat_os_file_path = os.path.abspath(exec_file_name)
     try:
         if not Path(exec_file_name).exists():
             raise JEditorExecException(file_not_fond_error)
