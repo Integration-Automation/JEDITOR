@@ -15,6 +15,7 @@ def exec_code(exec_file_name):
     :return: if error return result and True else return result and False
     """
     reformat_os_file_path = os.path.abspath(exec_file_name)
+    print(reformat_os_file_path)
     try:
         if not Path(exec_file_name).exists():
             raise JEditorExecException(file_not_fond_error)

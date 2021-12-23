@@ -54,7 +54,7 @@ jobs:
 workflows:
   main:
     jobs:
-      - build-and-test-stable
-      - build-and-test-dev:
+      - build-and-test-dev
+      - build-and-test-stable:
           requires:
-            - build-and-test-stable
+            - build-and-test-dev
