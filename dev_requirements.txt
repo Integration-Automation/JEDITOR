@@ -1,2 +1,2 @@
-je_editor
+je_editor_dev
 je_auto_control

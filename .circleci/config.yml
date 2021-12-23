@@ -4,11 +4,10 @@ orbs:
   win: circleci/windows@2.2.0
 
 jobs:
-  build-and-test:
+  build-and-test-stable:
     executor:
       name: win/default
       shell: powershell.exe
-
     steps:
       - checkout
       # pip require package
@@ -17,18 +16,45 @@ jobs:
           name: pip requirements.txt
       # exec code test
       - run:
-          command: python ./circle_ci_test/exec/code_exec_test/execute_test.py
+          command: python ./circle_ci_test_stable/exec/code_exec_test/execute_test.py
           name: execute_test
       # run on shell test
       - run:
-          command: python ./circle_ci_test/exec/shell_exec_test/shell_test.py
+          command: python ./circle_ci_test_stable/exec/shell_exec_test/shell_test.py
           name: shell_test
       # save and open file test
       - run:
-          command: python ./circle_ci_test/file/save_and_open/save_and_open.py
+          command: python ./circle_ci_test_stable/file/save_and_open/save_and_open.py
           name: save_and_open_test
+
+  build-and-test-dev:
+    executor:
+      name: win/default
+      shell: powershell.exe
+    steps:
+      - checkout
+      # pip require package
+      - run:
+          command: pip install --user -r dev_requirements.txt
+          name: pip requirements.txt
+      # exec code test
+      - run:
+          command: python ./circle_ci_test_dev/exec/code_exec_test/execute_test.py
+          name: execute_test
+      # run on shell test
+      - run:
+          command: python ./circle_ci_test_dev/exec/shell_exec_test/shell_test.py
+          name: shell_test
+      # save and open file test
+      - run:
+          command: python ./circle_ci_test_dev/file/save_and_open/save_and_open.py
+          name: save_and_open_test
+
 
 workflows:
   main:
     jobs:
-      - build-and-test
+      - build-and-test-dev
+      - build-and-test-stable:
+          requires:
+            - build-and-test-dev
