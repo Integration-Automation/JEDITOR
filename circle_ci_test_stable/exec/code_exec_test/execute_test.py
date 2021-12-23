@@ -4,8 +4,8 @@ import sys
 from je_editor import exec_code
 from je_editor import JEditorExecException
 
-print(os.getcwd() + "/circle_ci_test_stable/exec/code_exec_test/execute_test.py")
-exec_result = exec_code(os.getcwd() + "circle_ci_test_stable/exec/code_exec_test/execute_test.py")
+print(os.getcwd() + "/circle_ci_test_stable/exec/code_exec_test/get_exec_test.py")
+exec_result = exec_code(os.getcwd() + "circle_ci_test_stable/exec/code_exec_test/get_exec_test.py")
 print(exec_result[0])
 print(exec_result[1], file=sys.stderr)
 
