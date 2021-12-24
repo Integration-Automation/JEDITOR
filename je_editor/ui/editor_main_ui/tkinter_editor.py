@@ -45,6 +45,7 @@ class EditorMain(object):
         temp = open_file_to_read(self.code_editor)
         self.file_from_output_content = temp
         self.current_file = temp
+        self.highlight_text.search()
         self.start_auto_save()
 
     # save editor file

@@ -1,3 +1,4 @@
+import sys
 import os.path
 import queue
 import shutil
@@ -35,11 +36,14 @@ class ExecManager(object):
                 raise JEditorExecException(file_not_fond_error)
         except OSError as error:
             raise JEditorExecException(error)
-        python_path = shutil.which("python")
+        if sys.platform in ["linux", "linux2", "win32", "cygwin", "msys"]:
+            python_path = shutil.which("python")
+        else:
+            python_path = shutil.which("python3")
         if python_path is None:
             raise JEditorExecException(python_not_found_error)
         exec_command = reformat_os_file_path
-        self.process = subprocess.Popen([python_path + " ", exec_command],
+        self.process = subprocess.Popen([python_path, exec_command],
                                         stdout=subprocess.PIPE,
                                         stderr=subprocess.PIPE,
                                         shell=False)
