@@ -22,7 +22,7 @@ class HighlightText(object):
         # bind to keyboard key release
         self.tkinter_text.bind("<KeyRelease>", self.search)
 
-    def search(self, event):
+    def search(self, event=None):
         """
         :param event: tkinter event
         create temp var tag

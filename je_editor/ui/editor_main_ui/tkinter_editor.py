@@ -17,6 +17,8 @@ from je_editor.ui.ui_event.open_file.open_last_edit_file.open_last_edit_file imp
 from je_editor.ui.ui_event.save_file.save_file_to_open.save_file_to_open import save_file_to_open
 from je_editor.utils.code_tag.tag_keyword import HighlightText
 from je_editor.utils.editor_content.content_save import open_content_and_start
+from je_editor.utils.text_process.program_exec.exec_text import ExecManager
+from je_editor.utils.text_process.program_exec.process_error import process_error_text
 
 
 def start_editor(use_theme=None):
@@ -36,7 +38,7 @@ class EditorMain(object):
 
     # editor close event
     def close_event(self):
-        close_event(self.current_file, self.main_window)
+        close_event(self.current_file, self.main_window, self.exec_manager)
 
     # editor open file
     def open_file_to_read(self, event=None):
@@ -51,10 +53,11 @@ class EditorMain(object):
         self.start_auto_save()
 
     def open_last_edit_file(self):
+        self.highlight_text.search()
         return open_last_edit_file(self.file_from_output_content, self.code_editor)
 
     def exec_code(self, event=None):
-        execute_code(self.run_result, self.current_file, self.save_file_to_open)
+        execute_code(self.run_result, self.current_file, self.save_file_to_open, self.exec_manager)
 
     def run_on_shell(self, event=None):
         execute_shell_command(self.run_result, self.code_editor)
@@ -110,6 +113,9 @@ class EditorMain(object):
         self.run_result_scrollbar_y.grid(column=1, row=1)
         self.run_result.configure(state="disabled")
         self.run_result.bind("<1>", lambda event: self.run_result.focus_set())
+        self.exec_manager = ExecManager(run_result=self.run_result,
+                                        process_error_function=process_error_text,
+                                        main_window=self.main_window)
         # Menubar
         # Main menu
         self.menu = tkinter.Menu(self.main_window)
@@ -141,13 +147,14 @@ class EditorMain(object):
         self.main_window.columnconfigure(0, weight=1)
         self.main_window.rowconfigure(0, weight=1)
         # Highlight word
-        HighlightText(self.code_editor)
+        self.highlight_text = HighlightText(self.code_editor)
         # current file
         self.current_file = None
         # file to output content
         self.file_from_output_content = open_content_and_start()
         if self.file_from_output_content is not None:
             self.current_file = self.open_last_edit_file()
+            self.highlight_text.search()
         # close event
         self.main_window.protocol("WM_DELETE_WINDOW", self.close_event)
         # bind
@@ -161,3 +168,4 @@ class EditorMain(object):
         self.auto_save = None
         if self.current_file is not None:
             self.auto_save = start_auto_save(self.auto_save, self.current_file, self.code_editor)
+
