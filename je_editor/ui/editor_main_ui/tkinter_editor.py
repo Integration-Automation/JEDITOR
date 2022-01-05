@@ -19,6 +19,9 @@ from je_editor.utils.code_tag.tag_keyword import HighlightText
 from je_editor.utils.editor_content.content_save import open_content_and_start
 from je_editor.utils.text_process.program_exec.exec_text import ExecManager
 from je_editor.utils.text_process.program_exec.process_error import process_error_text
+from je_editor.ui.ui_utils.font.font import get_font
+from je_editor.ui.ui_event.change_font.change_font import change_font
+from je_editor.ui.ui_event.change_font.change_font import change_font_size
 
 
 def start_editor(use_theme=None):
@@ -76,6 +79,9 @@ class EditorMain(object):
         finally:
             self.popup_menu.grab_release()
 
+    def change_code_editor_font(self):
+        change_font(self.code_editor, self.font_tuple)
+
     # default event
     def do_test(self, event=None):
         self.test_run = True
@@ -128,6 +134,28 @@ class EditorMain(object):
         self.function_menu = tkinter.Menu(self.menu, tearoff=0)
         self.function_menu.add_command(label="Run", command=self.exec_code)
         self.function_menu.add_command(label="Run on shell", command=self.run_on_shell)
+        # Text menu
+        self.text_menu = tkinter.Menu(self.menu, tearoff=0)
+        self.text_font_sub_menu = tkinter.Menu(self.text_menu, tearoff=0)
+        self.text_size_sub_menu = tkinter.Menu(self.text_menu, tearoff=0)
+        self.font_tuple = get_font(self.main_window)
+        for i in range(len(self.font_tuple)):
+            self.text_font_sub_menu.add_command(
+                label=str(self.font_tuple[i]),
+                command=lambda my_font=self.font_tuple[i]: change_font(self.code_editor, my_font)
+            )
+        for i in range(12, 36, 2):
+            self.text_size_sub_menu.add_command(
+                label=str(i),
+                command=lambda font_size=i: change_font_size(self.code_editor, font_size)
+            )
+        self.text_menu.add_cascade(label="Font", menu=self.text_font_sub_menu)
+        self.text_menu.add_cascade(label="Font Size", menu=self.text_size_sub_menu)
+        # add and config
+        self.menu.add_cascade(label="File", menu=self.file_menu)
+        self.menu.add_cascade(label="Function", menu=self.function_menu)
+        self.menu.add_cascade(label="Text", menu=self.text_menu)
+        self.main_window.config(menu=self.menu)
         # Popup menu
         self.popup_menu = Menu(self.main_window, tearoff=0)
         self.popup_menu.add_command(label="Run", command=self.exec_code)
@@ -136,10 +164,6 @@ class EditorMain(object):
         self.popup_menu.add_command(label="Save File", command=self.save_file_to_open)
         self.popup_menu.add_command(label="Open File", command=self.open_file_to_read)
         self.main_window.bind("<Button-3>", self.show_popup_menu)
-        # add and config
-        self.menu.add_cascade(label="File", menu=self.file_menu)
-        self.menu.add_cascade(label="Function", menu=self.function_menu)
-        self.main_window.config(menu=self.menu)
         # set resize
         self.code_edit_frame.columnconfigure(0, weight=1)
         self.code_edit_frame.rowconfigure(0, weight=1)
@@ -169,4 +193,3 @@ class EditorMain(object):
         self.auto_save = None
         if self.current_file is not None:
             self.auto_save = start_auto_save(self.auto_save, self.current_file, self.code_editor)
-
