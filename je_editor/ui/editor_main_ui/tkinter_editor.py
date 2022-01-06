@@ -60,12 +60,6 @@ class EditorMain(object):
         self.highlight_text.search()
         return open_last_edit_file(self.file_from_output_content, self.code_editor)
 
-    def exec_code(self, event=None):
-        execute_code(self.run_result, self.current_file, self.save_file_to_open, self.exec_manager)
-
-    def run_on_shell(self, event=None):
-        execute_shell_command(self.run_result, self.code_editor)
-
     def show_popup_menu(self, event):
         """
         :param event: tkinter event bind Button-3
@@ -78,9 +72,6 @@ class EditorMain(object):
             self.popup_menu.tk_popup(event.x_root, event.y_root)
         finally:
             self.popup_menu.grab_release()
-
-    def change_code_editor_font(self):
-        change_font(self.code_editor, self.font_tuple)
 
     # default event
     def do_test(self, event=None):
@@ -132,8 +123,14 @@ class EditorMain(object):
         self.file_menu.add_command(label="Open File", command=self.open_file_to_read)
         # Function menu
         self.function_menu = tkinter.Menu(self.menu, tearoff=0)
-        self.function_menu.add_command(label="Run", command=self.exec_code)
-        self.function_menu.add_command(label="Run on shell", command=self.run_on_shell)
+        self.function_menu.add_command(
+            label="Run",
+            command=lambda: execute_code(self.run_result, self.current_file, self.save_file_to_open, self.exec_manager)
+        )
+        self.function_menu.add_command(
+            label="Run on shell",
+            command=lambda: execute_shell_command(self.run_result, self.code_editor)
+        )
         # Text menu
         self.text_menu = tkinter.Menu(self.menu, tearoff=0)
         self.text_font_sub_menu = tkinter.Menu(self.text_menu, tearoff=0)
@@ -142,12 +139,12 @@ class EditorMain(object):
         for i in range(len(self.font_tuple)):
             self.text_font_sub_menu.add_command(
                 label=str(self.font_tuple[i]),
-                command=lambda my_font=self.font_tuple[i]: change_font(self.code_editor, my_font)
+                command=lambda my_font=self.font_tuple[i]: change_font(self.code_editor, self.run_result, my_font)
             )
         for i in range(12, 36, 2):
             self.text_size_sub_menu.add_command(
                 label=str(i),
-                command=lambda font_size=i: change_font_size(self.code_editor, font_size)
+                command=lambda font_size=i: change_font_size(self.code_editor, self.run_result, font_size)
             )
         self.text_menu.add_cascade(label="Font", menu=self.text_font_sub_menu)
         self.text_menu.add_cascade(label="Font Size", menu=self.text_size_sub_menu)
@@ -158,8 +155,14 @@ class EditorMain(object):
         self.main_window.config(menu=self.menu)
         # Popup menu
         self.popup_menu = Menu(self.main_window, tearoff=0)
-        self.popup_menu.add_command(label="Run", command=self.exec_code)
-        self.popup_menu.add_command(label="Run on shell", command=self.run_on_shell)
+        self.popup_menu.add_command(
+            label="Run",
+            command=lambda: execute_code(self.run_result, self.current_file, self.save_file_to_open, self.exec_manager)
+        )
+        self.popup_menu.add_command(
+            label="Run on shell",
+            command=lambda: execute_shell_command(self.run_result, self.code_editor)
+        )
         self.popup_menu.add_separator()
         self.popup_menu.add_command(label="Save File", command=self.save_file_to_open)
         self.popup_menu.add_command(label="Open File", command=self.open_file_to_read)
@@ -185,8 +188,19 @@ class EditorMain(object):
         # bind
         self.main_window.bind("<Control-Key-o>", self.open_file_to_read)
         self.main_window.bind("<Control-Key-s>", self.save_file_to_open)
-        self.main_window.bind("<Control-Key-F5>", self.exec_code)
-        self.main_window.bind("<Control-Key-F6>", self.run_on_shell)
+        self.main_window.bind(
+            "<Control-Key-F5>",
+            lambda bind_exec_code: execute_code(
+                self.run_result,
+                self.current_file,
+                self.save_file_to_open,
+                self.exec_manager
+            )
+        )
+        self.main_window.bind(
+            "<Control-Key-F6>",
+            lambda bind_exec_shell_command: execute_shell_command(self.run_result, self.code_editor)
+        )
         # is this test run?
         self.test_run = False
         # Auto save thread
