@@ -17,6 +17,8 @@ from je_editor.utils.exception.je_editor_exceptions import JEditorExecException
 class ExecManager(object):
 
     def __init__(self, run_result, process_error_function, main_window):
+        self.read_program_error_output_from_thread = None
+        self.read_program_output_from_thread = None
         self.main_window = main_window
         self.still_run_program = True
         self.run_result = run_result
@@ -25,11 +27,23 @@ class ExecManager(object):
         self.run_output_queue = queue.Queue()
         self.run_error_queue = queue.Queue()
 
+    class ProgramRunner(Thread):
+
+        def __init__(self, run_target, still_run=True):
+            super().__init__()
+            self.still_run = still_run
+            self.run_target = run_target
+
+        def run(self):
+            while self.still_run:
+                self.run_target()
+
     def exec_code(self, exec_file_name):
         """
         :param exec_file_name: string file will open to run
         :return: if error return result and True else return result and False
         """
+        self.exit_program()
         reformat_os_file_path = os.path.abspath(exec_file_name)
         try:
             if not Path(exec_file_name).exists():
@@ -47,34 +61,49 @@ class ExecManager(object):
                                         stdout=subprocess.PIPE,
                                         stderr=subprocess.PIPE,
                                         shell=False)
-        read_program_output_from_thread = Thread(target=self.read_program_output_from_process)
-        read_program_output_from_thread.setDaemon(True)
-        read_program_output_from_thread.start()
-        read_program_error_output_from_thread = Thread(target=self.read_program_error_output_from_process)
-        read_program_error_output_from_thread.setDaemon(True)
-        read_program_error_output_from_thread.start()
+        self.still_run_program = True
+        self.read_program_output_from_thread = self.ProgramRunner(
+            run_target=self.read_program_output_from_process,
+            still_run=True
+        )
+        self.read_program_output_from_thread.setDaemon(True)
+        self.read_program_output_from_thread.start()
+        self.read_program_error_output_from_thread = self.ProgramRunner(
+            run_target=self.read_program_output_from_process,
+            still_run=True
+        )
+        self.read_program_error_output_from_thread.setDaemon(True)
+        self.read_program_error_output_from_thread.start()
         print("execute: " + reformat_os_file_path)
         self.edit_tkinter_text()
 
     def edit_tkinter_text(self):
         self.run_result.configure(state=NORMAL)
         if not self.run_error_queue.empty():
-            self.run_result.insert(END, self.run_error_queue.get())
+            error_message = self.run_error_queue.get()
+            if str(error_message).strip() is not None:
+                self.run_result.insert(END, error_message)
         if not self.run_output_queue.empty():
-            self.run_result.insert(END, self.run_output_queue.get())
+            output_message = self.run_output_queue.get()
+            if str(output_message).strip() is not None:
+                self.run_result.insert(END, output_message)
         self.run_result.configure(state=DISABLED)
         if self.still_run_program:
-            self.main_window.after(10, self.edit_tkinter_text)
+            self.main_window.after(50, self.edit_tkinter_text)
 
     def exit_program(self):
         self.still_run_program = False
+        if self.read_program_output_from_thread is not None:
+            self.read_program_output_from_thread.still_run = False
+        if self.read_program_error_output_from_thread is not None:
+            self.read_program_error_output_from_thread.still_run = False
+        if self.process is not None:
+            self.process.terminate()
 
     def read_program_output_from_process(self):
-        while self.still_run_program:
-            program_output_data = self.process.stdout.raw.read(1024).decode()
-            self.run_output_queue.put(program_output_data)
+        program_output_data = self.process.stdout.raw.read(1024).decode()
+        self.run_output_queue.put(program_output_data)
 
     def read_program_error_output_from_process(self):
-        while self.still_run_program:
-            program_error_output_data = self.process.stderr.raw.read(1024).decode()
-            self.run_error_queue.put(program_error_output_data)
+        program_error_output_data = self.process.stderr.raw.read(1024).decode()
+        self.run_error_queue.put(program_error_output_data)

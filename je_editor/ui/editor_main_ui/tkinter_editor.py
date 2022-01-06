@@ -30,13 +30,9 @@ def start_editor(use_theme=None):
 
 class EditorMain(object):
 
-    # start auto save
-    def start_auto_save(self):
-        self.auto_save = start_auto_save(self.auto_save, self.current_file, self.code_editor)
-
     # start editor and start auto save if auto save not start
     def start_editor(self):
-        self.start_auto_save()
+        self.auto_save = start_auto_save(self.auto_save, self.current_file, self.code_editor)
         self.main_window.mainloop()
 
     # editor close event
@@ -49,12 +45,12 @@ class EditorMain(object):
         self.file_from_output_content = temp
         self.current_file = temp
         self.highlight_text.search()
-        self.start_auto_save()
+        self.auto_save = start_auto_save(self.auto_save, self.current_file, self.code_editor)
 
     # save editor file
     def save_file_to_open(self, event=None):
         self.current_file = save_file_to_open(self.code_editor)
-        self.start_auto_save()
+        self.auto_save = start_auto_save(self.auto_save, self.current_file, self.code_editor)
 
     def open_last_edit_file(self):
         self.highlight_text.search()
