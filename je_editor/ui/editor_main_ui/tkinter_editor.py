@@ -15,6 +15,7 @@ from je_editor.ui.ui_event.execute.execute_shell_command.run_on_shell import exe
 from je_editor.ui.ui_event.open_file.open_file_to_read.open_file_to_read import open_file_to_read
 from je_editor.ui.ui_event.open_file.open_last_edit_file.open_last_edit_file import open_last_edit_file
 from je_editor.ui.ui_event.save_file.save_file_to_open.save_file_to_open import save_file_to_open
+from je_editor.ui.ui_event.save_file.save_file_to_open.save_file_to_open import save_file_then_can_run
 from je_editor.utils.code_tag.tag_keyword import HighlightText
 from je_editor.utils.editor_content.content_save import open_content_and_start
 from je_editor.utils.text_process.program_exec.exec_text import ExecManager
@@ -55,6 +56,11 @@ class EditorMain(object):
     def open_last_edit_file(self):
         self.highlight_text.search()
         return open_last_edit_file(self.file_from_output_content, self.code_editor)
+
+    def execute_program(self, event=None):
+        if self.current_file is not None:
+            save_file_then_can_run(self.current_file, self.code_editor)
+        execute_code(self.run_result, self.current_file, self.save_file_to_open, self.exec_manager)
 
     def show_popup_menu(self, event):
         """
@@ -107,9 +113,11 @@ class EditorMain(object):
         self.run_result_scrollbar_y.grid(column=1, row=1)
         self.run_result.configure(state="disabled")
         self.run_result.bind("<1>", lambda event: self.run_result.focus_set())
-        self.exec_manager = ExecManager(run_result=self.run_result,
-                                        process_error_function=process_error_text,
-                                        main_window=self.main_window)
+        self.exec_manager = ExecManager(
+            run_result=self.run_result,
+            process_error_function=process_error_text,
+            main_window=self.main_window
+        )
         # Menubar
         # Main menu
         self.menu = tkinter.Menu(self.main_window)
@@ -121,7 +129,7 @@ class EditorMain(object):
         self.function_menu = tkinter.Menu(self.menu, tearoff=0)
         self.function_menu.add_command(
             label="Run",
-            command=lambda: execute_code(self.run_result, self.current_file, self.save_file_to_open, self.exec_manager)
+            command=self.execute_program
         )
         self.function_menu.add_command(
             label="Run on shell",
@@ -153,7 +161,7 @@ class EditorMain(object):
         self.popup_menu = Menu(self.main_window, tearoff=0)
         self.popup_menu.add_command(
             label="Run",
-            command=lambda: execute_code(self.run_result, self.current_file, self.save_file_to_open, self.exec_manager)
+            command=self.execute_program
         )
         self.popup_menu.add_command(
             label="Run on shell",
@@ -186,12 +194,7 @@ class EditorMain(object):
         self.main_window.bind("<Control-Key-s>", self.save_file_to_open)
         self.main_window.bind(
             "<Control-Key-F5>",
-            lambda bind_exec_code: execute_code(
-                self.run_result,
-                self.current_file,
-                self.save_file_to_open,
-                self.exec_manager
-            )
+            self.execute_program
         )
         self.main_window.bind(
             "<Control-Key-F6>",
