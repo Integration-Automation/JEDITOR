@@ -16,7 +16,7 @@ from je_editor.utils.exception.je_editor_exceptions import JEditorExecException
 
 class ExecManager(object):
 
-    def __init__(self, run_result, process_error_function, main_window):
+    def __init__(self, run_result, process_error_function, main_window, running_menu, program_chose="python"):
         self.read_program_error_output_from_thread = None
         self.read_program_output_from_thread = None
         self.main_window = main_window
@@ -26,6 +26,8 @@ class ExecManager(object):
         self.process = None
         self.run_output_queue = queue.Queue()
         self.run_error_queue = queue.Queue()
+        self.program_chose = program_chose
+        self.running_menu = running_menu
 
     def exec_code(self, exec_file_name):
         """
@@ -33,6 +35,7 @@ class ExecManager(object):
         :return: if error return result and True else return result and False
         """
         self.exit_program()
+        self.running_menu.entryconfigure(1, label="Rerun")
         self.run_result.configure(state=NORMAL)
         self.run_result.delete("1.0", "end-1c")
         self.run_result.configure(state=DISABLED)
@@ -43,9 +46,9 @@ class ExecManager(object):
         except OSError as error:
             raise JEditorExecException(error)
         if sys.platform in ["linux", "linux2", "win32", "cygwin", "msys"]:
-            python_path = shutil.which("python")
+            python_path = shutil.which(self.program_chose)
         else:
-            python_path = shutil.which("python3")
+            python_path = shutil.which(self.program_chose)
         if python_path is None:
             raise JEditorExecException(python_not_found_error)
         exec_command = reformat_os_file_path
@@ -78,8 +81,13 @@ class ExecManager(object):
             output_message = self.run_output_queue.get()
             self.run_result.insert(END, output_message)
         self.run_result.configure(state=DISABLED)
-        if self.still_run_program:
-            self.main_window.after(30, self.edit_tkinter_text)
+        if self.process.returncode is not None:
+            self.exit_program()
+        if not self.still_run_program:
+            self.running_menu.entryconfigure(1, label="Run")
+        else:
+            self.main_window.after(10, self.edit_tkinter_text)
+            self.process.poll()
 
     def exit_program(self):
         self.still_run_program = False
@@ -94,10 +102,10 @@ class ExecManager(object):
 
     def read_program_output_from_process(self):
         while self.still_run_program:
-            program_output_data = self.process.stdout.raw.read(1024).decode()
+            program_output_data = self.process.stdout.raw.read(1024).decode("utf-8")
             self.run_output_queue.put(program_output_data)
 
     def read_program_error_output_from_process(self):
         while self.still_run_program:
-            program_error_output_data = self.process.stderr.raw.read(1024).decode()
+            program_error_output_data = self.process.stderr.raw.read(1024).decode("utf-8")
             self.run_error_queue.put(program_error_output_data)
