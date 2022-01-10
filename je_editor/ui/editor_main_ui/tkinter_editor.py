@@ -113,11 +113,6 @@ class EditorMain(object):
         self.run_result_scrollbar_y.grid(column=1, row=1)
         self.run_result.configure(state="disabled")
         self.run_result.bind("<1>", lambda event: self.run_result.focus_set())
-        self.exec_manager = ExecManager(
-            run_result=self.run_result,
-            process_error_function=process_error_text,
-            main_window=self.main_window
-        )
         # Menubar
         # Main menu
         self.menu = tkinter.Menu(self.main_window)
@@ -125,13 +120,11 @@ class EditorMain(object):
         self.file_menu = tkinter.Menu(self.menu, tearoff=0)
         self.file_menu.add_command(label="Save File", command=self.save_file_to_open)
         self.file_menu.add_command(label="Open File", command=self.open_file_to_read)
-        # Function menu
-        self.function_menu = tkinter.Menu(self.menu, tearoff=0)
-        self.function_menu.add_command(
+        self.menu.add_command(
             label="Run",
             command=self.execute_program
         )
-        self.function_menu.add_command(
+        self.menu.add_command(
             label="Run on shell",
             command=lambda: execute_shell_command(self.run_result, self.code_editor)
         )
@@ -154,7 +147,6 @@ class EditorMain(object):
         self.text_menu.add_cascade(label="Font Size", menu=self.text_size_sub_menu)
         # add and config
         self.menu.add_cascade(label="File", menu=self.file_menu)
-        self.menu.add_cascade(label="Function", menu=self.function_menu)
         self.menu.add_cascade(label="Text", menu=self.text_menu)
         self.main_window.config(menu=self.menu)
         # Popup menu
@@ -206,3 +198,9 @@ class EditorMain(object):
         self.auto_save = None
         if self.current_file is not None:
             self.auto_save = start_auto_save(self.auto_save, self.current_file, self.code_editor)
+        self.exec_manager = ExecManager(
+            run_result=self.run_result,
+            process_error_function=process_error_text,
+            main_window=self.main_window,
+            running_menu=self.menu
+        )
