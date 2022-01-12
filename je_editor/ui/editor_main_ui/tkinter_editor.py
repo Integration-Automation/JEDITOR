@@ -23,6 +23,7 @@ from je_editor.utils.text_process.program_exec.process_error import process_erro
 from je_editor.ui.ui_utils.font.font import get_font
 from je_editor.ui.ui_event.change_font.change_font import change_font
 from je_editor.ui.ui_event.change_font.change_font import change_font_size
+from je_editor.ui.ui_event.execute.execute_code.exec_code import stop_program
 
 
 def start_editor(use_theme=None):
@@ -60,15 +61,11 @@ class EditorMain(object):
     def execute_program(self, event=None):
         if self.current_file is not None:
             save_file_then_can_run(self.current_file, self.code_editor)
-        execute_code(self.run_result, self.current_file, self.save_file_to_open, self.exec_manager)
+        execute_code(self.current_file, self.save_file_to_open, self.exec_manager)
 
     def show_popup_menu(self, event):
         """
         :param event: tkinter event bind Button-3
-        try
-            show popup menu
-        finally
-            release popup menu
         """
         try:
             self.popup_menu.tk_popup(event.x_root, event.y_root)
@@ -82,6 +79,7 @@ class EditorMain(object):
 
     def __init__(self, use_theme=None, main_window=Tk()):
         """
+        :param use_theme: what theme editor used
         :param main_window: Tk instance
         """
         # style
@@ -127,6 +125,10 @@ class EditorMain(object):
         self.menu.add_command(
             label="Run on shell",
             command=lambda: execute_shell_command(self.run_result, self.code_editor)
+        )
+        self.menu.add_command(
+            label="Stop",
+            command=lambda: stop_program(self.exec_manager)
         )
         # Text menu
         self.text_menu = tkinter.Menu(self.menu, tearoff=0)
