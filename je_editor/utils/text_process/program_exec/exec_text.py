@@ -25,7 +25,7 @@ class ExecManager(object):
             process_error_function,
             main_window,
             running_menu,
-            program_chose="java",
+            program_language="python",
             program_encoding="utf-8"
     ):
         self.read_program_error_output_from_thread = None
@@ -37,7 +37,7 @@ class ExecManager(object):
         self.process = None
         self.run_output_queue = queue.Queue()
         self.run_error_queue = queue.Queue()
-        self.program_chose = program_chose
+        self.program_language = program_language
         self.running_menu = running_menu
         self.program_encoding = program_encoding
 
@@ -59,18 +59,18 @@ class ExecManager(object):
         except OSError as error:
             raise JEditorExecException(error)
         if sys.platform in ["linux", "linux2", "win32", "cygwin", "msys"]:
-            compiler_path = shutil.which(self.program_chose)
+            compiler_path = shutil.which(self.program_language)
         else:
-            compiler_path = shutil.which(self.program_chose)
+            compiler_path = shutil.which(self.program_language)
         if compiler_path is None:
             raise JEditorExecException(python_not_found_error)
         exec_command = reformat_os_file_path
 
-        if self.program_chose in language_compiler:
+        if self.program_language in language_compiler:
             self.process = subprocess.Popen(
                 [
-                    shutil.which(language_compiler.get(self.program_chose)),
-                    language_compiler_param.get(self.program_chose),
+                    shutil.which(language_compiler.get(self.program_language)),
+                    language_compiler_param.get(self.program_language),
                     reformat_os_file_path
                 ],
                 stdout=subprocess.PIPE,

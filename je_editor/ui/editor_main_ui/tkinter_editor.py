@@ -24,6 +24,10 @@ from je_editor.ui.ui_utils.font.font import get_font
 from je_editor.ui.ui_event.change_font.change_font import change_font
 from je_editor.ui.ui_event.change_font.change_font import change_font_size
 from je_editor.ui.ui_event.execute.execute_code.exec_code import stop_program
+from je_editor.utils.encoding.encoding_data_module import encoding_list
+from je_editor.ui.ui_event.encoding.set_encoding import set_encoding
+from je_editor.ui.ui_event.language.set_language import set_language
+from je_editor.utils.language.language_data_module import language_list
 
 
 def start_editor(use_theme=None):
@@ -138,7 +142,7 @@ class EditorMain(object):
         for i in range(len(self.font_tuple)):
             self.text_font_sub_menu.add_command(
                 label=str(self.font_tuple[i]),
-                command=lambda my_font=self.font_tuple[i]: change_font(self.code_editor, self.run_result, my_font)
+                command=lambda choose_font=self.font_tuple[i]: change_font(self.code_editor, self.run_result, choose_font)
             )
         for i in range(12, 36, 2):
             self.text_size_sub_menu.add_command(
@@ -147,9 +151,25 @@ class EditorMain(object):
             )
         self.text_menu.add_cascade(label="Font", menu=self.text_font_sub_menu)
         self.text_menu.add_cascade(label="Font Size", menu=self.text_size_sub_menu)
+        # Encoding menu
+        self.encoding_menu = tkinter.Menu(self.menu, tearoff=0)
+        for i in range(len(encoding_list)):
+            self.encoding_menu.add_command(
+                label=str(encoding_list[i]),
+                command=lambda choose_encoding=encoding_list[i]: set_encoding(self.exec_manager, choose_encoding)
+            )
+        # Language menu
+        self.language_menu = tkinter.Menu(self.menu, tearoff=0)
+        for i in range(len(language_list)):
+            self.language_menu.add_command(
+                label=str(language_list[i]),
+                command=lambda choose_language=language_list[i]: set_language(self.exec_manager, choose_language)
+            )
         # add and config
         self.menu.add_cascade(label="File", menu=self.file_menu)
         self.menu.add_cascade(label="Text", menu=self.text_menu)
+        self.menu.add_cascade(label="Encoding", menu=self.encoding_menu)
+        self.menu.add_cascade(label="Language", menu=self.language_menu)
         self.main_window.config(menu=self.menu)
         # Popup menu
         self.popup_menu = Menu(self.main_window, tearoff=0)
@@ -162,8 +182,10 @@ class EditorMain(object):
             command=lambda: execute_shell_command(self.run_result, self.code_editor)
         )
         self.popup_menu.add_separator()
-        self.popup_menu.add_command(label="Save File", command=self.save_file_to_open)
-        self.popup_menu.add_command(label="Open File", command=self.open_file_to_read)
+        self.popup_menu.add_cascade(label="File", menu=self.file_menu)
+        self.popup_menu.add_cascade(label="Text", menu=self.text_menu)
+        self.popup_menu.add_cascade(label="Encoding", menu=self.encoding_menu)
+        self.popup_menu.add_cascade(label="Language", menu=self.language_menu)
         self.main_window.bind("<Button-3>", self.show_popup_menu)
         # set resize
         self.code_edit_frame.columnconfigure(0, weight=1)

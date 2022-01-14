@@ -2,7 +2,6 @@ import tkinter
 
 from je_editor.ui.ui_utils.font.font import create_new_font
 from tkinter.font import Font
-from tkinter import SEL_FIRST, SEL_LAST
 
 
 def _config_change(tkinter_text_area, run_result, new_font):
