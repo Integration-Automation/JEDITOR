@@ -102,19 +102,21 @@ class EditorMain(object):
         self.end_position = "end-1c"
         # set code edit
         self.code_editor = Text(self.code_edit_frame, undo=True, autoseparators=True, maxundo=-1)
-        self.code_editor_scrollbar_y = ttk.Scrollbar(orient="vertical", command=self.code_editor.yview)
-        self.code_editor["yscrollcommand"] = self.code_editor_scrollbar_y.set
         self.code_editor.grid(column=0, row=0, sticky=(N, W, E, S))
-        self.code_editor_scrollbar_y.grid(column=1, row=0)
         self.code_editor.configure(state="normal")
+        self.code_editor_scrollbar_y = ttk.Scrollbar(self.code_edit_frame, orient="vertical",
+                                                     command=self.code_editor.yview)
+        self.code_editor["yscrollcommand"] = self.code_editor_scrollbar_y.set
+        self.code_editor_scrollbar_y.grid(column=1, row=0, sticky="ns")
         # run result
         self.run_result = Text(self.run_result_frame)
-        self.run_result_scrollbar_y = ttk.Scrollbar(orient="vertical", command=self.run_result.yview)
-        self.run_result["yscrollcommand"] = self.run_result_scrollbar_y.set
         self.run_result.grid(column=0, row=1, sticky=(N, W, E, S))
-        self.run_result_scrollbar_y.grid(column=1, row=1)
         self.run_result.configure(state="disabled")
         self.run_result.bind("<1>", lambda event: self.run_result.focus_set())
+        self.run_result_scrollbar_y = ttk.Scrollbar(self.run_result_frame, orient="vertical",
+                                                    command=self.run_result.yview)
+        self.run_result["yscrollcommand"] = self.run_result_scrollbar_y.set
+        self.run_result_scrollbar_y.grid(column=1, row=1, sticky="ns")
         # Menubar
         # Main menu
         self.menu = tkinter.Menu(self.main_window)
@@ -142,7 +144,8 @@ class EditorMain(object):
         for i in range(len(self.font_tuple)):
             self.text_font_sub_menu.add_command(
                 label=str(self.font_tuple[i]),
-                command=lambda choose_font=self.font_tuple[i]: change_font(self.code_editor, self.run_result, choose_font)
+                command=lambda choose_font=self.font_tuple[i]:
+                change_font(self.code_editor, self.run_result, choose_font)
             )
         for i in range(12, 36, 2):
             self.text_size_sub_menu.add_command(

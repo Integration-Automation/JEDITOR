@@ -130,10 +130,10 @@ class ExecManager(object):
 
     def read_program_output_from_process(self):
         while self.still_run_program:
-            program_output_data = self.process.stdout.raw.read(1024).decode(self.program_encoding).strip()
+            program_output_data = self.process.stdout.raw.read(1024).decode(self.program_encoding)
             self.run_output_queue.put(program_output_data)
 
     def read_program_error_output_from_process(self):
         while self.still_run_program:
-            program_error_output_data = self.process.stderr.raw.read(1024).decode(self.program_encoding).strip()
+            program_error_output_data = self.process.stderr.raw.read(1024).decode(self.program_encoding)
             self.run_error_queue.put(program_error_output_data)
