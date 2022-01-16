@@ -13,8 +13,8 @@ from je_editor.utils.exception.je_editor_exception_tag import file_not_fond_erro
 from je_editor.utils.exception.je_editor_exception_tag import python_not_found_error
 from je_editor.utils.exception.je_editor_exceptions import JEditorExecException
 
-language_compiler = {"java": "javac"}
-language_compiler_param = {"java": "-encoding UTF-8 -d -cp ."}
+from je_editor.utils.text_process.language_data_module.language_compiler_data_module import language_compiler
+from je_editor.utils.text_process.language_data_module.language_param_data_module import language_compiler_param
 
 
 class ExecManager(object):
@@ -111,7 +111,7 @@ class ExecManager(object):
         if self.process.returncode is not None:
             self.exit_program()
         if self.still_run_program:
-            self.main_window.after(10, self.edit_tkinter_text)
+            self.main_window.after(1, self.edit_tkinter_text)
             self.process.poll()
         else:
             self.running_menu.entryconfigure(1, label="Run")

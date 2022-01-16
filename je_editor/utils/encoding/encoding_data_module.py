@@ -1,3 +1,4 @@
+# encoding data module
 encoding_list = \
     ['ascii',
      'big5',
