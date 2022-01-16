@@ -1,7 +1,5 @@
 from je_editor.utils.exception.je_editor_exceptions import *
 # exec code
-from je_editor.utils.text_process.program_exec.exec_text import ExecManager
-from je_editor.utils.text_process.shell.shell_text import run_on_shell
 # editor content
 from je_editor.utils.editor_content.content_save import write_output_content
 from je_editor.utils.editor_content.content_save import read_output_content
