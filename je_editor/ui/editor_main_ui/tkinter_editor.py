@@ -1,11 +1,7 @@
 import tkinter
-from tkinter import E
 from tkinter import Menu
-from tkinter import N
-from tkinter import S
 from tkinter import Text
 from tkinter import Tk
-from tkinter import W
 from tkinter import ttk
 
 from je_editor.ui.ui_event.auto_save.start_auto_save.start_auto_save import start_auto_save
@@ -94,15 +90,17 @@ class EditorMain(object):
         self.main_window = main_window
         self.main_window.title("je_editor")
         self.code_edit_frame = ttk.Frame(self.main_window, padding="3 3 12 12")
-        self.code_edit_frame.grid(column=0, row=0, sticky=(N, W, E, S))
+        self.code_edit_frame.grid(column=0, row=0, sticky="nsew")
         self.program_run_result_frame = ttk.Frame(self.main_window, padding="3 3 12 12")
-        self.program_run_result_frame.grid(column=0, row=1, sticky=(N, W, E, S))
+        self.program_run_result_frame.grid(column=0, row=1, sticky="nsew")
+        self.main_window.grid_rowconfigure(0, weight=1)
+        self.main_window.grid_rowconfigure(1, weight=1)
         # Text start and end position
         self.start_position = "1.0"
         self.end_position = "end-1c"
         # set code edit
         self.code_editor = Text(self.code_edit_frame, undo=True, autoseparators=True, maxundo=-1)
-        self.code_editor.grid(column=0, row=0, sticky=(N, W, E, S))
+        self.code_editor.grid(column=0, row=0, sticky="nsew")
         self.code_editor.configure(state="normal")
         self.code_editor_scrollbar_y = ttk.Scrollbar(self.code_edit_frame, orient="vertical",
                                                      command=self.code_editor.yview)
@@ -110,7 +108,7 @@ class EditorMain(object):
         self.code_editor_scrollbar_y.grid(column=1, row=0, sticky="ns")
         # run result
         self.program_run_result_textarea = Text(self.program_run_result_frame)
-        self.program_run_result_textarea.grid(column=0, row=1, sticky=(N, W, E, S))
+        self.program_run_result_textarea.grid(column=0, row=1, sticky="nsew")
         self.program_run_result_textarea.configure(state="disabled")
         self.program_run_result_textarea.bind("<1>", lambda event: self.program_run_result_textarea.focus_set())
         self.program_run_result_textarea_scrollbar_y = ttk.Scrollbar(self.program_run_result_frame, orient="vertical",
@@ -150,7 +148,8 @@ class EditorMain(object):
         for i in range(12, 36, 2):
             self.text_size_sub_menu.add_command(
                 label=str(i),
-                command=lambda font_size=i: change_font_size(self.code_editor, self.program_run_result_textarea, font_size)
+                command=lambda font_size=i: change_font_size(self.code_editor, self.program_run_result_textarea,
+                                                             font_size)
             )
         self.text_menu.add_cascade(label="Font", menu=self.text_font_sub_menu)
         self.text_menu.add_cascade(label="Font Size", menu=self.text_size_sub_menu)
