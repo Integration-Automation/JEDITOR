@@ -7,7 +7,7 @@ exec exception
 """
 je_editor_exec_error = "JEditor exec error"
 file_not_fond_error = "file not fond"
-python_not_found_error = "python not found"
+compiler_not_found_error = "compiler not found"
 """
 shell exception
 """

@@ -8,7 +8,7 @@ def start_auto_save(auto_save_thread_object, current_file, code_editor):
     :param code_editor: code editor we load text to save
     :return: new auto save thread object
     """
-    if auto_save_thread_object is not None:
+    if auto_save_thread_object is not None and current_file is not None:
         auto_save_thread_object.file = current_file
         return auto_save_thread_object
     elif current_file is not None and auto_save_thread_object is None:

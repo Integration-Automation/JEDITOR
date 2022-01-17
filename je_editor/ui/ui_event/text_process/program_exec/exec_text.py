@@ -10,7 +10,7 @@ from tkinter import END
 from tkinter import NORMAL
 
 from je_editor.utils.exception.je_editor_exception_tag import file_not_fond_error
-from je_editor.utils.exception.je_editor_exception_tag import python_not_found_error
+from je_editor.utils.exception.je_editor_exception_tag import compiler_not_found_error
 from je_editor.utils.exception.je_editor_exceptions import JEditorExecException
 
 from je_editor.ui.ui_event.text_process.language_data_module.language_compiler_data_module import language_compiler
@@ -25,7 +25,7 @@ class ExecManager(object):
             process_error_function,
             main_window,
             running_menu,
-            program_language="python",
+            program_language="python3",
             program_encoding="utf-8"
     ):
         """
@@ -67,12 +67,9 @@ class ExecManager(object):
                 raise JEditorExecException(file_not_fond_error)
         except OSError as error:
             raise JEditorExecException(error)
-        if sys.platform in ["linux", "linux2", "win32", "cygwin", "msys"]:
-            compiler_path = shutil.which(self.program_language)
-        else:
-            compiler_path = shutil.which(self.program_language)
+        compiler_path = shutil.which(self.program_language)
         if compiler_path is None:
-            raise JEditorExecException(python_not_found_error)
+            raise JEditorExecException(compiler_not_found_error)
         exec_command = reformat_os_file_path
 
         # precompile

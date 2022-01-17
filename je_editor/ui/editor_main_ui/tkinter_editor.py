@@ -13,17 +13,17 @@ from je_editor.ui.ui_event.open_file.open_last_edit_file.open_last_edit_file imp
 from je_editor.ui.ui_event.save_file.save_file_to_open.save_file_to_open import save_file_to_open
 from je_editor.ui.ui_event.save_file.save_file_to_open.save_file_to_open import save_file_then_can_run
 from je_editor.ui.ui_event.tag_keyword.tag_keyword import HighlightText
-from je_editor.utils.editor_content.content_save import open_content_and_start
+from je_editor.ui.ui_utils.editor_content.content_save import open_content_and_start
 from je_editor.ui.ui_event.text_process.program_exec.exec_text import ExecManager
 from je_editor.ui.ui_event.text_process.program_exec.process_error import process_error_text
 from je_editor.ui.ui_utils.font.font import get_font
 from je_editor.ui.ui_event.change_font.change_font import change_font
 from je_editor.ui.ui_event.change_font.change_font import change_font_size
 from je_editor.ui.ui_event.execute.execute_code.exec_code import stop_program
-from je_editor.utils.encoding.encoding_data_module import encoding_list
+from je_editor.ui.ui_utils.encoding.encoding_data_module import encoding_list
 from je_editor.ui.ui_event.encoding.set_encoding import set_encoding
 from je_editor.ui.ui_event.language.set_language import set_language
-from je_editor.utils.language.language_data_module import language_list
+from je_editor.ui.ui_utils.language.language_data_module import language_list
 
 
 def start_editor(use_theme=None):
@@ -42,7 +42,7 @@ class EditorMain(object):
         close_event(self.current_file, self.main_window, self.exec_manager)
 
     # editor open file
-    def open_file_to_read(self, event=None):
+    def ui_open_file_to_read(self, event=None):
         temp = open_file_to_read(self.code_editor)
         self.file_from_output_content = temp
         self.current_file = temp
@@ -50,27 +50,24 @@ class EditorMain(object):
         self.auto_save = start_auto_save(self.auto_save, self.current_file, self.code_editor)
 
     # save editor file
-    def save_file_to_open(self, event=None):
+    def ui_save_file_to_open(self, event=None):
         self.current_file = save_file_to_open(self.code_editor)
         self.auto_save = start_auto_save(self.auto_save, self.current_file, self.code_editor)
 
-    def open_last_edit_file(self):
+    def ui_open_last_edit_file(self):
         self.highlight_text.search()
         return open_last_edit_file(self.file_from_output_content, self.code_editor)
 
-    def execute_program(self, event=None):
+    def ui_execute_program(self, event=None):
         if self.current_file is not None:
             save_file_then_can_run(self.current_file, self.code_editor)
-        execute_code(self.current_file, self.save_file_to_open, self.exec_manager)
+        execute_code(self.current_file, self.ui_save_file_to_open, self.exec_manager)
 
-    def show_popup_menu(self, event):
+    def ui_show_popup_menu(self, event):
         """
         :param event: tkinter event bind Button-3
         """
-        try:
-            self.popup_menu.tk_popup(event.x_root, event.y_root)
-        finally:
-            self.popup_menu.grab_release()
+        self.popup_menu.tk_popup(event.x_root, event.y_root)
 
     # default event
     def do_test(self, event=None):
@@ -120,11 +117,11 @@ class EditorMain(object):
         self.menu = tkinter.Menu(self.main_window)
         # File menu
         self.file_menu = tkinter.Menu(self.menu, tearoff=0)
-        self.file_menu.add_command(label="Save File", command=self.save_file_to_open)
-        self.file_menu.add_command(label="Open File", command=self.open_file_to_read)
+        self.file_menu.add_command(label="Save File", command=self.ui_save_file_to_open)
+        self.file_menu.add_command(label="Open File", command=self.ui_open_file_to_read)
         self.menu.add_command(
             label="Run",
-            command=self.execute_program
+            command=self.ui_execute_program
         )
         self.menu.add_command(
             label="Run on shell",
@@ -177,7 +174,7 @@ class EditorMain(object):
         self.popup_menu = Menu(self.main_window, tearoff=0)
         self.popup_menu.add_command(
             label="Run",
-            command=self.execute_program
+            command=self.ui_execute_program
         )
         self.popup_menu.add_command(
             label="Run on shell",
@@ -188,7 +185,7 @@ class EditorMain(object):
         self.popup_menu.add_cascade(label="Text", menu=self.text_menu)
         self.popup_menu.add_cascade(label="Encoding", menu=self.encoding_menu)
         self.popup_menu.add_cascade(label="Language", menu=self.language_menu)
-        self.main_window.bind("<Button-3>", self.show_popup_menu)
+        self.main_window.bind("<Button-3>", self.ui_show_popup_menu)
         # set resize
         self.code_edit_frame.columnconfigure(0, weight=1)
         self.code_edit_frame.rowconfigure(0, weight=1)
@@ -203,16 +200,16 @@ class EditorMain(object):
         # file to output content
         self.file_from_output_content = open_content_and_start()
         if self.file_from_output_content is not None:
-            self.current_file = self.open_last_edit_file()
+            self.current_file = self.ui_open_last_edit_file()
             self.highlight_text.search()
         # close event
         self.main_window.protocol("WM_DELETE_WINDOW", self.close_event)
         # bind
-        self.main_window.bind("<Control-Key-o>", self.open_file_to_read)
-        self.main_window.bind("<Control-Key-s>", self.save_file_to_open)
+        self.main_window.bind("<Control-Key-o>", self.ui_open_file_to_read)
+        self.main_window.bind("<Control-Key-s>", self.ui_save_file_to_open)
         self.main_window.bind(
             "<Control-Key-F5>",
-            self.execute_program
+            self.ui_execute_program
         )
         self.main_window.bind(
             "<Control-Key-F6>",
