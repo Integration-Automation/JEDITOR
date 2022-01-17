@@ -25,7 +25,7 @@ def write_file(file, content):
     content = str(content)
     try:
         lock.acquire()
-        if file != "":
+        if file != "" and file is not None:
             with open(file, "w+") as file_to_write:
                 file_to_write.write(content)
     except JEditorSaveFileException:
@@ -75,7 +75,7 @@ class SaveThread(Thread):
         if self.file is not None:
             self.auto_save = True
             self.path = Path(self.file)
-        while self.auto_save:
+        while self.auto_save and self.file is not None:
             time.sleep(15)
             if self.path.exists() and self.path.is_file():
                 print("auto saved file: ", str(self.file))

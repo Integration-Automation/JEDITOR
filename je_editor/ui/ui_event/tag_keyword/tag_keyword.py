@@ -1,6 +1,6 @@
 from tkinter import IntVar
 
-from je_editor.utils.keyword.keyword_list import keyword_list
+from je_editor.ui.ui_utils.keyword.keyword_list import keyword_list
 from je_editor.ui.ui_utils.theme.theme import theme_dict
 
 
