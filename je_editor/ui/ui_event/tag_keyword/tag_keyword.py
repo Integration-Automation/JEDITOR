@@ -1,7 +1,7 @@
 from tkinter import IntVar
 
-from je_editor.utils.code_tag.keyword_list import keyword_list
-from je_editor.utils.theme.theme import theme_dict
+from je_editor.utils.keyword.keyword_list import keyword_list
+from je_editor.ui.ui_utils.theme.theme import theme_dict
 
 
 class HighlightText(object):
@@ -37,7 +37,12 @@ class HighlightText(object):
             position = '1.0'
             self.tkinter_text.tag_config(word, foreground=self.theme.get("tag_keyword_color"))
             while self.tkinter_text.compare(position, "<", "end"):
-                find_function_index = self.tkinter_text.search("\m" + word + "\M", position, self.end_position, count=count_var, regexp=True)
+                find_function_index = self.tkinter_text.search(
+                    "\m" + word + "\M",
+                    position, self.end_position,
+                    count=count_var,
+                    regexp=True
+                )
                 if not find_function_index:
                     break
                 position = '{}+{}c'.format(find_function_index, len(word))

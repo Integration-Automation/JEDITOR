@@ -13,4 +13,7 @@ def execute_code(current_file, save_function, exec_manager):
 
 
 def stop_program(exec_manager):
+    """
+    :param exec_manager: call exec manager stop program method to stop
+    """
     exec_manager.exit_program()

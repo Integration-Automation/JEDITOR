@@ -1,11 +1,7 @@
 import tkinter
-from tkinter import E
 from tkinter import Menu
-from tkinter import N
-from tkinter import S
 from tkinter import Text
 from tkinter import Tk
-from tkinter import W
 from tkinter import ttk
 
 from je_editor.ui.ui_event.auto_save.start_auto_save.start_auto_save import start_auto_save
@@ -16,14 +12,18 @@ from je_editor.ui.ui_event.open_file.open_file_to_read.open_file_to_read import 
 from je_editor.ui.ui_event.open_file.open_last_edit_file.open_last_edit_file import open_last_edit_file
 from je_editor.ui.ui_event.save_file.save_file_to_open.save_file_to_open import save_file_to_open
 from je_editor.ui.ui_event.save_file.save_file_to_open.save_file_to_open import save_file_then_can_run
-from je_editor.utils.code_tag.tag_keyword import HighlightText
+from je_editor.ui.ui_event.tag_keyword.tag_keyword import HighlightText
 from je_editor.utils.editor_content.content_save import open_content_and_start
-from je_editor.utils.text_process.program_exec.exec_text import ExecManager
-from je_editor.utils.text_process.program_exec.process_error import process_error_text
+from je_editor.ui.ui_event.text_process.program_exec.exec_text import ExecManager
+from je_editor.ui.ui_event.text_process.program_exec.process_error import process_error_text
 from je_editor.ui.ui_utils.font.font import get_font
 from je_editor.ui.ui_event.change_font.change_font import change_font
 from je_editor.ui.ui_event.change_font.change_font import change_font_size
 from je_editor.ui.ui_event.execute.execute_code.exec_code import stop_program
+from je_editor.utils.encoding.encoding_data_module import encoding_list
+from je_editor.ui.ui_event.encoding.set_encoding import set_encoding
+from je_editor.ui.ui_event.language.set_language import set_language
+from je_editor.utils.language.language_data_module import language_list
 
 
 def start_editor(use_theme=None):
@@ -90,27 +90,31 @@ class EditorMain(object):
         self.main_window = main_window
         self.main_window.title("je_editor")
         self.code_edit_frame = ttk.Frame(self.main_window, padding="3 3 12 12")
-        self.code_edit_frame.grid(column=0, row=0, sticky=(N, W, E, S))
-        self.run_result_frame = ttk.Frame(self.main_window, padding="3 3 12 12")
-        self.run_result_frame.grid(column=0, row=1, sticky=(N, W, E, S))
+        self.code_edit_frame.grid(column=0, row=0, sticky="nsew")
+        self.program_run_result_frame = ttk.Frame(self.main_window, padding="3 3 12 12")
+        self.program_run_result_frame.grid(column=0, row=1, sticky="nsew")
+        self.main_window.grid_rowconfigure(0, weight=1)
+        self.main_window.grid_rowconfigure(1, weight=1)
         # Text start and end position
         self.start_position = "1.0"
         self.end_position = "end-1c"
         # set code edit
         self.code_editor = Text(self.code_edit_frame, undo=True, autoseparators=True, maxundo=-1)
-        self.code_editor_scrollbar_y = ttk.Scrollbar(orient="vertical", command=self.code_editor.yview)
-        self.code_editor["yscrollcommand"] = self.code_editor_scrollbar_y.set
-        self.code_editor.grid(column=0, row=0, sticky=(N, W, E, S))
-        self.code_editor_scrollbar_y.grid(column=1, row=0)
+        self.code_editor.grid(column=0, row=0, sticky="nsew")
         self.code_editor.configure(state="normal")
+        self.code_editor_scrollbar_y = ttk.Scrollbar(self.code_edit_frame, orient="vertical",
+                                                     command=self.code_editor.yview)
+        self.code_editor["yscrollcommand"] = self.code_editor_scrollbar_y.set
+        self.code_editor_scrollbar_y.grid(column=1, row=0, sticky="ns")
         # run result
-        self.run_result = Text(self.run_result_frame)
-        self.run_result_scrollbar_y = ttk.Scrollbar(orient="vertical", command=self.run_result.yview)
-        self.run_result["yscrollcommand"] = self.run_result_scrollbar_y.set
-        self.run_result.grid(column=0, row=1, sticky=(N, W, E, S))
-        self.run_result_scrollbar_y.grid(column=1, row=1)
-        self.run_result.configure(state="disabled")
-        self.run_result.bind("<1>", lambda event: self.run_result.focus_set())
+        self.program_run_result_textarea = Text(self.program_run_result_frame)
+        self.program_run_result_textarea.grid(column=0, row=1, sticky="nsew")
+        self.program_run_result_textarea.configure(state="disabled")
+        self.program_run_result_textarea.bind("<1>", lambda event: self.program_run_result_textarea.focus_set())
+        self.program_run_result_textarea_scrollbar_y = ttk.Scrollbar(self.program_run_result_frame, orient="vertical",
+                                                                     command=self.program_run_result_textarea.yview)
+        self.program_run_result_textarea["yscrollcommand"] = self.program_run_result_textarea_scrollbar_y.set
+        self.program_run_result_textarea_scrollbar_y.grid(column=1, row=1, sticky="ns")
         # Menubar
         # Main menu
         self.menu = tkinter.Menu(self.main_window)
@@ -124,7 +128,7 @@ class EditorMain(object):
         )
         self.menu.add_command(
             label="Run on shell",
-            command=lambda: execute_shell_command(self.run_result, self.code_editor)
+            command=lambda: execute_shell_command(self.program_run_result_textarea, self.code_editor)
         )
         self.menu.add_command(
             label="Stop",
@@ -138,18 +142,36 @@ class EditorMain(object):
         for i in range(len(self.font_tuple)):
             self.text_font_sub_menu.add_command(
                 label=str(self.font_tuple[i]),
-                command=lambda my_font=self.font_tuple[i]: change_font(self.code_editor, self.run_result, my_font)
+                command=lambda choose_font=self.font_tuple[i]:
+                change_font(self.code_editor, self.program_run_result_textarea, choose_font)
             )
         for i in range(12, 36, 2):
             self.text_size_sub_menu.add_command(
                 label=str(i),
-                command=lambda font_size=i: change_font_size(self.code_editor, self.run_result, font_size)
+                command=lambda font_size=i: change_font_size(self.code_editor, self.program_run_result_textarea,
+                                                             font_size)
             )
         self.text_menu.add_cascade(label="Font", menu=self.text_font_sub_menu)
         self.text_menu.add_cascade(label="Font Size", menu=self.text_size_sub_menu)
+        # Encoding menu
+        self.encoding_menu = tkinter.Menu(self.menu, tearoff=0)
+        for i in range(len(encoding_list)):
+            self.encoding_menu.add_command(
+                label=str(encoding_list[i]),
+                command=lambda choose_encoding=encoding_list[i]: set_encoding(self.exec_manager, choose_encoding)
+            )
+        # Language menu
+        self.language_menu = tkinter.Menu(self.menu, tearoff=0)
+        for i in range(len(language_list)):
+            self.language_menu.add_command(
+                label=str(language_list[i]),
+                command=lambda choose_language=language_list[i]: set_language(self.exec_manager, choose_language)
+            )
         # add and config
         self.menu.add_cascade(label="File", menu=self.file_menu)
         self.menu.add_cascade(label="Text", menu=self.text_menu)
+        self.menu.add_cascade(label="Encoding", menu=self.encoding_menu)
+        self.menu.add_cascade(label="Language", menu=self.language_menu)
         self.main_window.config(menu=self.menu)
         # Popup menu
         self.popup_menu = Menu(self.main_window, tearoff=0)
@@ -159,17 +181,19 @@ class EditorMain(object):
         )
         self.popup_menu.add_command(
             label="Run on shell",
-            command=lambda: execute_shell_command(self.run_result, self.code_editor)
+            command=lambda: execute_shell_command(self.program_run_result_textarea, self.code_editor)
         )
         self.popup_menu.add_separator()
-        self.popup_menu.add_command(label="Save File", command=self.save_file_to_open)
-        self.popup_menu.add_command(label="Open File", command=self.open_file_to_read)
+        self.popup_menu.add_cascade(label="File", menu=self.file_menu)
+        self.popup_menu.add_cascade(label="Text", menu=self.text_menu)
+        self.popup_menu.add_cascade(label="Encoding", menu=self.encoding_menu)
+        self.popup_menu.add_cascade(label="Language", menu=self.language_menu)
         self.main_window.bind("<Button-3>", self.show_popup_menu)
         # set resize
         self.code_edit_frame.columnconfigure(0, weight=1)
         self.code_edit_frame.rowconfigure(0, weight=1)
-        self.run_result_frame.columnconfigure(0, weight=1)
-        self.run_result_frame.rowconfigure(1, weight=1)
+        self.program_run_result_frame.columnconfigure(0, weight=1)
+        self.program_run_result_frame.rowconfigure(1, weight=1)
         self.main_window.columnconfigure(0, weight=1)
         self.main_window.rowconfigure(0, weight=1)
         # Highlight word
@@ -192,7 +216,7 @@ class EditorMain(object):
         )
         self.main_window.bind(
             "<Control-Key-F6>",
-            lambda bind_exec_shell_command: execute_shell_command(self.run_result, self.code_editor)
+            lambda bind_exec_shell_command: execute_shell_command(self.program_run_result_textarea, self.code_editor)
         )
         # is this test run?
         self.test_run = False
@@ -201,7 +225,7 @@ class EditorMain(object):
         if self.current_file is not None:
             self.auto_save = start_auto_save(self.auto_save, self.current_file, self.code_editor)
         self.exec_manager = ExecManager(
-            run_result=self.run_result,
+            program_run_result_textarea=self.program_run_result_textarea,
             process_error_function=process_error_text,
             main_window=self.main_window,
             running_menu=self.menu

@@ -1,10 +1,3 @@
-import sys
-
-
-def except_hook(cls, exception, traceback):
-    sys.__excepthook__(cls, exception, traceback)
-
-
 class JEditorException(Exception):
     pass
 
@@ -26,4 +19,8 @@ class JEditorOpenFileException(JEditorException):
 
 
 class JEditorContentFileException(JEditorException):
+    pass
+
+
+class JEditorCantFindLanguageException(JEditorException):
     pass
