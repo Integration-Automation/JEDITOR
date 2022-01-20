@@ -4,13 +4,11 @@ from pathlib import Path
 from threading import Lock
 
 from je_editor.utils.exception.je_editor_exceptions import JEditorContentFileException
+from je_editor.ui.ui_utils.editor_content.editor_data import editor_data_dict
+
 
 cwd = os.getcwd()
 lock = Lock()
-
-editor_data = {
-    "last_file": None
-}
 
 
 def read_output_content():
@@ -36,7 +34,7 @@ def write_output_content():
     try:
         lock.acquire()
         with open(cwd + "/je_editor_content.json", "w+") as file_to_write:
-            file_to_write.write(json.dumps(editor_data))
+            file_to_write.write(json.dumps(editor_data_dict))
     except JEditorContentFileException:
         raise JEditorContentFileException
     finally:
@@ -47,7 +45,7 @@ def save_content_and_quit(file):
     """
     set content data and write
     """
-    editor_data["last_file"] = file
+    editor_data_dict["last_file"] = file
     write_output_content()
 
 
@@ -57,5 +55,5 @@ def open_content_and_start():
     """
     temp_content = read_output_content()
     if temp_content is not None:
-        editor_data["last_file"] = json.loads(temp_content).get("last_file")
-    return editor_data.get("last_file")
+        editor_data_dict["last_file"] = json.loads(temp_content).get("last_file")
+    return editor_data_dict

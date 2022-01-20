@@ -56,7 +56,7 @@ class EditorMain(object):
 
     def ui_open_last_edit_file(self):
         self.highlight_text.search()
-        return open_last_edit_file(self.file_from_output_content, self.code_editor)
+        return open_last_edit_file(self.file_from_output_content.get("last_file"), self.code_editor)
 
     def ui_execute_program(self, event=None):
         if self.current_file is not None:
@@ -69,6 +69,24 @@ class EditorMain(object):
         """
         self.popup_menu.tk_popup(event.x_root, event.y_root)
 
+    def ui_init(self):
+        if self.file_from_output_content is not None:
+            self.theme = self.file_from_output_content.get("theme", None)
+            self.language = self.file_from_output_content.get("language", None)
+            self.encoding = self.file_from_output_content.get("encoding", None)
+            self.font = self.file_from_output_content.get("font", None)
+            self.font_size = self.file_from_output_content.get("font_size", None)
+        if self.theme is not None:
+            self.highlight_text.theme = self.theme.get("tag_keyword_color", "dark orange")
+        if self.language is not None:
+            set_language(self.exec_manager, self.language)
+        if self.encoding is not None:
+            set_encoding(self.exec_manager, self.encoding)
+        if self.font is not None:
+            change_font(self.code_editor, self.program_run_result_textarea, self.font)
+        if self.font_size is not None:
+            change_font_size(self.code_editor, self.program_run_result_textarea, self.font_size)
+
     # default event
     def do_test(self, event=None):
         self.test_run = True
@@ -79,10 +97,20 @@ class EditorMain(object):
         :param use_theme: what theme editor used
         :param main_window: Tk instance
         """
+        # init content
+        self.encoding = None
+        self.theme = None
+        self.language = None
+        self.font = None
+        self.font_size = None
+
         # style
         self.style = ttk.Style()
         if use_theme is not None:
             self.style.theme_use(use_theme)
+        # Text start and end position
+        self.start_position = "1.0"
+        self.end_position = "end-1c"
         # set main window title and add main frame
         self.main_window = main_window
         self.main_window.title("je_editor")
@@ -92,9 +120,6 @@ class EditorMain(object):
         self.program_run_result_frame.grid(column=0, row=1, sticky="nsew")
         self.main_window.grid_rowconfigure(0, weight=1)
         self.main_window.grid_rowconfigure(1, weight=1)
-        # Text start and end position
-        self.start_position = "1.0"
-        self.end_position = "end-1c"
         # set code edit
         self.code_editor = Text(self.code_edit_frame, undo=True, autoseparators=True, maxundo=-1)
         self.code_editor.grid(column=0, row=0, sticky="nsew")
@@ -197,7 +222,7 @@ class EditorMain(object):
         self.highlight_text = HighlightText(self.code_editor)
         # current file
         self.current_file = None
-        # file to output content
+        # file from output content
         self.file_from_output_content = open_content_and_start()
         if self.file_from_output_content is not None:
             self.current_file = self.ui_open_last_edit_file()
@@ -227,3 +252,4 @@ class EditorMain(object):
             main_window=self.main_window,
             running_menu=self.menu
         )
+        self.ui_init()
