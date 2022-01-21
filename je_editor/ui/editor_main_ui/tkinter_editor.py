@@ -24,6 +24,7 @@ from je_editor.ui.ui_utils.encoding.encoding_data_module import encoding_list
 from je_editor.ui.ui_event.encoding.set_encoding import set_encoding
 from je_editor.ui.ui_event.language.set_language import set_language
 from je_editor.ui.ui_utils.language.language_data_module import language_list
+from je_editor.ui.ui_utils.editor_content.editor_data import editor_data_dict
 
 
 def start_editor(use_theme=None):
@@ -39,12 +40,13 @@ class EditorMain(object):
 
     # editor close event
     def close_event(self):
-        close_event(self.current_file, self.main_window, self.exec_manager)
+        editor_data_dict["last_file"] = self.current_file
+        self.file_from_output_content["last_file"] = self.current_file
+        close_event(self.main_window, self.exec_manager)
 
     # editor open file
     def ui_open_file_to_read(self, event=None):
         temp = open_file_to_read(self.code_editor)
-        self.file_from_output_content = temp
         self.current_file = temp
         self.highlight_text.search()
         self.auto_save = start_auto_save(self.auto_save, self.current_file, self.code_editor)
@@ -77,7 +79,7 @@ class EditorMain(object):
             self.font = self.file_from_output_content.get("font", None)
             self.font_size = self.file_from_output_content.get("font_size", None)
         if self.theme is not None:
-            self.highlight_text.theme = self.theme.get("tag_keyword_color", "dark orange")
+            self.highlight_text.theme = self.theme
         if self.language is not None:
             set_language(self.exec_manager, self.language)
         if self.encoding is not None:
@@ -86,6 +88,7 @@ class EditorMain(object):
             change_font(self.code_editor, self.program_run_result_textarea, self.font)
         if self.font_size is not None:
             change_font_size(self.code_editor, self.program_run_result_textarea, self.font_size)
+        from je_editor.ui.ui_utils.editor_content.editor_data import editor_data_dict
 
     # default event
     def do_test(self, event=None):
@@ -226,6 +229,7 @@ class EditorMain(object):
         self.file_from_output_content = open_content_and_start()
         if self.file_from_output_content is not None:
             self.current_file = self.ui_open_last_edit_file()
+            print(self.current_file)
             self.highlight_text.search()
         # close event
         self.main_window.protocol("WM_DELETE_WINDOW", self.close_event)

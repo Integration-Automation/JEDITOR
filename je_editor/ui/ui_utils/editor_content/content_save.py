@@ -41,11 +41,10 @@ def write_output_content():
         lock.release()
 
 
-def save_content_and_quit(file):
+def save_content_and_quit():
     """
     set content data and write
     """
-    editor_data_dict["last_file"] = file
     write_output_content()
 
 
@@ -55,5 +54,4 @@ def open_content_and_start():
     """
     temp_content = read_output_content()
     if temp_content is not None:
-        editor_data_dict["last_file"] = json.loads(temp_content).get("last_file")
-    return editor_data_dict
+        return json.loads(temp_content)
