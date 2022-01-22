@@ -41,7 +41,8 @@ class EditorMain(object):
     # editor close event
     def close_event(self):
         editor_data_dict["last_file"] = self.current_file
-        self.file_from_output_content["last_file"] = self.current_file
+        if self.file_from_output_content is not None:
+            self.file_from_output_content["last_file"] = self.current_file
         close_event(self.main_window, self.exec_manager)
 
     # editor open file
@@ -229,7 +230,6 @@ class EditorMain(object):
         self.file_from_output_content = open_content_and_start()
         if self.file_from_output_content is not None:
             self.current_file = self.ui_open_last_edit_file()
-            print(self.current_file)
             self.highlight_text.search()
         # close event
         self.main_window.protocol("WM_DELETE_WINDOW", self.close_event)

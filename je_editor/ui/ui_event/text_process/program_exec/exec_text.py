@@ -10,7 +10,7 @@ from tkinter import END
 from tkinter import NORMAL
 
 from je_editor.utils.exception.je_editor_exception_tag import file_not_fond_error
-from je_editor.utils.exception.je_editor_exception_tag import compiler_not_found_error
+from je_editor.utils.exception.je_editor_exception_tag import je_editor_compiler_not_found_error
 from je_editor.utils.exception.je_editor_exceptions import JEditorExecException
 
 from je_editor.ui.ui_event.text_process.language_data_module.language_compiler_data_module import language_compiler
@@ -69,7 +69,7 @@ class ExecManager(object):
             raise JEditorExecException(error)
         compiler_path = shutil.which(self.program_language)
         if compiler_path is None:
-            raise JEditorExecException(compiler_not_found_error)
+            raise JEditorExecException(je_editor_compiler_not_found_error)
         exec_command = reformat_os_file_path
 
         # precompile
