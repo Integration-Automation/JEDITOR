@@ -1,1 +1,12 @@
-{"last_file": "C:/Program_SSD_Workspace/Python/Project/je_editor/test/tkinter_test/editor/a.py", "theme": {"tag_keyword_color": "dark orange"}, "language": "python3", "encoding": "utf-8", "font": "TkDefaultFont", "font_size": 18}
+{
+    "encoding": "utf-8",
+    "font": "TkDefaultFont",
+    "font_size": 12,
+    "language": "python3",
+    "language_compiler_param": null,
+    "language_precompiler": null,
+    "last_file": "C:/Program_SSD_Workspace/Python/Project/je_editor/test/tkinter_test/editor/a.py",
+    "theme": {
+        "tag_keyword_color": "dark orange"
+    }
+}

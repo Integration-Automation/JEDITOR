@@ -25,6 +25,7 @@ from je_editor.ui.ui_event.encoding.set_encoding import set_encoding
 from je_editor.ui.ui_event.language.set_language import set_language
 from je_editor.ui.ui_utils.language.language_data_module import language_list
 from je_editor.ui.ui_utils.editor_content.editor_data import editor_data_dict
+from je_editor.ui.ui_utils.theme import theme_dict
 
 
 def start_editor(use_theme=None):
@@ -74,6 +75,8 @@ class EditorMain(object):
 
     def ui_init(self):
         if self.file_from_output_content is not None:
+            for key, value in self.ui_init_dict:
+                pass
             self.theme = self.file_from_output_content.get("theme", None)
             self.language = self.file_from_output_content.get("language", None)
             self.encoding = self.file_from_output_content.get("encoding", None)
@@ -89,7 +92,7 @@ class EditorMain(object):
             change_font(self.code_editor, self.program_run_result_textarea, self.font)
         if self.font_size is not None:
             change_font_size(self.code_editor, self.program_run_result_textarea, self.font_size)
-        from je_editor.ui.ui_utils.editor_content.editor_data import editor_data_dict
+        print(self.ui_init_dict)
 
     # default event
     def do_test(self, event=None):
@@ -102,11 +105,18 @@ class EditorMain(object):
         :param main_window: Tk instance
         """
         # init content
-        self.encoding = None
-        self.theme = None
-        self.language = None
-        self.font = None
-        self.font_size = None
+        self.theme = "theme"
+        self.language = "language"
+        self.encoding = "encoding"
+        self.font = "font"
+        self.font_size = "font_size"
+        self.ui_init_dict = {
+            self.theme: theme_dict,
+            self.language: "python3",
+            self.encoding: "utf-8",
+            self.font: "TkDefaultFont",
+            self.font_size: 12
+        }
 
         # style
         self.style = ttk.Style()
