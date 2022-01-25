@@ -1,3 +1,4 @@
+import sys
 import tkinter
 from tkinter import Menu
 from tkinter import Text
@@ -25,6 +26,11 @@ from je_editor.ui.ui_event.encoding.set_encoding import set_encoding
 from je_editor.ui.ui_event.language.set_language import set_language
 from je_editor.ui.ui_utils.language.language_data_module import language_list
 from je_editor.ui.ui_utils.editor_content.editor_data import editor_data_dict
+from je_editor.ui.ui_utils.language_data_module.language_compiler_data_module import language_compiler
+from je_editor.ui.ui_utils.language_data_module.language_param_data_module import language_compiler_param
+from je_editor.utils.exception.je_editor_exceptions import JEditorContentFileException
+from je_editor.utils.exception.je_editor_exception_tag import je_editor_content_file_error
+from je_editor.utils.exception.je_editor_exception_tag import je_editor_content_set_compiler_error
 
 
 def start_editor(use_theme=None):
@@ -77,27 +83,44 @@ class EditorMain(object):
         self.highlight_text = HighlightText(self.code_editor)
         # file from output content
         self.file_from_output_content = open_content_and_start()
-        if self.file_from_output_content is not None:
-            self.current_file = self.ui_open_last_edit_file()
-            self.highlight_text.search()
-            if self.file_from_output_content.get("theme") is not None:
-                self.highlight_text.theme = self.file_from_output_content.get("theme")
-            if self.file_from_output_content.get("language") is not None:
-                set_language(self.exec_manager, self.file_from_output_content.get("language"))
-            if self.file_from_output_content.get("encoding") is not None:
-                set_encoding(self.exec_manager, self.file_from_output_content.get("encoding"))
-            if self.file_from_output_content.get("font") is not None:
-                change_font(
-                    self.code_editor,
-                    self.program_run_result_textarea,
-                    self.file_from_output_content.get("font")
-                )
-            if self.file_from_output_content.get("font_size") is not None:
-                change_font_size(
-                    self.code_editor,
-                    self.program_run_result_textarea,
-                    self.file_from_output_content.get("font_size")
-                )
+        try:
+            if self.file_from_output_content is not None:
+                self.current_file = self.ui_open_last_edit_file()
+                self.highlight_text.search()
+                if self.file_from_output_content.get("theme") is not None:
+                    self.highlight_text.theme = self.file_from_output_content.get("theme")
+                if self.file_from_output_content.get("language") is not None:
+                    language = self.file_from_output_content.get("language")
+                    if language not in language_list:
+                        language_list.append(language)
+                    set_language(self.exec_manager, language)
+                if self.file_from_output_content.get("encoding") is not None:
+                    set_encoding(self.exec_manager, self.file_from_output_content.get("encoding"))
+                if self.file_from_output_content.get("font") is not None:
+                    change_font(
+                        self.code_editor,
+                        self.program_run_result_textarea,
+                        self.file_from_output_content.get("font")
+                    )
+                if self.file_from_output_content.get("font_size") is not None:
+                    change_font_size(
+                        self.code_editor,
+                        self.program_run_result_textarea,
+                        self.file_from_output_content.get("font_size")
+                    )
+                try:
+                    if self.file_from_output_content.get("language_precompiler") is not None:
+                        language_compiler.update(self.file_from_output_content.get("language_precompiler"))
+                        editor_data_dict["language_precompiler"] = self.file_from_output_content.get(
+                            "language_precompiler")
+                    if self.file_from_output_content.get("language_compiler_param") is not None:
+                        language_compiler_param.update(self.file_from_output_content.get("language_compiler_param"))
+                        editor_data_dict["language_compiler_param"] = self.file_from_output_content.get(
+                            "language_compiler_param")
+                except JEditorContentFileException as error:
+                    print(repr(error), file=sys.stderr)
+        except JEditorContentFileException as error:
+            print(repr(error), file=sys.stderr)
 
     # default event
     def do_test(self, event=None):
