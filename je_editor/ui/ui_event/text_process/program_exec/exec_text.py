@@ -1,4 +1,3 @@
-import sys
 import os.path
 import queue
 import shutil
@@ -10,11 +9,11 @@ from tkinter import END
 from tkinter import NORMAL
 
 from je_editor.utils.exception.je_editor_exception_tag import file_not_fond_error
-from je_editor.utils.exception.je_editor_exception_tag import compiler_not_found_error
+from je_editor.utils.exception.je_editor_exception_tag import je_editor_compiler_not_found_error
 from je_editor.utils.exception.je_editor_exceptions import JEditorExecException
 
-from je_editor.ui.ui_event.text_process.language_data_module.language_compiler_data_module import language_compiler
-from je_editor.ui.ui_event.text_process.language_data_module.language_param_data_module import language_compiler_param
+from je_editor.ui.ui_utils.language_data_module.language_compiler_data_module import language_compiler
+from je_editor.ui.ui_utils.language_data_module.language_param_data_module import language_compiler_param
 
 
 class ExecManager(object):
@@ -69,7 +68,7 @@ class ExecManager(object):
             raise JEditorExecException(error)
         compiler_path = shutil.which(self.program_language)
         if compiler_path is None:
-            raise JEditorExecException(compiler_not_found_error)
+            raise JEditorExecException(je_editor_compiler_not_found_error)
         exec_command = reformat_os_file_path
 
         # precompile
@@ -87,10 +86,15 @@ class ExecManager(object):
             while self.process.returncode is None:
                 self.process.poll()
         # run program
-        self.process = subprocess.Popen([compiler_path, exec_command],
-                                        stdout=subprocess.PIPE,
-                                        stderr=subprocess.PIPE,
-                                        shell=False)
+        if language_compiler_param.get(self.program_language) is None:
+            execute_program_list = [compiler_path, exec_command]
+        else:
+            execute_program_list = [compiler_path, language_compiler_param.get(self.program_language), exec_command]
+        self.process = subprocess.Popen(
+            execute_program_list,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            shell=False)
         self.still_run_program = True
         # program output message queue thread
         self.read_program_output_from_thread = Thread(
