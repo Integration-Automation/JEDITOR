@@ -15,5 +15,6 @@ editor_data_dict = {
     "language_compiler_param": None,
     "encoding": "utf-8",
     "font": "TkDefaultFont",
-    "font_size": 12
+    "font_size": 12,
+    "tab_size": "1c",
 }
