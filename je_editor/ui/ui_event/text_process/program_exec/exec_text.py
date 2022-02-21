@@ -88,7 +88,7 @@ class ExecManager(object):
             while self.process.returncode is None:
                 self.process.poll()
         # run program
-        if language_compiler_param.get(self.program_language) is None:
+        if language_compiler_param.get(self.program_language) is None or self.program_language == "java":
             execute_program_list = [compiler_path, exec_command]
         else:
             execute_program_list = [compiler_path, language_compiler_param.get(self.program_language), exec_command]
