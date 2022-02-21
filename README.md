@@ -34,4 +34,4 @@ sudo sudo apt-get install python3-tk
 sudo dnf python3-tk
 ```
 
- 
+![Main window image](/github_image/main_window_image.png)
