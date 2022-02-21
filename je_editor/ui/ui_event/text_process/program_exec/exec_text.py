@@ -67,6 +67,8 @@ class ExecManager(object):
         except OSError as error:
             raise JEditorExecException(error)
         compiler_path = shutil.which(self.program_language)
+        if compiler_path is None and self.program_language == "python3":
+            compiler_path = shutil.which("python")
         if compiler_path is None:
             raise JEditorExecException(je_editor_compiler_not_found_error)
         exec_command = reformat_os_file_path
