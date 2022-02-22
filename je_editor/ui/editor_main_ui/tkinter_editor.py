@@ -90,6 +90,8 @@ class EditorMain(object):
                 self.highlight_text.search()
                 if self.file_from_output_content.get("theme") is not None:
                     self.highlight_text.theme = self.file_from_output_content.get("theme")
+                    editor_data_dict["theme"] = self.file_from_output_content.get(
+                        "theme")
                 if self.file_from_output_content.get("language") is not None:
                     language = self.file_from_output_content.get("language")
                     if language not in language_list:
@@ -126,6 +128,7 @@ class EditorMain(object):
                     self.code_editor.config(tabs=self.file_from_output_content.get("tab_size"))
         except JEditorContentFileException as error:
             print(repr(error), file=sys.stderr)
+        self.highlight_text.search()
 
     # default event
     def do_test(self, event=None):
