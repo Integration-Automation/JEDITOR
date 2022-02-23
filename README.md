@@ -34,4 +34,31 @@ sudo sudo apt-get install python3-tk
 sudo dnf python3-tk
 ```
 
- 
+* editor main window
+
+![Main window image](/github_image/main_window_image.png)
+
+* toolbar function
+  * Run
+    * Run program and get result
+  * Run on shell
+    * Run on command line and get result
+  * Stop
+    * Stop current running program
+  * File
+    * Save File
+      * Save current edit file
+    * Open File
+      * Open file to edit
+  * Text
+    * Font
+      * Choose editor font
+    * Font Size
+      * Choose font size
+  * Encoding
+    * Choose file encoding
+  * Language
+    * Java 
+      * need java on system path - default
+    * Python3
+      * need python3 on system path - default  

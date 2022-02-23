@@ -4,6 +4,7 @@ from tkinter import Menu
 from tkinter import Text
 from tkinter import Tk
 from tkinter import ttk
+from tkinter.font import Font
 
 from je_editor.ui.ui_event.auto_save.start_auto_save.start_auto_save import start_auto_save
 from je_editor.ui.ui_event.close.close_event import close_event
@@ -89,6 +90,8 @@ class EditorMain(object):
                 self.highlight_text.search()
                 if self.file_from_output_content.get("theme") is not None:
                     self.highlight_text.theme = self.file_from_output_content.get("theme")
+                    editor_data_dict["theme"] = self.file_from_output_content.get(
+                        "theme")
                 if self.file_from_output_content.get("language") is not None:
                     language = self.file_from_output_content.get("language")
                     if language not in language_list:
@@ -119,8 +122,13 @@ class EditorMain(object):
                             "language_compiler_param")
                 except JEditorContentFileException as error:
                     print(repr(error), file=sys.stderr)
+                if self.file_from_output_content.get("tab_size") is not None:
+                    editor_data_dict["tab_size"] = self.file_from_output_content.get(
+                        "tab_size")
+                    self.code_editor.config(tabs=self.file_from_output_content.get("tab_size"))
         except JEditorContentFileException as error:
             print(repr(error), file=sys.stderr)
+        self.highlight_text.search()
 
     # default event
     def do_test(self, event=None):
@@ -152,6 +160,7 @@ class EditorMain(object):
         # set code edit
         self.code_editor = Text(self.code_edit_frame, undo=True, autoseparators=True, maxundo=-1)
         self.code_editor.configure(state="normal")
+        self.code_editor.config(tabs="1c")
         self.code_editor_scrollbar_y = ttk.Scrollbar(self.code_edit_frame, orient="vertical",
                                                      command=self.code_editor.yview)
         self.code_editor["yscrollcommand"] = self.code_editor_scrollbar_y.set

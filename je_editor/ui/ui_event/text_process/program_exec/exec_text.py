@@ -67,9 +67,11 @@ class ExecManager(object):
         except OSError as error:
             raise JEditorExecException(error)
         compiler_path = shutil.which(self.program_language)
+        if compiler_path is None and self.program_language == "python3":
+            compiler_path = shutil.which("python")
         if compiler_path is None:
             raise JEditorExecException(je_editor_compiler_not_found_error)
-        exec_command = reformat_os_file_path
+        exec_file = reformat_os_file_path
 
         # precompile
         if self.program_language in language_compiler:
@@ -86,10 +88,7 @@ class ExecManager(object):
             while self.process.returncode is None:
                 self.process.poll()
         # run program
-        if language_compiler_param.get(self.program_language) is None:
-            execute_program_list = [compiler_path, exec_command]
-        else:
-            execute_program_list = [compiler_path, language_compiler_param.get(self.program_language), exec_command]
+        execute_program_list = [compiler_path, exec_file]
         self.process = subprocess.Popen(
             execute_program_list,
             stdout=subprocess.PIPE,
