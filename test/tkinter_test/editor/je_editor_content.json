@@ -1,13 +1,13 @@
 {
     "encoding": "utf-8",
     "font": "TkDefaultFont",
-    "font_size": 24,
+    "font_size": 12,
     "language": "java",
     "language_compiler_param": null,
     "language_precompiler": null,
     "last_file": "C:/program_workspace/python/GitHub/je_editor/test/tkinter_test/editor/HelloWorld.java",
     "tab_size": "1c",
     "theme": {
-        "tag_keyword_color": "Blue"
+        "tag_keyword_color": "dark blue"
     }
 }
