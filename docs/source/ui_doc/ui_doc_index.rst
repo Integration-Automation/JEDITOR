@@ -1,9 +1,11 @@
 ==================
-je_editor Doc
+je_editor UI Doc
 ==================
 
 .. toctree::
     :maxdepth: 4
+
+    # UI Event are what actually editor ui call event functions
 
     editor_main_ui/editor_main_ui.rst
     auto_save/auto_save.rst
