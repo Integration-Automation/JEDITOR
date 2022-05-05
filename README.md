@@ -1,5 +1,7 @@
 # je_editor
 
+---
+
 ## install
 
 * please check your tkinter version
@@ -34,9 +36,17 @@ sudo sudo apt-get install python3-tk
 sudo dnf python3-tk
 ```
 
+---
+
+[![CircleCI](https://circleci.com/gh/JE-Chen/je_editor/tree/main.svg?style=svg)](https://circleci.com/gh/JE-Chen/je_editor/tree/main)
+
+---
+
 * editor main window
 
 ![Main window image](/github_image/main_window_image.png)
+
+---
 
 * toolbar function
   * Run
@@ -62,3 +72,5 @@ sudo dnf python3-tk
       * need java on system path - default
     * Python3
       * need python3 on system path - default  
+
+---
