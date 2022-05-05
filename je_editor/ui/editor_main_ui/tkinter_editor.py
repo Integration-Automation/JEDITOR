@@ -4,7 +4,6 @@ from tkinter import Menu
 from tkinter import Text
 from tkinter import Tk
 from tkinter import ttk
-from tkinter.font import Font
 
 from je_editor.ui.ui_event.auto_save.start_auto_save.start_auto_save import start_auto_save
 from je_editor.ui.ui_event.close.close_event import close_event
@@ -30,19 +29,13 @@ from je_editor.ui.ui_utils.editor_content.editor_data import editor_data_dict
 from je_editor.ui.ui_utils.language_data_module.language_compiler_data_module import language_compiler
 from je_editor.ui.ui_utils.language_data_module.language_param_data_module import language_compiler_param
 from je_editor.utils.exception.je_editor_exceptions import JEditorContentFileException
-from je_editor.utils.exception.je_editor_exception_tag import je_editor_content_file_error
-from je_editor.utils.exception.je_editor_exception_tag import je_editor_content_set_compiler_error
-
-
-def start_editor(use_theme=None):
-    EditorMain(use_theme=use_theme).start_editor()
 
 
 class EditorMain(object):
 
     # start editor and start auto save if auto save not start
     def start_editor(self):
-        self.auto_save = start_auto_save(self.auto_save, self.current_file, self.code_editor)
+        self.auto_save_thread = start_auto_save(self.auto_save_thread, self.current_file, self.code_editor_textarea)
         self.main_window.mainloop()
 
     # editor close event
@@ -52,25 +45,25 @@ class EditorMain(object):
             self.file_from_output_content["last_file"] = self.current_file
         close_event(self.main_window, self.exec_manager)
 
-    # editor open file
+    # editor open file from path
     def ui_open_file_to_read(self, event=None):
-        temp = open_file_to_read(self.code_editor)
+        temp = open_file_to_read(self.code_editor_textarea)
         self.current_file = temp
         self.highlight_text.search()
-        self.auto_save = start_auto_save(self.auto_save, self.current_file, self.code_editor)
+        self.auto_save_thread = start_auto_save(self.auto_save_thread, self.current_file, self.code_editor_textarea)
 
-    # save editor file
+    # save editor file to choose path
     def ui_save_file_to_open(self, event=None):
-        self.current_file = save_file_to_open(self.code_editor)
-        self.auto_save = start_auto_save(self.auto_save, self.current_file, self.code_editor)
+        self.current_file = save_file_to_open(self.code_editor_textarea)
+        self.auto_save_thread = start_auto_save(self.auto_save_thread, self.current_file, self.code_editor_textarea)
 
     def ui_open_last_edit_file(self):
         self.highlight_text.search()
-        return open_last_edit_file(self.file_from_output_content.get("last_file"), self.code_editor)
+        return open_last_edit_file(self.file_from_output_content.get("last_file"), self.code_editor_textarea)
 
     def ui_execute_program(self, event=None):
         if self.current_file is not None:
-            save_file_then_can_run(self.current_file, self.code_editor)
+            save_file_then_can_run(self.current_file, self.code_editor_textarea)
         execute_code(self.current_file, self.ui_save_file_to_open, self.exec_manager)
 
     def ui_show_popup_menu(self, event):
@@ -81,7 +74,7 @@ class EditorMain(object):
 
     def ui_init(self):
         # Highlight word
-        self.highlight_text = HighlightText(self.code_editor)
+        self.highlight_text = HighlightText(self.code_editor_textarea)
         # file from output content
         self.file_from_output_content = open_content_and_start()
         try:
@@ -101,13 +94,13 @@ class EditorMain(object):
                     set_encoding(self.exec_manager, self.file_from_output_content.get("encoding"))
                 if self.file_from_output_content.get("font") is not None:
                     change_font(
-                        self.code_editor,
+                        self.code_editor_textarea,
                         self.program_run_result_textarea,
                         self.file_from_output_content.get("font")
                     )
                 if self.file_from_output_content.get("font_size") is not None:
                     change_font_size(
-                        self.code_editor,
+                        self.code_editor_textarea,
                         self.program_run_result_textarea,
                         self.file_from_output_content.get("font_size")
                     )
@@ -125,7 +118,7 @@ class EditorMain(object):
                 if self.file_from_output_content.get("tab_size") is not None:
                     editor_data_dict["tab_size"] = self.file_from_output_content.get(
                         "tab_size")
-                    self.code_editor.config(tabs=self.file_from_output_content.get("tab_size"))
+                    self.code_editor_textarea.config(tabs=self.file_from_output_content.get("tab_size"))
         except JEditorContentFileException as error:
             print(repr(error), file=sys.stderr)
         self.highlight_text.search()
@@ -143,7 +136,7 @@ class EditorMain(object):
         # is this test run?
         self.test_run = False
         # Auto save thread
-        self.auto_save = None
+        self.auto_save_thread = None
         # current file
         self.current_file = None
         # style
@@ -158,12 +151,12 @@ class EditorMain(object):
         self.code_edit_frame = ttk.Frame(self.main_window, padding="3 3 12 12")
         self.program_run_result_frame = ttk.Frame(self.main_window, padding="3 3 12 12")
         # set code edit
-        self.code_editor = Text(self.code_edit_frame, undo=True, autoseparators=True, maxundo=-1)
-        self.code_editor.configure(state="normal")
-        self.code_editor.config(tabs="1c")
-        self.code_editor_scrollbar_y = ttk.Scrollbar(self.code_edit_frame, orient="vertical",
-                                                     command=self.code_editor.yview)
-        self.code_editor["yscrollcommand"] = self.code_editor_scrollbar_y.set
+        self.code_editor_textarea = Text(self.code_edit_frame, undo=True, autoseparators=True, maxundo=-1)
+        self.code_editor_textarea.configure(state="normal")
+        self.code_editor_textarea.config(tabs="1c")
+        self.code_editor_textarea_scrollbar_y = ttk.Scrollbar(self.code_edit_frame, orient="vertical",
+                                                              command=self.code_editor_textarea.yview)
+        self.code_editor_textarea["yscrollcommand"] = self.code_editor_textarea_scrollbar_y.set
         # run result
         self.program_run_result_textarea = Text(self.program_run_result_frame)
         self.program_run_result_textarea_scrollbar_y = ttk.Scrollbar(self.program_run_result_frame, orient="vertical",
@@ -180,7 +173,7 @@ class EditorMain(object):
         )
         self.main_window.bind(
             "<Control-Key-F6>",
-            lambda bind_exec_shell_command: execute_shell_command(self.program_run_result_textarea, self.code_editor)
+            lambda bind_exec_shell_command: execute_shell_command(self.program_run_result_textarea, self.code_editor_textarea)
         )
         # Menubar
         # Main menu
@@ -206,7 +199,7 @@ class EditorMain(object):
         self.popup_menu.add_cascade(label="Encoding", menu=self.encoding_menu)
         self.popup_menu.add_cascade(label="Language", menu=self.language_menu)
         if self.current_file is not None:
-            self.auto_save = start_auto_save(self.auto_save, self.current_file, self.code_editor)
+            self.auto_save_thread = start_auto_save(self.auto_save_thread, self.current_file, self.code_editor_textarea)
         self.exec_manager = ExecManager(
             program_run_result_textarea=self.program_run_result_textarea,
             process_error_function=process_error_text,
@@ -220,8 +213,8 @@ class EditorMain(object):
         self.program_run_result_frame.grid(column=0, row=1, sticky="nsew")
         self.main_window.grid_rowconfigure(0, weight=1)
         self.main_window.grid_rowconfigure(1, weight=1)
-        self.code_editor.grid(column=0, row=0, sticky="nsew")
-        self.code_editor_scrollbar_y.grid(column=1, row=0, sticky="ns")
+        self.code_editor_textarea.grid(column=0, row=0, sticky="nsew")
+        self.code_editor_textarea_scrollbar_y.grid(column=1, row=0, sticky="ns")
         self.program_run_result_textarea.grid(column=0, row=1, sticky="nsew")
         self.program_run_result_textarea_scrollbar_y.grid(column=1, row=1, sticky="ns")
         # bind and config
@@ -243,7 +236,7 @@ class EditorMain(object):
         )
         self.menu.add_command(
             label="Run on shell",
-            command=lambda: execute_shell_command(self.program_run_result_textarea, self.code_editor)
+            command=lambda: execute_shell_command(self.program_run_result_textarea, self.code_editor_textarea)
         )
         self.menu.add_command(
             label="Stop",
@@ -262,13 +255,13 @@ class EditorMain(object):
             self.text_font_sub_menu.add_command(
                 label=str(self.font_tuple[i]),
                 command=lambda choose_font=self.font_tuple[i]:
-                change_font(self.code_editor, self.program_run_result_textarea, choose_font)
+                change_font(self.code_editor_textarea, self.program_run_result_textarea, choose_font)
             )
         # Text size menu
         for i in range(12, 36, 2):
             self.text_size_sub_menu.add_command(
                 label=str(i),
-                command=lambda font_size=i: change_font_size(self.code_editor, self.program_run_result_textarea,
+                command=lambda font_size=i: change_font_size(self.code_editor_textarea, self.program_run_result_textarea,
                                                              font_size)
             )
         # Language menu
@@ -284,7 +277,7 @@ class EditorMain(object):
         )
         self.popup_menu.add_command(
             label="Run on shell",
-            command=lambda: execute_shell_command(self.program_run_result_textarea, self.code_editor)
+            command=lambda: execute_shell_command(self.program_run_result_textarea, self.code_editor_textarea)
         )
         # add and config
         self.menu.add_cascade(label="File", menu=self.file_menu)
@@ -292,3 +285,7 @@ class EditorMain(object):
         self.menu.add_cascade(label="Encoding", menu=self.encoding_menu)
         self.menu.add_cascade(label="Language", menu=self.language_menu)
         self.main_window.config(menu=self.menu)
+
+
+def start_editor(use_theme=None):
+    EditorMain(use_theme=use_theme).start_editor()
