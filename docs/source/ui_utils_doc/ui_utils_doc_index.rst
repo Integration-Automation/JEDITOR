@@ -13,4 +13,5 @@ je_editor UI Utils Doc
     keyword/keyword.rst
     language/language.rst
     language_data_module/language_data_module.rst
+    theme/theme.rst
 
