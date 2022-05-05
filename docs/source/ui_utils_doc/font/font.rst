@@ -1,5 +1,5 @@
 ==================
-je_editor Font Doc
+je_editor Utils Font Doc
 ==================
 
 .. code-block:: python

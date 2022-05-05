@@ -1,5 +1,5 @@
 ==================
-je_editor Encoding Doc
+je_editor Utils Encoding Doc
 ==================
 
 .. code-block:: python

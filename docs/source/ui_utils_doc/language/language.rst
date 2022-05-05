@@ -1,5 +1,5 @@
 ==================
-je_editor Keyword Doc
+je_editor Utils Language Doc
 ==================
 
 .. code-block:: python

@@ -1,5 +1,5 @@
 ==================
-je_editor Editor Content Doc
+je_editor Utils Editor Content Doc
 ==================
 
 .. code-block:: python

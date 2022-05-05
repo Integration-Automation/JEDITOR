@@ -1,5 +1,5 @@
 ==================
-je_editor UI Doc
+je_editor UI Utils Doc
 ==================
 
 .. toctree::
