@@ -6,4 +6,14 @@ je_editor Doc
     :maxdepth: 4
 
     editor_main_ui/editor_main_ui.rst
-    ui_event_index/ui_event_index.rst
+    auto_save/auto_save.rst
+    change_font/change_font.rst
+    close/close.rst
+    encoding/encoding.rst
+    execute/execute.rst
+    language/language.rst
+    open_file/open_file.rst
+    save_file/save_file.rst
+    tag_keyword/tag_keyword.rst
+    text_process/text_process.rst
+
