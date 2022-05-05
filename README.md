@@ -40,6 +40,8 @@ sudo dnf python3-tk
 
 [![CircleCI](https://circleci.com/gh/JE-Chen/je_editor/tree/main.svg?style=svg)](https://circleci.com/gh/JE-Chen/je_editor/tree/main)
 
+[![Documentation Status](https://readthedocs.org/projects/je-editor/badge/?version=latest)](https://je-editor.readthedocs.io/en/latest/?badge=latest)
+
 ---
 
 * editor main window
