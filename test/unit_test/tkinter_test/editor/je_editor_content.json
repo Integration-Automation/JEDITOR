@@ -2,10 +2,10 @@
     "encoding": "utf_8",
     "font": "Arial",
     "font_size": 12,
-    "language": "python3",
-    "language_compiler_param": null,
-    "language_precompiler": null,
-    "last_file": "C:/program_workspace/python/GitHub/je_editor/test/tkinter_test/editor/HelloWorld.java",
+    "language": "g++",
+    "language_compiler_param": {},
+    "language_precompiler": {},
+    "last_file": null,
     "tab_size": "1c",
     "theme": {
         "tag_keyword_color": "dark orange"

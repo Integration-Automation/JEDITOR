@@ -86,10 +86,11 @@ class EditorMain(object):
                     editor_data_dict["theme"] = self.file_from_output_content.get(
                         "theme")
                 if self.file_from_output_content.get("language") is not None:
-                    language = self.file_from_output_content.get("language")
-                    if language not in language_list:
-                        language_list.append(language)
-                    set_language(self.exec_manager, language)
+                    language_from_content = self.file_from_output_content.get("language")
+                    for language in language_from_content:
+                        if language not in language_list:
+                            language_list.append(language)
+                    set_language(self.exec_manager, language_from_content)
                 if self.file_from_output_content.get("encoding") is not None:
                     set_encoding(self.exec_manager, self.file_from_output_content.get("encoding"))
                 if self.file_from_output_content.get("font") is not None:
@@ -122,6 +123,9 @@ class EditorMain(object):
         except JEditorContentFileException as error:
             print(repr(error), file=sys.stderr)
         self.highlight_text.search()
+        print(language_compiler_param)
+        print(language_compiler)
+        print(language_list)
 
     # default event
     def do_test(self, event=None):
