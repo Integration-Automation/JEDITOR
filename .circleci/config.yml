@@ -34,7 +34,7 @@ jobs:
 
   build-and-test-dev:
     executor:
-      name: win/default
+      name: windows/default
       shell: powershell.exe
     steps:
       - checkout
