@@ -1,12 +1,13 @@
 version: 2.1
 
 orbs:
-  win: circleci/windows@2.2.0
+  windows: circleci/windows@4.1.1
+  python: circleci/python@2.0.3
 
 jobs:
   build-and-test-stable:
     executor:
-      name: win/default
+      name: windows/default
       shell: powershell.exe
     steps:
       - checkout
@@ -26,10 +27,14 @@ jobs:
       - run:
           command: python ./test/unit_test/file/save_and_open/save_and_open.py
           name: save_and_open_test
+      # open and close editor
+      - run:
+          command: python ./test/unit_test/tkinter_test/editor/editor_with_theme.py
+          name: open_and_close_editor
 
   build-and-test-dev:
     executor:
-      name: win/default
+      name: windows/default
       shell: powershell.exe
     steps:
       - checkout
@@ -49,6 +54,7 @@ jobs:
       - run:
           command: python ./test/unit_test/file/save_and_open/save_and_open.py
           name: save_and_open_test
+
 
 
 workflows:

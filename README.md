@@ -2,6 +2,26 @@
 
 ---
 
+### Simple editor for edit code 
+
+#### Features
+* auto save (after first save)
+* open last edit file
+* run program
+* execute shell script
+* choose font and font size
+* choose encoding
+* choose language
+* choose editor style
+* use content file to choose you own style
+---
+
+## Requires
+
+```
+python 3.5 or later
+```
+
 ## install
 
 * please check your tkinter version
@@ -76,3 +96,11 @@ sudo dnf python3-tk
       * need python3 on system path - default  
 
 ---
+
+* Test on
+    * windows 10 ~ 11
+    * osx 10.5 ~ 11 big sur
+    * ubuntu 20.0.4
+    * raspberry pi 3B+
+
+| All test in test dir
