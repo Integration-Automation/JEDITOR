@@ -3,4 +3,5 @@ from tkinter import ttk
 
 style = ttk.Style()
 print(style.theme_names())
-start_editor(use_theme="clam")
+editor = start_editor(use_theme="clam")
+editor.close_event()

@@ -1,5 +1,4 @@
 import sys
-import tkinter
 from tkinter import Menu
 from tkinter import Text
 from tkinter import Tk
@@ -123,9 +122,9 @@ class EditorMain(object):
         except JEditorContentFileException as error:
             print(repr(error), file=sys.stderr)
         self.highlight_text.search()
-        print(language_compiler_param)
-        print(language_compiler)
-        print(language_list)
+        print("language_compiler_param: " + language_compiler_param)
+        print("language_compiler: " + language_compiler)
+        print("language_list: " + language_list)
 
     # default event
     def do_test(self, event=None):
@@ -181,20 +180,20 @@ class EditorMain(object):
         )
         # Menubar
         # Main menu
-        self.menu = tkinter.Menu(self.main_window)
+        self.menu = Menu(self.main_window)
         # File menu
-        self.file_menu = tkinter.Menu(self.menu, tearoff=0)
+        self.file_menu = Menu(self.menu, tearoff=0)
         # Text menu
-        self.text_menu = tkinter.Menu(self.menu, tearoff=0)
-        self.text_font_sub_menu = tkinter.Menu(self.text_menu, tearoff=0)
-        self.text_size_sub_menu = tkinter.Menu(self.text_menu, tearoff=0)
+        self.text_menu = Menu(self.menu, tearoff=0)
+        self.text_font_sub_menu = Menu(self.text_menu, tearoff=0)
+        self.text_size_sub_menu = Menu(self.text_menu, tearoff=0)
         self.font_tuple = get_font(self.main_window)
         self.text_menu.add_cascade(label="Font", menu=self.text_font_sub_menu)
         self.text_menu.add_cascade(label="Font Size", menu=self.text_size_sub_menu)
         # Encoding menu
-        self.encoding_menu = tkinter.Menu(self.menu, tearoff=0)
+        self.encoding_menu = Menu(self.menu, tearoff=0)
         # Language menu
-        self.language_menu = tkinter.Menu(self.menu, tearoff=0)
+        self.language_menu = Menu(self.menu, tearoff=0)
         # Popup menu
         self.popup_menu = Menu(self.main_window, tearoff=0)
         self.popup_menu.add_separator()
@@ -290,6 +289,11 @@ class EditorMain(object):
         self.menu.add_cascade(label="Language", menu=self.language_menu)
         self.main_window.config(menu=self.menu)
 
+    def use_choose_theme(self, use_theme=None):
+        self.style.theme_use(use_theme)
+
 
 def start_editor(use_theme=None):
-    EditorMain(use_theme=use_theme).start_editor()
+    new_editor = EditorMain(use_theme=use_theme)
+    new_editor.start_editor()
+    return new_editor
