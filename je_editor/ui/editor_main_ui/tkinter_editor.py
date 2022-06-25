@@ -5,26 +5,26 @@ from tkinter import Tk
 from tkinter import ttk
 
 from je_editor.ui.ui_event.auto_save.start_auto_save.start_auto_save import start_auto_save
-from je_editor.ui.ui_event.close.close_event import close_event
-from je_editor.ui.ui_event.execute.execute_code.exec_code import execute_code
-from je_editor.ui.ui_event.execute.execute_shell_command.run_on_shell import execute_shell_command
-from je_editor.ui.ui_event.open_file.open_file_to_read.open_file_to_read import open_file_to_read
-from je_editor.ui.ui_event.open_file.open_last_edit_file.open_last_edit_file import open_last_edit_file
-from je_editor.ui.ui_event.save_file.save_file_to_open.save_file_to_open import save_file_to_open
-from je_editor.ui.ui_event.save_file.save_file_to_open.save_file_to_open import save_file_then_can_run
-from je_editor.ui.ui_event.tag_keyword.tag_keyword import HighlightText
-from je_editor.ui.ui_utils.editor_content.content_save import open_content_and_start
-from je_editor.ui.ui_event.text_process.program_exec.exec_text import ExecManager
-from je_editor.ui.ui_event.text_process.program_exec.process_error import process_error_text
-from je_editor.ui.ui_utils.font.font import get_font
 from je_editor.ui.ui_event.change_font.change_font import change_font
 from je_editor.ui.ui_event.change_font.change_font import change_font_size
-from je_editor.ui.ui_event.execute.execute_code.exec_code import stop_program
-from je_editor.ui.ui_utils.encoding.encoding_data_module import encoding_list
+from je_editor.ui.ui_event.close.close_event import close_event
 from je_editor.ui.ui_event.encoding.set_encoding import set_encoding
+from je_editor.ui.ui_event.execute.execute_code.exec_code import execute_code
+from je_editor.ui.ui_event.execute.execute_code.exec_code import stop_program
+from je_editor.ui.ui_event.execute.execute_shell_command.run_on_shell import execute_shell_command
 from je_editor.ui.ui_event.language.set_language import set_language
-from je_editor.ui.ui_utils.language.language_data_module import language_list
+from je_editor.ui.ui_event.open_file.open_file_to_read.open_file_to_read import open_file_to_read
+from je_editor.ui.ui_event.open_file.open_last_edit_file.open_last_edit_file import open_last_edit_file
+from je_editor.ui.ui_event.save_file.save_file_to_open.save_file_to_open import save_file_then_can_run
+from je_editor.ui.ui_event.save_file.save_file_to_open.save_file_to_open import save_file_to_open
+from je_editor.ui.ui_event.tag_keyword.tag_keyword import HighlightText
+from je_editor.ui.ui_event.text_process.program_exec.exec_text import ExecManager
+from je_editor.ui.ui_event.text_process.program_exec.process_error import process_error_text
+from je_editor.ui.ui_utils.editor_content.content_save import open_content_and_start
 from je_editor.ui.ui_utils.editor_content.editor_data import editor_data_dict
+from je_editor.ui.ui_utils.encoding.encoding_data_module import encoding_list
+from je_editor.ui.ui_utils.font.font import get_font
+from je_editor.ui.ui_utils.language.language_data_module import language_list
 from je_editor.ui.ui_utils.language_data_module.language_compiler_data_module import language_compiler
 from je_editor.ui.ui_utils.language_data_module.language_param_data_module import language_compiler_param
 from je_editor.utils.exception.je_editor_exceptions import JEditorContentFileException
@@ -122,22 +122,23 @@ class EditorMain(object):
         except JEditorContentFileException as error:
             print(repr(error), file=sys.stderr)
         self.highlight_text.search()
-        print("language_compiler_param: " + language_compiler_param)
-        print("language_compiler: " + language_compiler)
-        print("language_list: " + language_list)
+        print("language_compiler_param: " + str(language_compiler_param))
+        print("language_compiler: " + str(language_compiler))
+        print("language_list: " + str(language_list))
 
     # default event
     def do_test(self, event=None):
-        self.test_run = True
+        self.debug_run = True
         print("test")
 
-    def __init__(self, use_theme=None, main_window=Tk()):
+    def __init__(self, use_theme=None, debug = False, main_window=Tk()):
         """
         :param use_theme: what theme editor used
         :param main_window: Tk instance
         """
         # is this test run?
-        self.test_run = False
+        if debug:
+            self.debug_run = True
         # Auto save thread
         self.auto_save_thread = None
         # current file
@@ -176,7 +177,8 @@ class EditorMain(object):
         )
         self.main_window.bind(
             "<Control-Key-F6>",
-            lambda bind_exec_shell_command: execute_shell_command(self.program_run_result_textarea, self.code_editor_textarea)
+            lambda bind_exec_shell_command: execute_shell_command(self.program_run_result_textarea,
+                                                                  self.code_editor_textarea)
         )
         # Menubar
         # Main menu
@@ -264,7 +266,8 @@ class EditorMain(object):
         for i in range(12, 36, 2):
             self.text_size_sub_menu.add_command(
                 label=str(i),
-                command=lambda font_size=i: change_font_size(self.code_editor_textarea, self.program_run_result_textarea,
+                command=lambda font_size=i: change_font_size(self.code_editor_textarea,
+                                                             self.program_run_result_textarea,
                                                              font_size)
             )
         # Language menu
@@ -288,12 +291,14 @@ class EditorMain(object):
         self.menu.add_cascade(label="Encoding", menu=self.encoding_menu)
         self.menu.add_cascade(label="Language", menu=self.language_menu)
         self.main_window.config(menu=self.menu)
+        if self.debug_run:
+            self.close_event()
 
     def use_choose_theme(self, use_theme=None):
         self.style.theme_use(use_theme)
 
 
-def start_editor(use_theme=None):
-    new_editor = EditorMain(use_theme=use_theme)
+def start_editor(use_theme=None, **kwargs):
+    new_editor = EditorMain(use_theme=use_theme, **kwargs)
     new_editor.start_editor()
     return new_editor
