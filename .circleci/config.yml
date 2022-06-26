@@ -54,7 +54,10 @@ jobs:
       - run:
           command: python ./test/unit_test/file/save_and_open/save_and_open.py
           name: save_and_open_test
-
+      # open and close editor
+      - run:
+          command: python ./test/unit_test/tkinter_test/editor/editor_with_theme.py
+          name: open_and_close_editor
 
 
 workflows:
