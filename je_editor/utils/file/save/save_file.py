@@ -5,10 +5,7 @@ from threading import Lock
 from threading import Thread
 from tkinter import filedialog
 
-from je_editor.utils.exception.je_editor_exceptions import JEditorSaveFileException
-
-cwd = os.getcwd()
-lock = Lock()
+from je_editor.utils.exception.exceptions import JEditorSaveFileException
 
 
 def write_file(file, content):
@@ -22,6 +19,7 @@ def write_file(file, content):
     finally
         release lock
     """
+    lock = Lock()
     content = str(content)
     try:
         lock.acquire()
@@ -43,6 +41,7 @@ def save_file(content):
         len(file) = 0 or ""
         :return ""
     """
+    cwd = os.getcwd()
     file = filedialog.asksaveasfilename(title="Save File",
                                         initialdir=cwd,
                                         defaultextension="*.*",

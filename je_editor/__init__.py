@@ -1,4 +1,4 @@
-from je_editor.utils.exception.je_editor_exceptions import *
+from je_editor.utils.exception.exceptions import *
 # exec code
 # editor content
 # file

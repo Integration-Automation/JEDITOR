@@ -27,7 +27,7 @@ from je_editor.ui.ui_utils.font.font import get_font
 from je_editor.ui.ui_utils.language.language_data_module import language_list
 from je_editor.ui.ui_utils.language_data_module.language_compiler_data_module import language_compiler
 from je_editor.ui.ui_utils.language_data_module.language_param_data_module import language_compiler_param
-from je_editor.utils.exception.je_editor_exceptions import JEditorContentFileException
+from je_editor.utils.exception.exceptions import JEditorContentFileException
 
 
 class EditorMain(object):

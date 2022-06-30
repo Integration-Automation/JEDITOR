@@ -3,9 +3,9 @@ import sys
 from json import dumps
 from json import loads
 
-from je_editor.utils.exception.je_editor_exception_tag import je_editor_cant_reformat_json_error
-from je_editor.utils.exception.je_editor_exception_tag import je_editor_wrong_json_data_error
-from je_editor.utils.exception.je_editor_exceptions import JEditorJsonException
+from je_editor.utils.exception.exception_tags import je_editor_cant_reformat_json_error
+from je_editor.utils.exception.exception_tags import je_editor_wrong_json_data_error
+from je_editor.utils.exception.exceptions import JEditorJsonException
 
 
 def __process_json(json_string: str, **kwargs):

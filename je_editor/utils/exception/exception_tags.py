@@ -25,7 +25,6 @@ je_editor_wrong_json_data_error = "Can't parser json"
 """
 content data error
 """
-# TODO THIS EXCEPTION
 je_editor_content_set_compiler_error = "When set compiler using content make an error"
 je_editor_content_file_error = "JEditor content file error"
 

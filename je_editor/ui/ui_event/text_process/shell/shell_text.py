@@ -1,6 +1,6 @@
 import subprocess
 
-from je_editor.utils.exception.je_editor_exceptions import JEditorRunOnShellException
+from je_editor.utils.exception.exceptions import JEditorRunOnShellException
 
 
 def run_on_shell(run_source):
