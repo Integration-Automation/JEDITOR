@@ -131,14 +131,13 @@ class EditorMain(object):
         self.debug_run = True
         print("test")
 
-    def __init__(self, use_theme=None, debug = False, main_window=Tk()):
+    def __init__(self, use_theme=None, debug=False, main_window=Tk()):
         """
         :param use_theme: what theme editor used
         :param main_window: Tk instance
         """
         # is this test run?
-        if debug:
-            self.debug_run = True
+        self.debug_run = debug
         # Auto save thread
         self.auto_save_thread = None
         # current file
