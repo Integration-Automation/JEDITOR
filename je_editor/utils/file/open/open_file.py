@@ -3,10 +3,7 @@ from pathlib import Path
 from threading import Lock
 from tkinter import filedialog
 
-from je_editor.utils.exception.je_editor_exceptions import JEditorOpenFileException
-
-cwd = os.getcwd()
-lock = Lock()
+from je_editor.utils.exception.exceptions import JEditorOpenFileException
 
 
 def read_file(file):
@@ -22,6 +19,7 @@ def read_file(file):
     finally
         release lock
     """
+    lock = Lock()
     try:
         lock.acquire()
         if file != "" and file is not None:
@@ -43,6 +41,7 @@ def open_file():
         len(file) = 0 or ""
         :return ""
     """
+    cwd = os.getcwd()
     file = filedialog.askopenfilename(title="Open File",
                                       initialdir=cwd,
                                       defaultextension="*.*",
