@@ -35,6 +35,8 @@ class EditorMain(object):
     # start editor and start auto save if auto save not start
     def start_editor(self):
         self.auto_save_thread = start_auto_save(self.auto_save_thread, self.current_file, self.code_editor_textarea)
+        if self.debug_run:
+            self.close_event()
         self.main_window.mainloop()
 
     # editor close event
@@ -290,8 +292,6 @@ class EditorMain(object):
         self.menu.add_cascade(label="Encoding", menu=self.encoding_menu)
         self.menu.add_cascade(label="Language", menu=self.language_menu)
         self.main_window.config(menu=self.menu)
-        if self.debug_run:
-            self.close_event()
 
     def use_choose_theme(self, use_theme=None):
         self.style.theme_use(use_theme)
