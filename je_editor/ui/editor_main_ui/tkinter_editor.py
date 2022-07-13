@@ -156,17 +156,23 @@ class EditorMain(object):
         self.code_edit_frame = ttk.Frame(self.main_window, padding="3 3 12 12")
         self.program_run_result_frame = ttk.Frame(self.main_window, padding="3 3 12 12")
         # set code edit
-        self.code_editor_textarea = Text(self.code_edit_frame, undo=True, autoseparators=True, maxundo=-1)
+        self.code_editor_textarea = Text(self.code_edit_frame, undo=True, autoseparators=True, maxundo=-1, wrap="none")
         self.code_editor_textarea.configure(state="normal")
         self.code_editor_textarea.config(tabs="1c")
         self.code_editor_textarea_scrollbar_y = ttk.Scrollbar(self.code_edit_frame, orient="vertical",
                                                               command=self.code_editor_textarea.yview)
+        self.code_editor_textarea_scrollbar_x = ttk.Scrollbar(self.code_edit_frame, orient="horizontal",
+                                                              command=self.code_editor_textarea.xview)
         self.code_editor_textarea["yscrollcommand"] = self.code_editor_textarea_scrollbar_y.set
+        self.code_editor_textarea["xscrollcommand"] = self.code_editor_textarea_scrollbar_x.set
         # run result
-        self.program_run_result_textarea = Text(self.program_run_result_frame)
+        self.program_run_result_textarea = Text(self.program_run_result_frame, wrap="none")
         self.program_run_result_textarea_scrollbar_y = ttk.Scrollbar(self.program_run_result_frame, orient="vertical",
                                                                      command=self.program_run_result_textarea.yview)
+        self.program_run_result_textarea_scrollbar_x = ttk.Scrollbar(self.program_run_result_frame, orient="horizontal",
+                                                                     command=self.program_run_result_textarea.xview)
         self.program_run_result_textarea["yscrollcommand"] = self.program_run_result_textarea_scrollbar_y.set
+        self.program_run_result_textarea["xscrollcommand"] = self.program_run_result_textarea_scrollbar_x.set
         # close event
         self.main_window.protocol("WM_DELETE_WINDOW", self.close_event)
         # bind
@@ -221,8 +227,10 @@ class EditorMain(object):
         self.main_window.grid_rowconfigure(1, weight=1)
         self.code_editor_textarea.grid(column=0, row=0, sticky="nsew")
         self.code_editor_textarea_scrollbar_y.grid(column=1, row=0, sticky="ns")
+        self.code_editor_textarea_scrollbar_x.grid(column=0, row=2, sticky="nsew")
         self.program_run_result_textarea.grid(column=0, row=1, sticky="nsew")
         self.program_run_result_textarea_scrollbar_y.grid(column=1, row=1, sticky="ns")
+        self.program_run_result_textarea_scrollbar_x.grid(column=0, row=3, sticky="nsew")
         # bind and config
         self.program_run_result_textarea.configure(state="disabled")
         self.program_run_result_textarea.bind("<1>", lambda event: self.program_run_result_textarea.focus_set())

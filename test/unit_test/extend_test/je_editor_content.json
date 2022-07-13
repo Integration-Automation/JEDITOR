@@ -2,7 +2,9 @@
     "encoding": "utf-8",
     "font": "TkDefaultFont",
     "font_size": 12,
-    "language": ["python3", "java"],
+    "language": [
+        "python3"
+    ],
     "language_compiler_param": null,
     "language_precompiler": null,
     "last_file": null,
