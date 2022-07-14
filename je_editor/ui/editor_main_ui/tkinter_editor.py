@@ -7,6 +7,7 @@ from tkinter import ttk
 from je_editor.ui.ui_event.auto_save.start_auto_save.start_auto_save import start_auto_save
 from je_editor.ui.ui_event.change_font.change_font import change_font
 from je_editor.ui.ui_event.change_font.change_font import change_font_size
+from je_editor.ui.ui_event.clear_result.clear_result import clear_result_area
 from je_editor.ui.ui_event.close.close_event import close_event
 from je_editor.ui.ui_event.encoding.set_encoding import set_encoding
 from je_editor.ui.ui_event.execute.execute_code.exec_code import execute_code
@@ -299,6 +300,11 @@ class EditorMain(object):
         self.menu.add_cascade(label="Text", menu=self.text_menu)
         self.menu.add_cascade(label="Encoding", menu=self.encoding_menu)
         self.menu.add_cascade(label="Language", menu=self.language_menu)
+        self.menu.add_cascade(
+            label="Clean Result", command=lambda: clear_result_area(
+                self.program_run_result_textarea
+            )
+        )
         self.main_window.config(menu=self.menu)
 
     def use_choose_theme(self, use_theme=None):
