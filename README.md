@@ -49,7 +49,7 @@ the Apple-supplied Tcl/Tk 8.5 has serious bugs that can cause application crashe
 ```
 * on linux ubuntu use 
 ```commandline 
-sudo sudo apt-get install python3-tk
+sudo apt-get install python3-tk
 ```
 * on fedora use
 ```commandline

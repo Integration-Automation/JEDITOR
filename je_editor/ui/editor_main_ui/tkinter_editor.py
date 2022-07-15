@@ -1,3 +1,4 @@
+import os
 import sys
 from tkinter import Menu
 from tkinter import Text
@@ -139,6 +140,7 @@ class EditorMain(object):
         :param use_theme: what theme editor used
         :param main_window: Tk instance
         """
+        os.environ["PYTHONUNBUFFERED"] = "1"
         # is this test run?
         self.debug_run = debug
         # Auto save thread
@@ -204,13 +206,6 @@ class EditorMain(object):
         self.encoding_menu = Menu(self.menu, tearoff=0)
         # Language menu
         self.language_menu = Menu(self.menu, tearoff=0)
-        # Popup menu
-        self.popup_menu = Menu(self.main_window, tearoff=0)
-        self.popup_menu.add_separator()
-        self.popup_menu.add_cascade(label="File", menu=self.file_menu)
-        self.popup_menu.add_cascade(label="Text", menu=self.text_menu)
-        self.popup_menu.add_cascade(label="Encoding", menu=self.encoding_menu)
-        self.popup_menu.add_cascade(label="Language", menu=self.language_menu)
         if self.current_file is not None:
             self.auto_save_thread = start_auto_save(self.auto_save_thread, self.current_file, self.code_editor_textarea)
         self.exec_manager = ExecManager(
@@ -287,13 +282,28 @@ class EditorMain(object):
                 command=lambda choose_language=language_list[i]: set_language(self.exec_manager, choose_language)
             )
         # Popup menu
+        self.popup_menu = Menu(self.main_window, tearoff=0)
+        self.popup_menu.add_separator()
+        self.popup_menu.add_cascade(label="File", menu=self.file_menu)
+        self.popup_menu.add_cascade(label="Text", menu=self.text_menu)
+        self.popup_menu.add_cascade(label="Encoding", menu=self.encoding_menu)
+        self.popup_menu.add_cascade(label="Language", menu=self.language_menu)
         self.popup_menu.add_command(
             label="Run",
             command=self.ui_execute_program
         )
         self.popup_menu.add_command(
+            label="Stop",
+            command=lambda: stop_program(self.exec_manager)
+        )
+        self.popup_menu.add_command(
             label="Run on shell",
             command=lambda: execute_shell_command(self.program_run_result_textarea, self.code_editor_textarea)
+        )
+        self.popup_menu.add_command(
+            label="Clean Result", command=lambda: clear_result_area(
+                self.program_run_result_textarea
+            )
         )
         # add and config
         self.menu.add_cascade(label="File", menu=self.file_menu)
