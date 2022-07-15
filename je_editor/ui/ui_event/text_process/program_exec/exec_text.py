@@ -2,6 +2,8 @@ import os.path
 import queue
 import shutil
 import subprocess
+import sys
+import time
 from pathlib import Path
 from threading import Thread
 from tkinter import DISABLED
@@ -53,64 +55,66 @@ class ExecManager(object):
         :param exec_file_name: string file will open to run
         :return: if error return result and True else return result and False
         """
-        self.exit_program()
-        self.running_menu.entryconfigure(1, label="Rerun")
-        self.running_menu.entryconfigure(3, state="normal")
-        self.run_program_result_textarea.configure(state=NORMAL)
-        self.run_program_result_textarea.delete("1.0", "end-1c")
-        self.run_program_result_textarea.configure(state=DISABLED)
-        reformat_os_file_path = os.path.abspath(exec_file_name)
-        # detect file is exist
         try:
-            if not Path(exec_file_name).exists():
-                raise JEditorExecException(file_not_fond_error)
-        except OSError as error:
-            raise JEditorExecException(error)
-        compiler_path = shutil.which(self.program_language)
-        if compiler_path is None and self.program_language == "python3":
-            compiler_path = shutil.which("python")
-        if compiler_path is None:
-            raise JEditorExecException(je_editor_compiler_not_found_error)
-        exec_file = reformat_os_file_path
+            self.exit_program()
+            self.running_menu.entryconfigure(1, label="Rerun")
+            self.running_menu.entryconfigure(3, state="normal")
+            self.run_program_result_textarea.configure(state=NORMAL)
+            self.run_program_result_textarea.delete("1.0", "end-1c")
+            self.run_program_result_textarea.configure(state=DISABLED)
+            reformat_os_file_path = os.path.abspath(exec_file_name)
+            # detect file is exist
+            try:
+                if not Path(exec_file_name).exists():
+                    raise JEditorExecException(file_not_fond_error)
+            except OSError as error:
+                raise JEditorExecException(error)
+            compiler_path = shutil.which(self.program_language)
+            if compiler_path is None and self.program_language == "python3":
+                compiler_path = shutil.which("python")
+            if compiler_path is None:
+                raise JEditorExecException(je_editor_compiler_not_found_error)
+            exec_file = reformat_os_file_path
 
-        # precompile
-        if self.program_language in language_compiler:
+            # precompile
+            if self.program_language in language_compiler:
+                self.process = subprocess.Popen(
+                    [
+                        shutil.which(language_compiler.get(self.program_language)),
+                        language_compiler_param.get(self.program_language),
+                        reformat_os_file_path
+                    ],
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                )
+                while self.process.returncode is None:
+                    self.process.poll()
+            # run program
+            execute_program_list = [compiler_path, exec_file]
             self.process = subprocess.Popen(
-                [
-                    shutil.which(language_compiler.get(self.program_language)),
-                    language_compiler_param.get(self.program_language),
-                    reformat_os_file_path
-                ],
+                execute_program_list,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
-                shell=False
             )
-            while self.process.returncode is None:
-                self.process.poll()
-        # run program
-        execute_program_list = [compiler_path, exec_file]
-        self.process = subprocess.Popen(
-            execute_program_list,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            shell=False)
-        self.still_run_program = True
-        # program output message queue thread
-        self.read_program_output_from_thread = Thread(
-            target=self.read_program_output_from_process,
-            daemon=True
-        ).start()
-        # program error message queue thread
-        self.read_program_error_output_from_thread = Thread(
-            target=self.read_program_error_output_from_process,
-            daemon=True
-        ).start()
-        # show which file execute
-        self.run_program_result_textarea.configure(state=NORMAL)
-        self.run_program_result_textarea.insert(END, compiler_path + " " + reformat_os_file_path + "\n")
-        self.run_program_result_textarea.configure(state=DISABLED)
-        # start ui update
-        self.edit_tkinter_text()
+            self.still_run_program = True
+            # program output message queue thread
+            self.read_program_output_from_thread = Thread(
+                target=self.read_program_output_from_process,
+                daemon=True
+            ).start()
+            # program error message queue thread
+            self.read_program_error_output_from_thread = Thread(
+                target=self.read_program_error_output_from_process,
+                daemon=True
+            ).start()
+            # show which file execute
+            self.run_program_result_textarea.configure(state=NORMAL)
+            self.run_program_result_textarea.insert(END, compiler_path + " " + reformat_os_file_path + "\n")
+            self.run_program_result_textarea.configure(state=DISABLED)
+            # start ui update
+            self.edit_tkinter_text()
+        except Exception as error:
+            print(repr(error))
 
     # ui update method
     def edit_tkinter_text(self):
