@@ -2,8 +2,6 @@ import os.path
 import queue
 import shutil
 import subprocess
-import sys
-import time
 from pathlib import Path
 from threading import Thread
 from tkinter import DISABLED
