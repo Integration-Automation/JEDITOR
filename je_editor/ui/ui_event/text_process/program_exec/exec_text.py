@@ -9,7 +9,7 @@ from tkinter import END
 from tkinter import NORMAL
 
 from je_editor.utils.exception.exception_tags import file_not_fond_error
-from je_editor.utils.exception.exception_tags import je_editor_compiler_not_found_error
+from je_editor.utils.exception.exception_tags import compiler_not_found_error
 from je_editor.utils.exception.exceptions import JEditorExecException
 
 from je_editor.ui.ui_utils.language_data_module.language_compiler_data_module import language_compiler
@@ -71,9 +71,8 @@ class ExecManager(object):
             if compiler_path is None and self.program_language == "python3":
                 compiler_path = shutil.which("python")
             if compiler_path is None:
-                raise JEditorExecException(je_editor_compiler_not_found_error)
+                raise JEditorExecException(compiler_not_found_error)
             exec_file = reformat_os_file_path
-
             # precompile
             if self.program_language in language_compiler:
                 self.process = subprocess.Popen(
@@ -148,10 +147,10 @@ class ExecManager(object):
 
     def read_program_output_from_process(self):
         while self.still_run_program:
-            program_output_data = self.process.stdout.raw.read(1024).decode(self.program_encoding)
+            program_output_data = self.process.stdout.raw.read().decode(self.program_encoding)
             self.run_output_queue.put(program_output_data)
 
     def read_program_error_output_from_process(self):
         while self.still_run_program:
-            program_error_output_data = self.process.stderr.raw.read(1024).decode(self.program_encoding)
+            program_error_output_data = self.process.stderr.raw.read().decode(self.program_encoding)
             self.run_error_queue.put(program_error_output_data)
