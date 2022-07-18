@@ -92,6 +92,7 @@ class ExecManager(object):
                 execute_program_list,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
+                shell=False
             )
             self.still_run_program = True
             # program output message queue thread
@@ -140,17 +141,20 @@ class ExecManager(object):
             self.read_program_output_from_thread = None
         if self.read_program_error_output_from_thread is not None:
             self.read_program_error_output_from_thread = None
-        self.run_output_queue = queue.Queue()
-        self.run_error_queue = queue.Queue()
+        self.print_and_clear_queue()
         if self.process is not None:
             self.process.terminate()
 
+    def print_and_clear_queue(self):
+        self.run_output_queue = queue.Queue()
+        self.run_error_queue = queue.Queue()
+
     def read_program_output_from_process(self):
         while self.still_run_program:
-            program_output_data = self.process.stdout.raw.read().decode(self.program_encoding)
-            self.run_output_queue.put(program_output_data)
+            program_output_data = self.process.stdout.raw.read(1024000).decode(self.program_encoding)
+            self.run_output_queue.put_nowait(program_output_data)
 
     def read_program_error_output_from_process(self):
         while self.still_run_program:
-            program_error_output_data = self.process.stderr.raw.read().decode(self.program_encoding)
-            self.run_error_queue.put(program_error_output_data)
+            program_error_output_data = self.process.stderr.raw.read(1024000).decode(self.program_encoding)
+            self.run_error_queue.put_nowait(program_error_output_data)
