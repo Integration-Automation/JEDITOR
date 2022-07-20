@@ -39,7 +39,8 @@ class EditorMain(object):
         self.auto_save_thread = start_auto_save(self.auto_save_thread, self.current_file, self.code_editor_textarea)
         if self.debug_run:
             self.close_event()
-        self.main_window.mainloop()
+        else:
+            self.main_window.mainloop()
 
     # editor close event
     def close_event(self):
@@ -132,8 +133,7 @@ class EditorMain(object):
 
     # default event
     def do_test(self, event=None):
-        self.debug_run = True
-        print("test")
+        print(self.debug_run)
 
     def __init__(self, use_theme=None, debug=False, main_window=Tk()):
         """
