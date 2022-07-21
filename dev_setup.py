@@ -5,7 +5,7 @@ with open("README.md", "r") as README:
 
 setuptools.setup(
     name="je_editor_dev",
-    version="0.0.30",
+    version="0.0.32",
     author="JE-Chen",
     author_email="zenmailman@gmail.com",
     description="simple editor",

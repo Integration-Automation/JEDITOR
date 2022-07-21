@@ -116,15 +116,20 @@ class ExecManager(object):
 
     # ui update method
     def edit_tkinter_text(self):
-        self.run_program_result_textarea.configure(state=NORMAL)
-        if not self.run_error_queue.empty():
-            error_message = self.run_error_queue.get_nowait()
-            self.process_error_function(self.run_program_result_textarea, error_message)
-        if not self.run_output_queue.empty():
-            output_message = self.run_output_queue.get_nowait()
-            self.run_program_result_textarea.insert(END, output_message)
-        self.run_program_result_textarea.configure(state=DISABLED)
-        if self.process.returncode is not None:
+        try:
+            self.run_program_result_textarea.configure(state=NORMAL)
+            if not self.run_error_queue.empty():
+                error_message = self.run_error_queue.get_nowait()
+                self.process_error_function(self.run_program_result_textarea, error_message)
+            if not self.run_output_queue.empty():
+                output_message = self.run_output_queue.get_nowait()
+                self.run_program_result_textarea.insert(END, output_message)
+            self.run_program_result_textarea.configure(state=DISABLED)
+        except queue.Empty:
+            pass
+        if self.process.returncode == 0:
+            self.exit_program()
+        elif self.process.returncode is not None:
             self.exit_program()
         if self.still_run_program:
             self.main_window.after(1, self.edit_tkinter_text)
@@ -146,6 +151,15 @@ class ExecManager(object):
             self.process.terminate()
 
     def print_and_clear_queue(self):
+        try:
+            self.run_program_result_textarea.configure(state=NORMAL)
+            for std_output in iter(self.run_output_queue.get_nowait, None):
+                self.run_program_result_textarea.insert(END, std_output + "\n")
+            for std_err in iter(self.run_error_queue.get_nowait, None):
+                self.run_program_result_textarea.insert(END, std_err, "warning", "\n")
+            self.run_program_result_textarea.configure(state=DISABLED)
+        except queue.Empty:
+            pass
         self.run_output_queue = queue.Queue()
         self.run_error_queue = queue.Queue()
 
