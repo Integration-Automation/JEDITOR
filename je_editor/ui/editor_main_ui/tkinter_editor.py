@@ -127,9 +127,6 @@ class EditorMain(object):
         except JEditorContentFileException as error:
             print(repr(error), file=sys.stderr)
         self.highlight_text.search()
-        print("language_compiler_param: " + str(language_compiler_param))
-        print("language_compiler: " + str(language_compiler))
-        print("language_list: " + str(language_list))
 
     # default event
     def do_test(self, event=None):
