@@ -1,5 +1,5 @@
-from je_editor.ui.ui_utils.font.font import create_new_font
-from je_editor.ui.ui_utils.editor_content.editor_data import editor_data_dict
+from je_editor.utils.font.font import create_new_font
+from je_editor.utils.editor_content.editor_data import editor_data_dict
 from tkinter.font import Font
 
 

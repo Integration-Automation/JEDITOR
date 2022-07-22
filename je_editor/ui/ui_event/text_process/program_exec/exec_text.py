@@ -12,8 +12,8 @@ from je_editor.utils.exception.exception_tags import file_not_fond_error
 from je_editor.utils.exception.exception_tags import compiler_not_found_error
 from je_editor.utils.exception.exceptions import JEditorExecException
 
-from je_editor.ui.ui_utils.language_data_module.language_compiler_data_module import language_compiler
-from je_editor.ui.ui_utils.language_data_module.language_param_data_module import language_compiler_param
+from je_editor.utils.language_data_module.language_compiler_data_module import language_compiler
+from je_editor.utils.language_data_module.language_param_data_module import language_compiler_param
 
 
 class ExecManager(object):
@@ -24,7 +24,7 @@ class ExecManager(object):
             process_error_function,
             main_window,
             running_menu,
-            program_language="python3",
+            program_language="python",
             program_encoding="utf-8"
     ):
         """
@@ -68,8 +68,8 @@ class ExecManager(object):
             except OSError as error:
                 raise JEditorExecException(error)
             compiler_path = shutil.which(self.program_language)
-            if compiler_path is None and self.program_language == "python3":
-                compiler_path = shutil.which("python")
+            if compiler_path is None and self.program_language == "python":
+                compiler_path = shutil.which("python3")
             if compiler_path is None:
                 raise JEditorExecException(compiler_not_found_error)
             exec_file = reformat_os_file_path

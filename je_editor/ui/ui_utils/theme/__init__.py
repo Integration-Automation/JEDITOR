@@ -1,1 +1,0 @@
-from je_editor.ui.ui_utils.theme.theme import theme_dict

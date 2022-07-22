@@ -1,1 +1,0 @@
-from je_editor.ui.ui_utils.string_translate.used_string import *

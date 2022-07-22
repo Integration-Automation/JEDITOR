@@ -1,4 +1,4 @@
-from je_editor.ui.ui_utils.editor_content.editor_data import editor_data_dict
+from je_editor.utils.editor_content.editor_data import editor_data_dict
 
 
 def set_encoding(exec_manager, encoding):
