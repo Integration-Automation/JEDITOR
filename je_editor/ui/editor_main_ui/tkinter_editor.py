@@ -22,13 +22,13 @@ from je_editor.ui.ui_event.save_file.save_file_to_open.save_file_to_open import 
 from je_editor.ui.ui_event.tag_keyword.tag_keyword import HighlightText
 from je_editor.ui.ui_event.text_process.program_exec.exec_text import ExecManager
 from je_editor.ui.ui_event.text_process.program_exec.process_error import process_error_text
-from je_editor.ui.ui_utils.editor_content.content_save import open_content_and_start
-from je_editor.ui.ui_utils.editor_content.editor_data import editor_data_dict
-from je_editor.ui.ui_utils.encoding.encoding_data_module import encoding_list
-from je_editor.ui.ui_utils.font.font import get_font
-from je_editor.ui.ui_utils.language.language_data_module import language_list
-from je_editor.ui.ui_utils.language_data_module.language_compiler_data_module import language_compiler
-from je_editor.ui.ui_utils.language_data_module.language_param_data_module import language_compiler_param
+from je_editor.utils.editor_content.content_save import open_content_and_start
+from je_editor.utils.editor_content.editor_data import editor_data_dict
+from je_editor.utils.encoding.encoding_data_module import encoding_list
+from je_editor.utils.font.font import get_font
+from je_editor.utils.language.language_data_module import language_list
+from je_editor.utils.language_data_module.language_compiler_data_module import language_compiler
+from je_editor.utils.language_data_module.language_param_data_module import language_compiler_param
 from je_editor.utils.exception.exceptions import JEditorContentFileException
 
 
@@ -307,7 +307,7 @@ class EditorMain(object):
         self.menu.add_cascade(label="Text", menu=self.text_menu)
         self.menu.add_cascade(label="Encoding", menu=self.encoding_menu)
         self.menu.add_cascade(label="Language", menu=self.language_menu)
-        self.menu.add_cascade(
+        self.menu.add_command(
             label="Clean Result", command=lambda: clear_result_area(
                 self.program_run_result_textarea
             )
@@ -322,3 +322,4 @@ def start_editor(use_theme=None, **kwargs):
     new_editor = EditorMain(use_theme=use_theme, **kwargs)
     new_editor.start_editor()
     return new_editor
+

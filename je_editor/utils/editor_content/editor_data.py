@@ -1,4 +1,4 @@
-from je_editor.ui.ui_utils.theme.theme import theme_dict
+from je_editor.utils.theme.theme import theme_dict
 
 
 """

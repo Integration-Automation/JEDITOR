@@ -1,4 +1,4 @@
-from je_editor.ui.ui_utils.editor_content.content_save import save_content_and_quit
+from je_editor.utils.editor_content.content_save import save_content_and_quit
 
 
 def close_event(tkinter_window, exec_manager):

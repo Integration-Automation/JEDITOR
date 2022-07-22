@@ -1,8 +1,8 @@
 from tkinter import Tk
 from tkinter import Text
 
-from je_editor.ui.ui_utils.font.font import get_font
-from je_editor.ui.ui_utils.font.font import create_new_font
+from je_editor.utils.font.font import get_font
+from je_editor.utils.font.font import create_new_font
 
 test_root = Tk()
 font_list = get_font(test_root)
