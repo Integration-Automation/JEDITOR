@@ -144,6 +144,7 @@ class EditorMain(object):
         :param main_window: Tk instance
         """
         # ui param
+        self.popup_menu = None
         self.program_run_result_textarea = None
         self.code_editor_textarea = None
         self.main_window = None
