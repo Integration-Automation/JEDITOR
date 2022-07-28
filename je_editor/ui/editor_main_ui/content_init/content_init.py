@@ -51,7 +51,8 @@ def content_init(editor_instance):
                     editor_data_dict["language_precompiler"] = editor_instance.file_from_output_content.get(
                         "language_precompiler")
                 if editor_instance.file_from_output_content.get("language_compiler_param") is not None:
-                    language_compiler_param.update(editor_instance.file_from_output_content.get("language_compiler_param"))
+                    language_compiler_param.update(editor_instance.file_from_output_content.get(
+                        "language_compiler_param"))
                     editor_data_dict["language_compiler_param"] = editor_instance.file_from_output_content.get(
                         "language_compiler_param")
             except JEditorContentFileException as error:
@@ -59,7 +60,13 @@ def content_init(editor_instance):
             if editor_instance.file_from_output_content.get("tab_size") is not None:
                 editor_data_dict["tab_size"] = editor_instance.file_from_output_content.get(
                     "tab_size")
-                editor_instance.code_editor_textarea.config(tabs=editor_instance.file_from_output_content.get("tab_size"))
+                editor_instance.code_editor_textarea.config(
+                    tabs=editor_instance.file_from_output_content.get("tab_size"))
+            if editor_instance.file_from_output_content.get("program_buffer") is not None:
+                editor_data_dict["program_buffer"] = editor_instance.file_from_output_content.get(
+                    "program_buffer")
+                editor_instance.exec_manager.program_buffer = int(editor_data_dict["program_buffer"])
+
     except JEditorContentFileException as error:
         print(repr(error), file=sys.stderr)
     editor_instance.highlight_text.search()

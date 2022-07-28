@@ -10,11 +10,12 @@ if you want to add param you can edit language_compiler_param
 editor_data_dict = {
     "last_file": None,
     "theme": theme_dict,
-    "language": ["python3"],
+    "language": ["python3", "python"],
     "language_precompiler": None,
     "language_compiler_param": None,
     "encoding": "utf-8",
     "font": "TkDefaultFont",
     "font_size": 12,
     "tab_size": "1c",
+    "program_buffer": 10240000,
 }
