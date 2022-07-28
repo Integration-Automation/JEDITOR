@@ -25,7 +25,8 @@ class ExecManager(object):
             main_window,
             running_menu,
             program_language="python",
-            program_encoding="utf-8"
+            program_encoding="utf-8",
+            program_buffer=10240000,
     ):
         """
         :param program_run_result_textarea:  program run result textarea
@@ -47,6 +48,7 @@ class ExecManager(object):
         self.program_language = program_language
         self.running_menu = running_menu
         self.program_encoding = program_encoding
+        self.program_buffer = program_buffer
 
     def exec_code(self, exec_file_name):
         """
@@ -165,10 +167,10 @@ class ExecManager(object):
 
     def read_program_output_from_process(self):
         while self.still_run_program:
-            program_output_data = self.process.stdout.raw.read(1024000).decode(self.program_encoding)
+            program_output_data = self.process.stdout.raw.read(self.program_buffer).decode(self.program_encoding)
             self.run_output_queue.put_nowait(program_output_data)
 
     def read_program_error_output_from_process(self):
         while self.still_run_program:
-            program_error_output_data = self.process.stderr.raw.read(1024000).decode(self.program_encoding)
+            program_error_output_data = self.process.stderr.raw.read(self.program_buffer).decode(self.program_encoding)
             self.run_error_queue.put_nowait(program_error_output_data)

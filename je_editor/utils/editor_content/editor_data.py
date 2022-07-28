@@ -17,4 +17,5 @@ editor_data_dict = {
     "font": "TkDefaultFont",
     "font_size": 12,
     "tab_size": "1c",
+    "program_buffer": 10240000,
 }

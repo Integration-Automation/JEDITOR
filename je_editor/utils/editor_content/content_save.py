@@ -6,6 +6,8 @@ from threading import Lock
 from je_editor.utils.editor_content.editor_data import editor_data_dict
 from je_editor.utils.exception.exceptions import JEditorContentFileException
 from je_editor.utils.json_format.json_process import reformat_json
+from je_editor.utils.project.create_project import check_project_is_exist, check_project_content_is_exist
+from je_editor.utils.project.create_project import create_project
 
 
 def read_output_content():
@@ -16,10 +18,11 @@ def read_output_content():
     try:
         lock.acquire()
         cwd = os.getcwd()
-        file_path = Path(cwd + "/je_editor_content.json")
-        if file_path.exists() and file_path.is_file():
-            with open(cwd + "/je_editor_content.json", "r+") as read_file:
-                return read_file.read()
+        if check_project_is_exist() and check_project_content_is_exist():
+            file_path = Path(cwd + "/.je_editor/je_editor_content.json")
+            if file_path.exists() and file_path.is_file():
+                with open(cwd + "/.je_editor/je_editor_content.json", "r+") as read_file:
+                    return read_file.read()
     except JEditorContentFileException:
         raise JEditorContentFileException
     finally:
@@ -34,8 +37,13 @@ def write_output_content():
     try:
         lock.acquire()
         cwd = os.getcwd()
-        with open(cwd + "/je_editor_content.json", "w+") as file_to_write:
-            file_to_write.write(reformat_json(json.dumps(editor_data_dict)))
+        if check_project_is_exist():
+            with open(cwd + "/.je_editor/je_editor_content.json", "w+") as file_to_write:
+                file_to_write.write(reformat_json(json.dumps(editor_data_dict)))
+        else:
+            create_project()
+            with open(cwd + "/.je_editor/je_editor_content.json", "w+") as file_to_write:
+                file_to_write.write(reformat_json(json.dumps(editor_data_dict)))
     except JEditorContentFileException:
         raise JEditorContentFileException
     finally:
