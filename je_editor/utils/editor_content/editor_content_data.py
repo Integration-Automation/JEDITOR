@@ -7,7 +7,7 @@ language_precompiler and language_compiler_param value None is right
 if you want to add param you can edit language_compiler_param
 """
 
-editor_data_dict = {
+editor_content_data_dict = {
     "last_file": None,
     "theme": theme_dict,
     "language": ["python3", "python"],

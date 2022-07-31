@@ -1,5 +1,5 @@
 from je_editor.utils.font.font import create_new_font
-from je_editor.utils.editor_content.editor_data import editor_data_dict
+from je_editor.utils.editor_content.editor_content_data import editor_content_data_dict
 from tkinter.font import Font
 
 
@@ -22,7 +22,7 @@ def change_font(program_run_result_textarea, shell_run_result_textarea, tkinter_
     current_font_size = Font(font=program_run_result_textarea["font"]).actual()["size"]
     new_font = create_new_font(tkinter_font, font_size=current_font_size)
     _config_change(program_run_result_textarea, shell_run_result_textarea, new_font)
-    editor_data_dict["font"] = tkinter_font
+    editor_content_data_dict["font"] = tkinter_font
 
 
 def change_font_size(program_run_result_textarea, shell_run_result_textarea, font_size: int):
@@ -34,4 +34,4 @@ def change_font_size(program_run_result_textarea, shell_run_result_textarea, fon
     current_font_family = Font(font=program_run_result_textarea["font"]).actual()["family"]
     new_font = create_new_font(current_font_family, font_size=font_size)
     _config_change(program_run_result_textarea, shell_run_result_textarea, new_font)
-    editor_data_dict["font_size"] = font_size
+    editor_content_data_dict["font_size"] = font_size
