@@ -21,7 +21,7 @@ from je_editor.ui.ui_event.save_file.save_file_to_open.save_file_to_open import 
 from je_editor.ui.ui_event.save_file.save_file_to_open.save_file_to_open import save_file_to_open
 from je_editor.ui.ui_event.text_process.program_exec.exec_text import ExecManager
 from je_editor.ui.ui_event.text_process.program_exec.process_error import process_error_text
-from je_editor.utils.editor_content.editor_data import editor_data_dict
+from je_editor.utils.editor_content.editor_content_data import editor_content_data_dict
 
 
 class EditorMain(object):
@@ -36,7 +36,7 @@ class EditorMain(object):
 
     # editor close event
     def close_event(self):
-        editor_data_dict["last_file"] = self.current_file
+        editor_content_data_dict["last_file"] = self.current_file
         if self.file_from_output_content is not None:
             self.file_from_output_content["last_file"] = self.current_file
         close_event(self.main_window, self.exec_manager)

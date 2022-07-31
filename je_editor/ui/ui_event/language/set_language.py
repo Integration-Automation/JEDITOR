@@ -1,4 +1,4 @@
-from je_editor.utils.editor_content.editor_data import editor_data_dict
+from je_editor.utils.editor_content.editor_content_data import editor_content_data_dict
 
 
 def set_language(exec_manager, language):
@@ -10,4 +10,4 @@ def set_language(exec_manager, language):
         exec_manager.program_language = language[0]
     else:
         exec_manager.program_language = language
-    editor_data_dict["language"] = language
+    editor_content_data_dict["language"] = language

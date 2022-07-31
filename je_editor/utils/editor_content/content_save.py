@@ -3,7 +3,7 @@ import os
 from pathlib import Path
 from threading import Lock
 
-from je_editor.utils.editor_content.editor_data import editor_data_dict
+from je_editor.utils.editor_content.editor_content_data import editor_content_data_dict
 from je_editor.utils.exception.exceptions import JEditorContentFileException
 from je_editor.utils.json_format.json_process import reformat_json
 from je_editor.utils.project.create_project import check_project_is_exist, check_project_content_is_exist
@@ -39,11 +39,11 @@ def write_output_content():
         cwd = os.getcwd()
         if check_project_is_exist():
             with open(cwd + "/.je_editor/je_editor_content.json", "w+") as file_to_write:
-                file_to_write.write(reformat_json(json.dumps(editor_data_dict)))
+                file_to_write.write(reformat_json(json.dumps(editor_content_data_dict)))
         else:
             create_project()
             with open(cwd + "/.je_editor/je_editor_content.json", "w+") as file_to_write:
-                file_to_write.write(reformat_json(json.dumps(editor_data_dict)))
+                file_to_write.write(reformat_json(json.dumps(editor_content_data_dict)))
     except JEditorContentFileException:
         raise JEditorContentFileException
     finally:

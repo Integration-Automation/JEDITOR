@@ -5,7 +5,7 @@ from je_editor.ui.ui_event.encoding.set_encoding import set_encoding
 from je_editor.ui.ui_event.language.set_language import set_language
 from je_editor.ui.ui_event.tag_keyword.tag_keyword import HighlightText
 from je_editor.utils.editor_content.content_save import open_content_and_start
-from je_editor.utils.editor_content.editor_data import editor_data_dict
+from je_editor.utils.editor_content.editor_content_data import editor_content_data_dict
 from je_editor.utils.exception.exceptions import JEditorContentFileException
 from je_editor.utils.language.language_data_module import language_list
 from je_editor.utils.language_data_module.language_compiler_data_module import language_compiler
@@ -23,7 +23,7 @@ def content_init(editor_instance):
             editor_instance.highlight_text.search()
             if editor_instance.file_from_output_content.get("theme") is not None:
                 editor_instance.highlight_text.theme = editor_instance.file_from_output_content.get("theme")
-                editor_data_dict["theme"] = editor_instance.file_from_output_content.get(
+                editor_content_data_dict["theme"] = editor_instance.file_from_output_content.get(
                     "theme")
             if editor_instance.file_from_output_content.get("language") is not None:
                 language_from_content = editor_instance.file_from_output_content.get("language")
@@ -48,24 +48,24 @@ def content_init(editor_instance):
             try:
                 if editor_instance.file_from_output_content.get("language_precompiler") is not None:
                     language_compiler.update(editor_instance.file_from_output_content.get("language_precompiler"))
-                    editor_data_dict["language_precompiler"] = editor_instance.file_from_output_content.get(
+                    editor_content_data_dict["language_precompiler"] = editor_instance.file_from_output_content.get(
                         "language_precompiler")
                 if editor_instance.file_from_output_content.get("language_compiler_param") is not None:
                     language_compiler_param.update(editor_instance.file_from_output_content.get(
                         "language_compiler_param"))
-                    editor_data_dict["language_compiler_param"] = editor_instance.file_from_output_content.get(
+                    editor_content_data_dict["language_compiler_param"] = editor_instance.file_from_output_content.get(
                         "language_compiler_param")
             except JEditorContentFileException as error:
                 print(repr(error), file=sys.stderr)
             if editor_instance.file_from_output_content.get("tab_size") is not None:
-                editor_data_dict["tab_size"] = editor_instance.file_from_output_content.get(
+                editor_content_data_dict["tab_size"] = editor_instance.file_from_output_content.get(
                     "tab_size")
                 editor_instance.code_editor_textarea.config(
                     tabs=editor_instance.file_from_output_content.get("tab_size"))
             if editor_instance.file_from_output_content.get("program_buffer") is not None:
-                editor_data_dict["program_buffer"] = editor_instance.file_from_output_content.get(
+                editor_content_data_dict["program_buffer"] = editor_instance.file_from_output_content.get(
                     "program_buffer")
-                editor_instance.exec_manager.program_buffer = int(editor_data_dict["program_buffer"])
+                editor_instance.exec_manager.program_buffer = int(editor_content_data_dict["program_buffer"])
 
     except JEditorContentFileException as error:
         print(repr(error), file=sys.stderr)
