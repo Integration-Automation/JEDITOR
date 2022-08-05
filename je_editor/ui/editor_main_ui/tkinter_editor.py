@@ -34,11 +34,14 @@ class EditorMain(object):
         else:
             self.main_window.mainloop()
 
-    # editor close event
-    def close_event(self):
+    def before_close_event(self):
         editor_content_data_dict["last_file"] = self.current_file
         if self.file_from_output_content is not None:
             self.file_from_output_content["last_file"] = self.current_file
+
+    # editor close event
+    def close_event(self):
+        self.before_close_event()
         close_event(self.main_window, self.exec_manager)
 
     # editor open file from path
