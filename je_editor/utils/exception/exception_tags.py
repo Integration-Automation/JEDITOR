@@ -3,6 +3,10 @@ default exception
 """
 je_editor_error = "JEditor error"
 """
+init exception
+"""
+je_editor_init_exec_manager_exception = "JEditor can't init program manager"
+"""
 exec exception
 """
 je_editor_exec_error = "JEditor exec error"

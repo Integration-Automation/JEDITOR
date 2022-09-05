@@ -4,7 +4,8 @@
     "font_size": 12,
     "language": [
         "python3",
-        "python"
+        "python",
+        "java"
     ],
     "language_compiler_param": null,
     "language_precompiler": null,

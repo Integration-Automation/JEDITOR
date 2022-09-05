@@ -15,8 +15,8 @@ def build_run_menu(editor_instance):
     editor_instance.run_menu.add_command(
         label="Run on shell",
         command=lambda: execute_shell_command(
-            editor_instance.program_run_result_textarea,
-            editor_instance.code_editor_textarea
+            editor_instance.code_editor_textarea,
+            editor_instance.shell_manager
         )
     )
     editor_instance.run_menu.add_command(

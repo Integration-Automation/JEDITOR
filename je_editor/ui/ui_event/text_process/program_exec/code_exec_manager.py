@@ -23,7 +23,6 @@ class ExecManager(object):
             program_run_result_textarea,
             process_error_function,
             main_window,
-            running_menu,
             program_language="python",
             program_encoding="utf-8",
             program_buffer=10240000,
@@ -32,7 +31,6 @@ class ExecManager(object):
         :param program_run_result_textarea:  program run result textarea
         :param process_error_function: when process error call this function
         :param main_window: tkinter main window
-        :param running_menu: menu when running change state
         :param program_language: which program language
         :param program_encoding: which encoding
         """
@@ -46,7 +44,6 @@ class ExecManager(object):
         self.run_output_queue = queue.Queue()
         self.run_error_queue = queue.Queue()
         self.program_language = program_language
-        self.running_menu = running_menu
         self.program_encoding = program_encoding
         self.program_buffer = program_buffer
 

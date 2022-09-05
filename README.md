@@ -19,7 +19,7 @@
 ## Requires
 
 ```
-python 3.5 or later
+python 3.7 or later
 ```
 
 ## install

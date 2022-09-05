@@ -3,12 +3,14 @@ from tkinter import Menu
 from tkinter import Tk
 from tkinter import ttk
 
+from je_editor import JEditorException
 from je_editor.ui.editor_main_ui.content_init.content_init import content_init
 from je_editor.ui.editor_main_ui.menu.build_menu import build_menu
 from je_editor.ui.editor_main_ui.menu.file_menu.build_file_menu import build_file_menu
 from je_editor.ui.editor_main_ui.menu.popup_menu.build_popup_menu import build_popup_menu
 from je_editor.ui.editor_main_ui.menu.run_menu.build_run_menu import build_run_menu
 from je_editor.ui.editor_main_ui.protocal_setting.set_ui_protocol import tkinter_set_protocol
+from je_editor.ui.editor_main_ui.redirect_output.redirect_output_to_tkinter_ui import redirect_output
 from je_editor.ui.editor_main_ui.ui_event_bind.event_bind import tkinter_event_bind
 from je_editor.ui.editor_main_ui.ui_grid.build_ui_grid import build_grid
 from je_editor.ui.editor_main_ui.ui_setting.ui_setting import tkinter_ui_setting
@@ -19,9 +21,12 @@ from je_editor.ui.ui_event.open_file.open_file_to_read.open_file_to_read import 
 from je_editor.ui.ui_event.open_file.open_last_edit_file.open_last_edit_file import open_last_edit_file
 from je_editor.ui.ui_event.save_file.save_file_to_open.save_file_to_open import save_file_then_can_run
 from je_editor.ui.ui_event.save_file.save_file_to_open.save_file_to_open import save_file_to_open
-from je_editor.ui.ui_event.text_process.program_exec.exec_text import ExecManager
+from je_editor.ui.ui_event.text_process.program_exec.code_exec_manager import ExecManager
 from je_editor.ui.ui_event.text_process.program_exec.process_error import process_error_text
+from je_editor.ui.ui_event.text_process.shell.shell_exec_manager import ShellManager
 from je_editor.utils.editor_content.editor_content_data import editor_content_data_dict
+from je_editor.utils.exception.exception_tags import je_editor_init_exec_manager_exception
+from je_editor.utils.redirect_manager.redirect_manager_class import redirect_manager_instance
 
 
 class EditorMain(object):
@@ -105,12 +110,19 @@ class EditorMain(object):
         self.menu = Menu(self.main_window)
         if self.current_file is not None:
             self.auto_save_thread = start_auto_save(self.auto_save_thread, self.current_file, self.code_editor_textarea)
-        self.exec_manager = ExecManager(
-            program_run_result_textarea=self.program_run_result_textarea,
-            process_error_function=process_error_text,
-            main_window=self.main_window,
-            running_menu=self.menu
-        )
+        if self.program_run_result_textarea is None or self.main_window is None:
+            raise JEditorException(je_editor_init_exec_manager_exception)
+        else:
+            self.exec_manager = ExecManager(
+                program_run_result_textarea=self.program_run_result_textarea,
+                process_error_function=process_error_text,
+                main_window=self.main_window,
+            )
+            self.shell_manager = ShellManager(
+                run_shell_result_textarea=self.program_run_result_textarea,
+                process_error_function=process_error_text,
+                main_window=self.main_window,
+            )
         # ui init should before grid and menu init
         content_init(self)
         build_grid(self)
@@ -121,6 +133,7 @@ class EditorMain(object):
         build_file_menu(self)
         build_popup_menu(self)
         build_menu(self)
+        self.program_run_result_textarea.after(10, lambda: redirect_output(self))
 
     def use_choose_theme(self, use_theme=None):
         self.style.theme_use(use_theme)
@@ -128,5 +141,6 @@ class EditorMain(object):
 
 def start_editor(use_theme=None, **kwargs):
     new_editor = EditorMain(use_theme=use_theme, **kwargs)
+    redirect_manager_instance.set_ui_setting(new_editor, True)
     new_editor.start_editor()
     return new_editor
