@@ -57,8 +57,6 @@ class ExecManager(object):
         """
         try:
             self.exit_program()
-            self.running_menu.entryconfigure(1, label="Rerun")
-            self.running_menu.entryconfigure(3, state="normal")
             self.run_program_result_textarea.configure(state=NORMAL)
             self.run_program_result_textarea.delete("1.0", "end-1c")
             self.run_program_result_textarea.configure(state=DISABLED)
@@ -72,6 +70,8 @@ class ExecManager(object):
             compiler_path = shutil.which(self.program_language)
             if compiler_path is None and self.program_language == "python":
                 compiler_path = shutil.which("python3")
+            elif compiler_path is None and self.program_language == "python3":
+                compiler_path = shutil.which("python")
             if compiler_path is None:
                 raise JEditorExecException(compiler_not_found_error)
             exec_file = reformat_os_file_path
@@ -137,9 +137,6 @@ class ExecManager(object):
             self.main_window.after(1, self.edit_tkinter_text)
             # poll return code
             self.process.poll()
-        else:
-            self.running_menu.entryconfigure(1, label="Run")
-            self.running_menu.entryconfigure(3, state="disable")
 
     # exit program change run flag to false and clean read thread and queue and process
     def exit_program(self):
