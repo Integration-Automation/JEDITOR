@@ -5,7 +5,7 @@ with open("README.md", "r") as README:
 
 setuptools.setup(
     name="je_editor",
-    version="0.0.47",
+    version="0.0.48",
     author="JE-Chen",
     author_email="zenmailman@gmail.com",
     description="simple editor",
@@ -16,7 +16,7 @@ setuptools.setup(
     install_requires=[
     ],
     classifiers=[
-        "Programming Language :: Python :: 3.5",
+        "Programming Language :: Python :: 3.7",
         "Development Status :: 2 - Pre-Alpha",
         "Environment :: Win32 (MS Windows)",
         "Environment :: MacOS X",

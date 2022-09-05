@@ -12,7 +12,7 @@ je_editor ExecManager Doc
                 process_error_function,
                 main_window,
                 running_menu,
-                program_language="python3",
+                program_language="python",
                 program_encoding="utf-8"
         ):
             """

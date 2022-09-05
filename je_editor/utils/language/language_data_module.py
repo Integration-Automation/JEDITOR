@@ -1,5 +1,6 @@
 language_list = \
     [
         "java",
-        "python"
+        "python",
+        "python3"
     ]

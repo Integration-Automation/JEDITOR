@@ -10,7 +10,7 @@ if you want to add param you can edit language_compiler_param
 editor_content_data_dict = {
     "last_file": None,
     "theme": theme_dict,
-    "language": ["python3", "python"],
+    "language": ["python3", "python", "java"],
     "language_precompiler": None,
     "language_compiler_param": None,
     "encoding": "utf-8",

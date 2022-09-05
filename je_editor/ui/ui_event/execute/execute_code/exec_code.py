@@ -1,4 +1,7 @@
-def execute_code(current_file, save_function, exec_manager):
+from je_editor.ui.ui_event.text_process.program_exec.code_exec_manager import ExecManager
+
+
+def execute_code(current_file, save_function, exec_manager: ExecManager):
     """
     :param exec_manager:
     :param current_file will execute file
