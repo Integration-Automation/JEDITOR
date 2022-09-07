@@ -133,6 +133,7 @@ class EditorMain(object):
         build_file_menu(self)
         build_popup_menu(self)
         build_menu(self)
+        redirect_manager_instance.set_ui_setting(self, True)
         self.program_run_result_textarea.after(10, lambda: redirect_output(self))
 
     def use_choose_theme(self, use_theme=None):
@@ -141,6 +142,5 @@ class EditorMain(object):
 
 def start_editor(use_theme=None, **kwargs):
     new_editor = EditorMain(use_theme=use_theme, **kwargs)
-    redirect_manager_instance.set_ui_setting(new_editor, True)
     new_editor.start_editor()
     return new_editor
