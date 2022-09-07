@@ -19,8 +19,11 @@ def content_init(editor_instance):
     editor_instance.file_from_output_content = open_content_and_start()
     try:
         if editor_instance.file_from_output_content is not None:
-            editor_instance.current_file = editor_instance.ui_open_last_edit_file()
             editor_instance.highlight_text.search()
+            if editor_instance.file_from_output_content.get("last_file") is not None:
+                last_file = editor_instance.file_from_output_content.get("last_file")
+                editor_content_data_dict["last_file"] = last_file
+                editor_instance.current_file = editor_instance.ui_open_last_edit_file()
             if editor_instance.file_from_output_content.get("theme") is not None:
                 editor_instance.highlight_text.theme = editor_instance.file_from_output_content.get("theme")
                 editor_content_data_dict["theme"] = editor_instance.file_from_output_content.get(
