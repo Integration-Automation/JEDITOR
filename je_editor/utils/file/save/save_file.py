@@ -70,14 +70,12 @@ class SaveThread(Thread):
 
     def run(self):
         # loop and save current edit file
-        print("auto save start")
         if self.file is not None:
             self.auto_save = True
             self.path = Path(self.file)
         while self.auto_save and self.file is not None:
             time.sleep(15)
             if self.path.exists() and self.path.is_file():
-                print("auto saved file: ", str(self.file))
                 write_file(self.file, self.tkinter_text.get("1.0", "end-1c"))
             else:
                 break
