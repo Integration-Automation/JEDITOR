@@ -30,15 +30,15 @@ class RedirectStdErr(logging.Handler):
 class RedirectManager(object):
 
     def __init__(self):
-        self.is_use_ite_ui: bool = False
-        self.ite_ui = None
+        self.is_use_ui: bool = False
+        self.ui = None
         self.std_err_queue = queue.Queue()
         self.std_out_queue = queue.Queue()
 
-    def set_ui_setting(self, ite_ui, is_use_ui: bool = False):
-        self.ite_ui = ite_ui
-        self.is_use_ite_ui = is_use_ui
-        if self.is_use_ite_ui is True and self.ite_ui is not None:
+    def set_ui_setting(self, ui, is_use_ui: bool = False):
+        self.ui = ui
+        self.is_use_ui = is_use_ui
+        if self.is_use_ui is True and self.ui is not None:
             redirect_out = RedirectStdOut()
             redirect_err = RedirectStdErr()
             sys.stdout = redirect_out
