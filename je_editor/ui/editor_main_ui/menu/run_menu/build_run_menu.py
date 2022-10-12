@@ -6,6 +6,11 @@ from je_editor.ui.ui_event.execute.execute_shell_command.run_on_shell import exe
 
 
 def build_run_menu(editor_instance):
+    """
+    use to init (read data set run menu)
+    :param editor_instance: editor's instance
+    :return: None
+    """
     # Run menu
     editor_instance.run_menu = Menu(editor_instance.menu, tearoff=0)
     editor_instance.run_menu.add_command(

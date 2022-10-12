@@ -133,7 +133,7 @@ class EditorMain(object):
         build_file_menu(self)
         build_popup_menu(self)
         build_menu(self)
-        redirect_manager_instance.set_ui_setting(self, True)
+        redirect_manager_instance.set_redirect(self, True)
         self.program_run_result_textarea.after(10, lambda: redirect_output(self))
 
     def use_choose_theme(self, use_theme=None):

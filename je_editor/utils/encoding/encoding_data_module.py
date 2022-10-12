@@ -1,4 +1,5 @@
 # encoding data module
+# user can choose every encoding on this list
 encoding_list = \
     ['ascii',
      'big5',

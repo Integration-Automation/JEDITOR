@@ -2,6 +2,11 @@ from je_editor.ui.ui_event.execute.execute_shell_command.run_on_shell import exe
 
 
 def tkinter_event_bind(editor_instance):
+    """
+    set tkinter event bind
+    :param editor_instance: editor's instance
+    :return: None
+    """
     # bind
     editor_instance.program_run_result_textarea.bind(
         "<1>",
