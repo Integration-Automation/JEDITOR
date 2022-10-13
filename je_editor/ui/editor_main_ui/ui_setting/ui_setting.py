@@ -2,6 +2,11 @@ from tkinter import ttk, Text, Tk
 
 
 def tkinter_ui_setting(editor_instance, main_window: Tk):
+    """
+    :param editor_instance: editor''s instance
+    :param main_window: Tk()
+    :return: None
+    """
     # set main window title and add main frame
     editor_instance.main_window = main_window
     editor_instance.main_window.title("je_editor")

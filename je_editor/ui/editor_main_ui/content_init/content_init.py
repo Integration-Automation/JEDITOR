@@ -13,6 +13,11 @@ from je_editor.utils.language_data_module.language_param_data_module import lang
 
 
 def content_init(editor_instance):
+    """
+    use to init (read data and set data)
+    :param editor_instance: editor's instance
+    :return: None
+    """
     # Highlight word
     editor_instance.highlight_text = HighlightText(editor_instance.code_editor_textarea)
     # file from output content

@@ -1,4 +1,9 @@
 def build_grid(editor_instance):
+    """
+    set tkinter grid
+    :param editor_instance: editor's instance
+    :return: None
+    """
     # grid and menu set
     editor_instance.code_edit_frame.grid(column=0, row=0, sticky="nsew")
     editor_instance.program_run_result_frame.grid(column=0, row=1, sticky="nsew")

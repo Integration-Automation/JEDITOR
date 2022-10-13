@@ -9,6 +9,11 @@ from je_editor.utils.language.language_data_module import language_list
 
 
 def build_file_menu(editor_instance):
+    """
+    use to init (read data set file menu)
+    :param editor_instance: editor's instance
+    :return: None
+    """
     # File menu
     editor_instance.file_menu = Menu(editor_instance.menu, tearoff=0)
     # Edit setting menu

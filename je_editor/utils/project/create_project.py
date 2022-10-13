@@ -1,6 +1,10 @@
 from os import getcwd
 from pathlib import Path
 
+"""
+project dir create use
+"""
+
 
 def create_project():
     Path(getcwd() + "/.je_editor").mkdir(parents=True, exist_ok=True)

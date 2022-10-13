@@ -4,6 +4,9 @@ import sys
 
 
 class RedirectStdOut(logging.Handler):
+    """
+    redirect logging std output to queue
+    """
 
     def __init__(self):
         super().__init__()
@@ -16,7 +19,9 @@ class RedirectStdOut(logging.Handler):
 
 
 class RedirectStdErr(logging.Handler):
-
+    """
+    redirect logging stderr output to queue
+    """
     def __init__(self):
         super().__init__()
 
@@ -35,7 +40,12 @@ class RedirectManager(object):
         self.std_err_queue = queue.Queue()
         self.std_out_queue = queue.Queue()
 
-    def set_ui_setting(self, ui, is_use_ui: bool = False):
+    def set_redirect(self, ui, is_use_ui: bool = False):
+        """
+        :param ui: ui instance
+        :param is_use_ui: false for cli
+        :return: None
+        """
         self.ui = ui
         self.is_use_ui = is_use_ui
         if self.is_use_ui is True and self.ui is not None:
@@ -50,6 +60,10 @@ class RedirectManager(object):
 
     @staticmethod
     def restore_std():
+        """
+        reset redirect
+        :return: None
+        """
         sys.stdout = sys.__stdout__
         sys.stderr = sys.__stderr__
 

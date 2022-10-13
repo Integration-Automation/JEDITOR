@@ -4,6 +4,11 @@ from je_editor.utils.redirect_manager.redirect_manager_class import redirect_man
 
 
 def redirect_output(editor_instance):
+    """
+    use to init
+    :param editor_instance: editor's instance
+    :return: None
+    """
     editor_instance.program_run_result_textarea.configure(state=NORMAL)
     if not redirect_manager_instance.std_out_queue.empty():
         editor_instance.program_run_result_textarea.insert(

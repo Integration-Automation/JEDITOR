@@ -8,7 +8,8 @@ from je_editor.utils.exception.exceptions import JEditorOpenFileException
 
 def read_file(file):
     """
-    :param file: the file we want to read it's whole file path
+    use to check file is exist and open
+    :param file: the file we want to read its whole file path
     :return: read's file and file content
     try
         lock thread
