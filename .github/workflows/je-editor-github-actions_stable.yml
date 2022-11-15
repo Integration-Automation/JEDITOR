@@ -14,18 +14,18 @@ jobs:
     runs-on: windows-2019
 
     steps:
-    - uses: actions/checkout@v3
-    - name: Set up Python 3.7
-      uses: actions/setup-python@v3
-      with:
-        python-version: "3.7"
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip wheel
-        pip install -r dev_requirements.txt
-      # save and open file test
-    - name: save_and_open_test
-      run: python ./test/unit_test/file/save_and_open/save_and_open.py
-      # open and close editor
-    - name: open_and_close_editor
-      run: python ./test/unit_test/tkinter_test/editor/editor_with_theme.py
+      - uses: actions/checkout@v3
+      - name: Set up Python 3.7
+        uses: actions/setup-python@v3
+        with:
+          python-version: "3.7"
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip wheel
+          pip install -r dev_requirements.txt
+        # save and open file test
+      - name: save_and_open_test
+        run: python ./test/unit_test/file/save_and_open/save_and_open.py
+        # open and close editor
+      - name: open_and_close_editor
+        run: python ./test/unit_test/tkinter_test/editor/editor_with_theme.py

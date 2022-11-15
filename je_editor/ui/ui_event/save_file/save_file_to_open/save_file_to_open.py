@@ -17,4 +17,3 @@ def save_file_to_open(code_editor):
 
 def save_file_then_can_run(file, code_editor):
     write_file(file, code_editor.get("1.0", "end-1c"))
-

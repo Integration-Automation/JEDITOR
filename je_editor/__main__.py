@@ -16,4 +16,3 @@ if __name__ == "__main__":
             argparse_event_dict.get(key)(value)
         else:
             argparse_event_dict.get(key)()
-

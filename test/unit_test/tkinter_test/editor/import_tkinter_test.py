@@ -1,3 +1,3 @@
 import tkinter
-tkinter._test()
 
+tkinter._test()

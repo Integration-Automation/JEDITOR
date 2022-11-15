@@ -22,6 +22,7 @@ class RedirectStdErr(logging.Handler):
     """
     redirect logging stderr output to queue
     """
+
     def __init__(self):
         super().__init__()
 

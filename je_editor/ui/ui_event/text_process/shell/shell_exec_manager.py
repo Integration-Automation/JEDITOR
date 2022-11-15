@@ -119,12 +119,12 @@ class ShellManager(object):
 
     def read_program_output_from_process(self):
         while self.still_run_shell:
-            program_output_data = self.process.stdout.raw.read(self.program_buffer)\
+            program_output_data = self.process.stdout.raw.read(self.program_buffer) \
                 .decode(self.program_encoding)
             self.run_output_queue.put_nowait(program_output_data)
 
     def read_program_error_output_from_process(self):
         while self.still_run_shell:
-            program_error_output_data = self.process.stderr.raw.read(self.program_buffer)\
+            program_error_output_data = self.process.stderr.raw.read(self.program_buffer) \
                 .decode(self.program_encoding)
             self.run_error_queue.put_nowait(program_error_output_data)
