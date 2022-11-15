@@ -31,4 +31,3 @@ content data error
 """
 content_set_compiler_error: str = "When set compiler using content make an error"
 je_editor_content_file_error: str = "JEditor content file error"
-

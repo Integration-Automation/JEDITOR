@@ -1,6 +1,5 @@
 from je_editor.utils.theme.theme import theme_dict
 
-
 """
 if you are using python3
 language_precompiler and language_compiler_param value None is right

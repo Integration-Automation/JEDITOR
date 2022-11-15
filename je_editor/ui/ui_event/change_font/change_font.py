@@ -1,6 +1,7 @@
-from je_editor.utils.font.font import create_new_font
-from je_editor.utils.editor_content.editor_content_data import editor_content_data_dict
 from tkinter.font import Font
+
+from je_editor.utils.editor_content.editor_content_data import editor_content_data_dict
+from je_editor.utils.font.font import create_new_font
 
 
 def _config_change(program_run_result_textarea, shell_run_result_textarea, new_font):

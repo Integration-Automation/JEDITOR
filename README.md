@@ -2,9 +2,10 @@
 
 ---
 
-### Simple editor for edit code 
+## Simple editor for edit code
 
-#### Features
+### Features
+
 * auto save (after first save)
 * open last edit file
 * run program
@@ -14,6 +15,7 @@
 * choose language
 * choose editor style
 * use content file to choose you own style
+
 ---
 
 ## Requires
@@ -25,7 +27,7 @@ python 3.7 or later
 ## install
 
 * please check your tkinter version
-  * make sure tkinter is version 8.5 or later
+    * make sure tkinter is version 8.5 or later
   ```python
   # check tkinter version
   import tkinter
@@ -33,25 +35,30 @@ python 3.7 or later
   ```
 
 * on Windows not need install any package
-  * if fail to start tkinter
-    * python version 3.7 and later will include new tk
-    
+    * if fail to start tkinter
+        * python version 3.7 and later will include new tk
+
 
 * on macOS not need install any package
-  * if fail to start tkinter 
-    * xcode-select --install
-      * download python-tk
-        * brew install python-tk
-    * or download new python version, new python version include new Tcl/Tk 
+    * if fail to start tkinter
+        * xcode-select --install
+            * download python-tk
+                * brew install python-tk
+        * or download new python version, new python version include new Tcl/Tk
+
 ```
 If you are using macOS 10.6 or later, 
 the Apple-supplied Tcl/Tk 8.5 has serious bugs that can cause application crashes.
 ```
-* on linux ubuntu use 
+
+* on linux ubuntu use
+
 ```commandline 
 sudo apt-get install python3-tk
 ```
+
 * on fedora use
+
 ```commandline
 sudo dnf python3-tk
 ```
@@ -77,29 +84,29 @@ sudo dnf python3-tk
 ---
 
 * toolbar function
-  * Run
-    * Run program and get result
-  * Run on shell
-    * Run on command line and get result
-  * Stop
-    * Stop current running program
-  * File
-    * Save File
-      * Save current edit file
-    * Open File
-      * Open file to edit
-  * Text
-    * Font
-      * Choose editor font
-    * Font Size
-      * Choose font size
-  * Encoding
-    * Choose file encoding
-  * Language
-    * Java 
-      * need java on system path - default
-    * Python3
-      * need python3 on system path - default  
+    * Run
+        * Run program and get result
+    * Run on shell
+        * Run on command line and get result
+    * Stop
+        * Stop current running program
+    * File
+        * Save File
+            * Save current edit file
+        * Open File
+            * Open file to edit
+    * Text
+        * Font
+            * Choose editor font
+        * Font Size
+            * Choose font size
+    * Encoding
+        * Choose file encoding
+    * Language
+        * Java
+            * need java on system path - default
+        * Python3
+            * need python3 on system path - default
 
 ---
 
