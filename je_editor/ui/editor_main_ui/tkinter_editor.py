@@ -3,7 +3,7 @@ from tkinter import Menu
 from tkinter import Tk
 from tkinter import ttk
 
-from je_editor import JEditorException
+from je_editor.utils.exception.exceptions import JEditorException
 from je_editor.ui.editor_main_ui.content_init.content_init import content_init
 from je_editor.ui.editor_main_ui.menu.build_menu import build_menu
 from je_editor.ui.editor_main_ui.menu.file_menu.build_file_menu import build_file_menu
