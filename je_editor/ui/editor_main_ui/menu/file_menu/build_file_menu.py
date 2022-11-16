@@ -32,10 +32,10 @@ def build_file_menu(editor_instance):
     editor_instance.text_menu.add_cascade(label="Font Size", menu=editor_instance.text_size_sub_menu)
     editor_instance.font_tuple = get_font(editor_instance.main_window)
     # Encoding menu
-    for i in range(len(encoding_list)):
+    for index, value in enumerate(encoding_list):
         editor_instance.encoding_menu.add_command(
-            label=str(encoding_list[i]),
-            command=lambda choose_encoding=encoding_list[i]: set_encoding(editor_instance.exec_manager, choose_encoding)
+            label=str(value),
+            command=lambda choose_encoding=value: set_encoding(editor_instance.exec_manager, choose_encoding)
         )
     # Font menu
     for i in range(len(editor_instance.font_tuple)):
@@ -53,10 +53,10 @@ def build_file_menu(editor_instance):
                                                          font_size)
         )
     # Language menu
-    for i in range(len(language_list)):
+    for index, value in enumerate(language_list):
         editor_instance.language_menu.add_command(
-            label=str(language_list[i]),
-            command=lambda choose_language=language_list[i]: set_language(editor_instance.exec_manager, choose_language)
+            label=str(value),
+            command=lambda choose_language=value: set_language(editor_instance.exec_manager, choose_language)
         )
     editor_instance.editor_setting_menu.add_cascade(label="Text", menu=editor_instance.text_menu)
     editor_instance.editor_setting_menu.add_cascade(label="Encoding", menu=editor_instance.encoding_menu)

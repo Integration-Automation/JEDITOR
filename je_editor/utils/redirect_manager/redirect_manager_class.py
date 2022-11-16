@@ -4,9 +4,8 @@ import sys
 
 
 class RedirectStdOut(logging.Handler):
-    """
-    redirect logging std output to queue
-    """
+
+    # redirect logging std output to queue
 
     def __init__(self):
         super().__init__()
@@ -19,9 +18,8 @@ class RedirectStdOut(logging.Handler):
 
 
 class RedirectStdErr(logging.Handler):
-    """
-    redirect logging stderr output to queue
-    """
+
+    # redirect logging stderr output to queue
 
     def __init__(self):
         super().__init__()

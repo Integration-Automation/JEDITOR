@@ -6,7 +6,7 @@ def set_language(exec_manager, language):
     :param exec_manager: which exec manager change program language
     :param language: set exec manager program language
     """
-    if type(language) is list:
+    if isinstance(language, list):
         exec_manager.program_language = language[0]
     else:
         exec_manager.program_language = language
