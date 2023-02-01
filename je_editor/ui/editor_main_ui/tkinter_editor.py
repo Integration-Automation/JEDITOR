@@ -55,11 +55,13 @@ class EditorMain(object):
         self.current_file = temp
         self.highlight_text.search()
         self.auto_save_thread = start_auto_save(self.auto_save_thread, self.current_file, self.code_editor_textarea)
+        editor_content_data_dict["last_file"] = self.current_file
 
     # save editor file to choose path
     def ui_save_file_to_open(self, event=None):
         self.current_file = save_file_to_open(self.code_editor_textarea)
         self.auto_save_thread = start_auto_save(self.auto_save_thread, self.current_file, self.code_editor_textarea)
+        editor_content_data_dict["last_file"] = self.current_file
 
     def ui_open_last_edit_file(self):
         self.highlight_text.search()
