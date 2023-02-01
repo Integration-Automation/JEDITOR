@@ -26,6 +26,10 @@
 
 [![JE_Editor GitHub Actions Stable](https://github.com/JE-Chen/je_editor/actions/workflows/je-editor-github-actions_stable.yml/badge.svg?branch=main)](https://github.com/JE-Chen/je_editor/actions/workflows/je-editor-github-actions_stable.yml)
 
+### Document
+
+[![Documentation Status](https://readthedocs.org/projects/je-editor/badge/?version=latest)](https://je-editor.readthedocs.io/en/latest/?badge=latest)
+
 ---
 
 ## Requires
@@ -72,20 +76,6 @@ sudo apt-get install python3-tk
 ```commandline
 sudo dnf python3-tk
 ```
-
----
-
-[![CircleCI](https://circleci.com/gh/JE-Chen/je_editor/tree/main.svg?style=svg)](https://circleci.com/gh/JE-Chen/je_editor/tree/main)
-
-[![JE_Editor GitHub Actions Dev](https://github.com/JE-Chen/je_editor/actions/workflows/je-editor-github-actions_dev.yml/badge.svg)](https://github.com/JE-Chen/je_editor/actions/workflows/je-editor-github-actions_dev.yml)
-
-[![JE_Editor GitHub Actions Stable](https://github.com/JE-Chen/je_editor/actions/workflows/je-editor-github-actions_stable.yml/badge.svg)](https://github.com/JE-Chen/je_editor/actions/workflows/je-editor-github-actions_stable.yml)
-
-### Document
-
-[![Documentation Status](https://readthedocs.org/projects/je-editor/badge/?version=latest)](https://je-editor.readthedocs.io/en/latest/?badge=latest)
-
----
 
 * editor main window
 
