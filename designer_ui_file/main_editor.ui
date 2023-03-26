@@ -1,0 +1,180 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>800</width>
+    <height>600</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>MainWindow</string>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <widget class="QPlainTextEdit" name="code_edit">
+    <property name="geometry">
+     <rect>
+      <x>-7</x>
+      <y>0</y>
+      <width>791</width>
+      <height>281</height>
+     </rect>
+    </property>
+   </widget>
+   <widget class="QPlainTextEdit" name="result_text">
+    <property name="geometry">
+     <rect>
+      <x>0</x>
+      <y>300</y>
+      <width>781</width>
+      <height>241</height>
+     </rect>
+    </property>
+   </widget>
+   <widget class="QScrollBar" name="code_edit_horizontal_scroll_bar">
+    <property name="geometry">
+     <rect>
+      <x>0</x>
+      <y>280</y>
+      <width>781</width>
+      <height>20</height>
+     </rect>
+    </property>
+    <property name="orientation">
+     <enum>Qt::Horizontal</enum>
+    </property>
+   </widget>
+   <widget class="QScrollBar" name="result_text_vertical_scroll_bar">
+    <property name="geometry">
+     <rect>
+      <x>780</x>
+      <y>299</y>
+      <width>20</width>
+      <height>251</height>
+     </rect>
+    </property>
+    <property name="orientation">
+     <enum>Qt::Vertical</enum>
+    </property>
+   </widget>
+   <widget class="QScrollBar" name="code_edit_vertical_scroll_bar">
+    <property name="geometry">
+     <rect>
+      <x>780</x>
+      <y>9</y>
+      <width>20</width>
+      <height>291</height>
+     </rect>
+    </property>
+    <property name="orientation">
+     <enum>Qt::Vertical</enum>
+    </property>
+   </widget>
+   <widget class="QScrollBar" name="result_horizontal_scroll_bar">
+    <property name="geometry">
+     <rect>
+      <x>0</x>
+      <y>540</y>
+      <width>781</width>
+      <height>20</height>
+     </rect>
+    </property>
+    <property name="orientation">
+     <enum>Qt::Horizontal</enum>
+    </property>
+   </widget>
+  </widget>
+  <widget class="QMenuBar" name="main_menu_bar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>800</width>
+     <height>22</height>
+    </rect>
+   </property>
+   <widget class="QMenu" name="menu_file">
+    <property name="title">
+     <string>File</string>
+    </property>
+    <widget class="QMenu" name="menu_editor_setting">
+     <property name="title">
+      <string>Editor Setting</string>
+     </property>
+     <addaction name="action_text"/>
+     <addaction name="action_encoding"/>
+     <addaction name="action_language"/>
+    </widget>
+    <addaction name="action_save_file"/>
+    <addaction name="action_open_file"/>
+    <addaction name="separator"/>
+    <addaction name="menu_editor_setting"/>
+   </widget>
+   <widget class="QMenu" name="menu_run">
+    <property name="title">
+     <string>Run</string>
+    </property>
+    <addaction name="action_run_program"/>
+    <addaction name="action_run_on_shell"/>
+    <addaction name="separator"/>
+    <addaction name="action_stop_program"/>
+    <addaction name="separator"/>
+    <addaction name="action_clean_result"/>
+    <addaction name="separator"/>
+   </widget>
+   <addaction name="menu_file"/>
+   <addaction name="menu_run"/>
+  </widget>
+  <widget class="QStatusBar" name="statusbar"/>
+  <action name="action_save_file">
+   <property name="text">
+    <string>Save File</string>
+   </property>
+  </action>
+  <action name="action_open_file">
+   <property name="text">
+    <string>Open File</string>
+   </property>
+  </action>
+  <action name="action_text">
+   <property name="text">
+    <string>Text</string>
+   </property>
+  </action>
+  <action name="action_encoding">
+   <property name="text">
+    <string>Encoding</string>
+   </property>
+  </action>
+  <action name="action_language">
+   <property name="text">
+    <string>Language</string>
+   </property>
+  </action>
+  <action name="action_run_program">
+   <property name="text">
+    <string>Run Program</string>
+   </property>
+  </action>
+  <action name="action_run_on_shell">
+   <property name="text">
+    <string>Run On Shell</string>
+   </property>
+  </action>
+  <action name="action_stop_program">
+   <property name="text">
+    <string>Stop Program</string>
+   </property>
+  </action>
+  <action name="action_clean_result">
+   <property name="text">
+    <string>Clean Result</string>
+   </property>
+  </action>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>
