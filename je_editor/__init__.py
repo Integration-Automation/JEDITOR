@@ -1,6 +1,6 @@
-from je_editor.ui.editor_main_ui.tkinter_editor import EditorMain
+from je_editor.tkinter_ui.editor_main_ui.tkinter_editor import EditorMain
 # start editor
-from je_editor.ui.editor_main_ui.tkinter_editor import start_editor
+from je_editor.tkinter_ui.editor_main_ui.tkinter_editor import start_editor
 # Exceptions
 from je_editor.utils.exception.exceptions import JEditorException
 from je_editor.utils.exception.exceptions import JEditorExecException

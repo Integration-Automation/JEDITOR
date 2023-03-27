@@ -25,7 +25,7 @@ jobs:
           pip install -r dev_requirements.txt
         # run on shell test
       - name: save_and_open_test
-        run: python ./test/unit_test/file/save_and_open/save_and_open.py
+        run: python ./test/tkinter_ui/unit_test/file/save_and_open/save_and_open.py
         # open and close editor
       - name: open_and_close_editor
-        run: python ./test/unit_test/tkinter_test/editor/editor_with_theme.py
+        run: python ./test/tkinter_ui/unit_test/tkinter_test/editor/editor_with_theme.py

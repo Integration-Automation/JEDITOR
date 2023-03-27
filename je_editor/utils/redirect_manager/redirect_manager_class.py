@@ -41,7 +41,7 @@ class RedirectManager(object):
 
     def set_redirect(self, ui, is_use_ui: bool = False):
         """
-        :param ui: ui instance
+        :param ui: tkinter_ui instance
         :param is_use_ui: false for cli
         :return: None
         """
