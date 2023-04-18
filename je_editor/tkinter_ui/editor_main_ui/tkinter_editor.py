@@ -142,7 +142,4 @@ class EditorMain(object):
         self.style.theme_use(use_theme)
 
 
-def start_editor(use_theme=None, **kwargs):
-    new_editor = EditorMain(use_theme=use_theme, **kwargs)
-    new_editor.start_editor()
-    return new_editor
+
