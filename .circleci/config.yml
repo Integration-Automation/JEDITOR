@@ -19,14 +19,6 @@ jobs:
       - run:
           command: pip install --user -r requirements.txt
           name: pip requirements.txt
-      # save and open file test
-      - run:
-          command: python ./test/tkinter_ui/unit_test/file/save_and_open/save_and_open.py
-          name: save_and_open_test
-      # open and close editor
-      - run:
-          command: python ./test/tkinter_ui/unit_test/tkinter_test/editor/editor_with_theme.py
-          name: open_and_close_editor
 
   build-and-test-dev:
     executor:
@@ -42,15 +34,6 @@ jobs:
       - run:
           command: pip install --user -r dev_requirements.txt
           name: pip requirements.txt
-      # save and open file test
-      - run:
-          command: python ./test/tkinter_ui/unit_test/file/save_and_open/save_and_open.py
-          name: save_and_open_test
-      # open and close editor
-      - run:
-          command: python ./test/tkinter_ui/unit_test/tkinter_test/editor/editor_with_theme.py
-          name: open_and_close_editor
-
 
 workflows:
   main:

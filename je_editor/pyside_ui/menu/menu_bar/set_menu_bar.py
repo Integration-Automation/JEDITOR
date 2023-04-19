@@ -2,7 +2,8 @@ from PySide6.QtGui import QAction
 from PySide6.QtWidgets import QMainWindow, QMenuBar
 
 
-def set_menu(ui_we_want_to_set: QMainWindow):
+def set_menu_bar(ui_we_want_to_set: QMainWindow):
+    # TODO MENUBAR
     # set menu
     ui_we_want_to_set.menu = QMenuBar()
     ui_we_want_to_set.file_menu = ui_we_want_to_set.menu.addMenu("File")
