@@ -6,7 +6,7 @@ from je_editor.tkinter_ui.editor_main_ui.tkinter_editor import EditorMain as Tki
 from je_editor.pyside_ui.editor_main_ui.main_editor import EditorMain as PysideEditor
 
 
-def start_editor(editor: str = "pyside", use_theme=None, **kwargs):
+def start_editor(editor: str = "tkinter", use_theme=None, **kwargs):
     if editor == "pyside":
         new_editor = QApplication(sys.argv)
         window = PysideEditor()
