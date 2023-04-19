@@ -1,5 +1,3 @@
-
-from je_editor.pyside_ui.editor_main_ui.main_editor import EditorMain as PySideEditor
 # start editor
 from je_editor.start_editor import start_editor
 # Exceptions
