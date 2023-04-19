@@ -9,7 +9,7 @@ def tkinter_ui_setting(editor_instance, main_window: Tk):
     """
     # set main window title and add main frame
     editor_instance.main_window = main_window
-    editor_instance.main_window.title("je_editor")
+    editor_instance.main_window.title("JEditor")
     editor_instance.code_edit_frame = ttk.Frame(editor_instance.main_window, padding="3 3 12 12")
     editor_instance.program_run_result_frame = ttk.Frame(editor_instance.main_window, padding="3 3 12 12")
     # set code edit
