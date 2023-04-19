@@ -2,8 +2,8 @@ import os
 
 from PySide6.QtWidgets import QMainWindow
 
-from je_editor.pyside_ui.ui_setting.ui_setting import set_ui
 from je_editor.pyside_ui.menu.set_menu import set_menu
+from je_editor.pyside_ui.ui_setting.ui_setting import set_ui
 
 
 class EditorMain(QMainWindow):
