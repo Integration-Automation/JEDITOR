@@ -1,9 +1,7 @@
-import os
 import time
 from pathlib import Path
 from threading import Lock
 from threading import Thread
-from tkinter import filedialog
 
 from je_editor.utils.exception.exceptions import JEditorSaveFileException
 

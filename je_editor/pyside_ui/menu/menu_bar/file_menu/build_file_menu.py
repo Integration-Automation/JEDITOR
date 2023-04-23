@@ -1,4 +1,4 @@
-from PySide6.QtGui import QAction, QFontDatabase
+from PySide6.QtGui import QAction
 from PySide6.QtWidgets import QMainWindow
 
 from je_editor.pyside_ui.file_dialog.open_file_dialog import choose_file_get_open_filename

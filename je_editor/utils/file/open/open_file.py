@@ -1,7 +1,5 @@
-import os
 from pathlib import Path
 from threading import Lock
-from tkinter import filedialog
 
 from je_editor.utils.exception.exceptions import JEditorOpenFileException
 
