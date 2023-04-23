@@ -18,5 +18,6 @@ def choose_file_get_save_filename(parent_qt_instance):
                 parent_qt_instance.current_file,
                 parent_qt_instance.code_edit.toPlainText()
             )
+            parent_qt_instance.auto_save_thread.start()
         elif parent_qt_instance.auto_save_thread is not None:
             parent_qt_instance.auto_save_thread.file = parent_qt_instance.current_file

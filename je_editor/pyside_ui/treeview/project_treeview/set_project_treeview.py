@@ -27,7 +27,10 @@ def treeview_click(ui_we_want_to_set):
     model = clicked_item.model()
     path = pathlib.Path(os.getcwd() + "/" + model.data(clicked_item))
     if path.is_file():
-        file_content = read_file(path)[1]
+        file, file_content = read_file(path)
         ui_we_want_to_set.code_edit.setPlainText(
             file_content
         )
+        ui_we_want_to_set.current_file = file
+        if ui_we_want_to_set.auto_save_thread is not None:
+            ui_we_want_to_set.auto_save_thread.file = ui_we_want_to_set.current_file
