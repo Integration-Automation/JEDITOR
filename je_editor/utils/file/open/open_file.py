@@ -34,19 +34,4 @@ def read_file(file):
         lock.release()
 
 
-def open_file():
-    """
-    :return: read's file and file content or ""
-    open tkinter ask open file dialog
-    if not choose
-        len(file) = 0 or ""
-        :return ""
-    """
-    cwd = os.getcwd()
-    file = filedialog.askopenfilename(title="Open File",
-                                      initialdir=cwd,
-                                      defaultextension="*.*",
-                                      filetypes=(("all files", "*.*"), ("je editor files", "*.jee")))
-    if len(file) == 0:
-        return ""
-    return read_file(file)
+
