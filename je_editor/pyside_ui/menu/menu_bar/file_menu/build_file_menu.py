@@ -1,4 +1,4 @@
-from PySide6.QtGui import QAction
+from PySide6.QtGui import QAction, QFontDatabase
 from PySide6.QtWidgets import QMainWindow
 
 from je_editor.pyside_ui.file_dialog.open_file_dialog import choose_file_get_open_filename
@@ -19,8 +19,4 @@ def set_file_menu(ui_we_want_to_set: QMainWindow):
     )
     ui_we_want_to_set.file_menu.addAction(ui_we_want_to_set.save_file_action)
     ui_we_want_to_set.file_menu.addSeparator()
-    ui_we_want_to_set.file_menu.addMenu("Text")
 
-
-def temp():
-    print("temp")
