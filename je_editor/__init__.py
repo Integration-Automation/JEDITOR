@@ -12,7 +12,6 @@ from je_editor.utils.exception.exceptions import JEditorJsonException
 
 
 __all__ = [
-    "PySideEditor",
     "start_editor",
     "JEditorException", "JEditorExecException",
     "JEditorRunOnShellException", "JEditorSaveFileException",
