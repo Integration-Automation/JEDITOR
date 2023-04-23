@@ -33,6 +33,7 @@ class EditorMain(QMainWindow):
                 self.current_file,
                 self.code_edit.code_edit.toPlainText()
             )
+            self.auto_save_thread.start()
 
     def add_font_menu(self):
         self.font_menu = self.text_menu.addMenu("Font")
