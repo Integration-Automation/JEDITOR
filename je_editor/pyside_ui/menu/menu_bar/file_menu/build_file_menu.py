@@ -6,13 +6,11 @@ from je_editor.pyside_ui.file_dialog.save_file_dialog import choose_file_get_sav
 
 
 def set_file_menu(ui_we_want_to_set: QMainWindow):
-    # TODO open file function
     ui_we_want_to_set.open_file_action = QAction("Open File")
     ui_we_want_to_set.open_file_action.triggered.connect(
         lambda: choose_file_get_open_filename(parent_qt_instance=ui_we_want_to_set)
     )
     ui_we_want_to_set.file_menu.addAction(ui_we_want_to_set.open_file_action)
-    # TODO save file function
     ui_we_want_to_set.save_file_action = QAction("Save File")
     ui_we_want_to_set.save_file_action.triggered.connect(
         lambda: choose_file_get_save_filename(parent_qt_instance=ui_we_want_to_set)
