@@ -19,10 +19,13 @@ class EditorMain(QMainWindow):
         self.auto_save_thread = None
         # current file
         self.current_file = None
+        # Font
+        self.font_database = QFontDatabase()
         set_ui(self)
         set_project_treeview(self)
         set_menu_bar(self)
         self.add_font_menu()
+        self.add_font_size_menu()
         self.showMaximized()
         self.focusWidget()
         if self.current_file is not None and self.auto_save_thread is None:
@@ -32,13 +35,35 @@ class EditorMain(QMainWindow):
             )
 
     def add_font_menu(self):
-        self.text_menu = self.file_menu.addMenu("Text")
-        self.font_database = QFontDatabase()
+        self.font_menu = self.text_menu.addMenu("Font")
         for family in self.font_database.families():
             font_action = QAction(family, parent=self)
             font_action.triggered.connect(self.set_font)
-            self.text_menu.addAction(font_action)
+            self.font_menu.addAction(font_action)
+
+    def add_font_size_menu(self):
+        self.font_size_menu = self.text_menu.addMenu("Font Size")
+        for size in range(12, 38, 2):
+            font_action = QAction(str(size), parent=self)
+            font_action.triggered.connect(self.set_font_size)
+            self.font_size_menu.addAction(font_action)
 
     def set_font(self):
         self.code_edit.setFont(self.font_database.font(self.sender().text(), "", 12))
         self.code_result.setFont(self.font_database.font(self.sender().text(), "", 12))
+
+    def set_font_size(self):
+        self.code_edit.setFont(
+            self.font_database.font(
+                self.font().family(),
+                "",
+                int(self.sender().text())
+            )
+        )
+        self.code_result.setFont(
+            self.font_database.font(
+                self.font().family(),
+                "",
+                int(self.sender().text())
+            )
+        )
