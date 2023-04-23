@@ -10,7 +10,7 @@ def choose_file_get_open_filename(parent_qt_instance):
         parent=parent_qt_instance,
         dir=os.getcwd()
     )
-    if filename is not None:
+    if filename is not None and filename != "":
         parent_qt_instance.current_file = filename
         file, file_content = read_file(filename)
         parent_qt_instance.code_edit.setPlainText(
