@@ -1,39 +1,44 @@
 import queue
 import subprocess
-import tkinter
-import typing
 from threading import Thread
-from tkinter import DISABLED
-from tkinter import END
-from tkinter import NORMAL
+
+from PySide6.QtCore import QTimer
+from PySide6.QtGui import QColor
+from PySide6.QtWidgets import QMainWindow, QTextEdit
 
 
 class ShellManager(object):
 
     def __init__(
             self,
-            main_window: tkinter.Tk,
-            run_shell_result_textarea: tkinter.Text,
-            process_error_function: typing.Callable,
+            main_window: QMainWindow = None,
             shell_encoding: str = "utf-8",
             program_buffer: int = 10240000,
     ):
         """
-        :param run_shell_result_textarea:  program run result textarea
-        :param process_error_function: when process error call this function
         :param main_window: tkinter main window
         """
         self.read_program_error_output_from_thread = None
         self.read_program_output_from_thread = None
-        self.main_window = main_window
-        self.run_shell_result_textarea = run_shell_result_textarea
-        self.process_error_function = process_error_function
-        self.still_run_shell = True
+        self.main_window: QMainWindow = main_window
+        self.code_result: [QTextEdit, None] = None
+        self.timer: [QTimer, None] = None
+        self.still_run_shell: bool = True
         self.process = None
-        self.run_output_queue = queue.Queue()
-        self.run_error_queue = queue.Queue()
-        self.program_encoding = shell_encoding
-        self.program_buffer = program_buffer
+        self.run_output_queue: queue = queue.Queue()
+        self.run_error_queue: queue = queue.Queue()
+        self.program_encoding: str = shell_encoding
+        self.program_buffer: int = program_buffer
+        self.red_color: QColor = QColor(255, 0, 0)
+        self.black_color: QColor = QColor(0, 0, 0)
+
+    def later_init(self):
+        if self.main_window is not None:
+            self.code_result: QTextEdit = self.main_window.code_result
+            self.timer = QTimer(self.main_window)
+        else:
+            # TODO Exception
+            raise Exception
 
     def exec_shell(self, shell_command: str):
         """
@@ -42,9 +47,7 @@ class ShellManager(object):
         """
         try:
             self.exit_program()
-            self.run_shell_result_textarea.configure(state=NORMAL)
-            self.run_shell_result_textarea.delete("1.0", "end-1c")
-            self.run_shell_result_textarea.configure(state=DISABLED)
+            self.code_result.setPlainText("")
             # run shell command
             args = shell_command.split()
             self.process = subprocess.Popen(
@@ -64,24 +67,28 @@ class ShellManager(object):
                 target=self.read_program_error_output_from_process,
                 daemon=True
             ).start()
-            # start tkinter_ui update
-            self.edit_tkinter_text()
+            # start timer
+            self.timer.setInterval(1000)
+            self.timer.timeout.connect(self.pull_text)
+            self.timer.start()
         except Exception as error:
-            self.run_shell_result_textarea.configure(state=NORMAL)
-            self.run_shell_result_textarea.insert(END, str(error), "warning", "\n")
-            self.run_shell_result_textarea.configure(state=DISABLED)
+            self.code_result.setTextColor(self.red_color)
+            self.code_result.append(str(error))
+            self.code_result.setTextColor(self.black_color)
 
     # tkinter_ui update method
-    def edit_tkinter_text(self):
+    def pull_text(self):
         try:
-            self.run_shell_result_textarea.configure(state=NORMAL)
+            self.code_result.setTextColor(self.red_color)
             if not self.run_error_queue.empty():
                 error_message = self.run_error_queue.get_nowait()
-                self.process_error_function(self.run_shell_result_textarea, error_message)
+                if error_message:
+                    self.code_result.append(error_message)
+            self.code_result.setTextColor(self.black_color)
             if not self.run_output_queue.empty():
                 output_message = self.run_output_queue.get_nowait()
-                self.run_shell_result_textarea.insert(END, output_message)
-            self.run_shell_result_textarea.configure(state=DISABLED)
+                if output_message:
+                    self.code_result.append(output_message)
         except queue.Empty:
             pass
         if self.process.returncode == 0:
@@ -89,7 +96,6 @@ class ShellManager(object):
         elif self.process.returncode is not None:
             self.exit_program()
         if self.still_run_shell:
-            self.main_window.after(1, self.edit_tkinter_text)
             # poll return code
             self.process.poll()
 
@@ -106,12 +112,14 @@ class ShellManager(object):
 
     def print_and_clear_queue(self):
         try:
-            self.run_shell_result_textarea.configure(state=NORMAL)
             for std_output in iter(self.run_output_queue.get_nowait, None):
-                self.run_shell_result_textarea.insert(END, std_output)
+                if std_output:
+                    self.code_result.append(std_output)
+            self.code_result.setTextColor(self.red_color)
             for std_err in iter(self.run_error_queue.get_nowait, None):
-                self.run_shell_result_textarea.insert(END, std_err, "warning", "\n")
-            self.run_shell_result_textarea.configure(state=DISABLED)
+                if std_err:
+                    self.code_result.append(std_err)
+            self.code_result.setTextColor(self.black_color)
         except queue.Empty:
             pass
         self.run_output_queue = queue.Queue()
@@ -119,12 +127,17 @@ class ShellManager(object):
 
     def read_program_output_from_process(self):
         while self.still_run_shell:
-            program_output_data = self.process.stdout.raw.read(self.program_buffer) \
+            program_output_data = self.process.stdout.raw.read(
+                self.program_buffer) \
                 .decode(self.program_encoding)
             self.run_output_queue.put_nowait(program_output_data)
 
     def read_program_error_output_from_process(self):
         while self.still_run_shell:
-            program_error_output_data = self.process.stderr.raw.read(self.program_buffer) \
+            program_error_output_data = self.process.stderr.raw.read(
+                self.program_buffer) \
                 .decode(self.program_encoding)
             self.run_error_queue.put_nowait(program_error_output_data)
+
+
+shell_manager = ShellManager()

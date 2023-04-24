@@ -1,4 +1,4 @@
-from PySide6.QtWidgets import QMainWindow, QScrollArea, QPlainTextEdit, QGridLayout, QWidget
+from PySide6.QtWidgets import QMainWindow, QScrollArea, QPlainTextEdit, QGridLayout, QWidget, QTextEdit
 
 
 def set_ui(ui_we_want_to_set: QMainWindow):
@@ -11,8 +11,8 @@ def set_ui(ui_we_want_to_set: QMainWindow):
     # code edit and code result plaintext
     ui_we_want_to_set.code_edit = QPlainTextEdit()
     ui_we_want_to_set.code_edit.setLineWrapMode(ui_we_want_to_set.code_edit.LineWrapMode.NoWrap)
-    ui_we_want_to_set.code_result = QPlainTextEdit()
-    ui_we_want_to_set.code_result.setLineWrapMode(ui_we_want_to_set.code_edit.LineWrapMode.NoWrap)
+    ui_we_want_to_set.code_result = QTextEdit()
+    ui_we_want_to_set.code_result.setLineWrapMode(ui_we_want_to_set.code_result.LineWrapMode.NoWrap)
     ui_we_want_to_set.code_result.setReadOnly(True)
     ui_we_want_to_set.code_edit_scroll_area = QScrollArea()
     ui_we_want_to_set.code_edit_scroll_area.setWidgetResizable(True)
