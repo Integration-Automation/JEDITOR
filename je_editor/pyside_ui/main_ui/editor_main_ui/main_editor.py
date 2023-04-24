@@ -1,12 +1,14 @@
 import os
 
-from PySide6.QtGui import QFontDatabase, QAction
+from PySide6.QtCore import QTimer
+from PySide6.QtGui import QFontDatabase, QAction, QColor
 from PySide6.QtWidgets import QMainWindow
 
 from je_editor.pyside_ui.main_ui_setting.ui_setting import set_ui
 from je_editor.pyside_ui.menu.menu_bar.set_menu_bar import set_menu_bar
 from je_editor.pyside_ui.treeview.project_treeview.set_project_treeview import set_project_treeview
 from je_editor.utils.file.save.save_file import SaveThread
+from je_editor.utils.redirect_manager.redirect_manager_class import redirect_manager_instance
 
 
 class EditorMain(QMainWindow):
@@ -21,6 +23,14 @@ class EditorMain(QMainWindow):
         self.current_file = None
         # Font
         self.font_database = QFontDatabase()
+        # Color
+        self.red_color: QColor = QColor(255, 0, 0)
+        self.black_color: QColor = QColor(0, 0, 0)
+        # Timer to redirect error or message
+        self.redirect_timer = QTimer(self)
+        self.redirect_timer.setInterval(1000)
+        self.redirect_timer.timeout.connect(self.redirect)
+        self.redirect_timer.start()
         set_ui(self)
         set_project_treeview(self)
         set_menu_bar(self)
@@ -34,6 +44,7 @@ class EditorMain(QMainWindow):
                 self.code_edit.code_edit.toPlainText()
             )
             self.auto_save_thread.start()
+        redirect_manager_instance.set_redirect(self, True)
 
     def add_font_menu(self):
         self.font_menu = self.text_menu.addMenu("Font")
@@ -68,3 +79,15 @@ class EditorMain(QMainWindow):
                 int(self.sender().text())
             )
         )
+
+    def redirect(self):
+        if not redirect_manager_instance.std_out_queue.empty():
+            output_message = redirect_manager_instance.std_out_queue.get_nowait()
+            if output_message:
+                self.code_result.append(output_message)
+        self.code_result.setTextColor(self.red_color)
+        if not redirect_manager_instance.std_err_queue.empty():
+            error_message = redirect_manager_instance.std_err_queue.get_nowait()
+            if error_message:
+                self.code_result.append(error_message)
+        self.code_result.setTextColor(self.black_color)
