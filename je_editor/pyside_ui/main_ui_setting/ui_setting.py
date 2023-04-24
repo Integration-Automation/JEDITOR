@@ -1,5 +1,5 @@
 from PySide6 import QtGui
-from PySide6.QtWidgets import QMainWindow, QScrollArea, QPlainTextEdit, QGridLayout, QWidget, QTextEdit
+from PySide6.QtWidgets import QMainWindow, QScrollArea, QGridLayout, QWidget, QTextEdit, QPlainTextEdit
 
 from je_editor.pyside_ui.syntax.python_syntax import PythonHighlighter
 

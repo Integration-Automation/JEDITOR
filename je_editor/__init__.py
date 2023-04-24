@@ -1,5 +1,7 @@
 # start editor
 from je_editor.start_editor import start_editor
+# Editor
+from je_editor.pyside_ui.main_ui.editor_main_ui.main_editor import EditorMain
 # Exceptions
 from je_editor.utils.exception.exceptions import JEditorException
 from je_editor.utils.exception.exceptions import JEditorExecException
@@ -12,7 +14,7 @@ from je_editor.utils.exception.exceptions import JEditorJsonException
 
 
 __all__ = [
-    "start_editor",
+    "start_editor", "EditorMain",
     "JEditorException", "JEditorExecException",
     "JEditorRunOnShellException", "JEditorSaveFileException",
     "JEditorOpenFileException", "JEditorContentFileException",
