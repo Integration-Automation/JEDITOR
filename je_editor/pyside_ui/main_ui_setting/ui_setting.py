@@ -1,4 +1,7 @@
-from PySide6.QtWidgets import QMainWindow, QScrollArea, QPlainTextEdit, QGridLayout, QWidget
+from PySide6 import QtGui
+from PySide6.QtWidgets import QMainWindow, QScrollArea, QGridLayout, QWidget, QTextEdit, QPlainTextEdit
+
+from je_editor.pyside_ui.syntax.python_syntax import PythonHighlighter
 
 
 def set_ui(ui_we_want_to_set: QMainWindow):
@@ -11,8 +14,11 @@ def set_ui(ui_we_want_to_set: QMainWindow):
     # code edit and code result plaintext
     ui_we_want_to_set.code_edit = QPlainTextEdit()
     ui_we_want_to_set.code_edit.setLineWrapMode(ui_we_want_to_set.code_edit.LineWrapMode.NoWrap)
-    ui_we_want_to_set.code_result = QPlainTextEdit()
-    ui_we_want_to_set.code_result.setLineWrapMode(ui_we_want_to_set.code_edit.LineWrapMode.NoWrap)
+    ui_we_want_to_set.code_edit.setTabStopDistance(
+        QtGui.QFontMetricsF(ui_we_want_to_set.code_edit.font()).horizontalAdvance(' ') * 4)
+    PythonHighlighter(ui_we_want_to_set.code_edit.document())
+    ui_we_want_to_set.code_result = QTextEdit()
+    ui_we_want_to_set.code_result.setLineWrapMode(ui_we_want_to_set.code_result.LineWrapMode.NoWrap)
     ui_we_want_to_set.code_result.setReadOnly(True)
     ui_we_want_to_set.code_edit_scroll_area = QScrollArea()
     ui_we_want_to_set.code_edit_scroll_area.setWidgetResizable(True)

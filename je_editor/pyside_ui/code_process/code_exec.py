@@ -4,9 +4,9 @@ import shutil
 import subprocess
 from pathlib import Path
 from threading import Thread
-from tkinter import DISABLED
-from tkinter import END
-from tkinter import NORMAL
+
+from PySide6.QtCore import QTimer
+from PySide6.QtWidgets import QMainWindow, QTextEdit
 
 from je_editor.utils.exception.exception_tags import compiler_not_found_error
 from je_editor.utils.exception.exception_tags import file_not_fond_error
@@ -17,32 +17,36 @@ class ExecManager(object):
 
     def __init__(
             self,
-            program_run_result_textarea,
-            process_error_function,
-            main_window,
+            main_window=None,
             program_language="python",
             program_encoding="utf-8",
             program_buffer=10240000,
     ):
         """
-        :param program_run_result_textarea:  program run result textarea
-        :param process_error_function: when process error call this function
         :param main_window: tkinter main window
         :param program_language: which program language
         :param program_encoding: which encoding
         """
         self.read_program_error_output_from_thread = None
         self.read_program_output_from_thread = None
-        self.main_window = main_window
+        self.main_window: QMainWindow = main_window
+        self.code_result: [QTextEdit, None] = None
+        self.timer: [QTimer, None] = None
         self.still_run_program = True
-        self.run_program_result_textarea = program_run_result_textarea
-        self.process_error_function = process_error_function
         self.process = None
         self.run_output_queue = queue.Queue()
         self.run_error_queue = queue.Queue()
         self.program_language = program_language
         self.program_encoding = program_encoding
         self.program_buffer = program_buffer
+
+    def later_init(self):
+        if self.main_window is not None:
+            self.code_result: QTextEdit = self.main_window.code_result
+            self.timer = QTimer(self.main_window)
+        else:
+            # TODO Exception
+            raise Exception
 
     def exec_code(self, exec_file_name):
         """
@@ -51,9 +55,7 @@ class ExecManager(object):
         """
         try:
             self.exit_program()
-            self.run_program_result_textarea.configure(state=NORMAL)
-            self.run_program_result_textarea.delete("1.0", "end-1c")
-            self.run_program_result_textarea.configure(state=DISABLED)
+            self.code_result.setPlainText("")
             reformat_os_file_path = os.path.abspath(exec_file_name)
             # detect file is exist
             try:
@@ -89,33 +91,41 @@ class ExecManager(object):
                 daemon=True
             ).start()
             # show which file execute
-            self.run_program_result_textarea.configure(state=NORMAL)
-            self.run_program_result_textarea.insert(END, compiler_path + " " + reformat_os_file_path + "\n")
-            self.run_program_result_textarea.configure(state=DISABLED)
+            self.code_result.append(compiler_path + " " + reformat_os_file_path)
             # start tkinter_ui update
-            self.edit_tkinter_text()
+            # start timer
+            self.timer = QTimer(self.main_window)
+            self.timer.setInterval(1)
+            self.timer.timeout.connect(self.pull_text)
+            self.timer.start()
         except Exception as error:
-            print(repr(error))
+            self.code_result.setTextColor(self.main_window.red_color)
+            self.code_result.append(str(error))
+            self.code_result.setTextColor(self.main_window.black_color)
 
     # tkinter_ui update method
-    def edit_tkinter_text(self):
+    def pull_text(self):
         try:
-            self.run_program_result_textarea.configure(state=NORMAL)
+            self.code_result.setTextColor(self.main_window.red_color)
             if not self.run_error_queue.empty():
                 error_message = self.run_error_queue.get_nowait()
-                self.process_error_function(self.run_program_result_textarea, error_message)
+                error_message = str(error_message).strip()
+                if error_message:
+                    self.code_result.append(error_message)
+            self.code_result.setTextColor(self.main_window.black_color)
             if not self.run_output_queue.empty():
                 output_message = self.run_output_queue.get_nowait()
-                self.run_program_result_textarea.insert(END, output_message)
-            self.run_program_result_textarea.configure(state=DISABLED)
+                output_message = str(output_message).strip()
+                if output_message:
+                    self.code_result.append(output_message)
         except queue.Empty:
             pass
         if self.process.returncode == 0:
             self.exit_program()
         elif self.process.returncode is not None:
             self.exit_program()
+            self.timer.stop()
         if self.still_run_program:
-            self.main_window.after(1, self.edit_tkinter_text)
             # poll return code
             self.process.poll()
 
@@ -132,12 +142,16 @@ class ExecManager(object):
 
     def print_and_clear_queue(self):
         try:
-            self.run_program_result_textarea.configure(state=NORMAL)
             for std_output in iter(self.run_output_queue.get_nowait, None):
-                self.run_program_result_textarea.insert(END, std_output + "\n")
+                std_output = str(std_output).strip()
+                if std_output:
+                    self.code_result.append(std_output)
+            self.code_result.setTextColor(self.main_window.red_color)
             for std_err in iter(self.run_error_queue.get_nowait, None):
-                self.run_program_result_textarea.insert(END, std_err, "warning", "\n")
-            self.run_program_result_textarea.configure(state=DISABLED)
+                std_err = str(std_err).strip()
+                if std_err:
+                    self.code_result.append(std_err)
+            self.code_result.setTextColor(self.main_window.black_color)
         except queue.Empty:
             pass
         self.run_output_queue = queue.Queue()
@@ -152,3 +166,6 @@ class ExecManager(object):
         while self.still_run_program:
             program_error_output_data = self.process.stderr.raw.read(self.program_buffer).decode(self.program_encoding)
             self.run_error_queue.put_nowait(program_error_output_data)
+
+
+exec_manage = ExecManager()
