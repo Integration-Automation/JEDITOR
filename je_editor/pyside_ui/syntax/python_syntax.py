@@ -62,25 +62,25 @@ class PythonHighlighter(QSyntaxHighlighter):
             self.highlight_rules.append((pattern, text_char_format))
 
         text_char_format = QTextCharFormat()
-        text_char_format.setForeground(QColor(0, 153, 0))
-        for rule in string_rule:
-            pattern = QRegularExpression(rule)
-            self.highlight_rules.append((pattern, text_char_format))
-
-        text_char_format = QTextCharFormat()
         text_char_format.setForeground(QColor(0, 128, 255))
         for rule in number_rule:
             pattern = QRegularExpression(rule)
             self.highlight_rules.append((pattern, text_char_format))
 
         text_char_format = QTextCharFormat()
-        text_char_format.setForeground(QColor(0, 0, 255))
+        text_char_format.setForeground(QColor(0, 153, 0))
+        for rule in string_rule:
+            pattern = QRegularExpression(rule)
+            self.highlight_rules.append((pattern, text_char_format))
+
+        text_char_format = QTextCharFormat()
+        text_char_format.setForeground(QColor(0, 255, 255))
         for word in builtins_keyword:
             pattern = QRegularExpression(rf"\b{word}\b")
             self.highlight_rules.append((pattern, text_char_format))
 
         text_char_format = QTextCharFormat()
-        text_char_format.setForeground(QColor(80, 80, 80))
+        text_char_format.setForeground(QColor(255, 255, 255))
         pattern = QRegularExpression(r"#[^\n]*")
         self.highlight_rules.append((pattern, text_char_format))
 

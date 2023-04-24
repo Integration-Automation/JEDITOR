@@ -4,6 +4,7 @@ from PySide6.QtCore import QTimer
 from PySide6.QtGui import QFontDatabase, QAction, QColor
 from PySide6.QtWidgets import QMainWindow
 
+from je_editor.pyside_ui.colors.global_color import error_color, output_color
 from je_editor.pyside_ui.main_ui_setting.ui_setting import set_ui
 from je_editor.pyside_ui.menu.menu_bar.set_menu_bar import set_menu_bar
 from je_editor.pyside_ui.treeview.project_treeview.set_project_treeview import set_project_treeview
@@ -24,8 +25,6 @@ class EditorMain(QMainWindow):
         # Font
         self.font_database = QFontDatabase()
         # Color
-        self.red_color: QColor = QColor(255, 0, 0)
-        self.black_color: QColor = QColor(0, 0, 0)
         # Timer to redirect error or message
         self.redirect_timer = QTimer(self)
         self.redirect_timer.setInterval(1)
@@ -61,20 +60,32 @@ class EditorMain(QMainWindow):
             self.font_size_menu.addAction(font_action)
 
     def set_font(self):
-        self.code_edit.setFont(self.font_database.font(self.sender().text(), "", 12))
-        self.code_result.setFont(self.font_database.font(self.sender().text(), "", 12))
+        self.code_edit.setFont(
+            self.font_database.font(
+                self.sender().text(),
+                "",
+                self.code_edit.font().pointSize()
+            )
+        )
+        self.code_result.setFont(
+            self.font_database.font(
+                self.sender().text(),
+                "",
+                self.code_result.font().pointSize()
+            )
+        )
 
     def set_font_size(self):
         self.code_edit.setFont(
             self.font_database.font(
-                self.font().family(),
+                self.code_edit.font().family(),
                 "",
                 int(self.sender().text())
             )
         )
         self.code_result.setFont(
             self.font_database.font(
-                self.font().family(),
+                self.code_result.font().family(),
                 "",
                 int(self.sender().text())
             )
@@ -88,10 +99,10 @@ class EditorMain(QMainWindow):
             output_message = str(output_message).strip()
             if output_message:
                 self.code_result.append(output_message)
-        self.code_result.setTextColor(self.red_color)
+        self.code_result.setTextColor(error_color)
         if not redirect_manager_instance.std_err_queue.empty():
             error_message = redirect_manager_instance.std_err_queue.get_nowait()
             error_message = str(error_message).strip()
             if error_message:
                 self.code_result.append(error_message)
-        self.code_result.setTextColor(self.black_color)
+        self.code_result.setTextColor(output_color)
