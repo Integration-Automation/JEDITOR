@@ -24,13 +24,11 @@ class SaveThread(Thread):
     def run(self):
         # loop and save current edit file
         if self.file is not None:
-            print("init")
             self.auto_save = True
             self.path = Path(self.file)
         while self.auto_save and self.file is not None:
             time.sleep(5)
             if self.path.exists() and self.path.is_file():
                 write_file(self.file, self.text_to_write)
-                print("saved")
             else:
                 break
