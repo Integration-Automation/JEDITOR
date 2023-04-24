@@ -2,7 +2,8 @@ import os
 
 from PySide6.QtWidgets import QFileDialog
 
-from je_editor.utils.file.save.save_file import write_file, SaveThread
+from je_editor.utils.file.save.save_file import write_file
+from je_editor.pyside_ui.auto_save.auto_save_thread import SaveThread
 
 
 def choose_file_get_save_filename(parent_qt_instance):
