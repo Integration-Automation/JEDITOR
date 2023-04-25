@@ -18,6 +18,5 @@ def set_file_menu(ui_we_want_to_set: QMainWindow):
         lambda: choose_file_get_save_filename(parent_qt_instance=ui_we_want_to_set)
     )
     ui_we_want_to_set.file_menu.addAction(ui_we_want_to_set.save_file_action)
-    ui_we_want_to_set.file_menu.addSeparator()
-    ui_we_want_to_set.text_menu = ui_we_want_to_set.file_menu.addMenu("Text")
+
 

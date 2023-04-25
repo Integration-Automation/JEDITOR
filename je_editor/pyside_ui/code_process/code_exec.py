@@ -9,9 +9,9 @@ from PySide6.QtCore import QTimer
 from PySide6.QtWidgets import QMainWindow, QTextEdit
 
 from je_editor.pyside_ui.colors.global_color import error_color, output_color
-from je_editor.utils.exception.exception_tags import compiler_not_found_error
+from je_editor.utils.exception.exception_tags import compiler_not_found_error, je_editor_init_error
 from je_editor.utils.exception.exception_tags import file_not_fond_error
-from je_editor.utils.exception.exceptions import JEditorExecException
+from je_editor.utils.exception.exceptions import JEditorExecException, JEditorException
 
 
 class ExecManager(object):
@@ -46,8 +46,7 @@ class ExecManager(object):
             self.code_result: QTextEdit = self.main_window.code_result
             self.timer = QTimer(self.main_window)
         else:
-            # TODO Exception
-            raise Exception
+            raise JEditorException(je_editor_init_error)
 
     def exec_code(self, exec_file_name):
         """

@@ -5,6 +5,7 @@ je_editor_error: str = "JEditor error"
 """
 init exception
 """
+je_editor_init_error: str = "JEditor can't init"
 je_editor_init_exec_manager_exception: str = "JEditor can't init program manager"
 """
 exec exception

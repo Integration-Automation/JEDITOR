@@ -94,13 +94,15 @@ class CodeEditor(QPlainTextEdit):
             key = key_event.key()
             if key == Qt.Key.Key_Enter or key == Qt.Key.Key_Return:
                 event.ignore()
+            else:
+                super().keyPressEvent(event)
         else:
             super().keyPressEvent(event)
         self.highlight_current_line()
 
     def mousePressEvent(self, event) -> None:
-        self.highlight_current_line()
         super().mousePressEvent(event)
+        self.highlight_current_line()
 
 
 class LineNumber(QWidget):

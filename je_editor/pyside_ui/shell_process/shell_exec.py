@@ -7,6 +7,9 @@ from PySide6.QtCore import QTimer
 from PySide6.QtGui import QColor
 from PySide6.QtWidgets import QMainWindow, QTextEdit
 
+from je_editor.utils.exception.exception_tags import je_editor_init_error
+from je_editor.utils.exception.exceptions import JEditorException
+
 from je_editor.pyside_ui.colors.global_color import error_color, output_color
 
 
@@ -37,8 +40,7 @@ class ShellManager(object):
         if self.main_window is not None:
             self.code_result: QTextEdit = self.main_window.code_result
         else:
-            # TODO Exception
-            raise Exception
+            raise JEditorException(je_editor_init_error)
 
     def exec_shell(self, shell_command: str):
         """
