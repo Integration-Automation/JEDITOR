@@ -1,4 +1,4 @@
-from os import getcwd
-with open(getcwd() + "/test.text", "w+") as file:
-	for i in range(1, 10000, 1):
-		file.write("Test \n")
+i = 0
+while True:
+    i = i + 1
+    print(i)

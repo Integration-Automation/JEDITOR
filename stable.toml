@@ -1,12 +1,12 @@
-# Rename to build dev version
-# This is dev version
+# Rename to build stable version
+# This is stable version
 [build-system]
-requires = ["setuptools"]
+requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "je_editor_dev"
-version = "0.0.69"
+name = "je_editor"
+version = "0.0.71"
 authors = [
     { name = "JE-Chen", email = "zenmailman@gmail.com" },
 ]
@@ -16,7 +16,8 @@ requires-python = ">=3.7"
 license = { text = "MIT" }
 dependencies = [
     "PySide6",
-    "qt-material"
+    "qt-material",
+    "yapf"
 ]
 classifiers = [
     "Programming Language :: Python :: 3.7",

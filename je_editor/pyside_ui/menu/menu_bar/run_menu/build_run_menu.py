@@ -1,4 +1,5 @@
-from PySide6.QtGui import QAction
+from PySide6.QtCore import Qt
+from PySide6.QtGui import QAction, QKeySequence
 from PySide6.QtWidgets import QMainWindow
 
 from je_editor.pyside_ui.code_process.code_exec import exec_manage
