@@ -99,8 +99,8 @@ class CodeEditor(QPlainTextEdit):
         self.highlight_current_line()
 
     def mousePressEvent(self, event) -> None:
-        self.highlight_current_line()
         super().mousePressEvent(event)
+        self.highlight_current_line()
 
 
 class LineNumber(QWidget):
