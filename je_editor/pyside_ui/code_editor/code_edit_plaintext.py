@@ -1,6 +1,9 @@
+from PySide6 import QtGui
 from PySide6.QtCore import Qt, QRect
-from PySide6.QtGui import QPainter, QColor
-from PySide6.QtWidgets import QPlainTextEdit, QWidget
+from PySide6.QtGui import QPainter, QColor, QTextCharFormat, QTextFormat, QKeyEvent
+from PySide6.QtWidgets import QPlainTextEdit, QWidget, QTextEdit
+
+from je_editor.pyside_ui.syntax.python_syntax import PythonHighlighter
 
 
 class CodeEditor(QPlainTextEdit):
@@ -11,6 +14,13 @@ class CodeEditor(QPlainTextEdit):
         self.blockCountChanged.connect(self.update_line_number_area_width)
         self.updateRequest.connect(self.update_line_number_area)
         self.update_line_number_area_width(0)
+        self.textChanged.connect(self.highlight_current_line)
+        self.setTabStopDistance(
+            QtGui.QFontMetricsF(self.font()).horizontalAdvance(' ') * 4
+        )
+        PythonHighlighter(self.document())
+        self.highlight_current_line()
+        self.setLineWrapMode(self.LineWrapMode.NoWrap)
 
     def line_number_paint(self, event):
         painter = QPainter(self.line_number)
@@ -22,7 +32,7 @@ class CodeEditor(QPlainTextEdit):
         while block.isValid() and top <= event.rect().bottom():
             if block.isVisible() and bottom >= event.rect().top():
                 number = str(block_number + 1)
-                painter.setPen(QColor(255, 255, 255))
+                painter.setPen(QColor(179, 179, 204))
                 painter.drawText(
                     0,
                     top,
@@ -63,6 +73,34 @@ class CodeEditor(QPlainTextEdit):
             )
         if rect.contains(self.viewport().rect()):
             self.update_line_number_area_width(0)
+
+    def highlight_current_line(self):
+        selections = []
+        if not self.isReadOnly():
+            formats = QTextCharFormat()
+            selection = QTextEdit.ExtraSelection()
+            selection.format = formats
+            color_of_the_line = QColor(92, 92, 138)
+            selection.cursor = self.textCursor()
+            selection.cursor.clearSelection()
+            selections.append(selection)
+            selection.format.setBackground(color_of_the_line)
+            selection.format.setProperty(QTextFormat.FullWidthSelection, True)
+        self.setExtraSelections(selections)
+
+    def keyPressEvent(self, event):
+        key_event = QKeyEvent(event)
+        if key_event.modifiers() and Qt.Modifier.SHIFT:
+            key = key_event.key()
+            if key == Qt.Key.Key_Enter or key == Qt.Key.Key_Return:
+                event.ignore()
+        else:
+            super().keyPressEvent(event)
+        self.highlight_current_line()
+
+    def mousePressEvent(self, event) -> None:
+        self.highlight_current_line()
+        super().mousePressEvent(event)
 
 
 class LineNumber(QWidget):
