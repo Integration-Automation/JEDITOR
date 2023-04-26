@@ -13,7 +13,7 @@ def choose_file_get_open_filename(parent_qt_instance):
     )[0]
     if filename is not None and filename != "":
         parent_qt_instance.current_file = filename
-        file, file_content = read_file(filename)
+        file_content = read_file(filename)[1]
         parent_qt_instance.code_edit.setPlainText(
             file_content
             )

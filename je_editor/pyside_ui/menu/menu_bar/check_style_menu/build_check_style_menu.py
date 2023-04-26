@@ -22,5 +22,5 @@ def check_python_code(ui_we_want_to_set):
         verify=True,
         style_config="google"
     )
-    if type(format_code) == tuple:
+    if isinstance(format_code, tuple):
         ui_we_want_to_set.code_edit.setPlainText(format_code[0])
