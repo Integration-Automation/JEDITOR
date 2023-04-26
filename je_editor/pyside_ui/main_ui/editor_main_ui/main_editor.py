@@ -1,14 +1,14 @@
 import os
 
 from PySide6.QtCore import QTimer
-from PySide6.QtGui import QFontDatabase, QAction, QColor
+from PySide6.QtGui import QFontDatabase, QAction
 from PySide6.QtWidgets import QMainWindow
 
+from je_editor.pyside_ui.auto_save.auto_save_thread import SaveThread
 from je_editor.pyside_ui.colors.global_color import error_color, output_color
 from je_editor.pyside_ui.main_ui_setting.ui_setting import set_ui
 from je_editor.pyside_ui.menu.menu_bar.set_menu_bar import set_menu_bar
 from je_editor.pyside_ui.treeview.project_treeview.set_project_treeview import set_project_treeview
-from je_editor.pyside_ui.auto_save.auto_save_thread import SaveThread
 from je_editor.utils.redirect_manager.redirect_manager_class import redirect_manager_instance
 
 

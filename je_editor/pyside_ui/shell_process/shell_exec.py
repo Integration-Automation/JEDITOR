@@ -4,13 +4,11 @@ import subprocess
 from threading import Thread
 
 from PySide6.QtCore import QTimer
-from PySide6.QtGui import QColor
 from PySide6.QtWidgets import QMainWindow, QTextEdit
 
+from je_editor.pyside_ui.colors.global_color import error_color, output_color
 from je_editor.utils.exception.exception_tags import je_editor_init_error
 from je_editor.utils.exception.exceptions import JEditorException
-
-from je_editor.pyside_ui.colors.global_color import error_color, output_color
 
 
 class ShellManager(object):
@@ -63,12 +61,14 @@ class ShellManager(object):
             self.read_program_output_from_thread = Thread(
                 target=self.read_program_output_from_process,
                 daemon=True
-            ).start()
+            )
+            self.read_program_output_from_thread.start()
             # program error message queue thread
             self.read_program_error_output_from_thread = Thread(
                 target=self.read_program_error_output_from_process,
                 daemon=True
-            ).start()
+            )
+            self.read_program_error_output_from_thread.start()
             # start timer
             self.timer = QTimer(self.main_window)
             self.timer.setInterval(1)

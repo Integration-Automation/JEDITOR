@@ -84,12 +84,14 @@ class ExecManager(object):
             self.read_program_output_from_thread = Thread(
                 target=self.read_program_output_from_process,
                 daemon=True
-            ).start()
+            )
+            self.read_program_output_from_thread.start()
             # program error message queue thread
             self.read_program_error_output_from_thread = Thread(
                 target=self.read_program_error_output_from_process,
                 daemon=True
-            ).start()
+            )
+            self.read_program_error_output_from_thread.start()
             # show which file execute
             self.code_result.append(compiler_path + " " + reformat_os_file_path)
             # start tkinter_ui update
