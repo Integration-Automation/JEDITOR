@@ -19,7 +19,7 @@ sys.path.insert(0, os.path.abspath('.'))
 
 
 project = 'je_editor'
-copyright = '2022, JE-Chen'
+copyright = '2020~2023, JE-Chen'
 author = 'JE-Chen'
 
 # The full version, including alpha/beta/rc tags

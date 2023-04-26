@@ -2,6 +2,7 @@ import os
 
 from PySide6.QtWidgets import QFileDialog
 
+from je_editor.pyside_ui.auto_save.auto_save_thread import SaveThread
 from je_editor.utils.file.open.open_file import read_file
 
 
@@ -16,5 +17,11 @@ def choose_file_get_open_filename(parent_qt_instance):
         parent_qt_instance.code_edit.setPlainText(
             file_content
             )
+        if parent_qt_instance.auto_save_thread is None:
+            parent_qt_instance.auto_save_thread = SaveThread(
+                parent_qt_instance.current_file,
+                parent_qt_instance.code_edit.toPlainText()
+            )
+            parent_qt_instance.auto_save_thread.start()
         if parent_qt_instance.auto_save_thread is not None:
             parent_qt_instance.auto_save_thread.file = parent_qt_instance.current_file

@@ -4,6 +4,7 @@ import pathlib
 from PySide6.QtCore import QDir, QModelIndex
 from PySide6.QtWidgets import QMainWindow, QFileSystemModel, QTreeView
 
+from je_editor.pyside_ui.auto_save.auto_save_thread import SaveThread
 from je_editor.utils.file.open.open_file import read_file
 
 
@@ -32,5 +33,11 @@ def treeview_click(ui_we_want_to_set):
             file_content
         )
         ui_we_want_to_set.current_file = file
+        if ui_we_want_to_set.auto_save_thread is None:
+            ui_we_want_to_set.auto_save_thread = SaveThread(
+                ui_we_want_to_set.current_file,
+                ui_we_want_to_set.code_edit.toPlainText()
+            )
+            ui_we_want_to_set.auto_save_thread.start()
         if ui_we_want_to_set.auto_save_thread is not None:
             ui_we_want_to_set.auto_save_thread.file = ui_we_want_to_set.current_file
