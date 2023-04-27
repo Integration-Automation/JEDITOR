@@ -1,7 +1,7 @@
 from PySide6 import QtGui
 from PySide6.QtCore import Qt, QRect
-from PySide6.QtGui import QPainter, QColor, QTextCharFormat, QTextFormat, QKeyEvent
-from PySide6.QtWidgets import QPlainTextEdit, QWidget, QTextEdit
+from PySide6.QtGui import QPainter, QColor, QTextCharFormat, QTextFormat, QKeyEvent, QAction
+from PySide6.QtWidgets import QPlainTextEdit, QWidget, QTextEdit, QInputDialog
 
 from je_editor.pyside_ui.syntax.python_syntax import PythonHighlighter
 
@@ -21,6 +21,19 @@ class CodeEditor(QPlainTextEdit):
         self.highlighter = PythonHighlighter(self.document())
         self.highlight_current_line()
         self.setLineWrapMode(self.LineWrapMode.NoWrap)
+        self.search_action = QAction("Search")
+        self.search_action.setShortcut("Ctrl+f")
+        self.search_action.triggered.connect(
+            self.start_search_dialog
+        )
+        self.addAction(self.search_action)
+
+    def start_search_dialog(self):
+        search_dialog = QInputDialog()
+        search_dialog.setOkButtonText("Search")
+        text, press_ok = search_dialog.getText(self, "Search", "search text")
+        if press_ok:
+            self.find(text)
 
     def line_number_paint(self, event):
         painter = QPainter(self.line_number)
