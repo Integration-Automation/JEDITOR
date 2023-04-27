@@ -105,7 +105,7 @@ class ExecManager(object):
             self.code_result.append(str(error))
             self.code_result.setTextColor(output_color)
 
-    # tkinter_ui update method
+    # Pyside UI update method
     def pull_text(self):
         try:
             self.code_result.setTextColor(error_color)
