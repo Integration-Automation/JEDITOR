@@ -94,7 +94,7 @@ class ExecManager(object):
             self.read_program_error_output_from_thread.start()
             # show which file execute
             self.code_result.append(compiler_path + " " + reformat_os_file_path)
-            # start Pyside update
+            # start tkinter_ui update
             # start timer
             self.timer = QTimer(self.main_window)
             self.timer.setInterval(1)
@@ -105,7 +105,7 @@ class ExecManager(object):
             self.code_result.append(str(error))
             self.code_result.setTextColor(output_color)
 
-    # Pyside UI update method
+    # tkinter_ui update method
     def pull_text(self):
         try:
             self.code_result.setTextColor(error_color)
