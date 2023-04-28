@@ -1,8 +1,9 @@
 from PySide6 import QtGui
 from PySide6.QtCore import Qt, QRect
-from PySide6.QtGui import QPainter, QColor, QTextCharFormat, QTextFormat, QKeyEvent, QAction
-from PySide6.QtWidgets import QPlainTextEdit, QWidget, QTextEdit, QInputDialog
+from PySide6.QtGui import QPainter, QColor, QTextCharFormat, QTextFormat, QKeyEvent, QAction, QTextDocument
+from PySide6.QtWidgets import QPlainTextEdit, QWidget, QTextEdit
 
+from je_editor.pyside_ui.search_ui.search_box import SearchBox
 from je_editor.pyside_ui.syntax.python_syntax import PythonHighlighter
 
 
@@ -29,11 +30,24 @@ class CodeEditor(QPlainTextEdit):
         self.addAction(self.search_action)
 
     def start_search_dialog(self):
-        search_dialog = QInputDialog()
-        search_dialog.setOkButtonText("Search")
-        text, press_ok = search_dialog.getText(self, "Search", "search text")
-        if press_ok:
+        self.search_box = SearchBox()
+        self.search_box.search_back_button.clicked.connect(
+            self.find_back_text
+        )
+        self.search_box.search_next_button.clicked.connect(
+            self.find_next_text
+        )
+        self.search_box.show()
+
+    def find_next_text(self):
+        if self.search_box.isVisible():
+            text = self.search_box.search_input.text()
             self.find(text)
+
+    def find_back_text(self):
+        if self.search_box.isVisible():
+            text = self.search_box.search_input.text()
+            self.find(text, QTextDocument.FindFlag.FindBackward)
 
     def line_number_paint(self, event):
         painter = QPainter(self.line_number)
