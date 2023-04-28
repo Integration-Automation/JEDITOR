@@ -17,5 +17,4 @@ class SearchResultBox(QWidget):
         self.box_layout.addWidget(self.search_input)
         self.box_layout.addLayout(self.box_h_layout)
         self.setWindowTitle("Search Result")
-        self.resize(150, 100)
         self.setLayout(self.box_layout)
