@@ -95,7 +95,7 @@ class EditorMain(QMainWindow):
         if self.auto_save_thread is not None:
             self.auto_save_thread.text_to_write = self.code_edit.toPlainText()
         if not redirect_manager_instance.std_out_queue.empty():
-            output_message = redirect_manager_instance.std_out_queue.get_nowait()
+            output_message = redirect_manager_instance.std_out_queue.get()
             output_message = str(output_message).strip()
             if output_message:
                 self.code_result.append(output_message)
