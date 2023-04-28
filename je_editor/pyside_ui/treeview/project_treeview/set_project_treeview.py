@@ -1,7 +1,7 @@
 import os
 import pathlib
 
-from PySide6.QtCore import QDir, QModelIndex
+from PySide6.QtCore import QDir, QFileInfo
 from PySide6.QtWidgets import QMainWindow, QFileSystemModel, QTreeView
 
 from je_editor.pyside_ui.auto_save.auto_save_thread import SaveThread
@@ -24,9 +24,9 @@ def set_project_treeview(ui_we_want_to_set: QMainWindow):
 
 
 def treeview_click(ui_we_want_to_set):
-    clicked_item: QModelIndex = ui_we_want_to_set.project_treeview.currentIndex()
-    model = clicked_item.model()
-    path = pathlib.Path(os.getcwd() + "/" + model.data(clicked_item))
+    clicked_item: QFileSystemModel = ui_we_want_to_set.project_treeview.selectedIndexes()[0]
+    file_info: QFileInfo = ui_we_want_to_set.project_treeview.model().fileInfo(clicked_item)
+    path = pathlib.Path(file_info.absoluteFilePath())
     if path.is_file():
         file, file_content = read_file(path)
         ui_we_want_to_set.code_edit.setPlainText(
