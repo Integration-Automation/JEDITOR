@@ -1,4 +1,5 @@
 import os
+import sys
 
 from PySide6.QtCore import QTimer
 from PySide6.QtGui import QFontDatabase, QAction
@@ -106,3 +107,7 @@ class EditorMain(QMainWindow):
             if error_message:
                 self.code_result.append(error_message)
         self.code_result.setTextColor(output_color)
+
+    def closeEvent(self, event) -> None:
+        super().closeEvent(event)
+        sys.exit()

@@ -1,6 +1,7 @@
-from PySide6.QtWidgets import QMainWindow, QScrollArea, QGridLayout, QWidget, QTextEdit
+from PySide6.QtWidgets import QMainWindow, QScrollArea, QGridLayout, QWidget
 
 from je_editor.pyside_ui.code_editor.code_edit_plaintext import CodeEditor
+from je_editor.pyside_ui.code_result.code_record import CodeRecord
 
 
 def set_ui(ui_we_want_to_set: QMainWindow):
@@ -12,9 +13,7 @@ def set_ui(ui_we_want_to_set: QMainWindow):
     ui_we_want_to_set.setWindowTitle("JEditor")
     # code edit and code result plaintext
     ui_we_want_to_set.code_edit = CodeEditor()
-    ui_we_want_to_set.code_result = QTextEdit()
-    ui_we_want_to_set.code_result.setLineWrapMode(ui_we_want_to_set.code_result.LineWrapMode.NoWrap)
-    ui_we_want_to_set.code_result.setReadOnly(True)
+    ui_we_want_to_set.code_result = CodeRecord()
     ui_we_want_to_set.code_edit_scroll_area = QScrollArea()
     ui_we_want_to_set.code_edit_scroll_area.setWidgetResizable(True)
     ui_we_want_to_set.code_edit_scroll_area.setViewportMargins(0, 0, 0, 0)

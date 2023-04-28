@@ -1,4 +1,4 @@
-from webbrowser import open
+import webbrowser
 
 from PySide6.QtGui import QAction
 from PySide6.QtWidgets import QMainWindow, QMessageBox
@@ -25,7 +25,7 @@ def set_help_menu(ui_we_want_to_set: QMainWindow):
 
 
 def open_web_browser(url: str):
-    open(url=url)
+    webbrowser.open(url=url)
 
 
 def show_about():
