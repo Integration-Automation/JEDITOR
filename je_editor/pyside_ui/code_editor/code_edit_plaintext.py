@@ -3,7 +3,7 @@ from PySide6.QtCore import Qt, QRect
 from PySide6.QtGui import QPainter, QColor, QTextCharFormat, QTextFormat, QKeyEvent, QAction, QTextDocument
 from PySide6.QtWidgets import QPlainTextEdit, QWidget, QTextEdit
 
-from je_editor.pyside_ui.search_ui.search_box import SearchBox
+from je_editor.pyside_ui.search_ui.search_text_box import SearchBox
 from je_editor.pyside_ui.syntax.python_syntax import PythonHighlighter
 
 
@@ -22,6 +22,7 @@ class CodeEditor(QPlainTextEdit):
         self.highlighter = PythonHighlighter(self.document())
         self.highlight_current_line()
         self.setLineWrapMode(self.LineWrapMode.NoWrap)
+        # Search Text
         self.search_action = QAction("Search")
         self.search_action.setShortcut("Ctrl+f")
         self.search_action.triggered.connect(

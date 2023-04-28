@@ -1,8 +1,7 @@
-from PySide6.QtGui import QPalette, QColor
 from PySide6.QtWidgets import QWidget, QLineEdit, QPushButton, QBoxLayout, QHBoxLayout
 
 
-class SearchBox(QWidget):
+class SearchResultBox(QWidget):
 
     def __init__(self):
         super().__init__()
@@ -17,6 +16,6 @@ class SearchBox(QWidget):
         self.box_h_layout.addWidget(self.search_next_button)
         self.box_layout.addWidget(self.search_input)
         self.box_layout.addLayout(self.box_h_layout)
-        self.setWindowTitle("Search Text")
+        self.setWindowTitle("Search Result")
         self.resize(150, 100)
         self.setLayout(self.box_layout)
