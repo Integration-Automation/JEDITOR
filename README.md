@@ -52,3 +52,6 @@ pip install je_editor
     * raspberry pi 3B+
 
 | All test in test dir
+
+### Architecture Diagram
+![Architecture Diagram](architecture_diagram/JEditor_Architecture.drawio.png)
