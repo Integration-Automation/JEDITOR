@@ -3,7 +3,7 @@
 ---
 
 ![Editor Picture](image/JEditor.png)
-
+> * Project Kanban https://github.com/orgs/Intergration-Automation-Testing/projects/2
 > * JEditor is a simple text editor, but it has all the necessary features.
 > * JEditor is one of the components of ITE, but modularization allows it to be used separately.
 > * JEditor defaults to using a dark interface as shown below:
@@ -36,7 +36,7 @@
 ## Requires
 
 ```
-python 3.7 or later
+python 3.8 or later
 ```
 
 ## install
