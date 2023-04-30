@@ -11,4 +11,4 @@ def start_editor(**kwargs):
     window = EditorMain()
     apply_stylesheet(new_editor, theme='dark_amber.xml')
     window.show()
-    sys.exit(new_editor.exec_())
+    sys.exit(new_editor.exec())
