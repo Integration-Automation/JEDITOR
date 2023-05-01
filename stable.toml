@@ -1,0 +1,36 @@
+# Rename to build stable version
+# This is stable version
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "je_editor"
+version = "0.0.83"
+authors = [
+    { name = "JE-Chen", email = "zenmailman@gmail.com" },
+]
+description = "Simple editor for ITE"
+readme = { file = "README.md", content-type = "text/markdown" }
+requires-python = ">=3.8"
+license = { text = "MIT" }
+dependencies = [
+    "PySide6",
+    "qt-material",
+    "yapf"
+]
+classifiers = [
+    "Programming Language :: Python :: 3.7",
+    "Development Status :: 2 - Pre-Alpha",
+    "Environment :: Win32 (MS Windows)",
+    "Environment :: MacOS X",
+    "Environment :: X11 Applications",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent"
+]
+
+[project.urls]
+"Homepage" = "https://github.com/JE-Chen/je_editor"
+
+[tool.setuptools.packages]
+find = { namespaces = false }
