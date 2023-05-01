@@ -54,6 +54,7 @@ class ShellManager(object):
                 args,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
+                stdin=subprocess.PIPE,
                 shell=False,
             )
             self.still_run_shell = True

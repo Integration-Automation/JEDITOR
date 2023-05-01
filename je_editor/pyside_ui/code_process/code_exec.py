@@ -77,6 +77,7 @@ class ExecManager(object):
                 execute_program_list,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
+                stdin=subprocess.PIPE,
                 shell=False
             )
             self.still_run_program = True
