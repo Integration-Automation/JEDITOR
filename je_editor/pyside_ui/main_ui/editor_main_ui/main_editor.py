@@ -5,17 +5,17 @@ from pathlib import Path
 from PySide6.QtCore import QTimer
 from PySide6.QtGui import QFontDatabase, QAction, QIcon
 from PySide6.QtWidgets import QMainWindow, QSystemTrayIcon
-from je_editor.pyside_ui.code_process.code_exec import exec_manage
-
-from je_editor.pyside_ui.shell_process.shell_exec import shell_manager
 
 from je_editor.pyside_ui.auto_save.auto_save_thread import SaveThread
+from je_editor.pyside_ui.code_process.code_exec import exec_manage
 from je_editor.pyside_ui.colors.global_color import error_color, output_color
 from je_editor.pyside_ui.main_ui_setting.ui_setting import set_ui
 from je_editor.pyside_ui.menu.menu_bar.set_menu_bar import set_menu_bar
+from je_editor.pyside_ui.shell_process.shell_exec import shell_manager
 from je_editor.pyside_ui.treeview.project_treeview.set_project_treeview import set_project_treeview
 from je_editor.pyside_ui.user_setting.user_setting_file import write_user_setting, user_setting_dict, read_user_setting
 from je_editor.utils.encodings.python_encodings import python_encodings_list
+from je_editor.utils.file.open.open_file import read_file
 from je_editor.utils.redirect_manager.redirect_manager_class import redirect_manager_instance
 
 
@@ -82,6 +82,12 @@ class EditorMain(QMainWindow):
                 user_setting_dict.get("font_size", 12)
             )
         )
+        last_file = user_setting_dict.get("last_file", None)
+        if last_file is not None:
+            last_file_path = Path(last_file)
+            if last_file_path.is_file() and last_file_path.exists():
+                self.current_file = str(last_file_path)
+                self.code_edit.setPlainText(read_file(self.current_file)[1])
 
     def add_font_menu(self):
         self.font_menu = self.text_menu.addMenu("Font")
@@ -161,4 +167,5 @@ class EditorMain(QMainWindow):
 
     def closeEvent(self, event) -> None:
         super().closeEvent(event)
+        user_setting_dict.update({"last_file": str(self.current_file)})
         write_user_setting()
