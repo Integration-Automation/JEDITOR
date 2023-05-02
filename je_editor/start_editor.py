@@ -10,5 +10,6 @@ def start_editor(**kwargs):
     new_editor = QApplication(sys.argv)
     window = EditorMain()
     apply_stylesheet(new_editor, theme='dark_amber.xml')
-    window.show()
+    window.showMaximized()
+    window.startup_setting()
     sys.exit(new_editor.exec())
