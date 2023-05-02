@@ -1,4 +1,4 @@
-from PySide6.QtWidgets import QMainWindow, QScrollArea, QGridLayout, QWidget, QTabWidget
+from PySide6.QtWidgets import QMainWindow, QScrollArea, QGridLayout, QWidget
 
 from je_editor.pyside_ui.code_editor.code_edit_plaintext import CodeEditor
 from je_editor.pyside_ui.code_result.code_record import CodeRecord
@@ -26,3 +26,4 @@ def set_ui(ui_we_want_to_set: QMainWindow):
     ui_we_want_to_set.grid_layout.setColumnStretch(1, 10)
     ui_we_want_to_set.grid_layout.addWidget(ui_we_want_to_set.code_edit_scroll_area, 0, 1)
     ui_we_want_to_set.grid_layout.addWidget(ui_we_want_to_set.code_result_scroll_area, 1, 1)
+

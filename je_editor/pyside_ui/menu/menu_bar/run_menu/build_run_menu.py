@@ -1,4 +1,4 @@
-from PySide6.QtGui import QAction
+from PySide6.QtGui import QAction, QKeySequence, Qt
 from PySide6.QtWidgets import QMainWindow, QMessageBox
 
 from je_editor.pyside_ui.code_process.code_exec import exec_manage
@@ -11,21 +11,33 @@ def set_run_menu(ui_we_want_to_set: QMainWindow):
     ui_we_want_to_set.run_menu.run_program_action.triggered.connect(
         lambda: run_program(ui_we_want_to_set)
     )
+    ui_we_want_to_set.run_menu.run_program_action.setShortcut(
+        QKeySequence(Qt.Key.Key_R, Qt.Key.Key_F1)
+    )
     ui_we_want_to_set.run_menu.addAction(ui_we_want_to_set.run_menu.run_program_action)
     ui_we_want_to_set.run_menu.run_on_shell_action = QAction("Run On Shell")
     ui_we_want_to_set.run_menu.run_on_shell_action.triggered.connect(
         lambda: shell_exec(ui_we_want_to_set)
+    )
+    ui_we_want_to_set.run_menu.run_on_shell_action.setShortcut(
+        QKeySequence(Qt.Key.Key_R, Qt.Key.Key_F2)
     )
     ui_we_want_to_set.run_menu.addAction(ui_we_want_to_set.run_menu.run_on_shell_action)
     ui_we_want_to_set.run_menu.clean_result_action = QAction("Clean Result")
     ui_we_want_to_set.run_menu.clean_result_action.triggered.connect(
         lambda: clean_result(ui_we_want_to_set)
     )
+    ui_we_want_to_set.run_menu.clean_result_action.setShortcut(
+        QKeySequence(Qt.Key.Key_R, Qt.Key.Key_F3)
+    )
     ui_we_want_to_set.run_menu.addAction(ui_we_want_to_set.run_menu.clean_result_action)
 
     ui_we_want_to_set.run_menu.stop_program_action = QAction("Stop Program")
     ui_we_want_to_set.run_menu.stop_program_action.triggered.connect(
         stop_program
+    )
+    ui_we_want_to_set.run_menu.stop_program_action.setShortcut(
+        QKeySequence(Qt.Key.Key_R, Qt.Key.Key_F4)
     )
     ui_we_want_to_set.run_menu.addAction(ui_we_want_to_set.run_menu.stop_program_action)
     # Run help menu
