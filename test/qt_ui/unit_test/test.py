@@ -1,1 +1,1 @@
-print("test")
+raise Exception(">>>>")

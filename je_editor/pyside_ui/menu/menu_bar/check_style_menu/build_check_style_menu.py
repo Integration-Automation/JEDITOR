@@ -7,23 +7,23 @@ from je_editor.utils.json_format.json_process import reformat_json
 
 def set_check_menu(ui_we_want_to_set: QMainWindow):
     # Yapf code check
-    ui_we_want_to_set.check_python_action = QAction("yapf")
-    ui_we_want_to_set.check_python_action.setShortcut("Ctrl+y")
-    ui_we_want_to_set.check_python_action.triggered.connect(
+    ui_we_want_to_set.check_menu.check_python_action = QAction("yapf")
+    ui_we_want_to_set.check_menu.check_python_action.setShortcut("Ctrl+y")
+    ui_we_want_to_set.check_menu.check_python_action.triggered.connect(
         lambda: check_python_code(
             ui_we_want_to_set
         )
     )
-    ui_we_want_to_set.check_menu.addAction(ui_we_want_to_set.check_python_action)
+    ui_we_want_to_set.check_menu.addAction(ui_we_want_to_set.check_menu.check_python_action)
     # Reformat JSON
-    ui_we_want_to_set.reformat_json_action = QAction("Reformat JSON")
-    ui_we_want_to_set.reformat_json_action.setShortcut("Ctrl+j")
-    ui_we_want_to_set.reformat_json_action.triggered.connect(
+    ui_we_want_to_set.check_menu.reformat_json_action = QAction("Reformat JSON")
+    ui_we_want_to_set.check_menu.reformat_json_action.setShortcut("Ctrl+j")
+    ui_we_want_to_set.check_menu.reformat_json_action.triggered.connect(
         lambda: reformat_json_text(
             ui_we_want_to_set
         )
     )
-    ui_we_want_to_set.check_menu.addAction(ui_we_want_to_set.reformat_json_action)
+    ui_we_want_to_set.check_menu.addAction(ui_we_want_to_set.check_menu.reformat_json_action)
 
 
 def check_python_code(ui_we_want_to_set):
