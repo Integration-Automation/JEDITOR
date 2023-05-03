@@ -1,14 +1,20 @@
-from PySide6.QtGui import QAction, QKeySequence, Qt
-from PySide6.QtWidgets import QMainWindow
+import os
+import shutil
+import sys
+from pathlib import Path
+
+from PySide6.QtGui import QAction
+from PySide6.QtWidgets import QMainWindow, QMessageBox, QInputDialog
 
 from je_editor.pyside_ui.file_dialog.open_file_dialog import choose_file_get_open_filename
 from je_editor.pyside_ui.file_dialog.save_file_dialog import choose_file_get_save_filename
+from je_editor.pyside_ui.shell_process.shell_exec import shell_manager
 
 
 def set_file_menu(ui_we_want_to_set: QMainWindow):
     ui_we_want_to_set.file_menu.open_file_action = QAction("Open File")
     ui_we_want_to_set.file_menu.open_file_action.setShortcut(
-        QKeySequence(Qt.Key.Key_F, Qt.Key.Key_O)
+        "Ctrl+o"
     )
     ui_we_want_to_set.file_menu.open_file_action.triggered.connect(
         lambda: choose_file_get_open_filename(parent_qt_instance=ui_we_want_to_set)
@@ -16,11 +22,9 @@ def set_file_menu(ui_we_want_to_set: QMainWindow):
     ui_we_want_to_set.file_menu.addAction(ui_we_want_to_set.file_menu.open_file_action)
     ui_we_want_to_set.file_menu.save_file_action = QAction("Save File")
     ui_we_want_to_set.file_menu.save_file_action.setShortcut(
-        QKeySequence(Qt.Key.Key_F, Qt.Key.Key_S)
+        "Ctrl+s"
     )
     ui_we_want_to_set.file_menu.save_file_action.triggered.connect(
         lambda: choose_file_get_save_filename(parent_qt_instance=ui_we_want_to_set)
     )
     ui_we_want_to_set.file_menu.addAction(ui_we_want_to_set.file_menu.save_file_action)
-
-

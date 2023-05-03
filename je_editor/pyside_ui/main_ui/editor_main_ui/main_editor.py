@@ -25,6 +25,8 @@ class EditorMain(QMainWindow):
         super(EditorMain, self).__init__()
         # Windows setup
         self.id = "JEditor"
+        # Venv
+        self.venv_path = None
         if sys.platform in ["win32", "cygwin", "msys"]:
             from ctypes import windll
             windll.shell32.SetCurrentProcessExplicitAppUserModelID(self.id)
@@ -63,6 +65,9 @@ class EditorMain(QMainWindow):
             self.setWindowIcon(self.icon)
             self.system_icon = QSystemTrayIcon()
             self.system_icon.setIcon(self.icon)
+        # Init shell manager
+        shell_manager.main_window = self
+        shell_manager.later_init()
         # Put Redirect on last to trace exception
         redirect_manager_instance.set_redirect(self, True)
 

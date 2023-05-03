@@ -1,1 +1,1 @@
-raise Exception(">>>>")
+python --version

@@ -2,6 +2,7 @@ import os.path
 import queue
 import shutil
 import subprocess
+import sys
 from pathlib import Path
 from threading import Thread
 
@@ -63,11 +64,24 @@ class ExecManager(object):
                     raise JEditorExecException(file_not_fond_error)
             except OSError as error:
                 raise JEditorExecException(error)
-            compiler_path = shutil.which(self.program_language)
-            if compiler_path is None and self.program_language == "python":
-                compiler_path = shutil.which("python3")
-            elif compiler_path is None and self.program_language == "python3":
-                compiler_path = shutil.which("python")
+            if sys.platform in ["win32", "cygwin", "msys"]:
+                venv_path = Path(os.getcwd() + "/venv/Scripts")
+            else:
+                venv_path = Path(os.getcwd() + "/venv/bin")
+            if venv_path.is_dir() and venv_path.exists():
+                compiler_path = shutil.which(
+                    cmd="python3",
+                    path=str(venv_path)
+                )
+            else:
+                compiler_path = shutil.which(cmd="python3")
+            if compiler_path is None:
+                compiler_path = shutil.which(
+                    cmd="python",
+                    path=str(venv_path)
+                )
+            else:
+                compiler_path = shutil.which(cmd="python")
             if compiler_path is None:
                 raise JEditorExecException(compiler_not_found_error)
             exec_file = reformat_os_file_path
@@ -77,8 +91,7 @@ class ExecManager(object):
                 execute_program_list,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
-                stdin=subprocess.PIPE,
-                shell=False
+                shell=True
             )
             self.still_run_program = True
             # program output message queue thread
@@ -124,10 +137,11 @@ class ExecManager(object):
         except queue.Empty:
             pass
         if self.process.returncode == 0:
+            self.timer.stop()
             self.exit_program()
         elif self.process.returncode is not None:
-            self.exit_program()
             self.timer.stop()
+            self.exit_program()
         if self.still_run_program:
             # poll return code
             self.process.poll()
@@ -142,6 +156,8 @@ class ExecManager(object):
         self.print_and_clear_queue()
         if self.process is not None:
             self.process.terminate()
+            print(f"Program exit with code {self.process.returncode}")
+            self.process = None
 
     def print_and_clear_queue(self):
         try:

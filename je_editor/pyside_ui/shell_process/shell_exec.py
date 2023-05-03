@@ -1,6 +1,7 @@
 import queue
 import shlex
 import subprocess
+import sys
 from threading import Thread
 
 from PySide6.QtCore import QTimer
@@ -40,7 +41,7 @@ class ShellManager(object):
         else:
             raise JEditorException(je_editor_init_error)
 
-    def exec_shell(self, shell_command: str):
+    def exec_shell(self, shell_command: [str, list]):
         """
         :param shell_command: shell command will run
         :return: if error return result and True else return result and False
@@ -48,14 +49,15 @@ class ShellManager(object):
         try:
             self.exit_program()
             self.code_result.setPlainText("")
-            # run shell command
-            args = shlex.split(shell_command)
+            if sys.platform in ["win32", "cygwin", "msys"]:
+                args = shell_command
+            else:
+                args = shlex.split(shell_command)
             self.process = subprocess.Popen(
                 args,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
-                stdin=subprocess.PIPE,
-                shell=False,
+                shell=True,
             )
             self.still_run_shell = True
             # program output message queue thread
@@ -98,10 +100,11 @@ class ShellManager(object):
         except queue.Empty:
             pass
         if self.process.returncode == 0:
+            self.timer.stop()
             self.exit_program()
         elif self.process.returncode is not None:
-            self.exit_program()
             self.timer.stop()
+            self.exit_program()
         if self.still_run_shell:
             # poll return code
             self.process.poll()
@@ -116,6 +119,8 @@ class ShellManager(object):
         self.print_and_clear_queue()
         if self.process is not None:
             self.process.terminate()
+            print(f"Shell command exit with code {self.process.returncode}")
+            self.process = None
 
     def print_and_clear_queue(self):
         try:

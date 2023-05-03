@@ -66,8 +66,6 @@ def run_program(ui_we_want_to_set: QMainWindow):
 
 
 def shell_exec(ui_we_want_to_set: QMainWindow):
-    shell_manager.main_window = ui_we_want_to_set
-    shell_manager.later_init()
     shell_manager.exec_shell(
         ui_we_want_to_set.code_edit.toPlainText()
     )

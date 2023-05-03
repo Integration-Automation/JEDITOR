@@ -8,7 +8,7 @@ user_setting_dict = {
     "font": "Lato",
     "font_size": 12,
     "encoding": "utf-8",
-    "last_file": None
+    "last_file": None,
 }
 
 
