@@ -48,14 +48,11 @@ class ShellManager(object):
         try:
             self.exit_program()
             self.code_result.setPlainText("")
-            # run shell command
-            args = shlex.split(shell_command)
             self.process = subprocess.Popen(
-                args,
+                shell_command,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
-                stdin=subprocess.PIPE,
-                shell=False,
+                shell=True,
             )
             self.still_run_shell = True
             # program output message queue thread
@@ -98,10 +95,11 @@ class ShellManager(object):
         except queue.Empty:
             pass
         if self.process.returncode == 0:
+            self.timer.stop()
             self.exit_program()
         elif self.process.returncode is not None:
-            self.exit_program()
             self.timer.stop()
+            self.exit_program()
         if self.still_run_shell:
             # poll return code
             self.process.poll()
@@ -116,6 +114,8 @@ class ShellManager(object):
         self.print_and_clear_queue()
         if self.process is not None:
             self.process.terminate()
+            print(f"Shell command exit with code {self.process.returncode}")
+            self.process = None
 
     def print_and_clear_queue(self):
         try:

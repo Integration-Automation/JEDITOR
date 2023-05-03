@@ -1,0 +1,1 @@
+pip install je_auto_control

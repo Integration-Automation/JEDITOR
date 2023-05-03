@@ -63,6 +63,9 @@ class EditorMain(QMainWindow):
             self.setWindowIcon(self.icon)
             self.system_icon = QSystemTrayIcon()
             self.system_icon.setIcon(self.icon)
+        # Init shell manager
+        shell_manager.main_window = self
+        shell_manager.later_init()
         # Put Redirect on last to trace exception
         redirect_manager_instance.set_redirect(self, True)
 
