@@ -76,17 +76,12 @@ class ExecManager(object):
             else:
                 compiler_path = shutil.which(cmd="python3")
             if compiler_path is None:
-                if sys.platform in ["win32", "cygwin", "msys"]:
-                    venv_path = Path(os.getcwd() + "/venv/Scripts")
-                else:
-                    venv_path = Path(os.getcwd() + "/venv/bin")
-                if venv_path.is_dir() and venv_path.exists():
-                    compiler_path = shutil.which(
-                        cmd="python",
-                        path=str(venv_path)
-                    )
-                else:
-                    compiler_path = shutil.which(cmd="python")
+                compiler_path = shutil.which(
+                    cmd="python",
+                    path=str(venv_path)
+                )
+            else:
+                compiler_path = shutil.which(cmd="python")
             if compiler_path is None:
                 raise JEditorExecException(compiler_not_found_error)
             exec_file = reformat_os_file_path

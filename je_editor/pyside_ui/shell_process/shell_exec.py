@@ -1,6 +1,7 @@
 import queue
 import shlex
 import subprocess
+import sys
 from threading import Thread
 
 from PySide6.QtCore import QTimer
@@ -40,7 +41,7 @@ class ShellManager(object):
         else:
             raise JEditorException(je_editor_init_error)
 
-    def exec_shell(self, shell_command: str):
+    def exec_shell(self, shell_command: [str, list]):
         """
         :param shell_command: shell command will run
         :return: if error return result and True else return result and False
@@ -48,8 +49,12 @@ class ShellManager(object):
         try:
             self.exit_program()
             self.code_result.setPlainText("")
+            if sys.platform in ["win32", "cygwin", "msys"]:
+                args = shell_command
+            else:
+                args = shlex.split(shell_command)
             self.process = subprocess.Popen(
-                shell_command,
+                args,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
                 shell=True,
