@@ -31,5 +31,6 @@ def set_ui(ui_we_want_to_set: QMainWindow):
     ui_we_want_to_set.grid_layout.setColumnStretch(1, 10)
     ui_we_want_to_set.edit_splitter.addWidget(ui_we_want_to_set.code_edit_scroll_area)
     ui_we_want_to_set.edit_splitter.addWidget(ui_we_want_to_set.code_result_scroll_area)
+    ui_we_want_to_set.edit_splitter.setStretchFactor(0, 7)
     ui_we_want_to_set.grid_layout.addWidget(ui_we_want_to_set.edit_splitter, 0, 1)
 
