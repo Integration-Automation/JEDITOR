@@ -2,7 +2,7 @@ import os
 import pathlib
 
 from PySide6.QtCore import QDir, QFileInfo
-from PySide6.QtWidgets import QMainWindow, QFileSystemModel, QTreeView
+from PySide6.QtWidgets import QMainWindow, QFileSystemModel, QTreeView, QScrollArea
 
 from je_editor.pyside_ui.auto_save.auto_save_thread import SaveThread
 from je_editor.utils.file.open.open_file import read_file
@@ -17,7 +17,11 @@ def set_project_treeview(ui_we_want_to_set: QMainWindow):
     ui_we_want_to_set.project_treeview.setRootIndex(
         ui_we_want_to_set.project_treeview_model.index(os.getcwd())
     )
-    ui_we_want_to_set.grid_layout.addWidget(ui_we_want_to_set.project_treeview, 0, 0, 0, 1)
+    ui_we_want_to_set.tree_view_scroll_area = QScrollArea()
+    ui_we_want_to_set.tree_view_scroll_area.setWidgetResizable(True)
+    ui_we_want_to_set.tree_view_scroll_area.setViewportMargins(0, 0, 0, 0)
+    ui_we_want_to_set.tree_view_scroll_area.setWidget(ui_we_want_to_set.project_treeview)
+    ui_we_want_to_set.grid_layout.addWidget(ui_we_want_to_set.tree_view_scroll_area, 0, 0, 0, 1)
     ui_we_want_to_set.project_treeview.clicked.connect(
         lambda: treeview_click(ui_we_want_to_set)
     )
