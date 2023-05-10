@@ -5,6 +5,7 @@ from pathlib import Path
 from PySide6.QtCore import QTimer
 from PySide6.QtGui import QFontDatabase, QAction, QIcon
 from PySide6.QtWidgets import QMainWindow, QSystemTrayIcon
+from qt_material import QtStyleTools
 
 from je_editor.pyside_ui.auto_save.auto_save_thread import SaveThread
 from je_editor.pyside_ui.code_process.code_exec import exec_manage
@@ -19,7 +20,7 @@ from je_editor.utils.file.open.open_file import read_file
 from je_editor.utils.redirect_manager.redirect_manager_class import redirect_manager_instance
 
 
-class EditorMain(QMainWindow):
+class EditorMain(QMainWindow, QtStyleTools):
 
     def __init__(self):
         super(EditorMain, self).__init__()
@@ -70,6 +71,23 @@ class EditorMain(QMainWindow):
         shell_manager.later_init()
         # Put Redirect on last to trace exception
         redirect_manager_instance.set_redirect(self, True)
+        # Add style menu
+        self.add_style_menu()
+
+    def add_style_menu(self):
+        self.menu.style_menu = self.menu.addMenu("UI Style")
+        for style in [
+            'dark_amber.xml', 'dark_blue.xml', 'dark_cyan.xml', 'dark_lightgreen.xml', 'dark_pink.xml',
+            'dark_purple.xml', 'dark_red.xml', 'dark_teal.xml', 'dark_yellow.xml', 'light_amber.xml',
+            'light_blue.xml', 'light_cyan.xml', 'light_cyan_500.xml', 'light_lightgreen.xml',
+            'light_pink.xml', 'light_purple.xml', 'light_red.xml', 'light_teal.xml', 'light_yellow.xml'
+        ]:
+            change_style_action = QAction(style, parent=self)
+            change_style_action.triggered.connect(self.set_style)
+            self.menu.style_menu.addAction(change_style_action)
+
+    def set_style(self):
+        self.apply_stylesheet(self, self.sender().text())
 
     def startup_setting(self):
         read_user_setting()
