@@ -58,5 +58,5 @@ def pip_install_package(ui_we_want_to_set: QMainWindow):
             pip_install_shell = ShellManager(main_window=ui_we_want_to_set)
             pip_install_shell.later_init()
             pip_install_shell.exec_shell(
-                [f"{pip_install_shell.compiler_path}", " -m pip install ", f"{package_text}"]
+                [f"{pip_install_shell.compiler_path}", "-m", "pip", "install", f"{package_text}"]
             )
