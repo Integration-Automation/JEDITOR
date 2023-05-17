@@ -1,3 +1,3 @@
-from je_editor import *
+from je_editor.start_editor import start_editor
 
 start_editor()

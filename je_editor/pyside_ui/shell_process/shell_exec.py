@@ -1,15 +1,18 @@
+import os
 import queue
 import shlex
+import shutil
 import subprocess
 import sys
+from pathlib import Path
 from threading import Thread
 
 from PySide6.QtCore import QTimer
 from PySide6.QtWidgets import QMainWindow, QTextEdit
 
 from je_editor.pyside_ui.colors.global_color import error_color, output_color
-from je_editor.utils.exception.exception_tags import je_editor_init_error
-from je_editor.utils.exception.exceptions import JEditorException
+from je_editor.utils.exception.exception_tags import je_editor_init_error, compiler_not_found_error
+from je_editor.utils.exception.exceptions import JEditorException, JEditorExecException
 
 
 class ShellManager(object):
@@ -26,6 +29,7 @@ class ShellManager(object):
         self.read_program_error_output_from_thread = None
         self.read_program_output_from_thread = None
         self.main_window: QMainWindow = main_window
+        self.compiler_path = None
         self.code_result: [QTextEdit, None] = None
         self.timer: [QTimer, None] = None
         self.still_run_shell: bool = True
@@ -34,6 +38,30 @@ class ShellManager(object):
         self.run_error_queue: queue = queue.Queue()
         self.program_encoding: str = shell_encoding
         self.program_buffer: int = program_buffer
+        self.renew_path()
+
+    def renew_path(self):
+
+        if sys.platform in ["win32", "cygwin", "msys"]:
+            venv_path = Path(os.getcwd() + "/venv/Scripts")
+        else:
+            venv_path = Path(os.getcwd() + "/venv/bin")
+        if venv_path.is_dir() and venv_path.exists():
+            self.compiler_path = shutil.which(
+                cmd="python3",
+                path=str(venv_path)
+            )
+        else:
+            self.compiler_path = shutil.which(cmd="python3")
+        if self.compiler_path is None:
+            self.compiler_path = shutil.which(
+                cmd="python",
+                path=str(venv_path)
+            )
+        else:
+            self.compiler_path = shutil.which(cmd="python")
+        if self.compiler_path is None:
+            raise JEditorExecException(compiler_not_found_error)
 
     def later_init(self):
         if self.main_window is not None:
@@ -53,8 +81,9 @@ class ShellManager(object):
                 args = shell_command
             else:
                 args = shlex.split(shell_command)
+            print(args)
             self.process = subprocess.Popen(
-                args,
+                args=args,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
                 shell=True,
