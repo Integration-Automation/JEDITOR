@@ -6,10 +6,16 @@ from pathlib import Path
 from PySide6.QtGui import QAction
 from PySide6.QtWidgets import QMainWindow, QMessageBox, QInputDialog
 
-from je_editor.pyside_ui.shell_process.shell_exec import shell_manager
+from je_editor.pyside_ui.shell_process.shell_exec import ShellManager
 
 
 def set_venv_menu(ui_we_want_to_set: QMainWindow):
+    # Install virtualenv
+    ui_we_want_to_set.venv_menu.install_virtualenv_action = QAction("Install virtualenv")
+    ui_we_want_to_set.venv_menu.install_virtualenv_action.triggered.connect(
+        lambda: install_virtualenv(ui_we_want_to_set)
+    )
+    ui_we_want_to_set.venv_menu.addAction(ui_we_want_to_set.venv_menu.install_virtualenv_action)
     # Create an venv
     ui_we_want_to_set.venv_menu.create_venv_action = QAction("Create Venv")
     ui_we_want_to_set.venv_menu.create_venv_action.setShortcut(
@@ -30,10 +36,18 @@ def set_venv_menu(ui_we_want_to_set: QMainWindow):
     ui_we_want_to_set.venv_menu.addAction(ui_we_want_to_set.venv_menu.pip_action)
 
 
+def install_virtualenv(ui_we_want_to_set: QMainWindow):
+    install_virtualenv_shell = ShellManager(main_window=ui_we_want_to_set)
+    install_virtualenv_shell.later_init()
+    install_virtualenv_shell.exec_shell("python -m pip install virtualenv")
+
+
 def create_venv(ui_we_want_to_set: QMainWindow):
     venv_path = Path(os.getcwd() + "/venv")
     if not venv_path.exists():
-        shell_manager.exec_shell("python -m virtualenv venv")
+        create_venv_shell = ShellManager(main_window=ui_we_want_to_set)
+        create_venv_shell.later_init()
+        create_venv_shell.exec_shell("python -m virtualenv venv")
         print("Creating venv please waiting for shell exit code.")
     else:
         message_box = QMessageBox()
@@ -71,4 +85,6 @@ def pip_install_package(ui_we_want_to_set: QMainWindow):
                 )
             else:
                 compiler_path = shutil.which(cmd="python")
-            shell_manager.exec_shell(f"{compiler_path} -m pip install {package_text}")
+            pip_install_shell = ShellManager(main_window=ui_we_want_to_set)
+            pip_install_shell.later_init()
+            pip_install_shell.exec_shell(f"{compiler_path} -m pip install {package_text}")
