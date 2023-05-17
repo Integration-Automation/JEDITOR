@@ -34,6 +34,7 @@ def create_venv(ui_we_want_to_set: QMainWindow):
     venv_path = Path(os.getcwd() + "/venv")
     if not venv_path.exists():
         shell_manager.exec_shell("python -m venv venv")
+        print("Creating venv please waiting for shell exit code.")
     else:
         message_box = QMessageBox()
         message_box.setText("venv already exists.")

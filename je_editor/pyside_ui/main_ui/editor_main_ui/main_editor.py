@@ -91,19 +91,20 @@ class EditorMain(QMainWindow, QtStyleTools):
 
     def startup_setting(self):
         read_user_setting()
-        self.code_edit.setFont(
-            self.font_database.font(
-                user_setting_dict.get("font", "Lato"),
-                "",
-                user_setting_dict.get("font_size", 12)
-            )
+        # self.code_edit.setFont(
+        #     self.font_database.font(
+        #         user_setting_dict.get("font", "Lato"),
+        #         "",
+        #         user_setting_dict.get("font_size", 12)
+        #     )
+        # )
+        self.code_edit.setStyleSheet(
+            f"font-size: {user_setting_dict.get('font_size', 12)}pt;"
+            f"font-family: {user_setting_dict.get('font', 'Lato')};"
         )
-        self.code_result.setFont(
-            self.font_database.font(
-                user_setting_dict.get("font", "Lato"),
-                "",
-                user_setting_dict.get("font_size", 12)
-            )
+        self.code_result.setStyleSheet(
+            f"font-size: {user_setting_dict.get('font_size', 12)}pt;"
+            f"font-family: {user_setting_dict.get('font', 'Lato')};"
         )
         last_file = user_setting_dict.get("last_file", None)
         if last_file is not None:
@@ -127,36 +128,24 @@ class EditorMain(QMainWindow, QtStyleTools):
             self.font_size_menu.addAction(font_action)
 
     def set_font(self):
-        self.code_edit.setFont(
-            self.font_database.font(
-                self.sender().text(),
-                "",
-                self.code_edit.font().pointSize()
-            )
+        self.code_edit.setStyleSheet(
+            f"font-size: {self.code_edit.font().pointSize()}pt;"
+            f"font-family: {self.sender().text()};"
         )
-        self.code_result.setFont(
-            self.font_database.font(
-                self.sender().text(),
-                "",
-                self.code_result.font().pointSize()
-            )
+        self.code_result.setStyleSheet(
+            f"font-size: {self.code_result.font().pointSize()}pt;"
+            f"font-family: {self.sender().text()};"
         )
         user_setting_dict.update({"font": self.sender().text()})
 
     def set_font_size(self):
-        self.code_edit.setFont(
-            self.font_database.font(
-                self.code_edit.font().family(),
-                "",
-                int(self.sender().text())
-            )
+        self.code_edit.setStyleSheet(
+            f"font-size: {int(self.sender().text())}pt;"
+            f"font-family: {self.code_edit.font().family()};"
         )
-        self.code_result.setFont(
-            self.font_database.font(
-                self.code_result.font().family(),
-                "",
-                int(self.sender().text())
-            )
+        self.code_result.setStyleSheet(
+            f"font-size: {int(self.sender().text())}pt;"
+            f"font-family: {self.code_result.font().family()};"
         )
         user_setting_dict.update({"font_size": int(self.sender().text())})
 
