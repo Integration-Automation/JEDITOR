@@ -12,7 +12,7 @@ from je_editor.pyside_ui.code_process.code_exec import exec_manage
 from je_editor.pyside_ui.colors.global_color import error_color, output_color
 from je_editor.pyside_ui.main_ui_setting.ui_setting import set_ui
 from je_editor.pyside_ui.menu.menu_bar.set_menu_bar import set_menu_bar
-from je_editor.pyside_ui.shell_process.shell_exec import shell_manager
+from je_editor.pyside_ui.shell_process.shell_exec import default_shell_manager
 from je_editor.pyside_ui.treeview.project_treeview.set_project_treeview import set_project_treeview
 from je_editor.pyside_ui.user_setting.user_setting_file import write_user_setting, user_setting_dict, read_user_setting
 from je_editor.utils.encodings.python_encodings import python_encodings_list
@@ -67,8 +67,8 @@ class EditorMain(QMainWindow, QtStyleTools):
             self.system_icon = QSystemTrayIcon()
             self.system_icon.setIcon(self.icon)
         # Init shell manager
-        shell_manager.main_window = self
-        shell_manager.later_init()
+        default_shell_manager.main_window = self
+        default_shell_manager.later_init()
         # Put Redirect on last to trace exception
         redirect_manager_instance.set_redirect(self, True)
         # Add style menu
@@ -91,19 +91,20 @@ class EditorMain(QMainWindow, QtStyleTools):
 
     def startup_setting(self):
         read_user_setting()
-        self.code_edit.setFont(
-            self.font_database.font(
-                user_setting_dict.get("font", "Lato"),
-                "",
-                user_setting_dict.get("font_size", 12)
-            )
+        # self.code_edit.setFont(
+        #     self.font_database.font(
+        #         user_setting_dict.get("font", "Lato"),
+        #         "",
+        #         user_setting_dict.get("font_size", 12)
+        #     )
+        # )
+        self.code_edit.setStyleSheet(
+            f"font-size: {user_setting_dict.get('font_size', 12)}pt;"
+            f"font-family: {user_setting_dict.get('font', 'Lato')};"
         )
-        self.code_result.setFont(
-            self.font_database.font(
-                user_setting_dict.get("font", "Lato"),
-                "",
-                user_setting_dict.get("font_size", 12)
-            )
+        self.code_result.setStyleSheet(
+            f"font-size: {user_setting_dict.get('font_size', 12)}pt;"
+            f"font-family: {user_setting_dict.get('font', 'Lato')};"
         )
         last_file = user_setting_dict.get("last_file", None)
         if last_file is not None:
@@ -127,36 +128,24 @@ class EditorMain(QMainWindow, QtStyleTools):
             self.font_size_menu.addAction(font_action)
 
     def set_font(self):
-        self.code_edit.setFont(
-            self.font_database.font(
-                self.sender().text(),
-                "",
-                self.code_edit.font().pointSize()
-            )
+        self.code_edit.setStyleSheet(
+            f"font-size: {self.code_edit.font().pointSize()}pt;"
+            f"font-family: {self.sender().text()};"
         )
-        self.code_result.setFont(
-            self.font_database.font(
-                self.sender().text(),
-                "",
-                self.code_result.font().pointSize()
-            )
+        self.code_result.setStyleSheet(
+            f"font-size: {self.code_result.font().pointSize()}pt;"
+            f"font-family: {self.sender().text()};"
         )
         user_setting_dict.update({"font": self.sender().text()})
 
     def set_font_size(self):
-        self.code_edit.setFont(
-            self.font_database.font(
-                self.code_edit.font().family(),
-                "",
-                int(self.sender().text())
-            )
+        self.code_edit.setStyleSheet(
+            f"font-size: {int(self.sender().text())}pt;"
+            f"font-family: {self.code_edit.font().family()};"
         )
-        self.code_result.setFont(
-            self.font_database.font(
-                self.code_result.font().family(),
-                "",
-                int(self.sender().text())
-            )
+        self.code_result.setStyleSheet(
+            f"font-size: {int(self.sender().text())}pt;"
+            f"font-family: {self.code_result.font().family()};"
         )
         user_setting_dict.update({"font_size": int(self.sender().text())})
 
@@ -168,7 +157,7 @@ class EditorMain(QMainWindow, QtStyleTools):
             self.encoding_menu.addAction(encoding_action)
 
     def set_encoding(self):
-        shell_manager.program_encoding = self.sender().text()
+        default_shell_manager.program_encoding = self.sender().text()
         exec_manage.program_encoding = self.sender().text()
         user_setting_dict.update({"encoding": self.sender().text()})
 

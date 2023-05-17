@@ -154,4 +154,4 @@ class ShellManager(object):
             self.run_error_queue.put_nowait(program_error_output_data)
 
 
-shell_manager = ShellManager()
+default_shell_manager = ShellManager()
