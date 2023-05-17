@@ -1,7 +1,7 @@
 from PySide6.QtGui import QAction, QKeySequence, Qt
 from PySide6.QtWidgets import QMainWindow, QMessageBox
 
-from je_editor.pyside_ui.code_process.code_exec import exec_manage
+from je_editor.pyside_ui.code_process.code_exec import exec_manage, ExecManager
 from je_editor.pyside_ui.file_dialog.save_file_dialog import choose_file_get_save_filename
 from je_editor.pyside_ui.shell_process.shell_exec import ShellManager
 
@@ -58,9 +58,9 @@ def set_run_menu(ui_we_want_to_set: QMainWindow):
 
 def run_program(ui_we_want_to_set: QMainWindow):
     choose_file_get_save_filename(ui_we_want_to_set)
-    exec_manage.main_window = ui_we_want_to_set
-    exec_manage.later_init()
-    exec_manage.exec_code(
+    code_exec = ExecManager(ui_we_want_to_set)
+    code_exec.later_init()
+    code_exec.exec_code(
         ui_we_want_to_set.current_file
     )
 
