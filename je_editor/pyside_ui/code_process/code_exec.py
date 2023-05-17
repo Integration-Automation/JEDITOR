@@ -11,7 +11,6 @@ from PySide6.QtWidgets import QMainWindow, QTextEdit
 
 from je_editor.pyside_ui.colors.global_color import error_color, output_color
 from je_editor.utils.exception.exception_tags import compiler_not_found_error, je_editor_init_error
-from je_editor.utils.exception.exception_tags import file_not_fond_error
 from je_editor.utils.exception.exceptions import JEditorExecException, JEditorException
 
 
@@ -32,6 +31,7 @@ class ExecManager(object):
         self.read_program_error_output_from_thread = None
         self.read_program_output_from_thread = None
         self.main_window: QMainWindow = main_window
+        self.compiler_path = None
         self.code_result: [QTextEdit, None] = None
         self.timer: [QTimer, None] = None
         self.still_run_program = True
@@ -41,6 +41,30 @@ class ExecManager(object):
         self.program_language = program_language
         self.program_encoding = program_encoding
         self.program_buffer = program_buffer
+        self.renew_path()
+
+    def renew_path(self):
+
+        if sys.platform in ["win32", "cygwin", "msys"]:
+            venv_path = Path(os.getcwd() + "/venv/Scripts")
+        else:
+            venv_path = Path(os.getcwd() + "/venv/bin")
+        if venv_path.is_dir() and venv_path.exists():
+            self.compiler_path = shutil.which(
+                cmd="python3",
+                path=str(venv_path)
+            )
+        else:
+            self.compiler_path = shutil.which(cmd="python3")
+        if self.compiler_path is None:
+            self.compiler_path = shutil.which(
+                cmd="python",
+                path=str(venv_path)
+            )
+        else:
+            self.compiler_path = shutil.which(cmd="python")
+        if self.compiler_path is None:
+            raise JEditorExecException(compiler_not_found_error)
 
     def later_init(self):
         if self.main_window is not None:
@@ -59,34 +83,9 @@ class ExecManager(object):
             self.code_result.setPlainText("")
             reformat_os_file_path = os.path.abspath(exec_file_name)
             # detect file is exist
-            try:
-                if not Path(exec_file_name).exists():
-                    raise JEditorExecException(file_not_fond_error)
-            except OSError as error:
-                raise JEditorExecException(error)
-            if sys.platform in ["win32", "cygwin", "msys"]:
-                venv_path = Path(os.getcwd() + "/venv/Scripts")
-            else:
-                venv_path = Path(os.getcwd() + "/venv/bin")
-            if venv_path.is_dir() and venv_path.exists():
-                compiler_path = shutil.which(
-                    cmd="python3",
-                    path=str(venv_path)
-                )
-            else:
-                compiler_path = shutil.which(cmd="python3")
-            if compiler_path is None:
-                compiler_path = shutil.which(
-                    cmd="python",
-                    path=str(venv_path)
-                )
-            else:
-                compiler_path = shutil.which(cmd="python")
-            if compiler_path is None:
-                raise JEditorExecException(compiler_not_found_error)
             exec_file = reformat_os_file_path
             # run program
-            execute_program_list = [compiler_path, exec_file]
+            execute_program_list = [self.compiler_path, exec_file]
             self.process = subprocess.Popen(
                 execute_program_list,
                 stdout=subprocess.PIPE,
@@ -107,7 +106,7 @@ class ExecManager(object):
             )
             self.read_program_error_output_from_thread.start()
             # show which file execute
-            self.code_result.append(compiler_path + " " + reformat_os_file_path)
+            self.code_result.append(self.compiler_path + " " + reformat_os_file_path)
             # start tkinter_ui update
             # start timer
             self.timer = QTimer(self.main_window)
