@@ -5,7 +5,7 @@ from je_editor.pyside_ui.search_ui.search_error_box import SearchResultBox
 
 
 class CodeRecord(QTextEdit):
-
+    # Extend QTextEdit
     def __init__(self):
         super().__init__()
         self.setLineWrapMode(self.LineWrapMode.NoWrap)
@@ -19,6 +19,7 @@ class CodeRecord(QTextEdit):
         self.addAction(self.search_result_action)
 
     def start_search_result_dialog(self):
+        # Binding search box
         self.search_result_box = SearchResultBox()
         self.search_result_box.search_back_button.clicked.connect(
             self.find_back_text

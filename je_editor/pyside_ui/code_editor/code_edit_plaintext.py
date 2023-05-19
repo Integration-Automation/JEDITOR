@@ -8,7 +8,10 @@ from je_editor.pyside_ui.syntax.python_syntax import PythonHighlighter
 
 
 class CodeEditor(QPlainTextEdit):
-
+    """
+    Extend QPlainTextEdit,
+    Add line, edit tab distance, add highlighter, add search text
+    """
     def __init__(self):
         super().__init__()
         self.line_number = LineNumber(self)
@@ -31,6 +34,7 @@ class CodeEditor(QPlainTextEdit):
         self.addAction(self.search_action)
 
     def start_search_dialog(self):
+        # Search box connect to function
         self.search_box = SearchBox()
         self.search_box.search_back_button.clicked.connect(
             self.find_back_text
@@ -117,6 +121,11 @@ class CodeEditor(QPlainTextEdit):
         self.setExtraSelections(selections)
 
     def keyPressEvent(self, event):
+        """
+        Catch Soft new line (key, shift + enter)
+        :param event: keypress event
+        :return: None
+        """
         key_event = QKeyEvent(event)
         if key_event.modifiers() and Qt.Modifier.SHIFT:
             key = key_event.key()
@@ -129,6 +138,7 @@ class CodeEditor(QPlainTextEdit):
         self.highlight_current_line()
 
     def mousePressEvent(self, event) -> None:
+        # Highlight mouse click line
         super().mousePressEvent(event)
         self.highlight_current_line()
 

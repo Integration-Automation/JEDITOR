@@ -22,7 +22,9 @@ class SaveThread(Thread):
         self.daemon = True
 
     def run(self):
-        # loop and save current edit file
+        """
+        loop and save current edit file
+        """
         if self.file is not None:
             self.auto_save = True
             self.path = Path(self.file)

@@ -24,7 +24,9 @@ class ShellManager(object):
             program_buffer: int = 10240000,
     ):
         """
-        :param main_window: tkinter main window
+        :param main_window: Pyside main window
+        :param shell_encoding: shell command read output encoding
+        :param program_buffer: buffer size
         """
         self.read_program_error_output_from_thread = None
         self.read_program_output_from_thread = None
@@ -41,7 +43,7 @@ class ShellManager(object):
         self.renew_path()
 
     def renew_path(self):
-
+        # Renew compiler path
         if sys.platform in ["win32", "cygwin", "msys"]:
             venv_path = Path(os.getcwd() + "/venv/Scripts")
         else:

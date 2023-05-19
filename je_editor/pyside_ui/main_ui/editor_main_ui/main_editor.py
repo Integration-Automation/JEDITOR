@@ -90,14 +90,8 @@ class EditorMain(QMainWindow, QtStyleTools):
         self.apply_stylesheet(self, self.sender().text())
 
     def startup_setting(self):
+        # Set font and font size, then try to open last edit file
         read_user_setting()
-        # self.code_edit.setFont(
-        #     self.font_database.font(
-        #         user_setting_dict.get("font", "Lato"),
-        #         "",
-        #         user_setting_dict.get("font_size", 12)
-        #     )
-        # )
         self.code_edit.setStyleSheet(
             f"font-size: {user_setting_dict.get('font_size', 12)}pt;"
             f"font-family: {user_setting_dict.get('font', 'Lato')};"
@@ -162,6 +156,7 @@ class EditorMain(QMainWindow, QtStyleTools):
         user_setting_dict.update({"encoding": self.sender().text()})
 
     def redirect(self):
+        # Pull out redirect text and put text in code result area
         if self.auto_save_thread is not None:
             self.auto_save_thread.text_to_write = self.code_edit.toPlainText()
         if not redirect_manager_instance.std_out_queue.empty():
