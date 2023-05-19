@@ -1,3 +1,5 @@
+import re
+
 from PySide6.QtCore import QRegularExpression
 from PySide6.QtGui import QColor
 from PySide6.QtGui import QFont
@@ -36,6 +38,8 @@ builtins_keyword = [
     "__import__"
 ]
 
+# Regex pattern
+
 string_rule = [
     r"'''[^'\\]*(\\.[^'\\]*)*'''",  # 3* Singel
     r'"""[^"\\]*(\\.[^"\\]*)*"""',  # 3* Double
@@ -56,6 +60,7 @@ class PythonHighlighter(QSyntaxHighlighter):
 
         self.highlight_rules = []
 
+        # Highlight keywords
         text_char_format = QTextCharFormat()
         text_char_format.setForeground(QColor(255, 212, 102))
         text_char_format.setFontWeight(QFont.Bold)
@@ -63,18 +68,21 @@ class PythonHighlighter(QSyntaxHighlighter):
             pattern = QRegularExpression(rf"\b{word}\b")
             self.highlight_rules.append((pattern, text_char_format))
 
+        # Highlight numbers
         text_char_format = QTextCharFormat()
         text_char_format.setForeground(QColor(0, 128, 255))
         for rule in number_rule:
             pattern = QRegularExpression(rule)
             self.highlight_rules.append((pattern, text_char_format))
 
+        # Highlight strings
         text_char_format = QTextCharFormat()
         text_char_format.setForeground(QColor(0, 153, 0))
         for rule in string_rule:
             pattern = QRegularExpression(rule)
             self.highlight_rules.append((pattern, text_char_format))
 
+        # Highlight builtins
         text_char_format = QTextCharFormat()
         text_char_format.setForeground(QColor(0, 255, 255))
         for word in builtins_keyword:
@@ -86,6 +94,7 @@ class PythonHighlighter(QSyntaxHighlighter):
         pattern = QRegularExpression(r"#[^\n]*")
         self.highlight_rules.append((pattern, text_char_format))
 
+        # Highlight self
         text_char_format = QTextCharFormat()
         text_char_format.setForeground(QColor(204, 0, 204))
         pattern = QRegularExpression(r"\bself\b")

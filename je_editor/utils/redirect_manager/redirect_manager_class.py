@@ -32,7 +32,7 @@ class RedirectStdErr(logging.Handler):
 
 
 class RedirectManager(object):
-
+    # Redirect all output to queue
     def __init__(self):
         self.is_use_ui: bool = False
         self.ui = None

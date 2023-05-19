@@ -22,6 +22,7 @@ def __process_json(json_string: str, **kwargs):
 
 
 def reformat_json(json_string: str, **kwargs):
+    # Make json pretty
     try:
         return __process_json(json_string, **kwargs)
     except JEditorJsonException:

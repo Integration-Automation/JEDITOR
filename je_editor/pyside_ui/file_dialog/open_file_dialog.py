@@ -7,6 +7,11 @@ from je_editor.utils.file.open.open_file import read_file
 
 
 def choose_file_get_open_filename(parent_qt_instance):
+    """
+    Open file and set code edit content
+    :param parent_qt_instance: Pyside parent
+    :return: None
+    """
     filename = QFileDialog().getOpenFileName(
         parent=parent_qt_instance,
         dir=os.getcwd()

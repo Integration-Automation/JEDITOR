@@ -7,6 +7,10 @@ from je_editor.pyside_ui.auto_save.auto_save_thread import SaveThread
 
 
 def choose_file_get_save_filename(parent_qt_instance):
+    """
+    :param parent_qt_instance: Pyside parent
+    :return: save code edit content to file
+    """
     filename = QFileDialog().getSaveFileName(
         parent=parent_qt_instance,
         dir=os.getcwd()

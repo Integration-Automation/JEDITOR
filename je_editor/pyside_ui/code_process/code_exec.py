@@ -24,7 +24,7 @@ class ExecManager(object):
             program_buffer=10240000,
     ):
         """
-        :param main_window: tkinter main window
+        :param main_window: Pyside main window
         :param program_language: which program language
         :param program_encoding: which encoding
         """
@@ -44,7 +44,7 @@ class ExecManager(object):
         self.renew_path()
 
     def renew_path(self):
-
+        # Renew compiler path
         if sys.platform in ["win32", "cygwin", "msys"]:
             venv_path = Path(os.getcwd() + "/venv/Scripts")
         else:
@@ -67,6 +67,7 @@ class ExecManager(object):
             raise JEditorExecException(compiler_not_found_error)
 
     def later_init(self):
+        # Enable timer and code result area
         if self.main_window is not None:
             self.code_result: QTextEdit = self.main_window.code_result
             self.timer = QTimer(self.main_window)
@@ -118,8 +119,8 @@ class ExecManager(object):
             self.code_result.append(str(error))
             self.code_result.setTextColor(output_color)
 
-    # tkinter_ui update method
     def pull_text(self):
+        # Pull text from queue and put in code result area
         try:
             self.code_result.setTextColor(error_color)
             if not self.run_error_queue.empty():
@@ -145,8 +146,8 @@ class ExecManager(object):
             # poll return code
             self.process.poll()
 
-    # exit program change run flag to false and clean read thread and queue and process
     def exit_program(self):
+        # exit program change run flag to false and clean read thread and queue and process
         self.still_run_program = False
         if self.read_program_output_from_thread is not None:
             self.read_program_output_from_thread = None
@@ -159,6 +160,7 @@ class ExecManager(object):
             self.process = None
 
     def print_and_clear_queue(self):
+        # Pull all remain string on queue and add to code result area
         try:
             for std_output in iter(self.run_output_queue.get_nowait, None):
                 std_output = str(std_output).strip()
