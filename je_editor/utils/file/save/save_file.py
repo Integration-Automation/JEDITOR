@@ -3,9 +3,9 @@ from threading import Lock
 from je_editor.utils.exception.exceptions import JEditorSaveFileException
 
 
-def write_file(file, content):
+def write_file(file_path: str, content: str) -> None:
     """
-    :param file: file we want to write
+    :param file_path: file we want to write
     :param content: content write in file
     try
         lock thread
@@ -18,8 +18,8 @@ def write_file(file, content):
     content = str(content)
     try:
         lock.acquire()
-        if file != "" and file is not None:
-            with open(file, "w+") as file_to_write:
+        if file_path != "" and file_path is not None:
+            with open(file_path, "w+") as file_to_write:
                 file_to_write.write(content)
     except JEditorSaveFileException:
         raise JEditorSaveFileException

@@ -1,13 +1,14 @@
+import typing
 from pathlib import Path
 from threading import Lock
 
 from je_editor.utils.exception.exceptions import JEditorOpenFileException
 
 
-def read_file(file):
+def read_file(file_path: str) -> typing.List[str, str]:
     """
     use to check file is exist and open
-    :param file: the file we want to read its whole file path
+    :param file_path: the file we want to read its whole file path
     :return: read's file and file content
     try
         lock thread
@@ -21,11 +22,11 @@ def read_file(file):
     lock = Lock()
     try:
         lock.acquire()
-        if file != "" and file is not None:
-            file_path = Path(file)
+        if file_path != "" and file_path is not None:
+            file_path = Path(file_path)
             if file_path.exists() and file_path.is_file():
-                with open(file, "r+") as open_read_file:
-                    return [file, open_read_file.read()]
+                with open(file_path, "r+") as open_read_file:
+                    return [file_path, open_read_file.read()]
     except JEditorOpenFileException:
         raise JEditorOpenFileException
     finally:

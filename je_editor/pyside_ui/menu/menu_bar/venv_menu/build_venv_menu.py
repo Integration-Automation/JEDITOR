@@ -7,7 +7,7 @@ from PySide6.QtWidgets import QMainWindow, QMessageBox, QInputDialog
 from je_editor.pyside_ui.shell_process.shell_exec import ShellManager
 
 
-def set_venv_menu(ui_we_want_to_set: QMainWindow):
+def set_venv_menu(ui_we_want_to_set: QMainWindow) -> None:
     # Create an venv
     ui_we_want_to_set.venv_menu.create_venv_action = QAction("Create Venv")
     ui_we_want_to_set.venv_menu.create_venv_action.setShortcut(
@@ -28,7 +28,7 @@ def set_venv_menu(ui_we_want_to_set: QMainWindow):
     ui_we_want_to_set.venv_menu.addAction(ui_we_want_to_set.venv_menu.pip_action)
 
 
-def create_venv(ui_we_want_to_set: QMainWindow):
+def create_venv(ui_we_want_to_set: QMainWindow) -> None:
     venv_path = Path(os.getcwd() + "/venv")
     if not venv_path.exists():
         create_venv_shell = ShellManager(main_window=ui_we_want_to_set)
@@ -43,7 +43,7 @@ def create_venv(ui_we_want_to_set: QMainWindow):
         message_box.exec()
 
 
-def pip_install_package(ui_we_want_to_set: QMainWindow):
+def pip_install_package(ui_we_want_to_set: QMainWindow) -> None:
     venv_path = Path(os.getcwd() + "/venv")
     if not venv_path.exists():
         message_box = QMessageBox()

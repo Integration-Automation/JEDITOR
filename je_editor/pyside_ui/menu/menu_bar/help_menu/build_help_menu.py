@@ -4,7 +4,7 @@ from PySide6.QtGui import QAction
 from PySide6.QtWidgets import QMainWindow, QMessageBox
 
 
-def set_help_menu(ui_we_want_to_set: QMainWindow):
+def set_help_menu(ui_we_want_to_set: QMainWindow) -> None:
     ui_we_want_to_set.help_menu .help_github_action = QAction("GitHub")
     ui_we_want_to_set.help_menu .help_github_action.triggered.connect(
         lambda: open_web_browser("https://github.com/Integrated-Testing-Environment/je_editor")

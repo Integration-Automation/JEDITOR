@@ -6,7 +6,7 @@ from je_editor.pyside_ui.file_dialog.save_file_dialog import choose_file_get_sav
 from je_editor.pyside_ui.shell_process.shell_exec import ShellManager
 
 
-def set_run_menu(ui_we_want_to_set: QMainWindow):
+def set_run_menu(ui_we_want_to_set: QMainWindow) -> None:
     ui_we_want_to_set.run_menu.run_program_action = QAction("Run Program")
     ui_we_want_to_set.run_menu.run_program_action.triggered.connect(
         lambda: run_program(ui_we_want_to_set)
@@ -56,7 +56,7 @@ def set_run_menu(ui_we_want_to_set: QMainWindow):
     ui_we_want_to_set.run_menu.run_help_menu.addAction(ui_we_want_to_set.run_menu.run_help_menu.shell_help_action)
 
 
-def run_program(ui_we_want_to_set: QMainWindow):
+def run_program(ui_we_want_to_set: QMainWindow) -> None:
     choose_file_get_save_filename(ui_we_want_to_set)
     code_exec = ExecManager(ui_we_want_to_set)
     code_exec.later_init()
@@ -65,7 +65,7 @@ def run_program(ui_we_want_to_set: QMainWindow):
     )
 
 
-def shell_exec(ui_we_want_to_set: QMainWindow):
+def shell_exec(ui_we_want_to_set: QMainWindow) -> None:
     shell_command = ShellManager(main_window=ui_we_want_to_set)
     shell_command.later_init()
     shell_command.exec_shell(
@@ -73,15 +73,15 @@ def shell_exec(ui_we_want_to_set: QMainWindow):
     )
 
 
-def stop_program():
+def stop_program() -> None:
     exec_manage.exit_program()
 
 
-def clean_result(ui_we_want_to_set: QMainWindow):
+def clean_result(ui_we_want_to_set: QMainWindow) -> None:
     ui_we_want_to_set.code_result.setPlainText("")
 
 
-def show_run_help():
+def show_run_help() -> None:
     message_box = QMessageBox()
     message_box.setText(
         """
@@ -93,7 +93,7 @@ If you are unable to run a Python program, please make sure you are not using th
     message_box.exec()
 
 
-def show_shell_help():
+def show_shell_help() -> None:
     message_box = QMessageBox()
     message_box.setText(
         """

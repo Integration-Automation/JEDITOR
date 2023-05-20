@@ -7,7 +7,7 @@ from je_editor.pyside_ui.menu.menu_bar.run_menu.build_run_menu import set_run_me
 from je_editor.pyside_ui.menu.menu_bar.venv_menu.build_venv_menu import set_venv_menu
 
 
-def set_menu_bar(ui_we_want_to_set: QMainWindow):
+def set_menu_bar(ui_we_want_to_set: QMainWindow) -> None:
     # set menu
     ui_we_want_to_set.menu = QMenuBar()
     ui_we_want_to_set.file_menu = ui_we_want_to_set.menu.addMenu("File")

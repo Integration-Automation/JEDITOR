@@ -100,7 +100,7 @@ class PythonHighlighter(QSyntaxHighlighter):
         pattern = QRegularExpression(r"\bself\b")
         self.highlight_rules.append((pattern, text_char_format))
 
-    def highlightBlock(self, text):
+    def highlightBlock(self, text) -> None:
         for pattern, format in self.highlight_rules:
             match_iterator = pattern.globalMatch(text)
             while match_iterator.hasNext():

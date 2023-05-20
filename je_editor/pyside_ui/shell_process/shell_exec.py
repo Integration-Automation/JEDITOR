@@ -42,7 +42,7 @@ class ShellManager(object):
         self.program_buffer: int = program_buffer
         self.renew_path()
 
-    def renew_path(self):
+    def renew_path(self) -> None:
         # Renew compiler path
         if sys.platform in ["win32", "cygwin", "msys"]:
             venv_path = Path(os.getcwd() + "/venv/Scripts")
@@ -65,13 +65,13 @@ class ShellManager(object):
         if self.compiler_path is None:
             raise JEditorExecException(compiler_not_found_error)
 
-    def later_init(self):
+    def later_init(self) -> None:
         if self.main_window is not None:
             self.code_result: QTextEdit = self.main_window.code_result
         else:
             raise JEditorException(je_editor_init_error)
 
-    def exec_shell(self, shell_command: [str, list]):
+    def exec_shell(self, shell_command: [str, list]) -> None:
         """
         :param shell_command: shell command will run
         :return: if error return result and True else return result and False
@@ -114,7 +114,7 @@ class ShellManager(object):
             self.code_result.setTextColor(output_color)
 
     # tkinter_ui update method
-    def pull_text(self):
+    def pull_text(self) -> None:
         try:
             self.code_result.setTextColor(error_color)
             if not self.run_error_queue.empty():
@@ -141,7 +141,7 @@ class ShellManager(object):
             self.process.poll()
 
     # exit program change run flag to false and clean read thread and queue and process
-    def exit_program(self):
+    def exit_program(self) -> None:
         self.still_run_shell = False
         if self.read_program_output_from_thread is not None:
             self.read_program_output_from_thread = None
@@ -153,7 +153,7 @@ class ShellManager(object):
             print(f"Shell command exit with code {self.process.returncode}")
             self.process = None
 
-    def print_and_clear_queue(self):
+    def print_and_clear_queue(self) -> None:
         try:
             for std_output in iter(self.run_output_queue.get_nowait, None):
                 std_output = str(std_output).strip()
@@ -170,14 +170,14 @@ class ShellManager(object):
         self.run_output_queue = queue.Queue()
         self.run_error_queue = queue.Queue()
 
-    def read_program_output_from_process(self):
+    def read_program_output_from_process(self) -> None:
         while self.still_run_shell:
             program_output_data = self.process.stdout.raw.read(
                 self.program_buffer) \
                 .decode(self.program_encoding)
             self.run_output_queue.put_nowait(program_output_data)
 
-    def read_program_error_output_from_process(self):
+    def read_program_error_output_from_process(self) -> None:
         while self.still_run_shell:
             program_error_output_data = self.process.stderr.raw.read(
                 self.program_buffer) \
