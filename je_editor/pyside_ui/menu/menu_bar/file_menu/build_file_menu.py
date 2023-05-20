@@ -11,7 +11,7 @@ from je_editor.pyside_ui.file_dialog.save_file_dialog import choose_file_get_sav
 from je_editor.pyside_ui.shell_process.shell_exec import default_shell_manager
 
 
-def set_file_menu(ui_we_want_to_set: QMainWindow):
+def set_file_menu(ui_we_want_to_set: QMainWindow) -> None:
     ui_we_want_to_set.file_menu.open_file_action = QAction("Open File")
     ui_we_want_to_set.file_menu.open_file_action.setShortcut(
         "Ctrl+o"

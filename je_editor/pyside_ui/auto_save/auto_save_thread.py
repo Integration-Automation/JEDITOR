@@ -21,7 +21,7 @@ class SaveThread(Thread):
         # set daemon
         self.daemon = True
 
-    def run(self):
+    def run(self) -> None:
         """
         loop and save current edit file
         """

@@ -5,7 +5,7 @@ from yapf.yapflib.yapf_api import FormatCode
 from je_editor.utils.json_format.json_process import reformat_json
 
 
-def set_check_menu(ui_we_want_to_set: QMainWindow):
+def set_check_menu(ui_we_want_to_set: QMainWindow) -> None:
     # Yapf code check
     ui_we_want_to_set.check_menu.check_python_action = QAction("yapf")
     ui_we_want_to_set.check_menu.check_python_action.setShortcut("Ctrl+y")
@@ -26,7 +26,7 @@ def set_check_menu(ui_we_want_to_set: QMainWindow):
     ui_we_want_to_set.check_menu.addAction(ui_we_want_to_set.check_menu.reformat_json_action)
 
 
-def check_python_code(ui_we_want_to_set):
+def check_python_code(ui_we_want_to_set) -> None:
     code_text = ui_we_want_to_set.code_edit.toPlainText()
     ui_we_want_to_set.code_result.setPlainText("")
     format_code = FormatCode(
@@ -38,7 +38,7 @@ def check_python_code(ui_we_want_to_set):
         ui_we_want_to_set.code_edit.setPlainText(format_code[0])
 
 
-def reformat_json_text(ui_we_want_to_set):
+def reformat_json_text(ui_we_want_to_set) -> None:
     code_text = ui_we_want_to_set.code_edit.toPlainText()
     ui_we_want_to_set.code_result.setPlainText("")
     ui_we_want_to_set.code_edit.setPlainText(reformat_json(code_text))

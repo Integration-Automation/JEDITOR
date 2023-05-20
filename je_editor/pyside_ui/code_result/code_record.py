@@ -18,7 +18,7 @@ class CodeRecord(QTextEdit):
         )
         self.addAction(self.search_result_action)
 
-    def start_search_result_dialog(self):
+    def start_search_result_dialog(self) -> None:
         # Binding search box
         self.search_result_box = SearchResultBox()
         self.search_result_box.search_back_button.clicked.connect(
@@ -29,12 +29,12 @@ class CodeRecord(QTextEdit):
         )
         self.search_result_box.show()
 
-    def find_next_text(self):
+    def find_next_text(self) -> None:
         if self.search_result_box.isVisible():
             text = self.search_result_box.search_input.text()
             self.find(text)
 
-    def find_back_text(self):
+    def find_back_text(self) -> None:
         if self.search_result_box.isVisible():
             text = self.search_result_box.search_input.text()
             self.find(text, QTextDocument.FindFlag.FindBackward)

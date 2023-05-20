@@ -74,7 +74,7 @@ class EditorMain(QMainWindow, QtStyleTools):
         # Add style menu
         self.add_style_menu()
 
-    def add_style_menu(self):
+    def add_style_menu(self) -> None:
         self.menu.style_menu = self.menu.addMenu("UI Style")
         for style in [
             'dark_amber.xml', 'dark_blue.xml', 'dark_cyan.xml', 'dark_lightgreen.xml', 'dark_pink.xml',
@@ -86,10 +86,10 @@ class EditorMain(QMainWindow, QtStyleTools):
             change_style_action.triggered.connect(self.set_style)
             self.menu.style_menu.addAction(change_style_action)
 
-    def set_style(self):
+    def set_style(self) -> None:
         self.apply_stylesheet(self, self.sender().text())
 
-    def startup_setting(self):
+    def startup_setting(self) -> None:
         # Set font and font size, then try to open last edit file
         read_user_setting()
         self.code_edit.setStyleSheet(
@@ -107,21 +107,21 @@ class EditorMain(QMainWindow, QtStyleTools):
                 self.current_file = str(last_file_path)
                 self.code_edit.setPlainText(read_file(self.current_file)[1])
 
-    def add_font_menu(self):
+    def add_font_menu(self) -> None:
         self.font_menu = self.text_menu.addMenu("Font")
         for family in self.font_database.families():
             font_action = QAction(family, parent=self)
             font_action.triggered.connect(self.set_font)
             self.font_menu.addAction(font_action)
 
-    def add_font_size_menu(self):
+    def add_font_size_menu(self) -> None:
         self.font_size_menu = self.text_menu.addMenu("Font Size")
         for size in range(12, 38, 2):
             font_action = QAction(str(size), parent=self)
             font_action.triggered.connect(self.set_font_size)
             self.font_size_menu.addAction(font_action)
 
-    def set_font(self):
+    def set_font(self) -> None:
         self.code_edit.setStyleSheet(
             f"font-size: {self.code_edit.font().pointSize()}pt;"
             f"font-family: {self.sender().text()};"
@@ -132,7 +132,7 @@ class EditorMain(QMainWindow, QtStyleTools):
         )
         user_setting_dict.update({"font": self.sender().text()})
 
-    def set_font_size(self):
+    def set_font_size(self) -> None:
         self.code_edit.setStyleSheet(
             f"font-size: {int(self.sender().text())}pt;"
             f"font-family: {self.code_edit.font().family()};"
@@ -143,19 +143,19 @@ class EditorMain(QMainWindow, QtStyleTools):
         )
         user_setting_dict.update({"font_size": int(self.sender().text())})
 
-    def add_encoding_menu(self):
+    def add_encoding_menu(self) -> None:
         self.encoding_menu = self.file_menu.addMenu("Encodings")
         for encoding in python_encodings_list:
             encoding_action = QAction(encoding, parent=self)
             encoding_action.triggered.connect(self.set_encoding)
             self.encoding_menu.addAction(encoding_action)
 
-    def set_encoding(self):
+    def set_encoding(self) -> None:
         default_shell_manager.program_encoding = self.sender().text()
         exec_manage.program_encoding = self.sender().text()
         user_setting_dict.update({"encoding": self.sender().text()})
 
-    def redirect(self):
+    def redirect(self) -> None:
         # Pull out redirect text and put text in code result area
         if self.auto_save_thread is not None:
             self.auto_save_thread.text_to_write = self.code_edit.toPlainText()

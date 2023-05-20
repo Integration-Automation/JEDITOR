@@ -8,7 +8,7 @@ from je_editor.pyside_ui.auto_save.auto_save_thread import SaveThread
 from je_editor.utils.file.open.open_file import read_file
 
 
-def set_project_treeview(ui_we_want_to_set: QMainWindow):
+def set_project_treeview(ui_we_want_to_set: QMainWindow) -> None:
     ui_we_want_to_set.grid_layout.setColumnStretch(0, 4)
     ui_we_want_to_set.project_treeview_model = QFileSystemModel()
     ui_we_want_to_set.project_treeview_model.setRootPath(QDir.currentPath())
@@ -27,7 +27,7 @@ def set_project_treeview(ui_we_want_to_set: QMainWindow):
     )
 
 
-def treeview_click(ui_we_want_to_set):
+def treeview_click(ui_we_want_to_set) -> None:
     clicked_item: QFileSystemModel = ui_we_want_to_set.project_treeview.selectedIndexes()[0]
     file_info: QFileInfo = ui_we_want_to_set.project_treeview.model().fileInfo(clicked_item)
     path = pathlib.Path(file_info.absoluteFilePath())

@@ -10,7 +10,7 @@ class RedirectStdOut(logging.Handler):
     def __init__(self):
         super().__init__()
 
-    def write(self, content_to_write):
+    def write(self, content_to_write) -> None:
         redirect_manager_instance.std_out_queue.put(content_to_write)
 
     def emit(self, record: logging.LogRecord) -> None:
@@ -24,7 +24,7 @@ class RedirectStdErr(logging.Handler):
     def __init__(self):
         super().__init__()
 
-    def write(self, content_to_write):
+    def write(self, content_to_write) -> None:
         redirect_manager_instance.std_err_queue.put(content_to_write)
 
     def emit(self, record: logging.LogRecord) -> None:
@@ -39,7 +39,7 @@ class RedirectManager(object):
         self.std_err_queue = queue.Queue()
         self.std_out_queue = queue.Queue()
 
-    def set_redirect(self, ui, is_use_ui: bool = False):
+    def set_redirect(self, ui, is_use_ui: bool = False) -> None:
         """
         :param ui: tkinter_ui instance
         :param is_use_ui: false for cli
@@ -58,7 +58,7 @@ class RedirectManager(object):
                 logging.getLogger(name).addHandler(redirect_err)
 
     @staticmethod
-    def restore_std():
+    def restore_std() -> None:
         """
         reset redirect
         :return: None

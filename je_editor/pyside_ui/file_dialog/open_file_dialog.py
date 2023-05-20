@@ -6,7 +6,7 @@ from je_editor.pyside_ui.auto_save.auto_save_thread import SaveThread
 from je_editor.utils.file.open.open_file import read_file
 
 
-def choose_file_get_open_filename(parent_qt_instance):
+def choose_file_get_open_filename(parent_qt_instance) -> None:
     """
     Open file and set code edit content
     :param parent_qt_instance: Pyside parent

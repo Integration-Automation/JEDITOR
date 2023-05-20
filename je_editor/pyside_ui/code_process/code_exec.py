@@ -43,7 +43,7 @@ class ExecManager(object):
         self.program_buffer = program_buffer
         self.renew_path()
 
-    def renew_path(self):
+    def renew_path(self) -> None:
         # Renew compiler path
         if sys.platform in ["win32", "cygwin", "msys"]:
             venv_path = Path(os.getcwd() + "/venv/Scripts")
@@ -66,7 +66,7 @@ class ExecManager(object):
         if self.compiler_path is None:
             raise JEditorExecException(compiler_not_found_error)
 
-    def later_init(self):
+    def later_init(self) -> None:
         # Enable timer and code result area
         if self.main_window is not None:
             self.code_result: QTextEdit = self.main_window.code_result
@@ -74,7 +74,7 @@ class ExecManager(object):
         else:
             raise JEditorException(je_editor_init_error)
 
-    def exec_code(self, exec_file_name):
+    def exec_code(self, exec_file_name) -> None:
         """
         :param exec_file_name: string file will open to run
         :return: if error return result and True else return result and False
@@ -119,7 +119,7 @@ class ExecManager(object):
             self.code_result.append(str(error))
             self.code_result.setTextColor(output_color)
 
-    def pull_text(self):
+    def pull_text(self) -> None:
         # Pull text from queue and put in code result area
         try:
             self.code_result.setTextColor(error_color)
@@ -146,7 +146,7 @@ class ExecManager(object):
             # poll return code
             self.process.poll()
 
-    def exit_program(self):
+    def exit_program(self) -> None:
         # exit program change run flag to false and clean read thread and queue and process
         self.still_run_program = False
         if self.read_program_output_from_thread is not None:
@@ -159,7 +159,7 @@ class ExecManager(object):
             print(f"Program exit with code {self.process.returncode}")
             self.process = None
 
-    def print_and_clear_queue(self):
+    def print_and_clear_queue(self) -> None:
         # Pull all remain string on queue and add to code result area
         try:
             for std_output in iter(self.run_output_queue.get_nowait, None):
@@ -177,12 +177,12 @@ class ExecManager(object):
         self.run_output_queue = queue.Queue()
         self.run_error_queue = queue.Queue()
 
-    def read_program_output_from_process(self):
+    def read_program_output_from_process(self) -> None:
         while self.still_run_program:
             program_output_data = self.process.stdout.raw.read(self.program_buffer).decode(self.program_encoding)
             self.run_output_queue.put_nowait(program_output_data)
 
-    def read_program_error_output_from_process(self):
+    def read_program_error_output_from_process(self) -> None:
         while self.still_run_program:
             program_error_output_data = self.process.stderr.raw.read(self.program_buffer).decode(self.program_encoding)
             self.run_error_queue.put_nowait(program_error_output_data)

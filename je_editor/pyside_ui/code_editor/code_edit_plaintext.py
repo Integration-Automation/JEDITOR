@@ -33,7 +33,7 @@ class CodeEditor(QPlainTextEdit):
         )
         self.addAction(self.search_action)
 
-    def start_search_dialog(self):
+    def start_search_dialog(self) -> None:
         # Search box connect to function
         self.search_box = SearchBox()
         self.search_box.search_back_button.clicked.connect(
@@ -44,17 +44,17 @@ class CodeEditor(QPlainTextEdit):
         )
         self.search_box.show()
 
-    def find_next_text(self):
+    def find_next_text(self) -> None:
         if self.search_box.isVisible():
             text = self.search_box.search_input.text()
             self.find(text)
 
-    def find_back_text(self):
+    def find_back_text(self) -> None:
         if self.search_box.isVisible():
             text = self.search_box.search_input.text()
             self.find(text, QTextDocument.FindFlag.FindBackward)
 
-    def line_number_paint(self, event):
+    def line_number_paint(self, event) -> None:
         painter = QPainter(self.line_number)
         painter.fillRect(event.rect(), QColor(51, 51, 77))
         block = self.firstVisibleBlock()
@@ -78,22 +78,22 @@ class CodeEditor(QPlainTextEdit):
             bottom = top + self.blockBoundingRect(block).height()
             block_number += 1
 
-    def line_number_width(self):
+    def line_number_width(self) -> int:
         digits = len(str(self.blockCount()))
         space = 10 * digits
         return space
 
-    def update_line_number_area_width(self, value):
+    def update_line_number_area_width(self, value) -> None:
         self.setViewportMargins(self.line_number_width(), 0, 0, 0)
 
-    def resizeEvent(self, event):
+    def resizeEvent(self, event) -> None:
         QPlainTextEdit.resizeEvent(self, event)
         cr = self.contentsRect()
         self.line_number.setGeometry(
             QRect(cr.left(), cr.top(), self.line_number_width(), cr.height()),
         )
 
-    def update_line_number_area(self, rect, dy):
+    def update_line_number_area(self, rect, dy) -> None:
         if dy:
             self.line_number.scroll(0, dy)
         else:
@@ -106,7 +106,7 @@ class CodeEditor(QPlainTextEdit):
         if rect.contains(self.viewport().rect()):
             self.update_line_number_area_width(0)
 
-    def highlight_current_line(self):
+    def highlight_current_line(self) -> None:
         selections = []
         if not self.isReadOnly():
             formats = QTextCharFormat()
@@ -120,7 +120,7 @@ class CodeEditor(QPlainTextEdit):
             selection.format.setProperty(QTextFormat.FullWidthSelection, True)
         self.setExtraSelections(selections)
 
-    def keyPressEvent(self, event):
+    def keyPressEvent(self, event) -> None:
         """
         Catch Soft new line (key, shift + enter)
         :param event: keypress event
@@ -149,5 +149,5 @@ class LineNumber(QWidget):
         QWidget.__init__(self, parent=editor)
         self.editor = editor
 
-    def paintEvent(self, event):
+    def paintEvent(self, event) -> None:
         self.editor.line_number_paint(event)

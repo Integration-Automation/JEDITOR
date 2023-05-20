@@ -6,7 +6,7 @@ from je_editor.utils.file.save.save_file import write_file
 from je_editor.pyside_ui.auto_save.auto_save_thread import SaveThread
 
 
-def choose_file_get_save_filename(parent_qt_instance):
+def choose_file_get_save_filename(parent_qt_instance) -> None:
     """
     :param parent_qt_instance: Pyside parent
     :return: save code edit content to file
