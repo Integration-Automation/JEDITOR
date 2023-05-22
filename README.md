@@ -9,9 +9,13 @@
 
 [![CircleCI](https://dl.circleci.com/status-badge/img/gh/Intergration-Automation-Testing/je_editor/tree/main.svg?style=svg)](https://dl.circleci.com/status-badge/redirect/gh/Intergration-Automation-Testing/je_editor/tree/main)
 
-[![JE_Editor GitHub Actions Dev](https://github.com/JE-Chen/je_editor/actions/workflows/je-editor-github-actions_dev.yml/badge.svg?branch=dev)](https://github.com/JE-Chen/je_editor/actions/workflows/je-editor-github-actions_dev.yml)
+[![JE_Editor Stable Python3.8](https://github.com/Intergration-Automation-Testing/je_editor/actions/workflows/je-editor-github-actions_stable_python3_8.yml/badge.svg)](https://github.com/Intergration-Automation-Testing/je_editor/actions/workflows/je-editor-github-actions_stable_python3_8.yml)
 
-[![JE_Editor GitHub Actions Stable](https://github.com/JE-Chen/je_editor/actions/workflows/je-editor-github-actions_stable.yml/badge.svg?branch=main)](https://github.com/JE-Chen/je_editor/actions/workflows/je-editor-github-actions_stable.yml)
+[![JE_Editor Stable Python3.9](https://github.com/Intergration-Automation-Testing/je_editor/actions/workflows/je-editor-github-actions_stable_python3_9.yml/badge.svg)](https://github.com/Intergration-Automation-Testing/je_editor/actions/workflows/je-editor-github-actions_stable_python3_9.yml)
+
+[![JE_Editor Stable Python3.10](https://github.com/Intergration-Automation-Testing/je_editor/actions/workflows/je-editor-github-actions_stable_python3_10.yml/badge.svg)](https://github.com/Intergration-Automation-Testing/je_editor/actions/workflows/je-editor-github-actions_stable_python3_10.yml)
+
+[![JE_Editor Stable Python3.11](https://github.com/Intergration-Automation-Testing/je_editor/actions/workflows/je-editor-github-actions_stable_python3_11.yml/badge.svg)](https://github.com/Intergration-Automation-Testing/je_editor/actions/workflows/je-editor-github-actions_stable_python3_11.yml)
 
 ### Document
 
