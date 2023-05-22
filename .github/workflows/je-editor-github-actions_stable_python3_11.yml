@@ -1,4 +1,4 @@
-name: JE_Editor Python3.11
+name: JE_Editor Stable Python3.11
 
 on:
   push:
@@ -10,7 +10,7 @@ permissions:
   contents: read
 
 jobs:
-  build_dev_version:
+  build_stable_version:
     runs-on: windows-2019
 
     steps:
