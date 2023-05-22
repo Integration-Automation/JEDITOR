@@ -22,8 +22,10 @@ from je_editor.utils.redirect_manager.redirect_manager_class import redirect_man
 
 class EditorMain(QMainWindow, QtStyleTools):
 
-    def __init__(self):
+    def __init__(self, debug_mode: bool = False, **kwargs):
         super(EditorMain, self).__init__()
+        # Debug mode
+        self.debug_mode: bool = debug_mode
         # Windows setup
         self.id = "JEditor"
         # Venv
@@ -73,6 +75,12 @@ class EditorMain(QMainWindow, QtStyleTools):
         redirect_manager_instance.set_redirect(self, True)
         # Add style menu
         self.add_style_menu()
+        # If debug open 10s and close
+        if self.debug_mode:
+            close_timer = QTimer(self)
+            close_timer.setInterval(10000)
+            close_timer.timeout.connect(self.debug_close)
+            close_timer.start()
 
     def add_style_menu(self) -> None:
         self.menu.style_menu = self.menu.addMenu("UI Style")
@@ -176,3 +184,7 @@ class EditorMain(QMainWindow, QtStyleTools):
         super().closeEvent(event)
         user_setting_dict.update({"last_file": str(self.current_file)})
         write_user_setting()
+
+    @classmethod
+    def debug_close(cls):
+        sys.exit(0)

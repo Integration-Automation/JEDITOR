@@ -11,14 +11,15 @@ jobs:
       shell: powershell.exe
     steps:
       - checkout
-      # upgrade
       - run:
           command: pip install --upgrade --user pip setuptools wheel
-          name: pip install --upgrade --user pip setuptools wheel
-      # pip require package
+          name: Run pip install --upgrade --user pip setuptools wheel
       - run:
           command: pip install --user -r requirements.txt
-          name: pip requirements.txt
+          name: Run pip requirements.txt
+      - run:
+          command: python ./test/qt_ui/unit_test/start_qt_ui.py
+          name: Test start editor
 
   build-and-test-dev:
     executor:
@@ -26,14 +27,15 @@ jobs:
       shell: powershell.exe
     steps:
       - checkout
-      # upgrade
       - run:
           command: pip install --upgrade --user pip setuptools wheel
-          name: pip install --upgrade --user pip setuptools wheel
-      # pip require package
+          name: Run pip install --upgrade --user pip setuptools wheel
       - run:
           command: pip install --user -r dev_requirements.txt
-          name: pip requirements.txt
+          name: Run pip requirements.txt
+      - run:
+          command: python ./test/qt_ui/unit_test/start_qt_ui.py
+          name: Test start editor
 
 workflows:
   main:

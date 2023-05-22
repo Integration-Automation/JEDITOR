@@ -5,7 +5,7 @@ from threading import Lock
 from je_editor.utils.exception.exceptions import JEditorOpenFileException
 
 
-def read_file(file_path: str) -> typing.List[str, str]:
+def read_file(file_path: str) -> typing.List[typing.Union[str, str]]:
     """
     use to check file is exist and open
     :param file_path: the file we want to read its whole file path
