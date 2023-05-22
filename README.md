@@ -7,8 +7,6 @@
 
 [![Codacy Badge](https://app.codacy.com/project/badge/Grade/825a90622a224207be4abe869775b50a)](https://www.codacy.com/gh/JE-Chen/je_editor/dashboard?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=JE-Chen/je_editor&amp;utm_campaign=Badge_Grade)
 
-[![CircleCI](https://dl.circleci.com/status-badge/img/gh/Intergration-Automation-Testing/je_editor/tree/main.svg?style=svg)](https://dl.circleci.com/status-badge/redirect/gh/Intergration-Automation-Testing/je_editor/tree/main)
-
 [![JE_Editor Stable Python3.8](https://github.com/Intergration-Automation-Testing/je_editor/actions/workflows/je-editor-github-actions_stable_python3_8.yml/badge.svg)](https://github.com/Intergration-Automation-Testing/je_editor/actions/workflows/je-editor-github-actions_stable_python3_8.yml)
 
 [![JE_Editor Stable Python3.9](https://github.com/Intergration-Automation-Testing/je_editor/actions/workflows/je-editor-github-actions_stable_python3_9.yml/badge.svg)](https://github.com/Intergration-Automation-Testing/je_editor/actions/workflows/je-editor-github-actions_stable_python3_9.yml)
