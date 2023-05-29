@@ -23,7 +23,7 @@
 
 
 ![Editor Picture](image/JEditor.png)
-> * Project Kanban https://github.com/orgs/Intergration-Automation-Testing/projects/2
+> * Project Kanban https://github.com/orgs/Integration-Automation/projects/2/views/1
 > * JEditor is a simple text editor, but it has all the necessary features.
 > * JEditor is one of the components of ITE, but modularization allows it to be used separately.
 > * JEditor defaults to using a dark interface as shown below:
