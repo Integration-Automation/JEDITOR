@@ -24,6 +24,7 @@
 
 ![Editor Picture](image/JEditor.png)
 > * Project Kanban https://github.com/orgs/Integration-Automation/projects/2/views/1
+> * Modern Editor.
 > * Old JEditor remake.
 > * AutoSave, Encoding Feature.
 > * Multi program and shell runner.
