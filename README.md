@@ -24,18 +24,20 @@
 
 ![Editor Picture](image/JEditor.png)
 > * Project Kanban https://github.com/orgs/Integration-Automation/projects/2/views/1
-> * JEditor is a simple text editor, but it has all the necessary features.
-> * JEditor is one of the components of ITE, but modularization allows it to be used separately.
-> * JEditor defaults to using a dark interface as shown below:
->> * JEditor has the following features:
->>    * Font change.
->>    * Font size change.
->>    * Auto-save (after first save or open).
->>    * Tree file structure browsing.
->>    * Save and open files.
->>    * Python formatting check using yapf.
->>    * Run python programs.
->>    * Run shell commands.
+> * Old JEditor remake.
+> * AutoSave, Encoding Feature.
+> * Multi program and shell runner.
+> * Including yapf python format checker.
+> * Including reformat JSON.
+> * Virtual Environment support. 
+> * Dark & Light mode ui support.
+> * File tree support.
+> * Line code.
+> * Current line highlight.
+> * Python code highlight.
+> * Performance efficiency than old JEditor 1000%.
+> * OS Independent.
+
 
 ---
 
