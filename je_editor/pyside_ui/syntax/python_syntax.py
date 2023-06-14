@@ -7,9 +7,9 @@ from PySide6.QtGui import QSyntaxHighlighter
 from PySide6.QtGui import QTextCharFormat
 
 keywords = [
-    "False", "None", "True", "and", "as", "assert", "async", 
+    "False", "None", "True", "and", "as", "assert", "async",
     "await", "break", "class", "continue", "def", "del",
-    "elif", "else", "except", "finally", "for", "from", 
+    "elif", "else", "except", "finally", "for", "from",
     "global", "if", "import", "in", "is", "lambda", "nonlocal",
     "not", "or", "pass", "raise", "return", "try", "while", "with", "yield"
 ]
@@ -41,8 +41,8 @@ builtins_keyword = [
 # Regex pattern
 
 string_rule = [
-    r"'''[^'\\]*(\\.[^'\\]*)*'''",  # 3* Singel
-    r'"""[^"\\]*(\\.[^"\\]*)*"""',  # 3* Double
+    r"'''^.*(?:[^\\']|\\\\|\\')*.*$'''",  # 3* Singel
+    r'"""^.*(?:[^\\"]|\\\\|\\")*.*$"""',  # 3* Double
     r"'[^'\\]*(\\.[^'\\]*)*'",  # Singel
     r'"[^"\\]*(\\.[^"\\]*)*"'  # Double
 ]
@@ -68,20 +68,6 @@ class PythonHighlighter(QSyntaxHighlighter):
             pattern = QRegularExpression(rf"\b{word}\b")
             self.highlight_rules.append((pattern, text_char_format))
 
-        # Highlight numbers
-        text_char_format = QTextCharFormat()
-        text_char_format.setForeground(QColor(0, 128, 255))
-        for rule in number_rule:
-            pattern = QRegularExpression(rule)
-            self.highlight_rules.append((pattern, text_char_format))
-
-        # Highlight strings
-        text_char_format = QTextCharFormat()
-        text_char_format.setForeground(QColor(0, 153, 0))
-        for rule in string_rule:
-            pattern = QRegularExpression(rule)
-            self.highlight_rules.append((pattern, text_char_format))
-
         # Highlight builtins
         text_char_format = QTextCharFormat()
         text_char_format.setForeground(QColor(0, 255, 255))
@@ -99,6 +85,20 @@ class PythonHighlighter(QSyntaxHighlighter):
         text_char_format.setForeground(QColor(204, 0, 204))
         pattern = QRegularExpression(r"\bself\b")
         self.highlight_rules.append((pattern, text_char_format))
+
+        # Highlight numbers
+        text_char_format = QTextCharFormat()
+        text_char_format.setForeground(QColor(0, 128, 255))
+        for rule in number_rule:
+            pattern = QRegularExpression(rule)
+            self.highlight_rules.append((pattern, text_char_format))
+
+        # Highlight strings
+        text_char_format = QTextCharFormat()
+        text_char_format.setForeground(QColor(0, 153, 0))
+        for rule in string_rule:
+            pattern = QRegularExpression(rule)
+            self.highlight_rules.append((pattern, text_char_format))
 
     def highlightBlock(self, text) -> None:
         for pattern, format in self.highlight_rules:
