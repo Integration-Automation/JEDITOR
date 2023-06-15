@@ -5,9 +5,9 @@ from PySide6.QtCore import Qt, QRect
 from PySide6.QtGui import QPainter, QColor, QTextCharFormat, QTextFormat, QKeyEvent, QAction, QTextDocument, QTextCursor
 from PySide6.QtWidgets import QPlainTextEdit, QWidget, QTextEdit, QCompleter
 
+from je_editor.pyside_ui.complete_list.total_complete_list import complete_list
 from je_editor.pyside_ui.search_ui.search_text_box import SearchBox
 from je_editor.pyside_ui.syntax.python_syntax import PythonHighlighter
-from je_editor.pyside_ui.complete_list.total_complete_list import complete_list
 
 
 class CodeEditor(QPlainTextEdit):
@@ -180,7 +180,7 @@ class CodeEditor(QPlainTextEdit):
             Qt.Key.Key_G, Qt.Key.Key_H, Qt.Key.Key_I, Qt.Key.Key_J, Qt.Key.Key_K, Qt.Key.Key_L,
             Qt.Key.Key_M, Qt.Key.Key_N, Qt.Key.Key_O, Qt.Key.Key_P, Qt.Key.Key_Q, Qt.Key.Key_R,
             Qt.Key.Key_S, Qt.Key.Key_T, Qt.Key.Key_U, Qt.Key.Key_V, Qt.Key.Key_W, Qt.Key.Key_X,
-            Qt.Key.Key_Y, Qt.Key.Key_Z
+            Qt.Key.Key_Y, Qt.Key.Key_Z, Qt.Key.Key_Backspace
         ]
         if self.completer.popup().isVisible() and event.key() in skip_popup_behavior_list:
             event.ignore()
