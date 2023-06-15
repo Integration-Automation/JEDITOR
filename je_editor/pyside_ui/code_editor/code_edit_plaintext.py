@@ -1,10 +1,13 @@
+from typing import Union
+
 from PySide6 import QtGui
 from PySide6.QtCore import Qt, QRect
-from PySide6.QtGui import QPainter, QColor, QTextCharFormat, QTextFormat, QKeyEvent, QAction, QTextDocument
-from PySide6.QtWidgets import QPlainTextEdit, QWidget, QTextEdit
+from PySide6.QtGui import QPainter, QColor, QTextCharFormat, QTextFormat, QKeyEvent, QAction, QTextDocument, QTextCursor
+from PySide6.QtWidgets import QPlainTextEdit, QWidget, QTextEdit, QCompleter
 
 from je_editor.pyside_ui.search_ui.search_text_box import SearchBox
 from je_editor.pyside_ui.syntax.python_syntax import PythonHighlighter
+from je_editor.pyside_ui.complete_list.total_complete_list import complete_list
 
 
 class CodeEditor(QPlainTextEdit):
@@ -14,7 +17,7 @@ class CodeEditor(QPlainTextEdit):
     """
     def __init__(self):
         super().__init__()
-        self.line_number = LineNumber(self)
+        self.line_number: LineNumber = LineNumber(self)
         self.blockCountChanged.connect(self.update_line_number_area_width)
         self.updateRequest.connect(self.update_line_number_area)
         self.update_line_number_area_width(0)
@@ -32,6 +35,48 @@ class CodeEditor(QPlainTextEdit):
             self.start_search_dialog
         )
         self.addAction(self.search_action)
+        # Complete
+        self.completer: Union[None, QCompleter] = None
+        self.set_complete()
+
+    def set_complete(self, list_to_complete: list = complete_list):
+        completer = QCompleter(list_to_complete)
+        completer.activated.connect(self.insert_completion)
+        completer.setWidget(self)
+        completer.setWrapAround(False)
+        completer.setCompletionMode(QCompleter.CompletionMode.PopupCompletion)
+        completer.setCaseSensitivity(Qt.CaseSensitivity.CaseInsensitive)
+        self.completer = completer
+
+    def insert_completion(self, completion):
+        if self.completer.widget() != self:
+            return
+        text_cursor = self.textCursor()
+        extra = len(completion) - len(self.completer.completionPrefix())
+        text_cursor.movePosition(QTextCursor.MoveOperation.Left)
+        text_cursor.movePosition(QTextCursor.MoveOperation.EndOfWord)
+        text_cursor.insertText(completion[-extra:])
+        self.setTextCursor(text_cursor)
+
+    @property
+    def text_under_cursor(self):
+        text_cursor = self.textCursor()
+        text_cursor.select(QTextCursor.SelectionType.WordUnderCursor)
+        return text_cursor.selectedText()
+
+    def focusInEvent(self, e) -> None:
+        if self.completer:
+            self.completer.setWidget(self)
+        QPlainTextEdit.focusInEvent(self, e)
+
+    def complete(self):
+        prefix = self.text_under_cursor
+        self.completer.setCompletionPrefix(prefix)
+        popup = self.completer.popup()
+        cursor_rect = self.cursorRect()
+        popup.setCurrentIndex(self.completer.completionModel().index(0, 0))
+        cursor_rect.setWidth(self.completer.popup().rect().size().width())
+        self.completer.complete(cursor_rect)
 
     def start_search_dialog(self) -> None:
         # Search box connect to function
@@ -126,6 +171,20 @@ class CodeEditor(QPlainTextEdit):
         :param event: keypress event
         :return: None
         """
+        skip_popup_behavior_list = [
+            Qt.Key.Key_Enter, Qt.Key.Key_Return, Qt.Key.Key_Up, Qt.Key.Key_Down,
+            Qt.Key.Key_Tab, Qt.Key.Key_Backtab, Qt.Key.Key_Space
+        ]
+        need_complete_list = [
+            Qt.Key.Key_A, Qt.Key.Key_B, Qt.Key.Key_C, Qt.Key.Key_D, Qt.Key.Key_E, Qt.Key.Key_F,
+            Qt.Key.Key_G, Qt.Key.Key_H, Qt.Key.Key_I, Qt.Key.Key_J, Qt.Key.Key_K, Qt.Key.Key_L,
+            Qt.Key.Key_M, Qt.Key.Key_N, Qt.Key.Key_O, Qt.Key.Key_P, Qt.Key.Key_Q, Qt.Key.Key_R,
+            Qt.Key.Key_S, Qt.Key.Key_T, Qt.Key.Key_U, Qt.Key.Key_V, Qt.Key.Key_W, Qt.Key.Key_X,
+            Qt.Key.Key_Y, Qt.Key.Key_Z
+        ]
+        if self.completer.popup().isVisible() and event.key() in skip_popup_behavior_list:
+            event.ignore()
+            return
         key_event = QKeyEvent(event)
         if key_event.modifiers() and Qt.Modifier.SHIFT:
             key = key_event.key()
@@ -136,6 +195,8 @@ class CodeEditor(QPlainTextEdit):
         else:
             super().keyPressEvent(event)
         self.highlight_current_line()
+        if event.key() in need_complete_list and self.completer is not None:
+            self.complete()
 
     def mousePressEvent(self, event) -> None:
         # Highlight mouse click line
