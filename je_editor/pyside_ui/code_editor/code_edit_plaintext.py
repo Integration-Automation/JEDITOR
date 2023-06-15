@@ -37,7 +37,8 @@ class CodeEditor(QPlainTextEdit):
         self.addAction(self.search_action)
         # Complete
         self.completer: Union[None, QCompleter] = None
-        self.set_complete()
+        self.complete_list = complete_list
+        self.set_complete(self.complete_list)
 
     def set_complete(self, list_to_complete: list = complete_list):
         completer = QCompleter(list_to_complete)
