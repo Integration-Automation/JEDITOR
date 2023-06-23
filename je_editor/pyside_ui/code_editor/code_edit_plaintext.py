@@ -37,9 +37,15 @@ class CodeEditor(QPlainTextEdit):
         self.addAction(self.search_action)
         # Complete
         self.completer: Union[None, QCompleter] = None
-        self.set_complete()
+        self.complete_list = complete_list
+        self.set_complete(self.complete_list)
 
-    def set_complete(self, list_to_complete: list = complete_list):
+    def set_complete(self, list_to_complete: list = complete_list) -> None:
+        """
+        Set complete and bind.
+        :param list_to_complete: keyword list to complete.
+        :return: None
+        """
         completer = QCompleter(list_to_complete)
         completer.activated.connect(self.insert_completion)
         completer.setWidget(self)
@@ -48,7 +54,12 @@ class CodeEditor(QPlainTextEdit):
         completer.setCaseSensitivity(Qt.CaseSensitivity.CaseInsensitive)
         self.completer = completer
 
-    def insert_completion(self, completion):
+    def insert_completion(self, completion) -> None:
+        """
+        insert complete keyword to editor.
+        :param completion: completion text
+        :return: None
+        """
         if self.completer.widget() != self:
             return
         text_cursor = self.textCursor()
@@ -60,6 +71,7 @@ class CodeEditor(QPlainTextEdit):
 
     @property
     def text_under_cursor(self):
+        # Find text under cursor
         text_cursor = self.textCursor()
         text_cursor.select(QTextCursor.SelectionType.WordUnderCursor)
         return text_cursor.selectedText()
@@ -69,7 +81,11 @@ class CodeEditor(QPlainTextEdit):
             self.completer.setWidget(self)
         QPlainTextEdit.focusInEvent(self, e)
 
-    def complete(self):
+    def complete(self) -> None:
+        """
+        Keyword autocomplete
+        :return:  None
+        """
         prefix = self.text_under_cursor
         self.completer.setCompletionPrefix(prefix)
         popup = self.completer.popup()
@@ -79,6 +95,10 @@ class CodeEditor(QPlainTextEdit):
         self.completer.complete(cursor_rect)
 
     def start_search_dialog(self) -> None:
+        """
+        Show search box ui and bind.
+        :return: None
+        """
         # Search box connect to function
         self.search_box = SearchBox()
         self.search_box.search_back_button.clicked.connect(
@@ -90,11 +110,19 @@ class CodeEditor(QPlainTextEdit):
         self.search_box.show()
 
     def find_next_text(self) -> None:
+        """
+        Find next match text.
+        :return: None
+        """
         if self.search_box.isVisible():
             text = self.search_box.search_input.text()
             self.find(text)
 
     def find_back_text(self) -> None:
+        """
+        Find back match text.
+        :return: None
+        """
         if self.search_box.isVisible():
             text = self.search_box.search_input.text()
             self.find(text, QTextDocument.FindFlag.FindBackward)
@@ -132,6 +160,11 @@ class CodeEditor(QPlainTextEdit):
         self.setViewportMargins(self.line_number_width(), 0, 0, 0)
 
     def resizeEvent(self, event) -> None:
+        """
+        Resize line number paint.
+        :param event: QT event.
+        :return: None
+        """
         QPlainTextEdit.resizeEvent(self, event)
         cr = self.contentsRect()
         self.line_number.setGeometry(
@@ -139,6 +172,12 @@ class CodeEditor(QPlainTextEdit):
         )
 
     def update_line_number_area(self, rect, dy) -> None:
+        """
+        Set line number.
+        :param rect: line number rect.
+        :param dy: update or not.
+        :return: None
+        """
         if dy:
             self.line_number.scroll(0, dy)
         else:
@@ -152,6 +191,10 @@ class CodeEditor(QPlainTextEdit):
             self.update_line_number_area_width(0)
 
     def highlight_current_line(self) -> None:
+        """
+        Change current line color.
+        :return: None
+        """
         selections = []
         if not self.isReadOnly():
             formats = QTextCharFormat()
@@ -205,7 +248,9 @@ class CodeEditor(QPlainTextEdit):
 
 
 class LineNumber(QWidget):
-
+    """
+    Used to paint line number.
+    """
     def __init__(self, editor):
         QWidget.__init__(self, parent=editor)
         self.editor = editor

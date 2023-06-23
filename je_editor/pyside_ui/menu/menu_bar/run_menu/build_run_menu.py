@@ -58,7 +58,7 @@ def set_run_menu(ui_we_want_to_set: QMainWindow) -> None:
 
 def run_program(ui_we_want_to_set: QMainWindow) -> None:
     choose_file_get_save_filename(ui_we_want_to_set)
-    code_exec = ExecManager(ui_we_want_to_set)
+    code_exec = ExecManager(main_window=ui_we_want_to_set, program_encoding=ui_we_want_to_set.encoding)
     code_exec.later_init()
     code_exec.exec_code(
         ui_we_want_to_set.current_file
@@ -66,7 +66,7 @@ def run_program(ui_we_want_to_set: QMainWindow) -> None:
 
 
 def shell_exec(ui_we_want_to_set: QMainWindow) -> None:
-    shell_command = ShellManager(main_window=ui_we_want_to_set)
+    shell_command = ShellManager(main_window=ui_we_want_to_set, shell_encoding=ui_we_want_to_set.encoding)
     shell_command.later_init()
     shell_command.exec_shell(
         ui_we_want_to_set.code_edit.toPlainText()

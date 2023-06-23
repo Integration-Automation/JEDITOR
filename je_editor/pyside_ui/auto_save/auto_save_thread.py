@@ -9,6 +9,7 @@ class SaveThread(Thread):
 
     def __init__(self, file_to_save, text_to_write, auto_save=False):
         """
+        This thread is used to auto save current file.
         :param file_to_save: file we want to auto save
         :param text_to_write: text that will be output to file
         :param auto_save: enable auto save or not
