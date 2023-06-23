@@ -39,6 +39,8 @@ class EditorMain(QMainWindow, QtStyleTools):
         self.auto_save_thread = None
         # current file
         self.current_file = None
+        # Encoding
+        self.encoding = "utf-8"
         # Font
         self.font_database = QFontDatabase()
         # Color
@@ -159,8 +161,7 @@ class EditorMain(QMainWindow, QtStyleTools):
             self.encoding_menu.addAction(encoding_action)
 
     def set_encoding(self) -> None:
-        default_shell_manager.program_encoding = self.sender().text()
-        exec_manage.program_encoding = self.sender().text()
+        self.encoding = self.sender().text()
         user_setting_dict.update({"encoding": self.sender().text()})
 
     def redirect(self) -> None:

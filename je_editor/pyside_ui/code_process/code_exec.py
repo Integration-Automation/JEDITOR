@@ -82,7 +82,8 @@ class ExecManager(object):
         try:
             self.exit_program()
             self.code_result.setPlainText("")
-            reformat_os_file_path = os.path.abspath(exec_file_name)
+            file_path = Path(exec_file_name)
+            reformat_os_file_path = str(file_path.absolute())
             # detect file is exist
             exec_file = reformat_os_file_path
             # run program
