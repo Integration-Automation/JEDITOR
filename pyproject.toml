@@ -10,14 +10,11 @@ version = "0.0.114"
 authors = [
     { name = "JE-Chen", email = "jechenmailman@gmail.com" },
 ]
-description = "JEditor is basic but powerful editor for python"
+description = "JEditor is basic but powerful editor include GPT"
 requires-python = ">=3.8"
 license = { text = "MIT" }
 dependencies = [
-    "PySide6",
-    "qt-material",
-    "yapf",
-    "virtualenv"
+    "PySide6", "qt-material", "yapf", "frontengine"
 ]
 classifiers = [
     "Programming Language :: Python :: 3.8",

@@ -1,6 +1,6 @@
 import re
 
-from PySide6.QtCore import QRegularExpression
+from PySide6.QtCore import QRegularExpression, Qt
 from PySide6.QtGui import QColor
 from PySide6.QtGui import QFont
 from PySide6.QtGui import QSyntaxHighlighter

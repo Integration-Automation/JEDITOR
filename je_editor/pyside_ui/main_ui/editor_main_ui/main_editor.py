@@ -4,7 +4,8 @@ from pathlib import Path
 
 from PySide6.QtCore import QTimer
 from PySide6.QtGui import QFontDatabase, QAction, QIcon
-from PySide6.QtWidgets import QMainWindow, QSystemTrayIcon
+from PySide6.QtWidgets import QMainWindow, QSystemTrayIcon, QWidget, QGridLayout, QTabWidget
+from frontengine import FrontEngineMainUI
 from qt_material import QtStyleTools
 
 from je_editor.pyside_ui.auto_save.auto_save_thread import SaveThread
@@ -43,7 +44,12 @@ class EditorMain(QMainWindow, QtStyleTools):
         self.encoding = "utf-8"
         # Font
         self.font_database = QFontDatabase()
-        # Color
+        # TabWidget
+        self.tab_widget = QTabWidget()
+        # MainWidget
+        self.main_widget = QWidget()
+        self.grid_layout = QGridLayout(self.main_widget)
+        self.grid_layout.setContentsMargins(0, 0, 0, 0)
         # Timer to redirect error or message
         self.redirect_timer = QTimer(self)
         self.redirect_timer.setInterval(1)
@@ -77,6 +83,10 @@ class EditorMain(QMainWindow, QtStyleTools):
         redirect_manager_instance.set_redirect(self, True)
         # Add style menu
         self.add_style_menu()
+        # TAB Add
+        self.tab_widget.addTab(self.main_widget, "Editor")
+        self.tab_widget.addTab(FrontEngineMainUI(), "FrontEngine")
+        self.setCentralWidget(self.tab_widget)
         # If debug open 10s and close
         if self.debug_mode:
             close_timer = QTimer(self)
