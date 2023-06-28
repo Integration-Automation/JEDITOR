@@ -5,7 +5,7 @@ from pathlib import Path
 from PySide6.QtCore import QTimer
 from PySide6.QtGui import QFontDatabase, QAction, QIcon
 from PySide6.QtWidgets import QMainWindow, QSystemTrayIcon, QWidget, QGridLayout, QTabWidget
-from frontengine import FrontEngineMainUI
+from frontengine import FrontEngineMainUI, ChatSceneUI
 from qt_material import QtStyleTools
 
 from je_editor.pyside_ui.auto_save.auto_save_thread import SaveThread
@@ -85,6 +85,7 @@ class EditorMain(QMainWindow, QtStyleTools):
         self.add_style_menu()
         # TAB Add
         self.tab_widget.addTab(self.main_widget, "Editor")
+        self.tab_widget.addTab(ChatSceneUI(), "GPT")
         self.tab_widget.addTab(FrontEngineMainUI(), "FrontEngine")
         self.setCentralWidget(self.tab_widget)
         # If debug open 10s and close
