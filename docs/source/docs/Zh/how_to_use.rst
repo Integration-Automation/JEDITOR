@@ -1,16 +1,45 @@
 如何使用
 ----
 
-* JEditor 是一個簡單的文字編輯器，但具有所有應有的功能。
-* JEditor 是 ITE 的構成組件之一，但元件化使得他可以單獨使用。
-* JEditor 預設使用深色介面 如下所示:
+* 現代編輯器。
+* 舊版 JEditor 重製。
+* 自動保存，Encoding 功能。
+* 多程式同時運行和 shell 運行器。
+* 包含 yapf python 格式檢查器。
+* 包含重新格式化 JSON。
+* 虛擬環境支持。
+* 暗色和亮色模式 UI 支持。
+* 文件樹支持。
+* 程式碼行數顯示。
+* 當前行高亮顯示。
+* Python 程式碼高亮顯示。
+* 比舊版 JEditor 效率高 1000%。
+* 獨立於作業系統。
+* JEditor 默認使用如下所示的深色界面：
 .. image:: image/JEditor.png
-* JEditor 有以下功能:
-    * 字體改變。
-    * 字體大小改變。
-    * 自動儲存 (儲存與開啟後)。
-    * 樹狀檔案結構查詢。
-    * 儲存與開啟檔案。
-    * Python 自動優化，使用 yapf。
-    * 運行 Python 程式。
-    * 運行 Shell command。
+* File 選單
+    * Open File（打開檔案並將內容讀取到程式編輯區內容）
+    * Save File (將當前程式編輯區內容保存到檔案)
+    * Encoding (選擇程式運行器和 shell 運行器 Encoding)
+* Run 選單
+    * Run Program (使用程式運行器運行程式編輯區內容)
+    * Run On Shell (使用 shell 運行程式編輯區內容)
+    * Clean Result (清除程式或 shell 結果)
+    * Stop Program (停止程式運行器)
+    * Run Help 選單
+        * Run Help (運行幫助訊息)
+        * Shell Help (Shell 幫助訊息)
+* Text 選單
+    * Font (選擇編輯器默認字體)
+    * Font Size (更改編輯器默認字體大小)
+* Check Code Style 選單
+    * yapf (使用 yapf 檢查 Python 代碼風格)
+    * Reformat JSON (重新格式化並驗證 JSON)
+* Help 選單
+    * GitHub (打開 JEditor GitHub)
+    * Doc (打開 JEditor 文件)
+    * About (關於 JEditor 信息)
+* Venv 選單
+    * Create Venv (嘗試使用 shell 運行器創建 venv)
+    * pip package (嘗試使用 shell 運行器安裝套件)
+* UI Style Menu（包括許多用戶可以使用的 UI）
