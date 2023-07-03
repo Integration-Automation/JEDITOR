@@ -1,5 +1,5 @@
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QMainWindow, QScrollArea, QGridLayout, QWidget, QSplitter
+from PySide6.QtWidgets import QMainWindow, QScrollArea, QSplitter
 
 from je_editor.pyside_ui.code_editor.code_edit_plaintext import CodeEditor
 from je_editor.pyside_ui.code_result.code_record import CodeRecord

@@ -9,7 +9,6 @@ from frontengine import FrontEngineMainUI, ChatSceneUI
 from qt_material import QtStyleTools
 
 from je_editor.pyside_ui.auto_save.auto_save_thread import SaveThread
-from je_editor.pyside_ui.code_process.code_exec import exec_manage
 from je_editor.pyside_ui.colors.global_color import error_color, output_color
 from je_editor.pyside_ui.main_ui_setting.ui_setting import set_ui
 from je_editor.pyside_ui.menu.menu_bar.set_menu_bar import set_menu_bar

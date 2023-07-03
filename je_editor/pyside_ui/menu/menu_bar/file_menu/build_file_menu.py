@@ -1,14 +1,8 @@
-import os
-import shutil
-import sys
-from pathlib import Path
-
 from PySide6.QtGui import QAction
-from PySide6.QtWidgets import QMainWindow, QMessageBox, QInputDialog
+from PySide6.QtWidgets import QMainWindow
 
 from je_editor.pyside_ui.file_dialog.open_file_dialog import choose_file_get_open_file_path
 from je_editor.pyside_ui.file_dialog.save_file_dialog import choose_file_get_save_file_path
-from je_editor.pyside_ui.shell_process.shell_exec import default_shell_manager
 
 
 def set_file_menu(ui_we_want_to_set: QMainWindow) -> None:

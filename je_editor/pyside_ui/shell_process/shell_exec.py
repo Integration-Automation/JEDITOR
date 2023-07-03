@@ -1,7 +1,6 @@
 import os
 import queue
 import shlex
-import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -11,8 +10,9 @@ from PySide6.QtCore import QTimer
 from PySide6.QtWidgets import QMainWindow, QTextEdit
 
 from je_editor.pyside_ui.colors.global_color import error_color, output_color
-from je_editor.utils.exception.exception_tags import je_editor_init_error, compiler_not_found_error
-from je_editor.utils.exception.exceptions import JEditorException, JEditorExecException
+from je_editor.utils.exception.exception_tags import je_editor_init_error
+from je_editor.utils.exception.exceptions import JEditorException
+from je_editor.utils.venv_check.check_venv import check_and_choose_venv
 
 
 class ShellManager(object):
@@ -48,22 +48,7 @@ class ShellManager(object):
             venv_path = Path(os.getcwd() + "/venv/Scripts")
         else:
             venv_path = Path(os.getcwd() + "/venv/bin")
-        if venv_path.is_dir() and venv_path.exists():
-            self.compiler_path = shutil.which(
-                cmd="python3",
-                path=str(venv_path)
-            )
-        else:
-            self.compiler_path = shutil.which(cmd="python3")
-        if self.compiler_path is None:
-            self.compiler_path = shutil.which(
-                cmd="python",
-                path=str(venv_path)
-            )
-        else:
-            self.compiler_path = shutil.which(cmd="python")
-        if self.compiler_path is None:
-            raise JEditorExecException(compiler_not_found_error)
+        self.compiler_path = check_and_choose_venv(venv_path)
 
     def later_init(self) -> None:
         if self.main_window is not None:
