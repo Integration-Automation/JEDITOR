@@ -1,6 +1,5 @@
-import os.path
+
 import queue
-import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -10,8 +9,9 @@ from PySide6.QtCore import QTimer
 from PySide6.QtWidgets import QMainWindow, QTextEdit
 
 from je_editor.pyside_ui.colors.global_color import error_color, output_color
-from je_editor.utils.exception.exception_tags import compiler_not_found_error, je_editor_init_error
-from je_editor.utils.exception.exceptions import JEditorExecException, JEditorException
+from je_editor.utils.exception.exception_tags import je_editor_init_error
+from je_editor.utils.exception.exceptions import JEditorException
+from je_editor.utils.venv_check.check_venv import check_and_choose_venv
 
 
 class ExecManager(object):
@@ -46,25 +46,10 @@ class ExecManager(object):
     def renew_path(self) -> None:
         # Renew compiler path
         if sys.platform in ["win32", "cygwin", "msys"]:
-            venv_path = Path(os.getcwd() + "/venv/Scripts")
+            venv_path = Path(str(Path.cwd()) + "/venv/Scripts")
         else:
-            venv_path = Path(os.getcwd() + "/venv/bin")
-        if venv_path.is_dir() and venv_path.exists():
-            self.compiler_path = shutil.which(
-                cmd="python3",
-                path=str(venv_path)
-            )
-        else:
-            self.compiler_path = shutil.which(cmd="python3")
-        if self.compiler_path is None:
-            self.compiler_path = shutil.which(
-                cmd="python",
-                path=str(venv_path)
-            )
-        else:
-            self.compiler_path = shutil.which(cmd="python")
-        if self.compiler_path is None:
-            raise JEditorExecException(compiler_not_found_error)
+            venv_path = Path(str(Path.cwd()) + "/venv/bin")
+        self.compiler_path = check_and_choose_venv(venv_path)
 
     def later_init(self) -> None:
         # Enable timer and code result area
@@ -91,8 +76,7 @@ class ExecManager(object):
             self.process = subprocess.Popen(
                 execute_program_list,
                 stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                shell=True
+                stderr=subprocess.PIPE
             )
             self.still_run_program = True
             # program output message queue thread
