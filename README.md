@@ -39,6 +39,7 @@
 > * Performance efficiency than old JEditor 1000%.
 > * OS Independent.
 
+* Include FrontEngine & FrontEngine GPT
 
 ---
 
