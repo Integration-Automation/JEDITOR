@@ -6,8 +6,8 @@ from pathlib import Path
 from PySide6.QtGui import QAction
 from PySide6.QtWidgets import QMainWindow, QMessageBox, QInputDialog
 
-from je_editor.pyside_ui.file_dialog.open_file_dialog import choose_file_get_open_filename
-from je_editor.pyside_ui.file_dialog.save_file_dialog import choose_file_get_save_filename
+from je_editor.pyside_ui.file_dialog.open_file_dialog import choose_file_get_open_file_path
+from je_editor.pyside_ui.file_dialog.save_file_dialog import choose_file_get_save_file_path
 from je_editor.pyside_ui.shell_process.shell_exec import default_shell_manager
 
 
@@ -17,7 +17,7 @@ def set_file_menu(ui_we_want_to_set: QMainWindow) -> None:
         "Ctrl+o"
     )
     ui_we_want_to_set.file_menu.open_file_action.triggered.connect(
-        lambda: choose_file_get_open_filename(parent_qt_instance=ui_we_want_to_set)
+        lambda: choose_file_get_open_file_path(parent_qt_instance=ui_we_want_to_set)
     )
     ui_we_want_to_set.file_menu.addAction(ui_we_want_to_set.file_menu.open_file_action)
     ui_we_want_to_set.file_menu.save_file_action = QAction("Save File")
@@ -25,6 +25,6 @@ def set_file_menu(ui_we_want_to_set: QMainWindow) -> None:
         "Ctrl+s"
     )
     ui_we_want_to_set.file_menu.save_file_action.triggered.connect(
-        lambda: choose_file_get_save_filename(parent_qt_instance=ui_we_want_to_set)
+        lambda: choose_file_get_save_file_path(parent_qt_instance=ui_we_want_to_set)
     )
     ui_we_want_to_set.file_menu.addAction(ui_we_want_to_set.file_menu.save_file_action)
