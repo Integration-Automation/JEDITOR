@@ -4,6 +4,7 @@ import subprocess
 import sys
 from pathlib import Path
 from threading import Thread
+from typing import List
 
 from PySide6.QtCore import QTimer
 from PySide6.QtWidgets import QMainWindow, QTextEdit
@@ -12,6 +13,19 @@ from je_editor.pyside_ui.colors.global_color import error_color, output_color
 from je_editor.utils.exception.exception_tags import je_editor_init_error
 from je_editor.utils.exception.exceptions import JEditorException
 from je_editor.utils.venv_check.check_venv import check_and_choose_venv
+
+
+class RunInstanceManager(object):
+
+    def __init__(self):
+        self.instance_list: List[subprocess.Popen] = list()
+
+    def close_all_instance(self):
+        for process in self.instance_list:
+            process.terminate()
+
+
+run_instance_manager = RunInstanceManager()
 
 
 class ExecManager(object):
@@ -99,6 +113,7 @@ class ExecManager(object):
             self.timer.setInterval(1)
             self.timer.timeout.connect(self.pull_text)
             self.timer.start()
+            run_instance_manager.instance_list.append(self.process)
         except Exception as error:
             self.code_result.setTextColor(error_color)
             self.code_result.append(str(error))
