@@ -1,7 +1,7 @@
 from PySide6.QtGui import QAction, QKeySequence, Qt
 from PySide6.QtWidgets import QMainWindow, QMessageBox
 
-from je_editor.pyside_ui.code_process.code_exec import exec_manage, ExecManager
+from je_editor.pyside_ui.code_process.code_exec import ExecManager, run_instance_manager
 from je_editor.pyside_ui.file_dialog.save_file_dialog import choose_file_get_save_file_path
 from je_editor.pyside_ui.shell_process.shell_exec import ShellManager
 
@@ -74,7 +74,7 @@ def shell_exec(ui_we_want_to_set: QMainWindow) -> None:
 
 
 def stop_program() -> None:
-    exec_manage.exit_program()
+    run_instance_manager.close_all_instance()
 
 
 def clean_result(ui_we_want_to_set: QMainWindow) -> None:
