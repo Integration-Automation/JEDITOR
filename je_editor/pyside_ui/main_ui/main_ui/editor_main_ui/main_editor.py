@@ -8,13 +8,14 @@ from PySide6.QtWidgets import QMainWindow, QSystemTrayIcon, QWidget, QGridLayout
 from frontengine import FrontEngineMainUI
 from qt_material import QtStyleTools
 
-from je_editor.pyside_ui.auto_save.auto_save_thread import SaveThread
+from je_editor.pyside_ui.code.auto_save.auto_save_thread import SaveThread
 from je_editor.pyside_ui.colors.global_color import error_color, output_color
-from je_editor.pyside_ui.main_ui_setting.ui_setting import set_ui
-from je_editor.pyside_ui.menu.menu_bar.set_menu_bar import set_menu_bar
-from je_editor.pyside_ui.shell_process.shell_exec import default_shell_manager
-from je_editor.pyside_ui.treeview.project_treeview.set_project_treeview import set_project_treeview
-from je_editor.pyside_ui.user_setting.user_setting_file import write_user_setting, user_setting_dict, read_user_setting
+from je_editor.pyside_ui.main_ui.main_ui_setting.ui_setting import set_ui
+from je_editor.pyside_ui.main_ui.menu.menu_bar.set_menu_bar import set_menu_bar
+from je_editor.pyside_ui.code.shell_process.shell_exec import default_shell_manager
+from je_editor.pyside_ui.main_ui.treeview.project_treeview.set_project_treeview import set_project_treeview
+from je_editor.pyside_ui.main_ui.save_user_setting.user_setting_file import write_user_setting, \
+    user_setting_dict, read_user_setting
 from je_editor.utils.encodings.python_encodings import python_encodings_list
 from je_editor.utils.file.open.open_file import read_file
 from je_editor.utils.redirect_manager.redirect_manager_class import redirect_manager_instance

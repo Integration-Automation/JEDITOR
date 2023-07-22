@@ -1,4 +1,4 @@
-je_editor_dev
 PySide6
 sphinx
 twine
+je_editor_dev

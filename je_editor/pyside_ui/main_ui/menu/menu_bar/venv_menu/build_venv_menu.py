@@ -4,7 +4,7 @@ from pathlib import Path
 from PySide6.QtGui import QAction
 from PySide6.QtWidgets import QMainWindow, QMessageBox, QInputDialog
 
-from je_editor.pyside_ui.shell_process.shell_exec import ShellManager
+from je_editor.pyside_ui.code.shell_process.shell_exec import ShellManager
 
 
 def set_venv_menu(ui_we_want_to_set: QMainWindow) -> None:

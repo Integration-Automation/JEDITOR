@@ -5,9 +5,9 @@ from PySide6.QtCore import Qt, QRect
 from PySide6.QtGui import QPainter, QColor, QTextCharFormat, QTextFormat, QKeyEvent, QAction, QTextDocument, QTextCursor
 from PySide6.QtWidgets import QPlainTextEdit, QWidget, QTextEdit, QCompleter
 
-from je_editor.pyside_ui.complete_list.total_complete_list import complete_list
-from je_editor.pyside_ui.search_ui.search_text_box import SearchBox
-from je_editor.pyside_ui.syntax.python_syntax import PythonHighlighter
+from je_editor.pyside_ui.code.complete_list.total_complete_list import complete_list
+from je_editor.pyside_ui.dialog.search_ui.search_text_box import SearchBox
+from je_editor.pyside_ui.code.syntax.python_syntax import PythonHighlighter
 
 
 class CodeEditor(QPlainTextEdit):
@@ -15,6 +15,7 @@ class CodeEditor(QPlainTextEdit):
     Extend QPlainTextEdit,
     Add line, edit tab distance, add highlighter, add search text
     """
+
     def __init__(self):
         super().__init__()
         self.line_number: LineNumber = LineNumber(self)
@@ -251,6 +252,7 @@ class LineNumber(QWidget):
     """
     Used to paint line number.
     """
+
     def __init__(self, editor):
         QWidget.__init__(self, parent=editor)
         self.editor = editor
