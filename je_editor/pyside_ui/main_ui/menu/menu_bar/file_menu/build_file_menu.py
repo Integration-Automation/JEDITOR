@@ -1,11 +1,20 @@
 from PySide6.QtGui import QAction
 from PySide6.QtWidgets import QMainWindow
 
+from je_editor.pyside_ui.dialog.file_dialog.create_file_dialog import CreateFileDialog
 from je_editor.pyside_ui.dialog.file_dialog.open_file_dialog import choose_file_get_open_file_path
 from je_editor.pyside_ui.dialog.file_dialog.save_file_dialog import choose_file_get_save_file_path
 
 
 def set_file_menu(ui_we_want_to_set: QMainWindow) -> None:
+    ui_we_want_to_set.file_menu.new_file_action = QAction("New File")
+    ui_we_want_to_set.file_menu.new_file_action.setShortcut(
+        "Ctrl+n"
+    )
+    ui_we_want_to_set.file_menu.new_file_action.triggered.connect(
+        lambda: show_create_file_dialog(ui_we_want_to_set)
+    )
+    ui_we_want_to_set.file_menu.addAction(ui_we_want_to_set.file_menu.new_file_action)
     ui_we_want_to_set.file_menu.open_file_action = QAction("Open File")
     ui_we_want_to_set.file_menu.open_file_action.setShortcut(
         "Ctrl+o"
@@ -22,3 +31,8 @@ def set_file_menu(ui_we_want_to_set: QMainWindow) -> None:
         lambda: choose_file_get_save_file_path(parent_qt_instance=ui_we_want_to_set)
     )
     ui_we_want_to_set.file_menu.addAction(ui_we_want_to_set.file_menu.save_file_action)
+
+
+def show_create_file_dialog(ui_we_want_to_set: QMainWindow):
+    ui_we_want_to_set.create_file_dialog = CreateFileDialog()
+    ui_we_want_to_set.create_file_dialog.show()
