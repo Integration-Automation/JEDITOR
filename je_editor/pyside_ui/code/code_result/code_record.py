@@ -1,7 +1,7 @@
 from PySide6.QtGui import QTextDocument, QAction
 from PySide6.QtWidgets import QTextEdit
 
-from je_editor.pyside_ui.search_ui.search_error_box import SearchResultBox
+from je_editor.pyside_ui.dialog.search_ui.search_error_box import SearchResultBox
 
 
 class CodeRecord(QTextEdit):

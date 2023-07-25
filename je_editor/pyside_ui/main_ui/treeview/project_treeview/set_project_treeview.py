@@ -4,7 +4,7 @@ import pathlib
 from PySide6.QtCore import QDir, QFileInfo
 from PySide6.QtWidgets import QMainWindow, QFileSystemModel, QTreeView, QScrollArea
 
-from je_editor.pyside_ui.auto_save.auto_save_thread import SaveThread
+from je_editor.pyside_ui.code.auto_save.auto_save_thread import SaveThread
 from je_editor.utils.file.open.open_file import read_file
 
 

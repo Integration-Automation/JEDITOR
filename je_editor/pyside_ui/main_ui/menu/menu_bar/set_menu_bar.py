@@ -1,10 +1,10 @@
 from PySide6.QtWidgets import QMainWindow, QMenuBar
 
-from je_editor.pyside_ui.menu.menu_bar.check_style_menu.build_check_style_menu import set_check_menu
-from je_editor.pyside_ui.menu.menu_bar.file_menu.build_file_menu import set_file_menu
-from je_editor.pyside_ui.menu.menu_bar.help_menu.build_help_menu import set_help_menu
-from je_editor.pyside_ui.menu.menu_bar.run_menu.build_run_menu import set_run_menu
-from je_editor.pyside_ui.menu.menu_bar.venv_menu.build_venv_menu import set_venv_menu
+from je_editor.pyside_ui.main_ui.menu.menu_bar.check_style_menu.build_check_style_menu import set_check_menu
+from je_editor.pyside_ui.main_ui.menu.menu_bar.file_menu.build_file_menu import set_file_menu
+from je_editor.pyside_ui.main_ui.menu.menu_bar.help_menu.build_help_menu import set_help_menu
+from je_editor.pyside_ui.main_ui.menu.menu_bar.run_menu.build_run_menu import set_run_menu
+from je_editor.pyside_ui.main_ui.menu.menu_bar.venv_menu.build_venv_menu import set_venv_menu
 
 
 def set_menu_bar(ui_we_want_to_set: QMainWindow) -> None:

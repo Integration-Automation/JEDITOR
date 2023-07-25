@@ -1,8 +1,8 @@
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QMainWindow, QScrollArea, QSplitter
 
-from je_editor.pyside_ui.code_editor.code_edit_plaintext import CodeEditor
-from je_editor.pyside_ui.code_result.code_record import CodeRecord
+from je_editor.pyside_ui.code.code_editor.code_edit_plaintext import CodeEditor
+from je_editor.pyside_ui.code.code_result.code_record import CodeRecord
 
 
 def set_ui(ui_we_want_to_set: QMainWindow):
