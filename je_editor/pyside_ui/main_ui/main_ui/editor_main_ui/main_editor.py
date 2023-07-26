@@ -1,21 +1,23 @@
+import logging
 import os
 import sys
 from pathlib import Path
 
 from PySide6.QtCore import QTimer
 from PySide6.QtGui import QFontDatabase, QAction, QIcon
-from PySide6.QtWidgets import QMainWindow, QSystemTrayIcon, QWidget, QGridLayout, QTabWidget
+from PySide6.QtWidgets import QMainWindow, QWidget, QGridLayout, QTabWidget
 from frontengine import FrontEngineMainUI, ChatSceneUI
 from qt_material import QtStyleTools
 
 from je_editor.pyside_ui.code.auto_save.auto_save_thread import SaveThread
+from je_editor.pyside_ui.code.shell_process.shell_exec import default_shell_manager
 from je_editor.pyside_ui.colors.global_color import error_color, output_color
 from je_editor.pyside_ui.main_ui.main_ui_setting.ui_setting import set_ui
 from je_editor.pyside_ui.main_ui.menu.menu_bar.set_menu_bar import set_menu_bar
-from je_editor.pyside_ui.code.shell_process.shell_exec import default_shell_manager
-from je_editor.pyside_ui.main_ui.treeview.project_treeview.set_project_treeview import set_project_treeview
 from je_editor.pyside_ui.main_ui.save_user_setting.user_setting_file import write_user_setting, \
     user_setting_dict, read_user_setting
+from je_editor.pyside_ui.main_ui.system_tray.extend_system_tray import ExtendSystemTray
+from je_editor.pyside_ui.main_ui.treeview.project_treeview.set_project_treeview import set_project_treeview
 from je_editor.utils.encodings.python_encodings import python_encodings_list
 from je_editor.utils.file.open.open_file import read_file
 from je_editor.utils.redirect_manager.redirect_manager_class import redirect_manager_instance
@@ -74,8 +76,10 @@ class EditorMain(QMainWindow, QtStyleTools):
         self.icon = QIcon(str(self.icon_path))
         if self.icon.isNull() is False:
             self.setWindowIcon(self.icon)
-            self.system_icon = QSystemTrayIcon()
-            self.system_icon.setIcon(self.icon)
+            if ExtendSystemTray.isSystemTrayAvailable():
+                system_tray = ExtendSystemTray(main_window=self)
+                system_tray.setIcon(self.icon)
+                system_tray.show()
         # Init shell manager
         default_shell_manager.main_window = self
         default_shell_manager.later_init()
@@ -193,9 +197,13 @@ class EditorMain(QMainWindow, QtStyleTools):
         self.code_result.setTextColor(output_color)
 
     def closeEvent(self, event) -> None:
-        super().closeEvent(event)
-        user_setting_dict.update({"last_file": str(self.current_file)})
-        write_user_setting()
+        if self.system_tray.isVisible():
+            self.hide()
+            event.ignore()
+        else:
+            super().closeEvent(event)
+            user_setting_dict.update({"last_file": str(self.current_file)})
+            write_user_setting()
 
     @classmethod
     def debug_close(cls):
