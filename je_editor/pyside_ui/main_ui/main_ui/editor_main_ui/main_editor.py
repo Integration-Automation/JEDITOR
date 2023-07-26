@@ -77,9 +77,9 @@ class EditorMain(QMainWindow, QtStyleTools):
         if self.icon.isNull() is False:
             self.setWindowIcon(self.icon)
             if ExtendSystemTray.isSystemTrayAvailable():
-                system_tray = ExtendSystemTray(main_window=self)
-                system_tray.setIcon(self.icon)
-                system_tray.show()
+                self.system_tray = ExtendSystemTray(main_window=self)
+                self.system_tray.setIcon(self.icon)
+                self.system_tray.show()
         # Init shell manager
         default_shell_manager.main_window = self
         default_shell_manager.later_init()
