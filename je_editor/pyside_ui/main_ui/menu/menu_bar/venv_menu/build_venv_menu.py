@@ -1,7 +1,8 @@
 import os
 from pathlib import Path
 
-from PySide6.QtGui import QAction
+from PySide6.QtCore import Qt
+from PySide6.QtGui import QAction, QKeySequence
 from PySide6.QtWidgets import QMainWindow, QMessageBox, QInputDialog
 
 from je_editor.pyside_ui.code.shell_process.shell_exec import ShellManager
@@ -17,10 +18,19 @@ def set_venv_menu(ui_we_want_to_set: QMainWindow) -> None:
         lambda: create_venv(ui_we_want_to_set)
     )
     ui_we_want_to_set.venv_menu.addAction(ui_we_want_to_set.venv_menu.create_venv_action)
-    # PIP a package
+    # pip upgrade package
+    ui_we_want_to_set.venv_menu.pip_upgrade_action = QAction("pip upgrade package")
+    ui_we_want_to_set.venv_menu.pip_upgrade_action.setShortcut(
+        "Ctrl+p"
+    )
+    ui_we_want_to_set.venv_menu.pip_upgrade_action.triggered.connect(
+        lambda: pip_install_package_update(ui_we_want_to_set)
+    )
+    ui_we_want_to_set.venv_menu.addAction(ui_we_want_to_set.venv_menu.pip_upgrade_action)
+    # pip package
     ui_we_want_to_set.venv_menu.pip_action = QAction("pip package")
     ui_we_want_to_set.venv_menu.pip_action.setShortcut(
-        "Ctrl+p"
+        QKeySequence(Qt.Key.Key_P, Qt.Key.Key_U)
     )
     ui_we_want_to_set.venv_menu.pip_action.triggered.connect(
         lambda: pip_install_package(ui_we_want_to_set)
@@ -34,7 +44,7 @@ def create_venv(ui_we_want_to_set: QMainWindow) -> None:
         create_venv_shell = ShellManager(main_window=ui_we_want_to_set)
         create_venv_shell.later_init()
         create_venv_shell.exec_shell(
-            [f"{create_venv_shell.compiler_path}",  "-m", "venv", "venv"]
+            [f"{create_venv_shell.compiler_path}", "-m", "venv", "venv"]
         )
         print("Creating venv please waiting for shell exit code.")
     else:
@@ -43,13 +53,51 @@ def create_venv(ui_we_want_to_set: QMainWindow) -> None:
         message_box.exec()
 
 
-def pip_install_package(ui_we_want_to_set: QMainWindow) -> None:
+def shell_pip_install(ui_we_want_to_set: QMainWindow, pip_install_command_list: list):
     venv_path = Path(os.getcwd() + "/venv")
     if not venv_path.exists():
         message_box = QMessageBox()
         message_box.setText("Please create venv first.")
         message_box.exec()
     else:
+        ask_package_dialog = QInputDialog()
+        package_text, press_ok = ask_package_dialog.getText(
+            ui_we_want_to_set, "Install Package", "What Package you want to install"
+        )
+        if press_ok:
+            pip_install_shell = ShellManager(main_window=ui_we_want_to_set)
+            pip_install_shell.later_init()
+            pip_install_shell.exec_shell(
+                pip_install_command_list
+            )
+
+
+def detect_venv() -> bool:
+    venv_path = Path(os.getcwd() + "/venv")
+    if not venv_path.exists():
+        message_box = QMessageBox()
+        message_box.setText("Please create venv first.")
+        message_box.exec()
+        return False
+    return True
+
+
+def pip_install_package_update(ui_we_want_to_set: QMainWindow) -> None:
+    if detect_venv:
+        ask_package_dialog = QInputDialog()
+        package_text, press_ok = ask_package_dialog.getText(
+            ui_we_want_to_set, "Install Package", "What Package you want to install or update"
+        )
+        if press_ok:
+            pip_install_shell = ShellManager(main_window=ui_we_want_to_set)
+            pip_install_shell.later_init()
+            pip_install_shell.exec_shell(
+                [f"{pip_install_shell.compiler_path}", "-m", "pip", "install", f"{package_text}", "-U"]
+            )
+
+
+def pip_install_package(ui_we_want_to_set: QMainWindow) -> None:
+    if detect_venv:
         ask_package_dialog = QInputDialog()
         package_text, press_ok = ask_package_dialog.getText(
             ui_we_want_to_set, "Install Package", "What Package you want to install"
