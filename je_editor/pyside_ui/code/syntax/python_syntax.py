@@ -39,10 +39,13 @@ builtins_keyword = [
 # Regex pattern
 
 string_rule = [
-    r"'''^.*(?:[^\\']|\\\\|\\')*.*$'''",  # 3* Singel
-    r'"""^.*(?:[^\\"]|\\\\|\\")*.*$"""',  # 3* Double
-    r"'[^'\\]*(\\.[^'\\]*)*'",  # Singel
-    r'"[^"\\]*(\\.[^"\\]*)*"'  # Double
+    r"^'[^'\\]*(\\.[^'\\]*)*'$",  # Single
+    r'^"[^"\\]*(\\.[^"\\]*)*"$',  # Double
+]
+
+multi_line_string_rule = [
+    r"^'''[^'\\]*(\\.[^'\\]*)*'''$",  # 3* Single
+    r'^"""[^"\\]*(\\.[^"\\]*)*"""$',  # 3* Double
 ]
 
 number_rule = [
@@ -98,9 +101,16 @@ class PythonHighlighter(QSyntaxHighlighter):
             pattern = QRegularExpression(rule)
             self.highlight_rules.append((pattern, text_char_format))
 
+        # Highlight multi line strings
+        text_char_format = QTextCharFormat()
+        text_char_format.setForeground(QColor(0, 153, 0))
+        for rule in multi_line_string_rule:
+            pattern = QRegularExpression(rule)
+            self.highlight_rules.append((pattern, text_char_format))
+
     def highlightBlock(self, text) -> None:
         for pattern, format in self.highlight_rules:
             match_iterator = pattern.globalMatch(text)
             while match_iterator.hasNext():
                 match = match_iterator.next()
-                self.setFormat(match.capturedStart(), match.capturedLength(), format)
+                self.setFormat(match.capturedStart(), match.capturedEnd(), format)
