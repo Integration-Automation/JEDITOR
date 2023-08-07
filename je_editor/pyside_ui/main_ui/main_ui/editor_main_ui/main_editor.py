@@ -90,7 +90,6 @@ class EditorMain(QMainWindow, QtStyleTools):
         # TAB Add
         self.tab_widget.addTab(self.main_widget, "Editor")
         self.tab_widget.addTab(FrontEngineMainUI(), "FrontEngine")
-        self.tab_widget.addTab(ChatSceneUI(), "Chat")
         self.setCentralWidget(self.tab_widget)
         # If debug open 10s and close
         if self.debug_mode:
