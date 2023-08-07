@@ -1,4 +1,4 @@
-import logging
+import os
 import os
 import sys
 from pathlib import Path
@@ -6,7 +6,7 @@ from pathlib import Path
 from PySide6.QtCore import QTimer
 from PySide6.QtGui import QFontDatabase, QAction, QIcon
 from PySide6.QtWidgets import QMainWindow, QWidget, QGridLayout, QTabWidget
-from frontengine import FrontEngineMainUI, ChatSceneUI
+from frontengine import FrontEngineMainUI
 from qt_material import QtStyleTools
 
 from je_editor.pyside_ui.code.auto_save.auto_save_thread import SaveThread
@@ -130,6 +130,9 @@ class EditorMain(QMainWindow, QtStyleTools):
             if last_file_path.is_file() and last_file_path.exists():
                 self.current_file = str(last_file_path)
                 self.code_edit.setPlainText(read_file(self.current_file)[1])
+
+    def clear_code_result(self):
+        self.code_result.clear()
 
     def add_font_menu(self) -> None:
         self.font_menu = self.text_menu.addMenu("Font")
