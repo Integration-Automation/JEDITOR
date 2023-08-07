@@ -43,11 +43,6 @@ string_rule = [
     r'^"[^"\\]*(\\.[^"\\]*)*"$',  # Double
 ]
 
-multi_line_string_rule = [
-    r"^'''[^'\\]*(\\.[^'\\]*)*'''$",  # 3* Single
-    r'^"""[^"\\]*(\\.[^"\\]*)*"""$',  # 3* Double
-]
-
 number_rule = [
     r"\b[+-]?[0-9]+[lL]?\b",
     r"\b[+-]?0[xX][0-9A-Fa-f]+[lL]?\b",
@@ -98,13 +93,6 @@ class PythonHighlighter(QSyntaxHighlighter):
         text_char_format = QTextCharFormat()
         text_char_format.setForeground(QColor(0, 153, 0))
         for rule in string_rule:
-            pattern = QRegularExpression(rule)
-            self.highlight_rules.append((pattern, text_char_format))
-
-        # Highlight multi line strings
-        text_char_format = QTextCharFormat()
-        text_char_format.setForeground(QColor(0, 153, 0))
-        for rule in multi_line_string_rule:
             pattern = QRegularExpression(rule)
             self.highlight_rules.append((pattern, text_char_format))
 
