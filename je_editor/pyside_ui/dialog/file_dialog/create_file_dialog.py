@@ -1,4 +1,4 @@
-from PySide6.QtWidgets import QWidget, QBoxLayout, QLineEdit, QPushButton, QHBoxLayout
+from PySide6.QtWidgets import QWidget, QBoxLayout, QLineEdit, QPushButton, QHBoxLayout, QMessageBox
 
 
 class CreateFileDialog(QWidget):
@@ -18,7 +18,13 @@ class CreateFileDialog(QWidget):
         self.setLayout(self.box_layout)
 
     def create_file(self):
-        file_name = self.file_name_input.text()
-        if not file_name.isspace():
+        file_name = self.file_name_input.text().strip()
+        print("file_name: ", file_name)
+        if file_name == "":
+            create_file_message_box = QMessageBox(self)
+            create_file_message_box.setText("Please enter right file name")
+            create_file_message_box.show()
+        else:
             with open(file_name, "w+") as file:
                 file.write("")
+            self.close()
