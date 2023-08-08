@@ -1,3 +1,4 @@
+frontengine
 PySide6
 sphinx
 twine

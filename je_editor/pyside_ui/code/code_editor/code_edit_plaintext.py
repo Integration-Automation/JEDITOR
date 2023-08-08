@@ -18,6 +18,7 @@ class CodeEditor(QPlainTextEdit):
 
     def __init__(self):
         super().__init__()
+        self.search_box = None
         self.line_number: LineNumber = LineNumber(self)
         self.blockCountChanged.connect(self.update_line_number_area_width)
         self.updateRequest.connect(self.update_line_number_area)

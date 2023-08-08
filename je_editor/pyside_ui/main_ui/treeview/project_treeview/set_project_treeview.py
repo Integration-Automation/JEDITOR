@@ -1,14 +1,20 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from je_editor.pyside_ui.main_ui.main_ui.editor_main_ui.main_editor import EditorMain
 import os
 import pathlib
 
 from PySide6.QtCore import QDir, QFileInfo
-from PySide6.QtWidgets import QMainWindow, QFileSystemModel, QTreeView, QScrollArea
+from PySide6.QtWidgets import QFileSystemModel, QTreeView, QScrollArea
 
 from je_editor.pyside_ui.code.auto_save.auto_save_thread import SaveThread
 from je_editor.utils.file.open.open_file import read_file
 
 
-def set_project_treeview(ui_we_want_to_set: QMainWindow) -> None:
+def set_project_treeview(ui_we_want_to_set: EditorMain) -> None:
     ui_we_want_to_set.grid_layout.setColumnStretch(0, 4)
     ui_we_want_to_set.project_treeview_model = QFileSystemModel()
     ui_we_want_to_set.project_treeview_model.setRootPath(QDir.currentPath())
@@ -27,12 +33,12 @@ def set_project_treeview(ui_we_want_to_set: QMainWindow) -> None:
     )
 
 
-def treeview_click(ui_we_want_to_set) -> None:
+def treeview_click(ui_we_want_to_set: EditorMain) -> None:
     clicked_item: QFileSystemModel = ui_we_want_to_set.project_treeview.selectedIndexes()[0]
     file_info: QFileInfo = ui_we_want_to_set.project_treeview.model().fileInfo(clicked_item)
     path = pathlib.Path(file_info.absoluteFilePath())
     if path.is_file():
-        file, file_content = read_file(path)
+        file, file_content = read_file(str(path))
         ui_we_want_to_set.code_edit.setPlainText(
             file_content
         )

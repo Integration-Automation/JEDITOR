@@ -25,8 +25,12 @@ from je_editor.utils.redirect_manager.redirect_manager_class import redirect_man
 
 class EditorMain(QMainWindow, QtStyleTools):
 
-    def __init__(self, debug_mode: bool = False, **kwargs):
+    def __init__(self, debug_mode: bool = False):
         super(EditorMain, self).__init__()
+        # Init variable
+        self.encoding_menu = None
+        self.font_size_menu = None
+        self.font_menu = None
         # Debug mode
         self.debug_mode: bool = debug_mode
         # Windows setup

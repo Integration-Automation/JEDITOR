@@ -1,11 +1,17 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from je_editor.pyside_ui.main_ui.main_ui.editor_main_ui.main_editor import EditorMain
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QMainWindow, QScrollArea, QSplitter
+from PySide6.QtWidgets import QScrollArea, QSplitter
 
 from je_editor.pyside_ui.code.code_editor.code_edit_plaintext import CodeEditor
 from je_editor.pyside_ui.code.code_result.code_record import CodeRecord
 
 
-def set_ui(ui_we_want_to_set: QMainWindow):
+def set_ui(ui_we_want_to_set: EditorMain):
     # set qt window
     ui_we_want_to_set.setWindowTitle("JEditor")
     # Splitter
