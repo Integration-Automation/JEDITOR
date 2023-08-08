@@ -1,12 +1,18 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from je_editor.pyside_ui.main_ui.main_ui.editor_main_ui.main_editor import EditorMain
 import sys
 
 from PySide6.QtGui import QAction
-from PySide6.QtWidgets import QSystemTrayIcon, QMenu, QMainWindow
+from PySide6.QtWidgets import QSystemTrayIcon, QMenu
 
 
 class ExtendSystemTray(QSystemTrayIcon):
 
-    def __init__(self, main_window: QMainWindow):
+    def __init__(self, main_window: EditorMain):
         super().__init__(parent=main_window)
         self.menu = QMenu()
         self.main_window = main_window
@@ -28,4 +34,3 @@ class ExtendSystemTray(QSystemTrayIcon):
         self.setVisible(False)
         self.main_window.close()
         sys.exit(0)
-

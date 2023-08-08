@@ -1,3 +1,9 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Union
+
+if TYPE_CHECKING:
+    from je_editor.pyside_ui.main_ui.main_ui.editor_main_ui.main_editor import EditorMain
 
 import queue
 import subprocess
@@ -32,7 +38,7 @@ class ExecManager(object):
 
     def __init__(
             self,
-            main_window=None,
+            main_window: Union[EditorMain, None] = None,
             program_language="python",
             program_encoding="utf-8",
             program_buffer=10240000,

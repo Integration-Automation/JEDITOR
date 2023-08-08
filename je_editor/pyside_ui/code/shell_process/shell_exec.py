@@ -1,3 +1,9 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Union
+
+if TYPE_CHECKING:
+    from je_editor.pyside_ui.main_ui.main_ui.editor_main_ui.main_editor import EditorMain
 import os
 import queue
 import shlex
@@ -19,7 +25,7 @@ class ShellManager(object):
 
     def __init__(
             self,
-            main_window: QMainWindow = None,
+            main_window: Union[EditorMain, None] = None,
             shell_encoding: str = "utf-8",
             program_buffer: int = 10240000,
     ):

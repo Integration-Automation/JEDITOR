@@ -1,4 +1,10 @@
-from PySide6.QtWidgets import QMainWindow, QMenuBar
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from je_editor.pyside_ui.main_ui.main_ui.editor_main_ui.main_editor import EditorMain
+from PySide6.QtWidgets import QMenuBar
 
 from je_editor.pyside_ui.main_ui.menu.menu_bar.check_style_menu.build_check_style_menu import set_check_menu
 from je_editor.pyside_ui.main_ui.menu.menu_bar.file_menu.build_file_menu import set_file_menu
@@ -7,7 +13,7 @@ from je_editor.pyside_ui.main_ui.menu.menu_bar.run_menu.build_run_menu import se
 from je_editor.pyside_ui.main_ui.menu.menu_bar.venv_menu.build_venv_menu import set_venv_menu
 
 
-def set_menu_bar(ui_we_want_to_set: QMainWindow) -> None:
+def set_menu_bar(ui_we_want_to_set: EditorMain) -> None:
     # set menu
     ui_we_want_to_set.menu = QMenuBar()
     ui_we_want_to_set.file_menu = ui_we_want_to_set.menu.addMenu("File")
