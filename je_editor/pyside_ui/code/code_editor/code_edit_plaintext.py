@@ -218,16 +218,17 @@ class CodeEditor(QPlainTextEdit):
         """
         skip_popup_behavior_list = [
             Qt.Key.Key_Enter, Qt.Key.Key_Return, Qt.Key.Key_Up, Qt.Key.Key_Down,
-            Qt.Key.Key_Tab, Qt.Key.Key_Backtab, Qt.Key.Key_Space
+            Qt.Key.Key_Tab, Qt.Key.Key_Backtab, Qt.Key.Key_Space, Qt.Key.Key_Backspace
         ]
         need_complete_list = [
             Qt.Key.Key_A, Qt.Key.Key_B, Qt.Key.Key_C, Qt.Key.Key_D, Qt.Key.Key_E, Qt.Key.Key_F,
             Qt.Key.Key_G, Qt.Key.Key_H, Qt.Key.Key_I, Qt.Key.Key_J, Qt.Key.Key_K, Qt.Key.Key_L,
             Qt.Key.Key_M, Qt.Key.Key_N, Qt.Key.Key_O, Qt.Key.Key_P, Qt.Key.Key_Q, Qt.Key.Key_R,
             Qt.Key.Key_S, Qt.Key.Key_T, Qt.Key.Key_U, Qt.Key.Key_V, Qt.Key.Key_W, Qt.Key.Key_X,
-            Qt.Key.Key_Y, Qt.Key.Key_Z, Qt.Key.Key_Backspace
+            Qt.Key.Key_Y, Qt.Key.Key_Z
         ]
         if self.completer.popup().isVisible() and event.key() in skip_popup_behavior_list:
+            self.completer.popup().hide()
             event.ignore()
             return
         key_event = QKeyEvent(event)
