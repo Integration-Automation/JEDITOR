@@ -41,5 +41,6 @@
     * About (關於 JEditor 信息)
 * Venv 選單
     * Create Venv (嘗試使用 shell 運行器創建 venv)
+    * pip upgrade package (嘗試使用 shell 運行器安裝與升級套件)
     * pip package (嘗試使用 shell 運行器安裝套件)
 * UI Style Menu（包括許多用戶可以使用的 UI）
