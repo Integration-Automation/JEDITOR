@@ -1,7 +1,7 @@
 import os
-import os
 import sys
 from pathlib import Path
+from typing import Dict, Type
 
 from PySide6.QtCore import QTimer
 from PySide6.QtGui import QFontDatabase, QAction, QIcon
@@ -22,12 +22,19 @@ from je_editor.utils.encodings.python_encodings import python_encodings_list
 from je_editor.utils.file.open.open_file import read_file
 from je_editor.utils.redirect_manager.redirect_manager_class import redirect_manager_instance
 
+EDITOR_EXTEND_TAB: Dict[str, Type[QWidget]] = {}
+
 
 class EditorMain(QMainWindow, QtStyleTools):
 
     def __init__(self, debug_mode: bool = False):
         super(EditorMain, self).__init__()
         # Init variable
+        self.file_menu = None
+        self.text_menu = None
+        self.code_result = None
+        self.code_edit = None
+        self.menu = None
         self.encoding_menu = None
         self.font_size_menu = None
         self.font_menu = None
@@ -72,7 +79,7 @@ class EditorMain(QMainWindow, QtStyleTools):
         if self.current_file is not None and self.auto_save_thread is None:
             self.auto_save_thread = SaveThread(
                 self.current_file,
-                self.code_edit.code_edit.toPlainText()
+                self.code_edit.toPlainText()
             )
             self.auto_save_thread.start()
         # Set Icon
@@ -83,7 +90,9 @@ class EditorMain(QMainWindow, QtStyleTools):
             if ExtendSystemTray.isSystemTrayAvailable():
                 self.system_tray = ExtendSystemTray(main_window=self)
                 self.system_tray.setIcon(self.icon)
+                self.system_tray.setVisible(True)
                 self.system_tray.show()
+                self.system_tray.setToolTip("JEditor")
         # Init shell manager
         default_shell_manager.main_window = self
         default_shell_manager.later_init()
@@ -94,6 +103,8 @@ class EditorMain(QMainWindow, QtStyleTools):
         # TAB Add
         self.tab_widget.addTab(self.main_widget, "Editor")
         self.tab_widget.addTab(FrontEngineMainUI(), "FrontEngine")
+        for widget_name, widget in EDITOR_EXTEND_TAB.items():
+            self.tab_widget.addTab(widget(), widget_name)
         self.setCentralWidget(self.tab_widget)
         # If debug open 10s and close
         if self.debug_mode:

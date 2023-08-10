@@ -2,6 +2,7 @@
 from je_editor.start_editor import start_editor
 # Editor
 from je_editor.pyside_ui.main_ui.main_ui.editor_main_ui.main_editor import EditorMain
+from je_editor.pyside_ui.main_ui.main_ui.editor_main_ui.main_editor import EDITOR_EXTEND_TAB
 # Exceptions
 from je_editor.utils.exception.exceptions import JEditorException
 from je_editor.utils.exception.exceptions import JEditorExecException
@@ -21,7 +22,7 @@ from je_editor.pyside_ui.code.shell_process.shell_exec import default_shell_mana
 from je_editor.pyside_ui.code.shell_process.shell_exec import ShellManager
 
 __all__ = [
-    "start_editor", "EditorMain",
+    "start_editor", "EditorMain", "EDITOR_EXTEND_TAB",
     "JEditorException", "JEditorExecException",
     "JEditorRunOnShellException", "JEditorSaveFileException",
     "JEditorOpenFileException", "JEditorContentFileException",

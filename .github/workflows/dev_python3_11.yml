@@ -25,5 +25,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip wheel
           pip install -r dev_requirements.txt
-      - name: Test start editor
+      - name: Test Start Editor
         run: python ./test/qt_ui/unit_test/start_qt_ui.py
+      - name: Test Extend Editor
+        run: python ./test/qt_ui/unit_test/extend_test.py
