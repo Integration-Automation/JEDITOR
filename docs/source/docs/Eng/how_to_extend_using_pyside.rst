@@ -8,6 +8,7 @@ How to extend using pyside
     from je_editor import start_editor, EDITOR_EXTEND_TAB
 
 
+    # You can use you own QWidget
     class TestUI(QWidget):
 
         def __init__(self):
