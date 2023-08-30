@@ -103,4 +103,4 @@ class PythonHighlighter(QSyntaxHighlighter):
             match_iterator = pattern.globalMatch(text)
             while match_iterator.hasNext():
                 match = match_iterator.next()
-                self.setFormat(match.capturedStart(), match.capturedEnd(), pattern_format)
+                self.setFormat(match.capturedStart(), match.capturedLength(), pattern_format)
