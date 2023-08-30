@@ -39,10 +39,10 @@ builtins_keyword = [
 # Regex pattern
 
 string_rule = [
+    r"'[^'\\]*(\\.[^'\\]*)*'",  # Singel
+    r'"[^"\\]*(\\.[^"\\]*)*"',  # Double
     r"'''^.*(?:[^\\']|\\\\|\\')*.*$'''",  # 3* Singel
     r'"""^.*(?:[^\\"]|\\\\|\\")*.*$"""',  # 3* Double
-    r"'[^'\\]*(\\.[^'\\]*)*'",  # Singel
-    r'"[^"\\]*(\\.[^"\\]*)*"'  # Double
 ]
 
 number_rule = [
@@ -99,8 +99,8 @@ class PythonHighlighter(QSyntaxHighlighter):
             self.highlight_rules.append((pattern, text_char_format))
 
     def highlightBlock(self, text) -> None:
-        for pattern, format in self.highlight_rules:
+        for pattern, pattern_format in self.highlight_rules:
             match_iterator = pattern.globalMatch(text)
             while match_iterator.hasNext():
                 match = match_iterator.next()
-                self.setFormat(match.capturedStart(), match.capturedLength(), format)
+                self.setFormat(match.capturedStart(), match.capturedEnd(), pattern_format)
