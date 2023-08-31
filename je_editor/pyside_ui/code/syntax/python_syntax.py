@@ -95,7 +95,7 @@ class PythonHighlighter(QSyntaxHighlighter):
         text_char_format = QTextCharFormat()
         text_char_format.setForeground(QColor(0, 153, 0))
         for rule in string_rule:
-            pattern = QRegularExpression(rule)
+            pattern = (QRegularExpression(rule))
             self.highlight_rules.append((pattern, text_char_format))
 
     def highlightBlock(self, text) -> None:
@@ -104,3 +104,4 @@ class PythonHighlighter(QSyntaxHighlighter):
             while match_iterator.hasNext():
                 match = match_iterator.next()
                 self.setFormat(match.capturedStart(), match.capturedLength(), pattern_format)
+

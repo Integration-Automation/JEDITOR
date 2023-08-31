@@ -2,8 +2,10 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from je_editor.pyside_ui.main_ui.editor.editor_widget import EditorWidget
+
 if TYPE_CHECKING:
-    from je_editor.pyside_ui.main_ui.main_ui.editor_main_ui.main_editor import EditorMain
+    from je_editor.pyside_ui.main_ui.main_editor import EditorMain
 from PySide6.QtGui import QAction, QKeySequence, Qt
 from PySide6.QtWidgets import QMessageBox
 
@@ -13,6 +15,7 @@ from je_editor.pyside_ui.code.shell_process.shell_exec import ShellManager
 
 
 def set_run_menu(ui_we_want_to_set: EditorMain) -> None:
+    ui_we_want_to_set.run_menu = ui_we_want_to_set.menu.addMenu("Run")
     ui_we_want_to_set.run_menu.run_program_action = QAction("Run Program")
     ui_we_want_to_set.run_menu.run_program_action.triggered.connect(
         lambda: run_program(ui_we_want_to_set)
@@ -63,20 +66,26 @@ def set_run_menu(ui_we_want_to_set: EditorMain) -> None:
 
 
 def run_program(ui_we_want_to_set: EditorMain) -> None:
-    if choose_file_get_save_file_path(ui_we_want_to_set):
-        code_exec = ExecManager(ui_we_want_to_set)
-        code_exec.later_init()
-        code_exec.exec_code(
-            ui_we_want_to_set.current_file
-        )
+    widget = ui_we_want_to_set.tab_widget.currentWidget()
+    if type(widget) is EditorWidget:
+        if choose_file_get_save_file_path(ui_we_want_to_set):
+            code_exec = ExecManager(widget)
+            code_exec.later_init()
+            code_exec.exec_code(
+                widget.current_file
+            )
 
 
 def shell_exec(ui_we_want_to_set: EditorMain) -> None:
-    shell_command = ShellManager(main_window=ui_we_want_to_set, shell_encoding=ui_we_want_to_set.encoding)
-    shell_command.later_init()
-    shell_command.exec_shell(
-        ui_we_want_to_set.code_edit.toPlainText()
-    )
+    widget = ui_we_want_to_set.tab_widget.currentWidget()
+    if type(widget) is EditorWidget:
+        shell_command = ShellManager(
+            main_window=widget,
+            shell_encoding=ui_we_want_to_set.encoding)
+        shell_command.later_init()
+        shell_command.exec_shell(
+            widget.code_edit.toPlainText()
+        )
 
 
 def stop_program() -> None:
@@ -84,7 +93,9 @@ def stop_program() -> None:
 
 
 def clean_result(ui_we_want_to_set: EditorMain) -> None:
-    ui_we_want_to_set.code_result.setPlainText("")
+    widget = ui_we_want_to_set.tab_widget.currentWidget()
+    if type(widget) is EditorWidget:
+        widget.code_result.setPlainText("")
 
 
 def show_run_help() -> None:

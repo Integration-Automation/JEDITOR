@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from je_editor.pyside_ui.main_ui.main_ui.editor_main_ui.main_editor import EditorMain
+    from je_editor.pyside_ui.main_ui.main_editor import EditorMain
 import webbrowser
 
 from PySide6.QtGui import QAction
@@ -11,6 +11,7 @@ from PySide6.QtWidgets import QMessageBox
 
 
 def set_help_menu(ui_we_want_to_set: EditorMain) -> None:
+    ui_we_want_to_set.help_menu = ui_we_want_to_set.menu.addMenu("Help")
     ui_we_want_to_set.help_menu .help_github_action = QAction("GitHub")
     ui_we_want_to_set.help_menu .help_github_action.triggered.connect(
         lambda: open_web_browser("https://github.com/Integrated-Testing-Environment/je_editor")

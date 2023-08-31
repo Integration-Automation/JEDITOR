@@ -1,8 +1,8 @@
 # start editor
 from je_editor.start_editor import start_editor
 # Editor
-from je_editor.pyside_ui.main_ui.main_ui.editor_main_ui.main_editor import EditorMain
-from je_editor.pyside_ui.main_ui.main_ui.editor_main_ui.main_editor import EDITOR_EXTEND_TAB
+from je_editor.pyside_ui.main_ui.main_editor import EditorMain
+from je_editor.pyside_ui.main_ui.main_editor import EDITOR_EXTEND_TAB
 # Exceptions
 from je_editor.utils.exception.exceptions import JEditorException
 from je_editor.utils.exception.exceptions import JEditorExecException
