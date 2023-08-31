@@ -1,33 +1,34 @@
 import os
+import pathlib
 import sys
 from pathlib import Path
 from typing import Dict, Type
 
 from PySide6.QtCore import QTimer
 from PySide6.QtGui import QFontDatabase, QAction, QIcon
-from PySide6.QtWidgets import QMainWindow, QWidget, QGridLayout, QTabWidget
+from PySide6.QtWidgets import QMainWindow, QWidget, QTabWidget
 from frontengine import FrontEngineMainUI
 from qt_material import QtStyleTools
 
-from je_editor.pyside_ui.code.auto_save.auto_save_thread import SaveThread
+from je_editor.pyside_ui.browser.je_broser import JEBrowser
 from je_editor.pyside_ui.code.shell_process.shell_exec import default_shell_manager
 from je_editor.pyside_ui.colors.global_color import error_color, output_color
+from je_editor.pyside_ui.main_ui.editor.editor_widget import EditorWidget
 from je_editor.pyside_ui.main_ui.main_ui_setting.ui_setting import set_ui
-from je_editor.pyside_ui.main_ui.menu.menu_bar.set_menu_bar import set_menu_bar
-from je_editor.pyside_ui.main_ui.save_user_setting.user_setting_file import write_user_setting, \
-    user_setting_dict, read_user_setting
+from je_editor.pyside_ui.main_ui.menu.set_menu_bar import set_menu_bar
+from je_editor.pyside_ui.main_ui.save_user_setting.user_setting_file import user_setting_dict, read_user_setting
 from je_editor.pyside_ui.main_ui.system_tray.extend_system_tray import ExtendSystemTray
-from je_editor.pyside_ui.main_ui.treeview.project_treeview.set_project_treeview import set_project_treeview
 from je_editor.utils.encodings.python_encodings import python_encodings_list
 from je_editor.utils.file.open.open_file import read_file
 from je_editor.utils.redirect_manager.redirect_manager_class import redirect_manager_instance
+from frontengine import RedirectManager
 
 EDITOR_EXTEND_TAB: Dict[str, Type[QWidget]] = {}
 
 
 class EditorMain(QMainWindow, QtStyleTools):
 
-    def __init__(self, debug_mode: bool = False):
+    def __init__(self, debug_mode: bool = False, show_system_tray_ray: bool = True):
         super(EditorMain, self).__init__()
         # Init variable
         self.file_menu = None
@@ -51,43 +52,31 @@ class EditorMain(QMainWindow, QtStyleTools):
         os.environ["PYTHONUNBUFFERED"] = "1"
         # Auto save thread
         self.auto_save_thread = None
-        # current file
-        self.current_file = None
         # Encoding
         self.encoding = "utf-8"
         # Font
         self.font_database = QFontDatabase()
         # TabWidget
         self.tab_widget = QTabWidget()
-        # MainWidget
-        self.main_widget = QWidget()
-        self.grid_layout = QGridLayout(self.main_widget)
-        self.grid_layout.setContentsMargins(0, 0, 0, 0)
+        self.tab_widget.setTabsClosable(True)
+        self.tab_widget.tabCloseRequested.connect(self.tab_widget.removeTab)
         # Timer to redirect error or message
         self.redirect_timer = QTimer(self)
         self.redirect_timer.setInterval(1)
-        self.redirect_timer.timeout.connect(self.redirect)
         self.redirect_timer.start()
         set_ui(self)
-        set_project_treeview(self)
         set_menu_bar(self)
         # Set font and font size menu
         self.add_font_menu()
         self.add_font_size_menu()
         # Set encoding menu
         self.add_encoding_menu()
-        if self.current_file is not None and self.auto_save_thread is None:
-            self.auto_save_thread = SaveThread(
-                self.current_file,
-                self.code_edit.toPlainText()
-            )
-            self.auto_save_thread.start()
         # Set Icon
         self.icon_path = Path(os.getcwd() + "/je_driver_icon.ico")
         self.icon = QIcon(str(self.icon_path))
         if self.icon.isNull() is False:
             self.setWindowIcon(self.icon)
-            if ExtendSystemTray.isSystemTrayAvailable():
+            if ExtendSystemTray.isSystemTrayAvailable() and show_system_tray_ray:
                 self.system_tray = ExtendSystemTray(main_window=self)
                 self.system_tray.setIcon(self.icon)
                 self.system_tray.setVisible(True)
@@ -97,12 +86,19 @@ class EditorMain(QMainWindow, QtStyleTools):
         default_shell_manager.main_window = self
         default_shell_manager.later_init()
         # Put Redirect on last to trace exception
+        RedirectManager.restore_std()
         redirect_manager_instance.set_redirect(self, True)
+        # Timer to redirect error or message
+        self.redirect_timer = QTimer(self)
+        self.redirect_timer.setInterval(1)
+        self.redirect_timer.timeout.connect(self.redirect)
+        self.redirect_timer.start()
         # Add style menu
         self.add_style_menu()
         # TAB Add
-        self.tab_widget.addTab(self.main_widget, "Editor")
-        self.tab_widget.addTab(FrontEngineMainUI(), "FrontEngine")
+        self.tab_widget.addTab(EditorWidget(), "Editor")
+        self.tab_widget.addTab(FrontEngineMainUI(show_system_tray_ray=False), "FrontEngine")
+        self.tab_widget.addTab(JEBrowser(), "Web Browser")
         for widget_name, widget in EDITOR_EXTEND_TAB.items():
             self.tab_widget.addTab(widget(), widget_name)
         self.setCentralWidget(self.tab_widget)
@@ -112,6 +108,20 @@ class EditorMain(QMainWindow, QtStyleTools):
             close_timer.setInterval(10000)
             close_timer.timeout.connect(self.debug_close)
             close_timer.start()
+
+    def set_font(self) -> None:
+        for code_editor in range(self.tab_widget.count()):
+            widget = self.tab_widget.widget(code_editor)
+            if type(widget) is EditorWidget:
+                widget.setStyleSheet(
+                    f"font-size: {widget.code_edit.font().pointSize()}pt;"
+                    f"font-family: {self.sender().text()};"
+                )
+                widget.setStyleSheet(
+                    f"font-size: {widget.code_result.font().pointSize()}pt;"
+                    f"font-family: {self.sender().text()};"
+                )
+                user_setting_dict.update({"font": self.sender().text()})
 
     def add_style_menu(self) -> None:
         self.menu.style_menu = self.menu.addMenu("UI Style")
@@ -128,27 +138,6 @@ class EditorMain(QMainWindow, QtStyleTools):
     def set_style(self) -> None:
         self.apply_stylesheet(self, self.sender().text())
 
-    def startup_setting(self) -> None:
-        # Set font and font size, then try to open last edit file
-        read_user_setting()
-        self.code_edit.setStyleSheet(
-            f"font-size: {user_setting_dict.get('font_size', 12)}pt;"
-            f"font-family: {user_setting_dict.get('font', 'Lato')};"
-        )
-        self.code_result.setStyleSheet(
-            f"font-size: {user_setting_dict.get('font_size', 12)}pt;"
-            f"font-family: {user_setting_dict.get('font', 'Lato')};"
-        )
-        last_file = user_setting_dict.get("last_file", None)
-        if last_file is not None:
-            last_file_path = Path(last_file)
-            if last_file_path.is_file() and last_file_path.exists():
-                self.current_file = str(last_file_path)
-                self.code_edit.setPlainText(read_file(self.current_file)[1])
-
-    def clear_code_result(self):
-        self.code_result.clear()
-
     def add_font_menu(self) -> None:
         self.font_menu = self.text_menu.addMenu("Font")
         for family in self.font_database.families():
@@ -163,27 +152,24 @@ class EditorMain(QMainWindow, QtStyleTools):
             font_action.triggered.connect(self.set_font_size)
             self.font_size_menu.addAction(font_action)
 
-    def set_font(self) -> None:
-        self.code_edit.setStyleSheet(
-            f"font-size: {self.code_edit.font().pointSize()}pt;"
-            f"font-family: {self.sender().text()};"
-        )
-        self.code_result.setStyleSheet(
-            f"font-size: {self.code_result.font().pointSize()}pt;"
-            f"font-family: {self.sender().text()};"
-        )
-        user_setting_dict.update({"font": self.sender().text()})
-
     def set_font_size(self) -> None:
-        self.code_edit.setStyleSheet(
-            f"font-size: {int(self.sender().text())}pt;"
-            f"font-family: {self.code_edit.font().family()};"
-        )
-        self.code_result.setStyleSheet(
-            f"font-size: {int(self.sender().text())}pt;"
-            f"font-family: {self.code_result.font().family()};"
-        )
-        user_setting_dict.update({"font_size": int(self.sender().text())})
+        for code_editor in range(self.tab_widget.count()):
+            widget = self.tab_widget.widget(code_editor)
+            if type(widget) is EditorWidget:
+                widget.code_edit.setStyleSheet(
+                    f"font-size: {int(self.sender().text())}pt;"
+                    f"font-family: {widget.code_edit.font().family()};"
+                )
+                widget.code_result.setStyleSheet(
+                    f"font-size: {int(self.sender().text())}pt;"
+                    f"font-family: {widget.code_result.font().family()};"
+                )
+                user_setting_dict.update({"font_size": int(self.sender().text())})
+
+    def clear_code_result(self):
+        widget = self.tab_widget.currentWidget()
+        if type(widget) is EditorWidget:
+            widget.code_result.clear()
 
     def add_encoding_menu(self) -> None:
         self.encoding_menu = self.file_menu.addMenu("Encodings")
@@ -197,21 +183,46 @@ class EditorMain(QMainWindow, QtStyleTools):
         user_setting_dict.update({"encoding": self.sender().text()})
 
     def redirect(self) -> None:
-        # Pull out redirect text and put text in code result area
-        if self.auto_save_thread is not None:
-            self.auto_save_thread.text_to_write = self.code_edit.toPlainText()
-        if not redirect_manager_instance.std_out_queue.empty():
-            output_message = redirect_manager_instance.std_out_queue.get_nowait()
-            output_message = str(output_message).strip()
-            if output_message:
-                self.code_result.append(output_message)
-        self.code_result.setTextColor(error_color)
-        if not redirect_manager_instance.std_err_queue.empty():
-            error_message = redirect_manager_instance.std_err_queue.get_nowait()
-            error_message = str(error_message).strip()
-            if error_message:
-                self.code_result.append(error_message)
-        self.code_result.setTextColor(output_color)
+        for code_editor in range(self.tab_widget.count()):
+            widget = self.tab_widget.widget(code_editor)
+            if type(widget) is EditorWidget:
+                # Pull out redirect text and put text in code result area
+                if widget.auto_save_thread is not None:
+                    widget.auto_save_thread.text_to_write = widget.code_edit.toPlainText()
+                if not redirect_manager_instance.std_out_queue.empty():
+                    output_message = redirect_manager_instance.std_out_queue.get_nowait()
+                    output_message = str(output_message).strip()
+                    if output_message:
+                        widget.code_result.append(output_message)
+                widget.code_result.setTextColor(error_color)
+                if not redirect_manager_instance.std_err_queue.empty():
+                    error_message = redirect_manager_instance.std_err_queue.get_nowait()
+                    error_message = str(error_message).strip()
+                    if error_message:
+                        widget.code_result.append(error_message)
+                widget.code_result.setTextColor(output_color)
+                break
+
+    def startup_setting(self) -> None:
+        # Set font and font size, then try to open last edit file
+        read_user_setting()
+        for code_editor in range(self.tab_widget.count()):
+            widget = self.tab_widget.widget(code_editor)
+            if type(widget) is EditorWidget:
+                widget.code_edit.setStyleSheet(
+                    f"font-size: {user_setting_dict.get('font_size', 12)}pt;"
+                    f"font-family: {user_setting_dict.get('font', 'Lato')};"
+                )
+                widget.code_result.setStyleSheet(
+                    f"font-size: {user_setting_dict.get('font_size', 12)}pt;"
+                    f"font-family: {user_setting_dict.get('font', 'Lato')};"
+                )
+                last_file = user_setting_dict.get("last_file", None)
+                if last_file is not None:
+                    last_file_path = pathlib.Path(last_file)
+                    if last_file_path.is_file() and last_file_path.exists():
+                        widget.current_file = str(last_file_path)
+                        widget.code_edit.setPlainText(read_file(widget.current_file)[1])
 
     def closeEvent(self, event) -> None:
         if self.system_tray.isVisible():
@@ -219,8 +230,6 @@ class EditorMain(QMainWindow, QtStyleTools):
             event.ignore()
         else:
             super().closeEvent(event)
-            user_setting_dict.update({"last_file": str(self.current_file)})
-            write_user_setting()
 
     @classmethod
     def debug_close(cls):

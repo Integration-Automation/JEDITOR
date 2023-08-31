@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from je_editor.pyside_ui.main_ui.main_ui.editor_main_ui.main_editor import EditorMain
+    from je_editor.pyside_ui.main_ui.main_editor import EditorMain
 import sys
 
 from PySide6.QtGui import QAction

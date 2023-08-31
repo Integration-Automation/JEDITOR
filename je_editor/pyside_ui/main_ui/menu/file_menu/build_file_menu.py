@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from je_editor.pyside_ui.main_ui.main_ui.editor_main_ui.main_editor import EditorMain
+    from je_editor.pyside_ui.main_ui.main_editor import EditorMain
 from PySide6.QtGui import QAction
 
 from je_editor.pyside_ui.dialog.file_dialog.create_file_dialog import CreateFileDialog
@@ -12,6 +12,7 @@ from je_editor.pyside_ui.dialog.file_dialog.save_file_dialog import choose_file_
 
 
 def set_file_menu(ui_we_want_to_set: EditorMain) -> None:
+    ui_we_want_to_set.file_menu = ui_we_want_to_set.menu.addMenu("File")
     ui_we_want_to_set.file_menu.new_file_action = QAction("New File")
     ui_we_want_to_set.file_menu.new_file_action.setShortcut(
         "Ctrl+n"
