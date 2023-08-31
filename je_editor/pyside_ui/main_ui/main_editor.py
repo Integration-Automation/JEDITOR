@@ -160,14 +160,16 @@ class EditorMain(QMainWindow, QtStyleTools):
                     f"font-size: {int(self.sender().text())}pt;"
                     f"font-family: {widget.code_edit.font().family()};"
                 )
-                self.code_result.setStyleSheet(
+                widget.code_result.setStyleSheet(
                     f"font-size: {int(self.sender().text())}pt;"
                     f"font-family: {widget.code_result.font().family()};"
                 )
                 user_setting_dict.update({"font_size": int(self.sender().text())})
 
     def clear_code_result(self):
-        self.code_result.clear()
+        widget = self.tab_widget.currentWidget()
+        if type(widget) is EditorWidget:
+            widget.code_result.clear()
 
     def add_encoding_menu(self) -> None:
         self.encoding_menu = self.file_menu.addMenu("Encodings")

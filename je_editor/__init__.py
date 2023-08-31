@@ -21,13 +21,20 @@ from je_editor.pyside_ui.code.code_process.code_exec import exec_manage
 from je_editor.pyside_ui.code.code_process.code_exec import ExecManager
 from je_editor.pyside_ui.code.shell_process.shell_exec import default_shell_manager
 from je_editor.pyside_ui.code.shell_process.shell_exec import ShellManager
+# Browser
+from je_editor.pyside_ui.browser.je_broser import JEBrowser
+# Highlight
+from je_editor.pyside_ui.code.complete_list.total_complete_list import complete_list
+from je_editor.pyside_ui.code.syntax.python_syntax import PythonHighlighter
+from je_editor.pyside_ui.code.syntax.syntax_setting import syntax_word_setting_dict, syntax_rule_setting_dict
+
 
 __all__ = [
     "start_editor", "EditorMain", "EDITOR_EXTEND_TAB",
     "JEditorException", "JEditorExecException",
-    "JEditorRunOnShellException", "JEditorSaveFileException",
-    "JEditorOpenFileException", "JEditorContentFileException",
-    "JEditorCantFindLanguageException", "JEditorJsonException",
-    "error_color", "output_color", "EditorWidget",
+    "JEditorRunOnShellException", "JEditorSaveFileException", "syntax_rule_setting_dict",
+    "JEditorOpenFileException", "JEditorContentFileException", "syntax_word_setting_dict",
+    "JEditorCantFindLanguageException", "JEditorJsonException", "PythonHighlighter",
+    "error_color", "output_color", "EditorWidget", "JEBrowser", "complete_list",
     "exec_manage", "default_shell_manager", "ExecManager", "ShellManager"
 ]
