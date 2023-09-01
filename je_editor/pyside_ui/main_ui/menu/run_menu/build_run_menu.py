@@ -67,7 +67,7 @@ def set_run_menu(ui_we_want_to_set: EditorMain) -> None:
 
 def run_program(ui_we_want_to_set: EditorMain) -> None:
     widget = ui_we_want_to_set.tab_widget.currentWidget()
-    if type(widget) is EditorWidget:
+    if isinstance(widget, EditorWidget):
         if choose_file_get_save_file_path(ui_we_want_to_set):
             code_exec = ExecManager(widget)
             code_exec.later_init()
@@ -78,7 +78,7 @@ def run_program(ui_we_want_to_set: EditorMain) -> None:
 
 def shell_exec(ui_we_want_to_set: EditorMain) -> None:
     widget = ui_we_want_to_set.tab_widget.currentWidget()
-    if type(widget) is EditorWidget:
+    if isinstance(widget, EditorWidget):
         shell_command = ShellManager(
             main_window=widget,
             shell_encoding=ui_we_want_to_set.encoding)
@@ -94,7 +94,7 @@ def stop_program() -> None:
 
 def clean_result(ui_we_want_to_set: EditorMain) -> None:
     widget = ui_we_want_to_set.tab_widget.currentWidget()
-    if type(widget) is EditorWidget:
+    if isinstance(widget, EditorWidget):
         widget.code_result.setPlainText("")
 
 

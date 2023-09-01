@@ -1,10 +1,10 @@
 from __future__ import annotations
 
+from pathlib import Path
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from je_editor.pyside_ui.main_ui.main_editor import EditorMain
-import os
 
 from PySide6.QtWidgets import QFileDialog
 
@@ -20,10 +20,10 @@ def choose_file_get_open_file_path(parent_qt_instance: EditorMain) -> None:
     :return: None
     """
     widget = parent_qt_instance.tab_widget.currentWidget()
-    if type(widget) is EditorWidget:
+    if isinstance(widget, EditorWidget):
         file_path = QFileDialog().getOpenFileName(
             parent=parent_qt_instance,
-            dir=os.getcwd()
+            dir=str(Path.cwd())
         )[0]
         if file_path is not None and file_path != "":
             widget.current_file = file_path

@@ -6,8 +6,8 @@ from PySide6.QtCore import Qt, QFileInfo, QDir
 from PySide6.QtWidgets import QWidget, QGridLayout, QSplitter, QScrollArea, QFileSystemModel, QTreeView
 
 from je_editor.pyside_ui.code.auto_save.auto_save_thread import SaveThread
-from je_editor.pyside_ui.code.code_editor.code_edit_plaintext import CodeEditor
-from je_editor.pyside_ui.code.code_result.code_record import CodeRecord
+from je_editor.pyside_ui.code.plaintext_code_edit.code_edit_plaintext import CodeEditor
+from je_editor.pyside_ui.code.textedit_code_result.code_record import CodeRecord
 from je_editor.pyside_ui.main_ui.save_user_setting.user_setting_file import user_setting_dict, \
     write_user_setting
 from je_editor.utils.file.open.open_file import read_file

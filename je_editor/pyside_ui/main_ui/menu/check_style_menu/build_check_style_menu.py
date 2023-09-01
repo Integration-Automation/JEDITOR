@@ -36,7 +36,7 @@ def set_check_menu(ui_we_want_to_set: EditorMain) -> None:
 
 def check_python_code(ui_we_want_to_set: EditorMain) -> None:
     widget = ui_we_want_to_set.tab_widget.currentWidget()
-    if type(widget) is EditorWidget:
+    if isinstance(widget, EditorWidget):
         code_text = widget.code_edit.toPlainText()
         widget.code_result.setPlainText("")
         format_code = FormatCode(
@@ -50,7 +50,7 @@ def check_python_code(ui_we_want_to_set: EditorMain) -> None:
 
 def reformat_json_text(ui_we_want_to_set: EditorMain) -> None:
     widget = ui_we_want_to_set.tab_widget.currentWidget()
-    if type(widget) is EditorWidget:
+    if isinstance(widget, EditorWidget):
         code_text = widget.code_edit.toPlainText()
         widget.code_result.setPlainText("")
         widget.code_edit.setPlainText(reformat_json(code_text))

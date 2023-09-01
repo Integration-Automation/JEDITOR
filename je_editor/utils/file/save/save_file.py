@@ -25,4 +25,3 @@ def write_file(file_path: str, content: str) -> None:
         raise JEditorSaveFileException
     finally:
         lock.release()
-

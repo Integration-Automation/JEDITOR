@@ -5,11 +5,13 @@ from PySide6.QtWidgets import QWidget, QGridLayout, QPushButton, QLineEdit, QInp
 
 class JEBrowser(QWidget):
 
-    def __init__(self):
+    def __init__(self, start_url: str = "https://www.google.com/",
+                 search_prefix: str = "https://www.google.com.tw/search?q="):
         super().__init__()
         # Browser setting
         self.browser = QWebEngineView(self)
-        self.browser.setUrl("https://www.google.com/")
+        self.browser.setUrl(start_url)
+        self.search_prefix = search_prefix
         # Top bar
         self.back_button = QPushButton("Back")
         self.back_button.clicked.connect(self.browser.back)
@@ -36,7 +38,7 @@ class JEBrowser(QWidget):
         self.setLayout(self.grid_layout)
 
     def search(self):
-        self.browser.setUrl(f"https://www.google.com.tw/search?q={self.url_input.text()}")
+        self.browser.setUrl(f"{self.search_prefix}{self.url_input.text()}")
 
     def find_text(self):
         search_box = QInputDialog(self)

@@ -2,4 +2,5 @@ frontengine
 PySide6
 sphinx
 twine
+yapf
 je_editor

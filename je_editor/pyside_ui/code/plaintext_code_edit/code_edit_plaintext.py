@@ -6,8 +6,8 @@ from PySide6.QtGui import QPainter, QColor, QTextCharFormat, QTextFormat, QKeyEv
 from PySide6.QtWidgets import QPlainTextEdit, QWidget, QTextEdit, QCompleter
 
 from je_editor.pyside_ui.code.complete_list.total_complete_list import complete_list
-from je_editor.pyside_ui.dialog.search_ui.search_text_box import SearchBox
 from je_editor.pyside_ui.code.syntax.python_syntax import PythonHighlighter
+from je_editor.pyside_ui.dialog.search_ui.search_text_box import SearchBox
 
 
 class CodeEditor(QPlainTextEdit):
@@ -131,7 +131,7 @@ class CodeEditor(QPlainTextEdit):
 
     def line_number_paint(self, event) -> None:
         painter = QPainter(self.line_number)
-        painter.fillRect(event.rect(), QColor(51, 51, 77))
+        painter.fillRect(event.rect(), Qt.GlobalColor.gray)
         block = self.firstVisibleBlock()
         block_number = block.blockNumber()
         top = self.blockBoundingGeometry(block).translated(self.contentOffset()).top()
