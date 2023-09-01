@@ -2,8 +2,10 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Union
 
+from je_editor.pyside_ui.main_ui.editor.editor_widget import EditorWidget
+
 if TYPE_CHECKING:
-    from je_editor.pyside_ui.main_ui.main_editor import EditorMain
+    pass
 
 import queue
 import subprocess
@@ -13,7 +15,7 @@ from threading import Thread
 from typing import List
 
 from PySide6.QtCore import QTimer
-from PySide6.QtWidgets import QMainWindow, QTextEdit
+from PySide6.QtWidgets import QTextEdit
 
 from je_editor.pyside_ui.colors.global_color import error_color, output_color
 from je_editor.utils.exception.exception_tags import je_editor_init_error
@@ -38,7 +40,7 @@ class ExecManager(object):
 
     def __init__(
             self,
-            main_window: Union[EditorMain, None] = None,
+            main_window: Union[EditorWidget, None] = None,
             program_language="python",
             program_encoding="utf-8",
             program_buffer=10240000,
@@ -50,7 +52,7 @@ class ExecManager(object):
         """
         self.read_program_error_output_from_thread = None
         self.read_program_output_from_thread = None
-        self.main_window: QMainWindow = main_window
+        self.main_window: EditorWidget = main_window
         self.compiler_path = None
         self.code_result: [QTextEdit, None] = None
         self.timer: [QTimer, None] = None

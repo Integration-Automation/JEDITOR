@@ -111,7 +111,7 @@ class EditorMain(QMainWindow, QtStyleTools):
     def set_font(self) -> None:
         for code_editor in range(self.tab_widget.count()):
             widget = self.tab_widget.widget(code_editor)
-            if type(widget) is EditorWidget:
+            if isinstance(widget, EditorWidget):
                 widget.setStyleSheet(
                     f"font-size: {widget.code_edit.font().pointSize()}pt;"
                     f"font-family: {self.sender().text()};"

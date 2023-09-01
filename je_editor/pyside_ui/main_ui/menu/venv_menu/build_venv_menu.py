@@ -49,7 +49,7 @@ def set_venv_menu(ui_we_want_to_set: EditorMain) -> None:
 
 def create_venv(ui_we_want_to_set: EditorMain) -> None:
     widget = ui_we_want_to_set.tab_widget.currentWidget()
-    if type(widget) is EditorWidget:
+    if isinstance(widget, EditorWidget):
         venv_path = Path(os.getcwd() + "/venv")
         if not venv_path.exists():
             create_venv_shell = ShellManager(main_window=widget)
@@ -66,7 +66,7 @@ def create_venv(ui_we_want_to_set: EditorMain) -> None:
 
 def shell_pip_install(ui_we_want_to_set: EditorMain, pip_install_command_list: list):
     widget = ui_we_want_to_set.tab_widget.currentWidget()
-    if type(widget) is EditorWidget:
+    if isinstance(widget, EditorWidget):
         venv_path = Path(os.getcwd() + "/venv")
         if not venv_path.exists():
             message_box = QMessageBox()
@@ -97,7 +97,7 @@ def detect_venv() -> bool:
 
 def pip_install_package_update(ui_we_want_to_set: EditorMain) -> None:
     widget = ui_we_want_to_set.tab_widget.currentWidget()
-    if type(widget) is EditorWidget:
+    if isinstance(widget, EditorWidget):
         if detect_venv:
             ask_package_dialog = QInputDialog()
             package_text, press_ok = ask_package_dialog.getText(
@@ -113,7 +113,7 @@ def pip_install_package_update(ui_we_want_to_set: EditorMain) -> None:
 
 def pip_install_package(ui_we_want_to_set: EditorMain) -> None:
     widget = ui_we_want_to_set.tab_widget.currentWidget()
-    if type(widget) is EditorWidget:
+    if isinstance(widget, EditorWidget):
         if detect_venv:
             ask_package_dialog = QInputDialog()
             package_text, press_ok = ask_package_dialog.getText(
