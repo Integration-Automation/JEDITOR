@@ -49,6 +49,7 @@ def add_dock_widget(ui_we_want_to_set: EditorMain, widget_type: str = None):
     # Dock widget
     dock_widget = DestroyDock()
     if widget_type == "stackoverflow":
+        dock_widget.setWindowTitle("stackoverflow")
         dock_widget.setWidget(JEBrowser(
             start_url="https://stackoverflow.com/", search_prefix="https://stackoverflow.com/search?q="))
     elif widget_type == "editor":
@@ -62,9 +63,12 @@ def add_dock_widget(ui_we_want_to_set: EditorMain, widget_type: str = None):
             widget.code_edit.setPlainText(
                 file_content
             )
+            dock_widget.setWindowTitle("editor")
             dock_widget.setWidget(widget)
     elif widget_type == "frontengine":
+        dock_widget.setWindowTitle("frontengine")
         dock_widget.setWidget(FrontEngineMainUI())
     else:
+        dock_widget.setWindowTitle("browser")
         dock_widget.setWidget(JEBrowser())
     ui_we_want_to_set.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, dock_widget)
