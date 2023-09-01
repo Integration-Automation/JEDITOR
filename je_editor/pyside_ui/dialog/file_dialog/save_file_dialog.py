@@ -18,7 +18,7 @@ def choose_file_get_save_file_path(parent_qt_instance: EditorMain) -> bool:
     :return: save code edit content to file
     """
     widget = parent_qt_instance.tab_widget.currentWidget()
-    if type(widget) is EditorWidget:
+    if isinstance(widget, EditorWidget):
         file_path = QFileDialog().getSaveFileName(
             parent=parent_qt_instance,
             dir=os.getcwd()

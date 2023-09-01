@@ -8,20 +8,19 @@ from PySide6.QtCore import QTimer
 from PySide6.QtGui import QFontDatabase, QAction, QIcon
 from PySide6.QtWidgets import QMainWindow, QWidget, QTabWidget
 from frontengine import FrontEngineMainUI
+from frontengine import RedirectManager
 from qt_material import QtStyleTools
 
 from je_editor.pyside_ui.browser.je_broser import JEBrowser
 from je_editor.pyside_ui.code.shell_process.shell_exec import default_shell_manager
 from je_editor.pyside_ui.colors.global_color import error_color, output_color
 from je_editor.pyside_ui.main_ui.editor.editor_widget import EditorWidget
-from je_editor.pyside_ui.main_ui.main_ui_setting.ui_setting import set_ui
 from je_editor.pyside_ui.main_ui.menu.set_menu_bar import set_menu_bar
 from je_editor.pyside_ui.main_ui.save_user_setting.user_setting_file import user_setting_dict, read_user_setting
 from je_editor.pyside_ui.main_ui.system_tray.extend_system_tray import ExtendSystemTray
 from je_editor.utils.encodings.python_encodings import python_encodings_list
 from je_editor.utils.file.open.open_file import read_file
 from je_editor.utils.redirect_manager.redirect_manager_class import redirect_manager_instance
-from frontengine import RedirectManager
 
 EDITOR_EXTEND_TAB: Dict[str, Type[QWidget]] = {}
 
@@ -64,7 +63,7 @@ class EditorMain(QMainWindow, QtStyleTools):
         self.redirect_timer = QTimer(self)
         self.redirect_timer.setInterval(1)
         self.redirect_timer.start()
-        set_ui(self)
+        self.setWindowTitle("JEditor")
         set_menu_bar(self)
         # Set font and font size menu
         self.add_font_menu()

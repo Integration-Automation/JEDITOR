@@ -17,7 +17,7 @@ class PythonHighlighter(QSyntaxHighlighter):
             text_char_format = QTextCharFormat()
             text_char_format.setForeground(color)
             for word in rule_variable_dict.get("words"):
-                pattern = QRegularExpression(rf"{word}")
+                pattern = QRegularExpression(rf"\b{word}\b")
                 self.highlight_rules.append((pattern, text_char_format))
 
         for rule_variable_dict in syntax_rule_setting_dict.values():

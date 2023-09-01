@@ -131,7 +131,7 @@ class CodeEditor(QPlainTextEdit):
 
     def line_number_paint(self, event) -> None:
         painter = QPainter(self.line_number)
-        painter.fillRect(event.rect(), QColor(51, 51, 77))
+        painter.fillRect(event.rect(), Qt.GlobalColor.gray)
         block = self.firstVisibleBlock()
         block_number = block.blockNumber()
         top = self.blockBoundingGeometry(block).translated(self.contentOffset()).top()

@@ -4,6 +4,7 @@ from je_editor.start_editor import start_editor
 from je_editor.pyside_ui.main_ui.main_editor import EditorMain
 from je_editor.pyside_ui.main_ui.main_editor import EDITOR_EXTEND_TAB
 from je_editor.pyside_ui.main_ui.editor.editor_widget import EditorWidget
+from je_editor.pyside_ui.main_ui.editor.editor_widget_full import FullEditorWidget
 # Exceptions
 from je_editor.utils.exception.exceptions import JEditorException
 from je_editor.utils.exception.exceptions import JEditorExecException
@@ -31,7 +32,7 @@ from je_editor.pyside_ui.code.syntax.syntax_setting import syntax_word_setting_d
 
 __all__ = [
     "start_editor", "EditorMain", "EDITOR_EXTEND_TAB",
-    "JEditorException", "JEditorExecException",
+    "JEditorException", "JEditorExecException", "FullEditorWidget",
     "JEditorRunOnShellException", "JEditorSaveFileException", "syntax_rule_setting_dict",
     "JEditorOpenFileException", "JEditorContentFileException", "syntax_word_setting_dict",
     "JEditorCantFindLanguageException", "JEditorJsonException", "PythonHighlighter",

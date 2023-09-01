@@ -9,7 +9,7 @@ syntax_rule_setting_dict: dict = {
     },
     "comment_rule": {
         "rules": (r"#[^\n]*",),
-        "color": QColor(179, 204, 204)
+        "color": QColor(0, 230, 0)
     },
     "string_rule": {
         "rules": (
