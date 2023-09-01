@@ -5,11 +5,11 @@ from PySide6.QtWidgets import QWidget, QGridLayout, QPushButton, QLineEdit, QInp
 
 class JEBrowser(QWidget):
 
-    def __init__(self):
+    def __init__(self, start_url: str = "https://www.google.com/"):
         super().__init__()
         # Browser setting
         self.browser = QWebEngineView(self)
-        self.browser.setUrl("https://www.google.com/")
+        self.browser.setUrl(start_url)
         # Top bar
         self.back_button = QPushButton("Back")
         self.back_button.clicked.connect(self.browser.back)
