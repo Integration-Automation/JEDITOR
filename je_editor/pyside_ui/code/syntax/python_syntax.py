@@ -34,4 +34,3 @@ class PythonHighlighter(QSyntaxHighlighter):
             while match_iterator.hasNext():
                 match = match_iterator.next()
                 self.setFormat(match.capturedStart(), match.capturedLength(), pattern_format)
-

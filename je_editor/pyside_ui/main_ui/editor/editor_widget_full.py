@@ -1,11 +1,8 @@
 from pathlib import Path
 
-from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QWidget, QGridLayout, QSplitter, QScrollArea
+from PySide6.QtWidgets import QWidget, QGridLayout, QScrollArea
 
-from je_editor.pyside_ui.code.auto_save.auto_save_thread import SaveThread
 from je_editor.pyside_ui.code.plaintext_code_edit.code_edit_plaintext import CodeEditor
-from je_editor.pyside_ui.code.textedit_code_result.code_record import CodeRecord
 from je_editor.utils.file.save.save_file import write_file
 
 

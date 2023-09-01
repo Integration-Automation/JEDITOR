@@ -31,6 +31,3 @@ def read_file(file_path: str) -> typing.List[typing.Union[str, str]]:
         raise JEditorOpenFileException
     finally:
         lock.release()
-
-
-
