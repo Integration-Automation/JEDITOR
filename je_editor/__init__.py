@@ -1,6 +1,6 @@
 # start editor
 # Browser
-from je_editor.pyside_ui.browser.je_broser import JEBrowser
+from je_editor.pyside_ui.browser.browser_widget import JEBrowser
 from je_editor.pyside_ui.code.code_process.code_exec import ExecManager
 # Exec and shell
 from je_editor.pyside_ui.code.code_process.code_exec import exec_manage

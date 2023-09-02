@@ -8,7 +8,7 @@ from PySide6.QtGui import QAction
 from PySide6.QtWidgets import QFileDialog
 from frontengine import FrontEngineMainUI
 
-from je_editor.pyside_ui.browser.je_broser import JEBrowser
+from je_editor.pyside_ui.browser.browser_widget import JEBrowser
 from je_editor.pyside_ui.main_ui.dock.destroy_dock import DestroyDock
 from je_editor.pyside_ui.main_ui.editor.editor_widget_full import FullEditorWidget
 from je_editor.utils.file.open.open_file import read_file
@@ -71,4 +71,5 @@ def add_dock_widget(ui_we_want_to_set: EditorMain, widget_type: str = None):
     else:
         dock_widget.setWindowTitle("browser")
         dock_widget.setWidget(JEBrowser())
-    ui_we_want_to_set.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, dock_widget)
+    if dock_widget.widget() is not None:
+        ui_we_want_to_set.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, dock_widget)

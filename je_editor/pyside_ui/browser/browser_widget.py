@@ -1,6 +1,7 @@
 from PySide6.QtGui import QAction
-from PySide6.QtWebEngineWidgets import QWebEngineView
 from PySide6.QtWidgets import QWidget, QGridLayout, QPushButton, QLineEdit, QInputDialog
+
+from je_editor.pyside_ui.browser.browser_view import BrowserView
 
 
 class JEBrowser(QWidget):
@@ -9,8 +10,7 @@ class JEBrowser(QWidget):
                  search_prefix: str = "https://www.google.com.tw/search?q="):
         super().__init__()
         # Browser setting
-        self.browser = QWebEngineView(self)
-        self.browser.setUrl(start_url)
+        self.browser = BrowserView(start_url)
         self.search_prefix = search_prefix
         # Top bar
         self.back_button = QPushButton("Back")
@@ -47,3 +47,4 @@ class JEBrowser(QWidget):
             self.browser.findText(search_text)
         else:
             self.browser.findText("")
+
