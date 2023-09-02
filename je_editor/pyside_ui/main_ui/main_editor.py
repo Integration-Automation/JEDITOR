@@ -11,7 +11,7 @@ from frontengine import FrontEngineMainUI
 from frontengine import RedirectManager
 from qt_material import QtStyleTools
 
-from je_editor.pyside_ui.browser.je_broser import JEBrowser
+from je_editor.pyside_ui.browser.browser_widget import JEBrowser
 from je_editor.pyside_ui.code.shell_process.shell_exec import default_shell_manager
 from je_editor.pyside_ui.colors.global_color import error_color, output_color
 from je_editor.pyside_ui.main_ui.editor.editor_widget import EditorWidget

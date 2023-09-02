@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from je_editor.pyside_ui.browser.je_broser import JEBrowser
+from je_editor.pyside_ui.browser.browser_widget import JEBrowser
 
 if TYPE_CHECKING:
     from je_editor.pyside_ui.main_ui.main_editor import EditorMain

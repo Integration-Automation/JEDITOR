@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING
 
 from frontengine import FrontEngineMainUI
 
-from je_editor.pyside_ui.browser.je_broser import JEBrowser
+from je_editor.pyside_ui.browser.browser_widget import JEBrowser
 from je_editor.pyside_ui.main_ui.editor.editor_widget import EditorWidget
 
 if TYPE_CHECKING:
