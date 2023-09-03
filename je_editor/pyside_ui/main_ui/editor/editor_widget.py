@@ -11,6 +11,7 @@ from je_editor.pyside_ui.code.textedit_code_result.code_record import CodeRecord
 from je_editor.pyside_ui.main_ui.save_user_setting.user_setting_file import user_setting_dict, \
     write_user_setting
 from je_editor.utils.file.open.open_file import read_file
+from pathlib import Path
 
 
 class EditorWidget(QWidget):
@@ -65,7 +66,7 @@ class EditorWidget(QWidget):
         self.project_treeview = QTreeView()
         self.project_treeview.setModel(self.project_treeview_model)
         self.project_treeview.setRootIndex(
-            self.project_treeview_model.index(os.getcwd())
+            self.project_treeview_model.index(str(Path.cwd()))
         )
         self.tree_view_scroll_area = QScrollArea()
         self.tree_view_scroll_area.setWidgetResizable(True)

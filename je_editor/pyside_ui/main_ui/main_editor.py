@@ -38,6 +38,8 @@ class EditorMain(QMainWindow, QtStyleTools):
         self.encoding_menu = None
         self.font_size_menu = None
         self.font_menu = None
+        # Project compiler if user not choose this will use which to find
+        self.python_compiler = None
         # Debug mode
         self.debug_mode: bool = debug_mode
         # Windows setup
