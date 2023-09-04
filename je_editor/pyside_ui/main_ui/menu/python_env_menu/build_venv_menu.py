@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from je_editor.pyside_ui.dialog.file_dialog.open_file_dialog import choose_file_get_open_file_path
 from je_editor.pyside_ui.main_ui.editor.editor_widget import EditorWidget
+from je_editor.pyside_ui.main_ui.save_user_setting.user_setting_file import user_setting_dict
 
 if TYPE_CHECKING:
     from je_editor.pyside_ui.main_ui.main_editor import EditorMain
@@ -57,6 +57,7 @@ def set_venv_menu(ui_we_want_to_set: EditorMain) -> None:
 def create_venv(ui_we_want_to_set: EditorMain) -> None:
     widget = ui_we_want_to_set.tab_widget.currentWidget()
     if isinstance(widget, EditorWidget):
+        widget.python_compiler = ui_we_want_to_set.python_compiler
         venv_path = Path(os.getcwd() + "/venv")
         if not venv_path.exists():
             create_venv_shell = ShellManager(main_window=widget)
@@ -74,6 +75,7 @@ def create_venv(ui_we_want_to_set: EditorMain) -> None:
 def shell_pip_install(ui_we_want_to_set: EditorMain, pip_install_command_list: list):
     widget = ui_we_want_to_set.tab_widget.currentWidget()
     if isinstance(widget, EditorWidget):
+        widget.python_compiler = ui_we_want_to_set.python_compiler
         venv_path = Path(os.getcwd() + "/venv")
         if not venv_path.exists():
             message_box = QMessageBox()
@@ -105,6 +107,7 @@ def detect_venv() -> bool:
 def pip_install_package_update(ui_we_want_to_set: EditorMain) -> None:
     widget = ui_we_want_to_set.tab_widget.currentWidget()
     if isinstance(widget, EditorWidget):
+        widget.python_compiler = ui_we_want_to_set.python_compiler
         if detect_venv:
             ask_package_dialog = QInputDialog()
             package_text, press_ok = ask_package_dialog.getText(
@@ -121,6 +124,7 @@ def pip_install_package_update(ui_we_want_to_set: EditorMain) -> None:
 def pip_install_package(ui_we_want_to_set: EditorMain) -> None:
     widget = ui_we_want_to_set.tab_widget.currentWidget()
     if isinstance(widget, EditorWidget):
+        widget.python_compiler = ui_we_want_to_set.python_compiler
         if detect_venv:
             ask_package_dialog = QInputDialog()
             package_text, press_ok = ask_package_dialog.getText(
@@ -141,4 +145,4 @@ def chose_python_interpreter(ui_we_want_to_set: EditorMain):
     )[0]
     if file_path is not None and file_path != "":
         ui_we_want_to_set.python_compiler = file_path
-        
+        user_setting_dict.update({"python_compiler": file_path})

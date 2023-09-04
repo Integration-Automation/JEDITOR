@@ -12,11 +12,11 @@ from frontengine import RedirectManager
 from qt_material import QtStyleTools
 
 from je_editor.pyside_ui.browser.browser_widget import JEBrowser
-from je_editor.pyside_ui.code.shell_process.shell_exec import default_shell_manager
 from je_editor.pyside_ui.colors.global_color import error_color, output_color
 from je_editor.pyside_ui.main_ui.editor.editor_widget import EditorWidget
 from je_editor.pyside_ui.main_ui.menu.set_menu_bar import set_menu_bar
-from je_editor.pyside_ui.main_ui.save_user_setting.user_setting_file import user_setting_dict, read_user_setting
+from je_editor.pyside_ui.main_ui.save_user_setting.user_setting_file import user_setting_dict, read_user_setting, \
+    write_user_setting
 from je_editor.pyside_ui.main_ui.system_tray.extend_system_tray import ExtendSystemTray
 from je_editor.utils.encodings.python_encodings import python_encodings_list
 from je_editor.utils.file.open.open_file import read_file
@@ -83,9 +83,6 @@ class EditorMain(QMainWindow, QtStyleTools):
                 self.system_tray.setVisible(True)
                 self.system_tray.show()
                 self.system_tray.setToolTip("JEditor")
-        # Init shell manager
-        default_shell_manager.main_window = self
-        default_shell_manager.later_init()
         # Put Redirect on last to trace exception
         RedirectManager.restore_std()
         redirect_manager_instance.set_redirect(self, True)
@@ -209,7 +206,7 @@ class EditorMain(QMainWindow, QtStyleTools):
         read_user_setting()
         for code_editor in range(self.tab_widget.count()):
             widget = self.tab_widget.widget(code_editor)
-            if type(widget) is EditorWidget:
+            if isinstance(widget, EditorWidget):
                 widget.code_edit.setStyleSheet(
                     f"font-size: {user_setting_dict.get('font_size', 12)}pt;"
                     f"font-family: {user_setting_dict.get('font', 'Lato')};"
@@ -218,6 +215,7 @@ class EditorMain(QMainWindow, QtStyleTools):
                     f"font-size: {user_setting_dict.get('font_size', 12)}pt;"
                     f"font-family: {user_setting_dict.get('font', 'Lato')};"
                 )
+                self.python_compiler = user_setting_dict.get("python_compiler", None)
                 last_file = user_setting_dict.get("last_file", None)
                 if last_file is not None:
                     last_file_path = pathlib.Path(last_file)
@@ -230,6 +228,7 @@ class EditorMain(QMainWindow, QtStyleTools):
             self.hide()
             event.ignore()
         else:
+            write_user_setting()
             super().closeEvent(event)
 
     @classmethod

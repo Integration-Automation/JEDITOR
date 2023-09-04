@@ -68,6 +68,7 @@ def set_run_menu(ui_we_want_to_set: EditorMain) -> None:
 def run_program(ui_we_want_to_set: EditorMain) -> None:
     widget = ui_we_want_to_set.tab_widget.currentWidget()
     if isinstance(widget, EditorWidget):
+        widget.python_compiler = ui_we_want_to_set.python_compiler
         if choose_file_get_save_file_path(ui_we_want_to_set):
             code_exec = ExecManager(widget)
             code_exec.later_init()

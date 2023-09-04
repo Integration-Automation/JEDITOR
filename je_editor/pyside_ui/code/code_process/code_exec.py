@@ -66,12 +66,15 @@ class ExecManager(object):
         self.renew_path()
 
     def renew_path(self) -> None:
-        # Renew compiler path
-        if sys.platform in ["win32", "cygwin", "msys"]:
-            venv_path = Path(str(Path.cwd()) + "/venv/Scripts")
+        if self.main_window.python_compiler is None:
+            # Renew compiler path
+            if sys.platform in ["win32", "cygwin", "msys"]:
+                venv_path = Path(str(Path.cwd()) + "/venv/Scripts")
+            else:
+                venv_path = Path(str(Path.cwd()) + "/venv/bin")
+            self.compiler_path = check_and_choose_venv(venv_path)
         else:
-            venv_path = Path(str(Path.cwd()) + "/venv/bin")
-        self.compiler_path = check_and_choose_venv(venv_path)
+            self.compiler_path = self.main_window.python_compiler
 
     def later_init(self) -> None:
         # Enable timer and code result area
@@ -194,6 +197,3 @@ class ExecManager(object):
         while self.still_run_program:
             program_error_output_data = self.process.stderr.raw.read(self.program_buffer).decode(self.program_encoding)
             self.run_error_queue.put_nowait(program_error_output_data)
-
-
-exec_manage = ExecManager()
