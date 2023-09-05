@@ -51,12 +51,15 @@ class ShellManager(object):
         self.renew_path()
 
     def renew_path(self) -> None:
-        # Renew compiler path
-        if sys.platform in ["win32", "cygwin", "msys"]:
-            venv_path = Path(os.getcwd() + "/venv/Scripts")
+        if self.main_window.python_compiler is None:
+            # Renew compiler path
+            if sys.platform in ["win32", "cygwin", "msys"]:
+                venv_path = Path(os.getcwd() + "/venv/Scripts")
+            else:
+                venv_path = Path(os.getcwd() + "/venv/bin")
+            self.compiler_path = check_and_choose_venv(venv_path)
         else:
-            venv_path = Path(os.getcwd() + "/venv/bin")
-        self.compiler_path = check_and_choose_venv(venv_path)
+            self.compiler_path = self.main_window.python_compiler
 
     def later_init(self) -> None:
         if self.main_window is not None:
@@ -177,5 +180,3 @@ class ShellManager(object):
                 .decode(self.program_encoding)
             self.run_error_queue.put_nowait(program_error_output_data)
 
-
-default_shell_manager = ShellManager()

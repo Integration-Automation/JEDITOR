@@ -3,6 +3,8 @@ from __future__ import annotations
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+from je_editor.pyside_ui.main_ui.save_user_setting.user_setting_file import user_setting_dict
+
 if TYPE_CHECKING:
     from je_editor.pyside_ui.main_ui.main_editor import EditorMain
 
@@ -39,3 +41,4 @@ def choose_file_get_open_file_path(parent_qt_instance: EditorMain) -> None:
                 widget.auto_save_thread.start()
             if widget.auto_save_thread is not None:
                 widget.auto_save_thread.file = widget.current_file
+            user_setting_dict.update({"last_file": str(widget.current_file)})

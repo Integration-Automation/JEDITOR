@@ -1,15 +1,14 @@
-import os
 import pathlib
+from pathlib import Path
 
-from PySide6 import QtGui
 from PySide6.QtCore import Qt, QFileInfo, QDir
 from PySide6.QtWidgets import QWidget, QGridLayout, QSplitter, QScrollArea, QFileSystemModel, QTreeView
 
 from je_editor.pyside_ui.code.auto_save.auto_save_thread import SaveThread
 from je_editor.pyside_ui.code.plaintext_code_edit.code_edit_plaintext import CodeEditor
 from je_editor.pyside_ui.code.textedit_code_result.code_record import CodeRecord
-from je_editor.pyside_ui.main_ui.save_user_setting.user_setting_file import user_setting_dict, \
-    write_user_setting
+from je_editor.pyside_ui.main_ui.save_user_setting.user_setting_file import user_setting_dict, write_user_setting
+from je_editor.utils.redirect_manager.redirect_manager_class import redirect_manager_instance
 from je_editor.utils.file.open.open_file import read_file
 
 
@@ -23,6 +22,7 @@ class EditorWidget(QWidget):
         self.tree_view_scroll_area = None
         self.project_treeview = None
         self.project_treeview_model = None
+        self.python_compiler = None
         # UI
         self.grid_layout = QGridLayout(self)
         self.setWindowTitle("JEditor")
@@ -65,7 +65,7 @@ class EditorWidget(QWidget):
         self.project_treeview = QTreeView()
         self.project_treeview.setModel(self.project_treeview_model)
         self.project_treeview.setRootIndex(
-            self.project_treeview_model.index(os.getcwd())
+            self.project_treeview_model.index(str(Path.cwd()))
         )
         self.tree_view_scroll_area = QScrollArea()
         self.tree_view_scroll_area.setWidgetResizable(True)
@@ -94,8 +94,5 @@ class EditorWidget(QWidget):
                 self.auto_save_thread.start()
             if self.auto_save_thread is not None:
                 self.auto_save_thread.file = self.current_file
+            user_setting_dict.update({"last_file": str(self.current_file)})
 
-    def closeEvent(self, event: QtGui.QCloseEvent):
-        super().closeEvent()
-        user_setting_dict.update({"last_file": str(self.current_file)})
-        write_user_setting()

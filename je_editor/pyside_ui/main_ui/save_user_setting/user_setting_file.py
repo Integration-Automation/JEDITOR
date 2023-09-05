@@ -9,6 +9,7 @@ user_setting_dict = {
     "font_size": 12,
     "encoding": "utf-8",
     "last_file": None,
+    "python_compiler": None
 }
 
 
