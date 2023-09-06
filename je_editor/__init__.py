@@ -11,7 +11,7 @@ from je_editor.pyside_ui.code.syntax.syntax_setting import syntax_word_setting_d
 from je_editor.pyside_ui.colors.global_color import error_color
 from je_editor.pyside_ui.colors.global_color import output_color
 from je_editor.pyside_ui.main_ui.editor.editor_widget import EditorWidget
-from je_editor.pyside_ui.main_ui.editor.editor_widget_full import FullEditorWidget
+from je_editor.pyside_ui.main_ui.editor.editor_widget_dock import FullEditorWidget
 from je_editor.pyside_ui.main_ui.main_editor import EDITOR_EXTEND_TAB
 # Editor
 from je_editor.pyside_ui.main_ui.main_editor import EditorMain

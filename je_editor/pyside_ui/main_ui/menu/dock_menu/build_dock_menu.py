@@ -10,7 +10,7 @@ from frontengine import FrontEngineMainUI
 
 from je_editor.pyside_ui.browser.browser_widget import JEBrowser
 from je_editor.pyside_ui.main_ui.dock.destroy_dock import DestroyDock
-from je_editor.pyside_ui.main_ui.editor.editor_widget_full import FullEditorWidget
+from je_editor.pyside_ui.main_ui.editor.editor_widget_dock import FullEditorWidget
 from je_editor.utils.file.open.open_file import read_file
 
 if TYPE_CHECKING:
