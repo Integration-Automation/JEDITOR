@@ -74,12 +74,13 @@ class ShellManager(object):
         """
         try:
             self.exit_program()
+            self.code_result.setTextColor(output_color)
             self.code_result.setPlainText("")
             if sys.platform in ["win32", "cygwin", "msys"]:
                 args = shell_command
             else:
                 args = shlex.split(shell_command)
-            print(args)
+            self.code_result.append(args)
             self.process = subprocess.Popen(
                 args=args,
                 stdout=subprocess.PIPE,
@@ -146,7 +147,7 @@ class ShellManager(object):
         self.print_and_clear_queue()
         if self.process is not None:
             self.process.terminate()
-            print(f"Shell command exit with code {self.process.returncode}")
+            self.code_result.append(f"Shell command exit with code {self.process.returncode}")
             self.process = None
 
     def print_and_clear_queue(self) -> None:
@@ -179,4 +180,3 @@ class ShellManager(object):
                 self.program_buffer) \
                 .decode(self.program_encoding)
             self.run_error_queue.put_nowait(program_error_output_data)
-

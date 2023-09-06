@@ -11,8 +11,4 @@ def start_editor(debug_mode: bool = False, ) -> None:
     window = EditorMain(debug_mode)
     apply_stylesheet(new_editor, theme='dark_amber.xml')
     window.showMaximized()
-    try:
-        window.startup_setting()
-    except Exception as error:
-        print(repr(error))
     sys.exit(new_editor.exec())

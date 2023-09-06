@@ -91,6 +91,7 @@ class ExecManager(object):
         """
         try:
             self.exit_program()
+            self.code_result.setTextColor(output_color)
             self.code_result.setPlainText("")
             file_path = Path(exec_file_name)
             reformat_os_file_path = str(file_path.absolute())
@@ -167,7 +168,7 @@ class ExecManager(object):
         self.print_and_clear_queue()
         if self.process is not None:
             self.process.terminate()
-            print(f"Program exit with code {self.process.returncode}")
+            self.code_result.append(f"Program exit with code {self.process.returncode}")
             self.process = None
 
     def print_and_clear_queue(self) -> None:

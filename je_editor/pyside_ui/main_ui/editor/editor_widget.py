@@ -55,6 +55,15 @@ class EditorWidget(QWidget):
         self.full_splitter.setStretchFactor(0, 1)
         self.full_splitter.setStretchFactor(1, 3)
         self.full_splitter.setSizes([100, 300])
+        # Font
+        self.code_edit.setStyleSheet(
+            f"font-size: {user_setting_dict.get('font_size', 12)}pt;"
+            f"font-family: {user_setting_dict.get('font', 'Lato')};"
+        )
+        self.code_result.setStyleSheet(
+            f"font-size: {user_setting_dict.get('font_size', 12)}pt;"
+            f"font-family: {user_setting_dict.get('font', 'Lato')};"
+        )
         # Add to layout
         self.grid_layout.addWidget(self.full_splitter)
         # current file
@@ -67,7 +76,6 @@ class EditorWidget(QWidget):
             self.auto_save_thread.start()
 
     def set_project_treeview(self) -> None:
-        self.grid_layout.setColumnStretch(0, 4)
         self.project_treeview_model = QFileSystemModel()
         self.project_treeview_model.setRootPath(QDir.currentPath())
         self.project_treeview = QTreeView()

@@ -3,6 +3,7 @@ from pathlib import Path
 from PySide6.QtWidgets import QWidget, QGridLayout, QScrollArea
 
 from je_editor.pyside_ui.code.plaintext_code_edit.code_edit_plaintext import CodeEditor
+from je_editor.pyside_ui.main_ui.save_user_setting.user_setting_file import user_setting_dict
 from je_editor.utils.file.save.save_file import write_file
 
 
@@ -23,6 +24,11 @@ class FullEditorWidget(QWidget):
         self.code_edit_scroll_area.setViewportMargins(0, 0, 0, 0)
         self.code_edit_scroll_area.setWidget(self.code_edit)
         self.grid_layout.addWidget(self.code_edit_scroll_area, 0, 0)
+        # Font
+        self.code_edit.setStyleSheet(
+            f"font-size: {user_setting_dict.get('font_size', 12)}pt;"
+            f"font-family: {user_setting_dict.get('font', 'Lato')};"
+        )
 
     def closeEvent(self, event) -> None:
         path = Path(self.current_file)
