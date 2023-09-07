@@ -1,11 +1,5 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Union
-
-from je_editor.pyside_ui.main_ui.editor.editor_widget import EditorWidget
-
-if TYPE_CHECKING:
-    pass
 import os
 import queue
 import shlex
@@ -13,11 +7,13 @@ import subprocess
 import sys
 from pathlib import Path
 from threading import Thread
+from typing import Union
 
 from PySide6.QtCore import QTimer
 from PySide6.QtWidgets import QTextEdit
 
-from je_editor.pyside_ui.colors.global_color import error_color, output_color
+from je_editor.pyside_ui.main_ui.editor.editor_widget import EditorWidget
+from je_editor.pyside_ui.main_ui.save_settings.user_setting_color_file import actually_color_dict
 from je_editor.utils.exception.exception_tags import je_editor_init_error
 from je_editor.utils.exception.exceptions import JEditorException
 from je_editor.utils.venv_check.check_venv import check_and_choose_venv
@@ -29,7 +25,7 @@ class ShellManager(object):
             self,
             main_window: Union[EditorWidget, None] = None,
             shell_encoding: str = "utf-8",
-            program_buffer: int = 10240000,
+            program_buffer: int = 8192000,
     ):
         """
         :param main_window: Pyside main window
@@ -74,7 +70,7 @@ class ShellManager(object):
         """
         try:
             self.exit_program()
-            self.code_result.setTextColor(output_color)
+            self.code_result.setTextColor(actually_color_dict.get("normal_output_color"))
             self.code_result.setPlainText("")
             if sys.platform in ["win32", "cygwin", "msys"]:
                 args = shell_command
@@ -106,25 +102,25 @@ class ShellManager(object):
             self.timer.timeout.connect(self.pull_text)
             self.timer.start()
         except Exception as error:
-            self.code_result.setTextColor(error_color)
+            self.code_result.setTextColor(actually_color_dict.get("error_output_color"))
             self.code_result.append(str(error))
-            self.code_result.setTextColor(output_color)
+            self.code_result.setTextColor(actually_color_dict.get("normal_output_color"))
 
     # tkinter_ui update method
     def pull_text(self) -> None:
         try:
-            self.code_result.setTextColor(error_color)
-            if not self.run_error_queue.empty():
-                error_message = self.run_error_queue.get_nowait()
-                error_message = str(error_message).strip()
-                if error_message:
-                    self.code_result.append(error_message)
-            self.code_result.setTextColor(output_color)
+            self.code_result.setTextColor(actually_color_dict.get("normal_output_color"))
             if not self.run_output_queue.empty():
                 output_message = self.run_output_queue.get_nowait()
                 output_message = str(output_message).strip()
                 if output_message:
                     self.code_result.append(output_message)
+            self.code_result.setTextColor(actually_color_dict.get("error_output_color"))
+            if not self.run_error_queue.empty():
+                error_message = self.run_error_queue.get_nowait()
+                error_message = str(error_message).strip()
+                if error_message:
+                    self.code_result.append(error_message)
         except queue.Empty:
             pass
         if self.process.returncode == 0:
@@ -151,19 +147,6 @@ class ShellManager(object):
             self.process = None
 
     def print_and_clear_queue(self) -> None:
-        try:
-            for std_output in iter(self.run_output_queue.get_nowait, None):
-                std_output = str(std_output).strip()
-                if std_output:
-                    self.code_result.append(std_output)
-            self.code_result.setTextColor(error_color)
-            for std_err in iter(self.run_error_queue.get_nowait, None):
-                std_err = str(std_err).strip()
-                if std_err:
-                    self.code_result.append(std_err)
-            self.code_result.setTextColor(output_color)
-        except queue.Empty:
-            pass
         self.run_output_queue = queue.Queue()
         self.run_error_queue = queue.Queue()
 

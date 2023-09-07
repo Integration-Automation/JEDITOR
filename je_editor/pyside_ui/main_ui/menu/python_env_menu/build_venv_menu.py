@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from je_editor.pyside_ui.main_ui.editor.editor_widget import EditorWidget
-from je_editor.pyside_ui.main_ui.save_user_setting.user_setting_file import user_setting_dict
+from je_editor.pyside_ui.main_ui.save_settings.user_setting_file import user_setting_dict
 
 if TYPE_CHECKING:
     from je_editor.pyside_ui.main_ui.main_editor import EditorMain
@@ -22,7 +22,7 @@ def set_venv_menu(ui_we_want_to_set: EditorMain) -> None:
     # Create an venv
     ui_we_want_to_set.venv_menu.create_venv_action = QAction("Create Venv")
     ui_we_want_to_set.venv_menu.create_venv_action.setShortcut(
-        "Ctrl+v"
+        QKeySequence("Ctrl+Shift+V")
     )
     ui_we_want_to_set.venv_menu.create_venv_action.triggered.connect(
         lambda: create_venv(ui_we_want_to_set)
@@ -31,7 +31,7 @@ def set_venv_menu(ui_we_want_to_set: EditorMain) -> None:
     # pip upgrade package
     ui_we_want_to_set.venv_menu.pip_upgrade_action = QAction("pip upgrade package")
     ui_we_want_to_set.venv_menu.pip_upgrade_action.setShortcut(
-        "Ctrl+p"
+        QKeySequence("Ctrl+Shift+U")
     )
     ui_we_want_to_set.venv_menu.pip_upgrade_action.triggered.connect(
         lambda: pip_install_package_update(ui_we_want_to_set)
@@ -40,7 +40,7 @@ def set_venv_menu(ui_we_want_to_set: EditorMain) -> None:
     # pip package
     ui_we_want_to_set.venv_menu.pip_action = QAction("pip package")
     ui_we_want_to_set.venv_menu.pip_action.setShortcut(
-        QKeySequence(Qt.Key.Key_P, Qt.Key.Key_U)
+        QKeySequence("Ctrl+Shift+P")
     )
     ui_we_want_to_set.venv_menu.pip_action.triggered.connect(
         lambda: pip_install_package(ui_we_want_to_set)

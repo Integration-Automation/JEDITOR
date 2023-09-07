@@ -2,12 +2,13 @@ from typing import Union
 
 from PySide6 import QtGui
 from PySide6.QtCore import Qt, QRect
-from PySide6.QtGui import QPainter, QColor, QTextCharFormat, QTextFormat, QKeyEvent, QAction, QTextDocument, QTextCursor
+from PySide6.QtGui import QPainter, QTextCharFormat, QTextFormat, QKeyEvent, QAction, QTextDocument, QTextCursor
 from PySide6.QtWidgets import QPlainTextEdit, QWidget, QTextEdit, QCompleter
 
 from je_editor.pyside_ui.code.complete_list.total_complete_list import complete_list
 from je_editor.pyside_ui.code.syntax.python_syntax import PythonHighlighter
 from je_editor.pyside_ui.dialog.search_ui.search_text_box import SearchBox
+from je_editor.pyside_ui.main_ui.save_settings.user_setting_color_file import actually_color_dict
 
 
 class CodeEditor(QPlainTextEdit):
@@ -131,7 +132,7 @@ class CodeEditor(QPlainTextEdit):
 
     def line_number_paint(self, event) -> None:
         painter = QPainter(self.line_number)
-        painter.fillRect(event.rect(), Qt.GlobalColor.gray)
+        painter.fillRect(event.rect(), actually_color_dict.get("line_number_background_color"))
         block = self.firstVisibleBlock()
         block_number = block.blockNumber()
         top = self.blockBoundingGeometry(block).translated(self.contentOffset()).top()
@@ -139,7 +140,7 @@ class CodeEditor(QPlainTextEdit):
         while block.isValid() and top <= event.rect().bottom():
             if block.isVisible() and bottom >= event.rect().top():
                 number = str(block_number + 1)
-                painter.setPen(QColor(179, 179, 204))
+                painter.setPen(actually_color_dict.get("line_number_color"))
                 painter.drawText(
                     0,
                     top,
@@ -155,7 +156,7 @@ class CodeEditor(QPlainTextEdit):
 
     def line_number_width(self) -> int:
         digits = len(str(self.blockCount()))
-        space = 10 * digits
+        space = 12 * digits
         return space
 
     def update_line_number_area_width(self, value) -> None:
@@ -202,7 +203,7 @@ class CodeEditor(QPlainTextEdit):
             formats = QTextCharFormat()
             selection = QTextEdit.ExtraSelection()
             selection.format = formats
-            color_of_the_line = QColor(92, 92, 138)
+            color_of_the_line = actually_color_dict.get("current_line_color")
             selection.cursor = self.textCursor()
             selection.cursor.clearSelection()
             selections.append(selection)
@@ -210,12 +211,15 @@ class CodeEditor(QPlainTextEdit):
             selection.format.setProperty(QTextFormat.FullWidthSelection, True)
         self.setExtraSelections(selections)
 
-    def keyPressEvent(self, event) -> None:
+    def keyPressEvent(self, event: QKeyEvent) -> None:
         """
         Catch Soft new line (key, shift + enter)
         :param event: keypress event
         :return: None
         """
+        if event.modifiers() and Qt.Modifier.CTRL:
+            super().keyPressEvent(event)
+            return
         skip_popup_behavior_list = [
             Qt.Key.Key_Enter, Qt.Key.Key_Return, Qt.Key.Key_Up, Qt.Key.Key_Down,
             Qt.Key.Key_Tab, Qt.Key.Key_Backtab, Qt.Key.Key_Space, Qt.Key.Key_Backspace
@@ -231,9 +235,8 @@ class CodeEditor(QPlainTextEdit):
             self.completer.popup().hide()
             event.ignore()
             return
-        key_event = QKeyEvent(event)
-        if key_event.modifiers() and Qt.Modifier.SHIFT:
-            key = key_event.key()
+        if event.modifiers() and Qt.Modifier.SHIFT:
+            key = event.key()
             if key == Qt.Key.Key_Enter or key == Qt.Key.Key_Return:
                 event.ignore()
             else:

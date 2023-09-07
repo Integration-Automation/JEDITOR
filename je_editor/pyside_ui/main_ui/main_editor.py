@@ -5,17 +5,19 @@ from pathlib import Path
 from typing import Dict, Type
 
 from PySide6.QtCore import QTimer
-from PySide6.QtGui import QFontDatabase, QIcon
+from PySide6.QtGui import QFontDatabase, QIcon, Qt, QColor
 from PySide6.QtWidgets import QMainWindow, QWidget, QTabWidget
 from frontengine import FrontEngineMainUI
 from frontengine import RedirectManager
 from qt_material import QtStyleTools
 
 from je_editor.pyside_ui.browser.browser_widget import JEBrowser
-from je_editor.pyside_ui.colors.global_color import error_color, output_color
+from je_editor.pyside_ui.code.auto_save import auto_save_thread
 from je_editor.pyside_ui.main_ui.editor.editor_widget import EditorWidget
 from je_editor.pyside_ui.main_ui.menu.set_menu_bar import set_menu_bar
-from je_editor.pyside_ui.main_ui.save_user_setting.user_setting_file import user_setting_dict, read_user_setting, \
+from je_editor.pyside_ui.main_ui.save_settings.user_setting_color_file import write_user_color_setting, \
+    read_user_color_setting, actually_color_dict, user_setting_color_dict
+from je_editor.pyside_ui.main_ui.save_settings.user_setting_file import user_setting_dict, read_user_setting, \
     write_user_setting
 from je_editor.pyside_ui.main_ui.system_tray.extend_system_tray import ExtendSystemTray
 from je_editor.utils.file.open.open_file import read_file
@@ -55,6 +57,7 @@ class EditorMain(QMainWindow, QtStyleTools):
         self.encoding = "utf-8"
         # Read user setting first
         read_user_setting()
+        read_user_color_setting()
         # Font
         self.font_database = QFontDatabase()
         # TabWidget
@@ -118,13 +121,13 @@ class EditorMain(QMainWindow, QtStyleTools):
                     output_message = str(output_message).strip()
                     if output_message:
                         widget.code_result.append(output_message)
-                widget.code_result.setTextColor(error_color)
+                widget.code_result.setTextColor(Qt.GlobalColor.red)
                 if not redirect_manager_instance.std_err_queue.empty():
                     error_message = redirect_manager_instance.std_err_queue.get_nowait()
                     error_message = str(error_message).strip()
                     if error_message:
                         widget.code_result.append(error_message)
-                widget.code_result.setTextColor(output_color)
+                widget.code_result.setTextColor(Qt.GlobalColor.black)
                 break
 
     def startup_setting(self) -> None:
@@ -133,25 +136,55 @@ class EditorMain(QMainWindow, QtStyleTools):
             f"font-size: {user_setting_dict.get('ui_font_size', 12)}pt;"
             f"font-family: {user_setting_dict.get('ui_font', 'Lato')};"
         )
+        # User setting
         for code_editor in range(self.tab_widget.count()):
             widget = self.tab_widget.widget(code_editor)
             if isinstance(widget, EditorWidget):
+                # Font size
                 widget.code_edit.setStyleSheet(
                     f"font-size: {user_setting_dict.get('font_size', 12)}pt;"
                     f"font-family: {user_setting_dict.get('font', 'Lato')};"
                 )
+                # Font
                 widget.code_result.setStyleSheet(
                     f"font-size: {user_setting_dict.get('font_size', 12)}pt;"
                     f"font-family: {user_setting_dict.get('font', 'Lato')};"
                 )
+                # Default compiler
                 self.python_compiler = user_setting_dict.get("python_compiler", None)
+                # Last edit file
                 last_file = user_setting_dict.get("last_file", None)
                 if last_file is not None:
                     last_file_path = pathlib.Path(last_file)
                     if last_file_path.is_file() and last_file_path.exists():
                         widget.current_file = str(last_file_path)
                         widget.code_edit.setPlainText(read_file(widget.current_file)[1])
+                    auto_save_thread.auto_save_instance.file = widget.current_file
+                    auto_save_thread.auto_save_instance.editor = widget.code_edit
+                    if not auto_save_thread.auto_save_instance.is_alive():
+                        auto_save_thread.auto_save_instance.start()
+        # Style
         self.apply_stylesheet(self, user_setting_dict.get("ui_style", "dark_amber.xml"))
+        # Color
+        actually_color_dict.update(
+            {
+                "line_number_color": QColor(
+                    user_setting_color_dict.get("line_number_color")[0],
+                    user_setting_color_dict.get("line_number_color")[1],
+                    user_setting_color_dict.get("line_number_color")[2],
+                ),
+                "line_number_background_color": QColor(
+                    user_setting_color_dict.get("line_number_background_color")[0],
+                    user_setting_color_dict.get("line_number_background_color")[1],
+                    user_setting_color_dict.get("line_number_background_color")[2],
+                ),
+                "current_line_color": QColor(
+                    user_setting_color_dict.get("current_line_color")[0],
+                    user_setting_color_dict.get("current_line_color")[1],
+                    user_setting_color_dict.get("current_line_color")[2],
+                )
+            }
+        )
 
     def closeEvent(self, event) -> None:
         if self.system_tray.isVisible():
@@ -159,6 +192,7 @@ class EditorMain(QMainWindow, QtStyleTools):
             event.ignore()
         else:
             write_user_setting()
+            write_user_color_setting()
             super().closeEvent(event)
 
     @classmethod

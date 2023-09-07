@@ -27,6 +27,3 @@ class BrowserView(QWebEngineView):
         for download_window in self.download_window_list:
             download_window.close()
         super().closeEvent(event)
-
-
-

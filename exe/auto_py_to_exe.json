@@ -7,7 +7,7 @@
   },
   {
    "optionDest": "filenames",
-   "value": "C:/Users/JeffreyChen/Desktop/Code_Space/je_editor/exe/start_editor.py"
+   "value": "C:/CodeWorkspace/je_editor/exe/start_editor.py"
   },
   {
    "optionDest": "onefile",
@@ -19,7 +19,7 @@
   },
   {
    "optionDest": "icon_file",
-   "value": "C:/Users/JeffreyChen/Desktop/Code_Space/je_editor/exe/je_driver_icon.ico"
+   "value": "C:/CodeWorkspace/je_editor/exe/je_driver_icon.ico"
   },
   {
    "optionDest": "name",
@@ -75,11 +75,11 @@
   },
   {
    "optionDest": "datas",
-   "value": "C:/Users/JeffreyChen/Desktop/Code_Space/je_editor/exe/je_driver_icon.ico;."
+   "value": "C:/CodeWorkspace/je_editor/exe/je_driver_icon.ico;."
   },
   {
    "optionDest": "pathex",
-   "value": "C:/Users/JeffreyChen/Desktop/Code_Space/je_editor/venv"
+   "value": "C:/CodeWorkspace/je_editor/venv"
   }
  ],
  "nonPyinstallerOptions": {

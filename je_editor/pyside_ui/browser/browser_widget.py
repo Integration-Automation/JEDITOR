@@ -1,6 +1,7 @@
 from PySide6.QtGui import QAction
-from PySide6.QtWidgets import QWidget, QGridLayout, QPushButton, QLineEdit, QInputDialog
+from PySide6.QtWidgets import QWidget, QGridLayout, QPushButton, QInputDialog
 
+from je_editor.pyside_ui.browser.browser_serach_lineedit import BrowserLineSearch
 from je_editor.pyside_ui.browser.browser_view import BrowserView
 
 
@@ -21,7 +22,7 @@ class JEBrowser(QWidget):
         self.reload_button.clicked.connect(self.browser.reload)
         self.search_button = QPushButton("Search")
         self.search_button.clicked.connect(self.search)
-        self.url_input = QLineEdit()
+        self.url_input = BrowserLineSearch(self)
         # Action
         self.find_action = QAction()
         self.find_action.setShortcut("Ctrl+f")
@@ -47,4 +48,3 @@ class JEBrowser(QWidget):
             self.browser.findText(search_text)
         else:
             self.browser.findText("")
-

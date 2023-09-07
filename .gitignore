@@ -114,5 +114,5 @@ dmypy.json
 .pyre/
 
 # User setting
-**/user_setting*
+exe/.jeditor/user_setting.json
 

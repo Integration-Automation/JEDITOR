@@ -1,24 +1,24 @@
 import time
 from pathlib import Path
 from threading import Thread
+from typing import Union
 
+from je_editor.pyside_ui.code.plaintext_code_edit.code_edit_plaintext import CodeEditor
 from je_editor.utils.file.save.save_file import write_file
 
 
-class SaveThread(Thread):
+class CodeEditSaveThread(Thread):
 
-    def __init__(self, file_to_save, text_to_write, auto_save=False):
+    def __init__(
+            self, file_to_save: Union[str, None] = None, editor: Union[None, CodeEditor] = None):
         """
         This thread is used to auto save current file.
         :param file_to_save: file we want to auto save
-        :param text_to_write: text that will be output to file
-        :param auto_save: enable auto save or not
+        :param editor: code editor to auto save
         """
         super().__init__()
         self.file = file_to_save
-        self.path = None
-        self.text_to_write = text_to_write
-        self.auto_save = auto_save
+        self.editor = editor
         # set daemon
         self.daemon = True
 
@@ -27,11 +27,10 @@ class SaveThread(Thread):
         loop and save current edit file
         """
         if self.file is not None:
-            self.auto_save = True
-            self.path = Path(self.file)
-        while self.auto_save and self.file is not None:
-            time.sleep(5)
-            if self.path.exists() and self.path.is_file():
-                write_file(self.file, self.text_to_write)
-            else:
-                break
+            path = Path(self.file)
+            while path.is_file() and self.editor is not None:
+                time.sleep(5)
+                write_file(self.file, self.editor.toPlainText())
+
+
+auto_save_instance = CodeEditSaveThread()

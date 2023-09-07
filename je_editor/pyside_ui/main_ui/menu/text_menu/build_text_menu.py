@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 from PySide6.QtGui import QAction
 
 from je_editor.pyside_ui.main_ui.editor.editor_widget import EditorWidget
-from je_editor.pyside_ui.main_ui.save_user_setting.user_setting_file import user_setting_dict
+from je_editor.pyside_ui.main_ui.save_settings.user_setting_file import user_setting_dict
 
 if TYPE_CHECKING:
     from je_editor.pyside_ui.main_ui.main_editor import EditorMain

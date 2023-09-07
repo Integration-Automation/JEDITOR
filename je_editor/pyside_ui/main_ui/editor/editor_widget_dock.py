@@ -3,7 +3,7 @@ from pathlib import Path
 from PySide6.QtWidgets import QWidget, QGridLayout, QScrollArea
 
 from je_editor.pyside_ui.code.plaintext_code_edit.code_edit_plaintext import CodeEditor
-from je_editor.pyside_ui.main_ui.save_user_setting.user_setting_file import user_setting_dict
+from je_editor.pyside_ui.main_ui.save_settings.user_setting_file import user_setting_dict
 from je_editor.utils.file.save.save_file import write_file
 
 

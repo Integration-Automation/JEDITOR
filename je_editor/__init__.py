@@ -8,13 +8,14 @@ from je_editor.pyside_ui.code.shell_process.shell_exec import ShellManager
 from je_editor.pyside_ui.code.syntax.python_syntax import PythonHighlighter
 from je_editor.pyside_ui.code.syntax.syntax_setting import syntax_word_setting_dict, syntax_rule_setting_dict
 # Color
-from je_editor.pyside_ui.colors.global_color import error_color
-from je_editor.pyside_ui.colors.global_color import output_color
 from je_editor.pyside_ui.main_ui.editor.editor_widget import EditorWidget
 from je_editor.pyside_ui.main_ui.editor.editor_widget_dock import FullEditorWidget
 from je_editor.pyside_ui.main_ui.main_editor import EDITOR_EXTEND_TAB
 # Editor
 from je_editor.pyside_ui.main_ui.main_editor import EditorMain
+from je_editor.pyside_ui.main_ui.save_settings.user_setting_color_file import user_setting_color_dict
+# Setting
+from je_editor.pyside_ui.main_ui.save_settings.user_setting_file import user_setting_dict
 from je_editor.start_editor import start_editor
 from je_editor.utils.exception.exceptions import JEditorCantFindLanguageException
 from je_editor.utils.exception.exceptions import JEditorContentFileException
@@ -32,6 +33,6 @@ __all__ = [
     "JEditorRunOnShellException", "JEditorSaveFileException", "syntax_rule_setting_dict",
     "JEditorOpenFileException", "JEditorContentFileException", "syntax_word_setting_dict",
     "JEditorCantFindLanguageException", "JEditorJsonException", "PythonHighlighter",
-    "error_color", "output_color", "EditorWidget", "JEBrowser", "complete_list",
+    "user_setting_dict", "user_setting_color_dict", "EditorWidget", "JEBrowser", "complete_list",
     "ExecManager", "ShellManager"
 ]

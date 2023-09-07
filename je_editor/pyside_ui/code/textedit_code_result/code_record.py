@@ -2,7 +2,7 @@ from PySide6.QtGui import QTextDocument, QAction
 from PySide6.QtWidgets import QTextEdit
 
 from je_editor.pyside_ui.dialog.search_ui.search_error_box import SearchResultBox
-from je_editor.pyside_ui.main_ui.save_user_setting.user_setting_file import user_setting_dict
+from je_editor.pyside_ui.main_ui.save_settings.user_setting_file import user_setting_dict
 
 
 class CodeRecord(QTextEdit):

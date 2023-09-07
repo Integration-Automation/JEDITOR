@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from je_editor.pyside_ui.main_ui.save_user_setting.user_setting_file import user_setting_dict
+from je_editor.pyside_ui.main_ui.save_settings.user_setting_file import user_setting_dict
 from je_editor.utils.encodings.python_encodings import python_encodings_list
 
 if TYPE_CHECKING:
