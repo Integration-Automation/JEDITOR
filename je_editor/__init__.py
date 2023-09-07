@@ -1,25 +1,18 @@
-# start editor
-# Browser
 from je_editor.pyside_ui.browser.browser_widget import JEBrowser
 from je_editor.pyside_ui.code.code_process.code_exec import ExecManager
-# Highlight
 from je_editor.pyside_ui.code.complete_list.total_complete_list import complete_list
 from je_editor.pyside_ui.code.shell_process.shell_exec import ShellManager
 from je_editor.pyside_ui.code.syntax.python_syntax import PythonHighlighter
 from je_editor.pyside_ui.code.syntax.syntax_setting import syntax_word_setting_dict, syntax_rule_setting_dict
-# Color
 from je_editor.pyside_ui.main_ui.editor.editor_widget import EditorWidget
 from je_editor.pyside_ui.main_ui.editor.editor_widget_dock import FullEditorWidget
 from je_editor.pyside_ui.main_ui.main_editor import EDITOR_EXTEND_TAB
-# Editor
 from je_editor.pyside_ui.main_ui.main_editor import EditorMain
 from je_editor.pyside_ui.main_ui.save_settings.user_setting_color_file import user_setting_color_dict
-# Setting
 from je_editor.pyside_ui.main_ui.save_settings.user_setting_file import user_setting_dict
 from je_editor.start_editor import start_editor
 from je_editor.utils.exception.exceptions import JEditorCantFindLanguageException
 from je_editor.utils.exception.exceptions import JEditorContentFileException
-# Exceptions
 from je_editor.utils.exception.exceptions import JEditorException
 from je_editor.utils.exception.exceptions import JEditorExecException
 from je_editor.utils.exception.exceptions import JEditorJsonException
