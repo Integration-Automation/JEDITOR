@@ -76,7 +76,7 @@ class ShellManager(object):
                 args = shell_command
             else:
                 args = shlex.split(shell_command)
-            self.code_result.append(args)
+            self.code_result.append(str(args))
             self.process = subprocess.Popen(
                 args=args,
                 stdout=subprocess.PIPE,
@@ -121,6 +121,7 @@ class ShellManager(object):
                 error_message = str(error_message).strip()
                 if error_message:
                     self.code_result.append(error_message)
+            self.code_result.setTextColor(actually_color_dict.get("normal_output_color"))
         except queue.Empty:
             pass
         if self.process.returncode == 0:
