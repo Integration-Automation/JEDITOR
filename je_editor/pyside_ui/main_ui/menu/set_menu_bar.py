@@ -3,7 +3,9 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from je_editor.pyside_ui.main_ui.menu.dock_menu.build_dock_menu import set_dock_menu
+from je_editor.pyside_ui.main_ui.menu.style_menu.build_style_menu import set_style_menu
 from je_editor.pyside_ui.main_ui.menu.tab_menu.build_tab_menu import set_tab_menu
+from je_editor.pyside_ui.main_ui.menu.text_menu.build_text_menu import set_text_menu
 
 if TYPE_CHECKING:
     from je_editor.pyside_ui.main_ui.main_editor import EditorMain
@@ -21,10 +23,11 @@ def set_menu_bar(ui_we_want_to_set: EditorMain) -> None:
     ui_we_want_to_set.menu = QMenuBar()
     set_file_menu(ui_we_want_to_set)
     set_run_menu(ui_we_want_to_set)
-    ui_we_want_to_set.text_menu = ui_we_want_to_set.menu.addMenu("Text")
+    set_text_menu(ui_we_want_to_set)
     set_check_menu(ui_we_want_to_set)
     set_help_menu(ui_we_want_to_set)
     set_venv_menu(ui_we_want_to_set)
     set_tab_menu(ui_we_want_to_set)
     set_dock_menu(ui_we_want_to_set)
+    set_style_menu(ui_we_want_to_set)
     ui_we_want_to_set.setMenuBar(ui_we_want_to_set.menu)

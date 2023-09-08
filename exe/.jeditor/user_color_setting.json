@@ -1,0 +1,27 @@
+{
+    "line_number_color": [
+        200,
+        200,
+        200
+    ],
+    "line_number_background_color": [
+        179,
+        179,
+        179
+    ],
+    "current_line_color": [
+        194,
+        194,
+        214
+    ],
+    "normal_output_color": [
+        255,
+        255,
+        255
+    ],
+    "error_output_color": [
+        255,
+        0,
+        0
+    ]
+}

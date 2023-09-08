@@ -1,23 +1,18 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Union
-
-from je_editor.pyside_ui.main_ui.editor.editor_widget import EditorWidget
-
-if TYPE_CHECKING:
-    pass
-
 import queue
 import subprocess
 import sys
 from pathlib import Path
 from threading import Thread
 from typing import List
+from typing import Union
 
 from PySide6.QtCore import QTimer
 from PySide6.QtWidgets import QTextEdit
 
-from je_editor.pyside_ui.colors.global_color import error_color, output_color
+from je_editor.pyside_ui.main_ui.editor.editor_widget import EditorWidget
+from je_editor.pyside_ui.main_ui.save_settings.user_setting_color_file import actually_color_dict
 from je_editor.utils.exception.exception_tags import je_editor_init_error
 from je_editor.utils.exception.exceptions import JEditorException
 from je_editor.utils.venv_check.check_venv import check_and_choose_venv
@@ -41,9 +36,9 @@ class ExecManager(object):
     def __init__(
             self,
             main_window: Union[EditorWidget, None] = None,
-            program_language="python",
-            program_encoding="utf-8",
-            program_buffer=10240000,
+            program_language: str = "python",
+            program_encoding: str = "utf-8",
+            program_buffer: int = 8192000,
     ):
         """
         :param main_window: Pyside main window
@@ -54,10 +49,10 @@ class ExecManager(object):
         self.read_program_output_from_thread = None
         self.main_window: EditorWidget = main_window
         self.compiler_path = None
-        self.code_result: [QTextEdit, None] = None
-        self.timer: [QTimer, None] = None
+        self.code_result: Union[QTextEdit, None] = None
+        self.timer: Union[QTimer, None] = None
         self.still_run_program = True
-        self.process = None
+        self.process: Union[subprocess.Popen, None] = None
         self.run_output_queue = queue.Queue()
         self.run_error_queue = queue.Queue()
         self.program_language = program_language
@@ -91,6 +86,7 @@ class ExecManager(object):
         """
         try:
             self.exit_program()
+            self.code_result.setTextColor(actually_color_dict.get("normal_output_color"))
             self.code_result.setPlainText("")
             file_path = Path(exec_file_name)
             reformat_os_file_path = str(file_path.absolute())
@@ -101,7 +97,8 @@ class ExecManager(object):
             self.process = subprocess.Popen(
                 execute_program_list,
                 stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE
+                stderr=subprocess.PIPE,
+                shell=True
             )
             self.still_run_program = True
             # program output message queue thread
@@ -126,25 +123,26 @@ class ExecManager(object):
             self.timer.start()
             run_instance_manager.instance_list.append(self.process)
         except Exception as error:
-            self.code_result.setTextColor(error_color)
+            self.code_result.setTextColor(actually_color_dict.get("error_output_color"))
             self.code_result.append(str(error))
-            self.code_result.setTextColor(output_color)
+            self.code_result.setTextColor(actually_color_dict.get("normal_output_color"))
 
     def pull_text(self) -> None:
         # Pull text from queue and put in code result area
         try:
-            self.code_result.setTextColor(error_color)
-            if not self.run_error_queue.empty():
-                error_message = self.run_error_queue.get_nowait()
-                error_message = str(error_message).strip()
-                if error_message:
-                    self.code_result.append(error_message)
-            self.code_result.setTextColor(output_color)
+            self.code_result.setTextColor(actually_color_dict.get("normal_output_color"))
             if not self.run_output_queue.empty():
                 output_message = self.run_output_queue.get_nowait()
                 output_message = str(output_message).strip()
                 if output_message:
                     self.code_result.append(output_message)
+            self.code_result.setTextColor(actually_color_dict.get("error_output_color"))
+            if not self.run_error_queue.empty():
+                error_message = self.run_error_queue.get_nowait()
+                error_message = str(error_message).strip()
+                if error_message:
+                    self.code_result.append(error_message)
+            self.code_result.setTextColor(actually_color_dict.get("normal_output_color"))
         except queue.Empty:
             pass
         if self.process.returncode == 0:
@@ -157,8 +155,8 @@ class ExecManager(object):
             # poll return code
             self.process.poll()
 
+    # Exit program change run flag to false and clean read thread and queue and process
     def exit_program(self) -> None:
-        # exit program change run flag to false and clean read thread and queue and process
         self.still_run_program = False
         if self.read_program_output_from_thread is not None:
             self.read_program_output_from_thread = None
@@ -167,24 +165,11 @@ class ExecManager(object):
         self.print_and_clear_queue()
         if self.process is not None:
             self.process.terminate()
-            print(f"Program exit with code {self.process.returncode}")
+            self.code_result.append(f"Program exit with code {self.process.returncode}")
             self.process = None
 
+    # Pull all remain string on queue and add to code result area
     def print_and_clear_queue(self) -> None:
-        # Pull all remain string on queue and add to code result area
-        try:
-            for std_output in iter(self.run_output_queue.get_nowait, None):
-                std_output = str(std_output).strip()
-                if std_output:
-                    self.code_result.append(std_output)
-            self.code_result.setTextColor(error_color)
-            for std_err in iter(self.run_error_queue.get_nowait, None):
-                std_err = str(std_err).strip()
-                if std_err:
-                    self.code_result.append(std_err)
-            self.code_result.setTextColor(output_color)
-        except queue.Empty:
-            pass
         self.run_output_queue = queue.Queue()
         self.run_error_queue = queue.Queue()
 
