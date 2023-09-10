@@ -4,3 +4,4 @@ sphinx
 twine
 yapf
 je_editor
+pycodestyle

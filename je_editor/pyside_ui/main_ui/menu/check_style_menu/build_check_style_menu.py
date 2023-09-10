@@ -6,7 +6,7 @@ from je_editor.pyside_ui.main_ui.editor.editor_widget import EditorWidget
 
 if TYPE_CHECKING:
     from je_editor.pyside_ui.main_ui.main_editor import EditorMain
-from PySide6.QtGui import QAction, QKeySequence, Qt
+from PySide6.QtGui import QAction, QKeySequence
 from yapf.yapflib.yapf_api import FormatCode
 
 from je_editor.utils.json_format.json_process import reformat_json

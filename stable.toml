@@ -14,7 +14,7 @@ description = "JEditor is basic but powerful editor include GPT"
 requires-python = ">=3.9"
 license = { text = "MIT" }
 dependencies = [
-    "PySide6", "qt-material", "yapf", "frontengine"
+    "PySide6", "qt-material", "yapf", "frontengine", "pycodestyle"
 ]
 classifiers = [
     "Programming Language :: Python :: 3.9",

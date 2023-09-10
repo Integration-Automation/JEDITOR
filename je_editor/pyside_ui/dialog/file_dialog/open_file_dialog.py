@@ -3,7 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from je_editor.pyside_ui.code.auto_save import auto_save_thread
+from je_editor.pyside_ui.code.auto_save.auto_save_manager import init_new_auto_save_thread
 from je_editor.pyside_ui.main_ui.save_settings.user_setting_file import user_setting_dict
 
 if TYPE_CHECKING:
@@ -33,8 +33,8 @@ def choose_file_get_open_file_path(parent_qt_instance: EditorMain) -> None:
             widget.code_edit.setPlainText(
                 file_content
             )
-            auto_save_thread.auto_save_instance.file = widget.current_file
-            auto_save_thread.auto_save_instance.editor = widget.code_edit
-            if not auto_save_thread.auto_save_instance.is_alive():
-                auto_save_thread.auto_save_instance.start()
+            if widget.current_file is not None and widget.code_save_thread is None:
+                init_new_auto_save_thread(widget.current_file, widget)
+            else:
+                widget.code_save_thread.file = widget.current_file
             user_setting_dict.update({"last_file": str(widget.current_file)})
