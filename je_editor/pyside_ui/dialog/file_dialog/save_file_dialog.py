@@ -1,7 +1,10 @@
 from __future__ import annotations
 
 import os
+from pathlib import Path
 from typing import TYPE_CHECKING
+
+from je_editor.pyside_ui.code.auto_save.auto_save_manager import file_is_open_manager_dict
 
 if TYPE_CHECKING:
     from je_editor.pyside_ui.main_ui.main_editor import EditorMain
@@ -25,6 +28,11 @@ def choose_file_get_save_file_path(parent_qt_instance: EditorMain) -> bool:
         if file_path is not None and file_path != "":
             widget.current_file = file_path
             write_file(file_path, widget.code_edit.toPlainText())
+            path = Path(file_path)
+            file_is_open_manager_dict.update({str(path): str(path.name)})
+            if widget.code_save_thread is not None:
+                widget.code_save_thread.file = file_path
+                widget.code_save_thread.editor = widget.code_edit
             widget.rename_self_tab()
             return True
         return False

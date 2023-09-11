@@ -1,11 +1,13 @@
 import pathlib
 from pathlib import Path
+from typing import Union
 
 from PySide6.QtCore import Qt, QFileInfo, QDir, QTimer
 from PySide6.QtWidgets import QWidget, QGridLayout, QSplitter, QScrollArea, QFileSystemModel, QTreeView, QTabWidget
 
 from je_editor.pyside_ui.code.auto_save.auto_save_manager import auto_save_manager_dict, init_new_auto_save_thread, \
     file_is_open_manager_dict
+from je_editor.pyside_ui.code.auto_save.auto_save_thread import CodeEditSaveThread
 from je_editor.pyside_ui.code.code_format.pep8_format import PEP8FormatChecker
 from je_editor.pyside_ui.code.plaintext_code_edit.code_edit_plaintext import CodeEditor
 from je_editor.pyside_ui.code.textedit_code_result.code_record import CodeRecord
@@ -26,7 +28,7 @@ class EditorWidget(QWidget):
         self.python_compiler = None
         self.tab_manager = tab_manager
         # Autosave
-        self.code_save_thread = None
+        self.code_save_thread: Union[CodeEditSaveThread, None] = None
         # UI
         self.grid_layout = QGridLayout(self)
         self.setWindowTitle("JEditor")
@@ -104,7 +106,6 @@ class EditorWidget(QWidget):
         file_info: QFileInfo = self.project_treeview.model().fileInfo(clicked_item)
         path = pathlib.Path(file_info.absoluteFilePath())
         if path.is_file():
-            print(file_is_open_manager_dict)
             if file_is_open_manager_dict.get(str(path), None) is not None:
                 self.tab_manager.setCurrentWidget(self.tab_manager.findChild(EditorWidget, str(path.name)))
                 return
