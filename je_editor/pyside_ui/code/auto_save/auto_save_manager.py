@@ -7,9 +7,9 @@ if TYPE_CHECKING:
 
 from je_editor.pyside_ui.code.auto_save.auto_save_thread import CodeEditSaveThread
 
-auto_save_manager_dict = {
+auto_save_manager_dict: dict = dict()
 
-}
+file_is_open_manager_dict: dict = dict()
 
 
 def init_new_auto_save_thread(file_path: str, widget: EditorWidget):

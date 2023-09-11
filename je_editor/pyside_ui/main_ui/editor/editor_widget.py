@@ -4,7 +4,8 @@ from pathlib import Path
 from PySide6.QtCore import Qt, QFileInfo, QDir, QTimer
 from PySide6.QtWidgets import QWidget, QGridLayout, QSplitter, QScrollArea, QFileSystemModel, QTreeView, QTabWidget
 
-from je_editor.pyside_ui.code.auto_save.auto_save_manager import auto_save_manager_dict, init_new_auto_save_thread
+from je_editor.pyside_ui.code.auto_save.auto_save_manager import auto_save_manager_dict, init_new_auto_save_thread, \
+    file_is_open_manager_dict
 from je_editor.pyside_ui.code.code_format.pep8_format import PEP8FormatChecker
 from je_editor.pyside_ui.code.plaintext_code_edit.code_edit_plaintext import CodeEditor
 from je_editor.pyside_ui.code.textedit_code_result.code_record import CodeRecord
@@ -15,7 +16,7 @@ from je_editor.utils.file.open.open_file import read_file
 
 class EditorWidget(QWidget):
 
-    def __init__(self):
+    def __init__(self, tab_manager: QTabWidget):
         super().__init__()
         # Init variable
         self.current_file = None
@@ -23,6 +24,7 @@ class EditorWidget(QWidget):
         self.project_treeview = None
         self.project_treeview_model = None
         self.python_compiler = None
+        self.tab_manager = tab_manager
         # Autosave
         self.code_save_thread = None
         # UI
@@ -102,6 +104,12 @@ class EditorWidget(QWidget):
         file_info: QFileInfo = self.project_treeview.model().fileInfo(clicked_item)
         path = pathlib.Path(file_info.absoluteFilePath())
         if path.is_file():
+            print(file_is_open_manager_dict)
+            if file_is_open_manager_dict.get(str(path), None) is not None:
+                self.tab_manager.setCurrentWidget(self.tab_manager.findChild(EditorWidget, str(path.name)))
+                return
+            else:
+                file_is_open_manager_dict.update({str(path): str(path.name)})
             file, file_content = read_file(str(path))
             self.code_edit.setPlainText(
                 file_content
@@ -112,6 +120,13 @@ class EditorWidget(QWidget):
                 init_new_auto_save_thread(self.current_file, self)
             else:
                 self.code_save_thread.file = self.current_file
+            self.rename_self_tab()
+
+    def rename_self_tab(self):
+        if self.tab_manager.currentWidget() is self:
+            self.tab_manager.setTabText(
+                self.tab_manager.currentIndex(), str(Path(self.current_file).name))
+            self.setObjectName(str(Path(self.current_file).name))
 
     def check_file_format(self):
         if self.current_file:

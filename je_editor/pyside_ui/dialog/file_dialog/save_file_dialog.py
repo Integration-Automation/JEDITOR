@@ -25,5 +25,6 @@ def choose_file_get_save_file_path(parent_qt_instance: EditorMain) -> bool:
         if file_path is not None and file_path != "":
             widget.current_file = file_path
             write_file(file_path, widget.code_edit.toPlainText())
+            widget.rename_self_tab()
             return True
         return False

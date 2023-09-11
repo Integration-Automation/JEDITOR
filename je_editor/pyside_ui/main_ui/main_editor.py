@@ -5,14 +5,14 @@ from pathlib import Path
 from typing import Dict, Type
 
 from PySide6.QtCore import QTimer
-from PySide6.QtGui import QFontDatabase, QIcon, Qt, QCloseEvent
+from PySide6.QtGui import QFontDatabase, QIcon, Qt
 from PySide6.QtWidgets import QMainWindow, QWidget, QTabWidget
 from frontengine import FrontEngineMainUI
 from frontengine import RedirectManager
 from qt_material import QtStyleTools
 
 from je_editor.pyside_ui.browser.browser_widget import JEBrowser
-from je_editor.pyside_ui.code.auto_save.auto_save_manager import init_new_auto_save_thread
+from je_editor.pyside_ui.code.auto_save.auto_save_manager import init_new_auto_save_thread, file_is_open_manager_dict
 from je_editor.pyside_ui.main_ui.editor.editor_widget import EditorWidget
 from je_editor.pyside_ui.main_ui.menu.set_menu_bar import set_menu_bar
 from je_editor.pyside_ui.main_ui.save_settings.user_setting_color_file import write_user_color_setting, \
@@ -90,7 +90,7 @@ class EditorMain(QMainWindow, QtStyleTools):
         self.redirect_timer.timeout.connect(self.redirect)
         self.redirect_timer.start()
         # TAB Add
-        self.tab_widget.addTab(EditorWidget(), "Editor")
+        self.tab_widget.addTab(EditorWidget(self.tab_widget), "Editor")
         self.tab_widget.addTab(FrontEngineMainUI(show_system_tray_ray=False), "FrontEngine")
         self.tab_widget.addTab(JEBrowser(), "Web Browser")
         for widget_name, widget in EDITOR_EXTEND_TAB.items():
@@ -157,6 +157,8 @@ class EditorMain(QMainWindow, QtStyleTools):
                     if last_file_path.is_file() and last_file_path.exists() and widget.code_save_thread is None:
                         init_new_auto_save_thread(str(last_file_path), widget)
                         widget.code_edit.setPlainText(read_file(widget.current_file)[1])
+                        file_is_open_manager_dict.update({str(last_file_path): str(last_file_path.name)})
+                        widget.rename_self_tab()
 
         # Style
         self.apply_stylesheet(self, user_setting_dict.get("ui_style", "dark_amber.xml"))
@@ -173,7 +175,6 @@ class EditorMain(QMainWindow, QtStyleTools):
             super().closeEvent(event)
 
     def close_tab(self, index: int):
-        self.tab_widget.widget(index).closeEvent(QCloseEvent())
         self.tab_widget.removeTab(index)
 
     @classmethod

@@ -3,7 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from je_editor.pyside_ui.code.auto_save.auto_save_manager import init_new_auto_save_thread
+from je_editor.pyside_ui.code.auto_save.auto_save_manager import init_new_auto_save_thread, file_is_open_manager_dict
 from je_editor.pyside_ui.main_ui.save_settings.user_setting_file import user_setting_dict
 
 if TYPE_CHECKING:
@@ -28,6 +28,12 @@ def choose_file_get_open_file_path(parent_qt_instance: EditorMain) -> None:
             dir=str(Path.cwd())
         )[0]
         if file_path is not None and file_path != "":
+            if file_is_open_manager_dict.get(str(Path(file_path)), None) is not None:
+                widget.tab_manager.setCurrentWidget(
+                    widget.tab_manager.findChild(EditorWidget, str(Path(file_path).name)))
+                return
+            else:
+                file_is_open_manager_dict.update({file_path: str(Path(file_path).name)})
             widget.current_file = file_path
             file_content = read_file(file_path)[1]
             widget.code_edit.setPlainText(
@@ -38,3 +44,4 @@ def choose_file_get_open_file_path(parent_qt_instance: EditorMain) -> None:
             else:
                 widget.code_save_thread.file = widget.current_file
             user_setting_dict.update({"last_file": str(widget.current_file)})
+            widget.rename_self_tab()
