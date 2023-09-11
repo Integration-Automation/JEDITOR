@@ -42,7 +42,7 @@ def set_tab_menu(ui_we_want_to_set: EditorMain) -> None:
 
 def add_editor_tab(ui_we_want_to_set: EditorMain):
     ui_we_want_to_set.tab_widget.addTab(
-        EditorWidget(), f"Editor {ui_we_want_to_set.tab_widget.count()}")
+        EditorWidget(ui_we_want_to_set.tab_widget), f"Editor {ui_we_want_to_set.tab_widget.count()}")
 
 
 def add_frontengine_tab(ui_we_want_to_set: EditorMain):

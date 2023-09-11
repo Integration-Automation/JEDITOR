@@ -10,7 +10,6 @@ if TYPE_CHECKING:
 import os
 from pathlib import Path
 
-from PySide6.QtCore import Qt
 from PySide6.QtGui import QAction, QKeySequence
 from PySide6.QtWidgets import QMessageBox, QInputDialog, QFileDialog
 

@@ -17,8 +17,9 @@ class CodeEditSaveThread(Thread):
         :param editor: code editor to auto save
         """
         super().__init__()
-        self.file = file_to_save
-        self.editor = editor
+        self.file: str = file_to_save
+        self.editor: Union[None, CodeEditor] = editor
+        self.still_run: bool = True
         # set daemon
         self.daemon = True
 
@@ -26,11 +27,8 @@ class CodeEditSaveThread(Thread):
         """
         loop and save current edit file
         """
-        if self.file is not None:
+        if self.file is not None and self.still_run:
             path = Path(self.file)
             while path.is_file() and self.editor is not None:
                 time.sleep(5)
                 write_file(self.file, self.editor.toPlainText())
-
-
-auto_save_instance = CodeEditSaveThread()
