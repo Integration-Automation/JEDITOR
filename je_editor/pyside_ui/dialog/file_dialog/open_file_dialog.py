@@ -25,7 +25,10 @@ def choose_file_get_open_file_path(parent_qt_instance: EditorMain) -> None:
     if isinstance(widget, EditorWidget):
         file_path = QFileDialog().getOpenFileName(
             parent=parent_qt_instance,
-            dir=str(Path.cwd())
+            dir=str(Path.cwd()),
+            filter="""Python file (*.py);;
+            HTML file (*.html);;
+            File (*.*)"""
         )[0]
         if file_path is not None and file_path != "":
             if file_is_open_manager_dict.get(str(Path(file_path)), None) is not None:

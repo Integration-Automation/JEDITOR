@@ -83,7 +83,7 @@ class EditorMain(QMainWindow, QtStyleTools):
                 self.system_tray.setToolTip("JEditor")
         # Put Redirect on last to trace exception
         RedirectManager.restore_std()
-        redirect_manager_instance.set_redirect(self, True)
+        redirect_manager_instance.set_redirect()
         # Timer to redirect error or message
         self.redirect_timer = QTimer(self)
         self.redirect_timer.setInterval(1)
