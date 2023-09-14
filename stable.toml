@@ -1,12 +1,12 @@
-# Rename to build dev version
-# This is dev version
+# Rename to build stable version
+# This is stable version
 [build-system]
-requires = ["setuptools"]
+requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "je_editor_dev"
-version = "0.0.161"
+name = "je_editor"
+version = "0.0.154"
 authors = [
     { name = "JE-Chen", email = "jechenmailman@gmail.com" },
 ]
@@ -25,6 +25,7 @@ classifiers = [
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent"
 ]
+
 
 [project.urls]
 Homepage = "https://github.com/JE-Chen/je_editor"
