@@ -23,7 +23,10 @@ def choose_file_get_save_file_path(parent_qt_instance: EditorMain) -> bool:
     if isinstance(widget, EditorWidget):
         file_path = QFileDialog().getSaveFileName(
             parent=parent_qt_instance,
-            dir=os.getcwd()
+            dir=os.getcwd(),
+            filter="""Python file (*.py);;
+            HTML file (*.html);;
+            File (*.*)"""
         )[0]
         if file_path is not None and file_path != "":
             widget.current_file = file_path

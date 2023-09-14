@@ -83,7 +83,7 @@ class EditorMain(QMainWindow, QtStyleTools):
                 self.system_tray.setToolTip("JEditor")
         # Put Redirect on last to trace exception
         RedirectManager.restore_std()
-        redirect_manager_instance.set_redirect(self, True)
+        redirect_manager_instance.set_redirect()
         # Timer to redirect error or message
         self.redirect_timer = QTimer(self)
         self.redirect_timer.setInterval(1)
@@ -93,6 +93,10 @@ class EditorMain(QMainWindow, QtStyleTools):
         self.tab_widget.addTab(EditorWidget(self.tab_widget), "Editor")
         self.tab_widget.addTab(FrontEngineMainUI(show_system_tray_ray=False), "FrontEngine")
         self.tab_widget.addTab(JEBrowser(), "Web Browser")
+        self.tab_widget.addTab(
+            JEBrowser(start_url="https://stackoverflow.com/", search_prefix="https://stackoverflow.com/search?q="),
+            "Stackoverflow")
+
         for widget_name, widget in EDITOR_EXTEND_TAB.items():
             self.tab_widget.addTab(widget(), widget_name)
         self.setCentralWidget(self.tab_widget)
