@@ -5,3 +5,6 @@ twine
 yapf
 je_editor
 pycodestyle
+docutils
+future
+jedi

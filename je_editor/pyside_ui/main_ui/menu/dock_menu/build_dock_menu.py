@@ -12,6 +12,7 @@ from je_editor.pyside_ui.browser.browser_widget import JEBrowser
 from je_editor.pyside_ui.main_ui.dock.destroy_dock import DestroyDock
 from je_editor.pyside_ui.main_ui.editor.editor_widget_dock import FullEditorWidget
 from je_editor.utils.file.open.open_file import read_file
+from je_editor.utils.multi_language.multi_language_wrapper import language_wrapper
 
 if TYPE_CHECKING:
     from je_editor.pyside_ui.main_ui.main_editor import EditorMain
@@ -19,26 +20,31 @@ if TYPE_CHECKING:
 
 def set_dock_menu(ui_we_want_to_set: EditorMain) -> None:
     # Browser
-    ui_we_want_to_set.dock_menu = ui_we_want_to_set.menu.addMenu("Dock")
-    ui_we_want_to_set.dock_menu.new_dock_browser_action = QAction("New Dock Browser")
+    ui_we_want_to_set.dock_menu = ui_we_want_to_set.menu.addMenu(
+        language_wrapper.language_word_dict.get("dock_menu_label"))
+    ui_we_want_to_set.dock_menu.new_dock_browser_action = QAction(
+        language_wrapper.language_word_dict.get("dock_browser_label"))
     ui_we_want_to_set.dock_menu.new_dock_browser_action.triggered.connect(
         lambda: add_dock_widget(ui_we_want_to_set)
     )
     ui_we_want_to_set.dock_menu.addAction(ui_we_want_to_set.dock_menu.new_dock_browser_action)
     # Stackoverflow
-    ui_we_want_to_set.dock_menu.new_dock_stackoverflow_action = QAction("New Dock Stackoverflow")
+    ui_we_want_to_set.dock_menu.new_dock_stackoverflow_action = QAction(
+        language_wrapper.language_word_dict.get("dock_stackoverflow_label"))
     ui_we_want_to_set.dock_menu.new_dock_stackoverflow_action.triggered.connect(
         lambda: add_dock_widget(ui_we_want_to_set, "stackoverflow")
     )
     ui_we_want_to_set.dock_menu.addAction(ui_we_want_to_set.dock_menu.new_dock_stackoverflow_action)
     # Editor
-    ui_we_want_to_set.dock_menu.new_tab_dock_editor_action = QAction("New Dock Editor")
+    ui_we_want_to_set.dock_menu.new_tab_dock_editor_action = QAction(
+        language_wrapper.language_word_dict.get("dock_editor_label"))
     ui_we_want_to_set.dock_menu.new_tab_dock_editor_action.triggered.connect(
         lambda: add_dock_widget(ui_we_want_to_set, "editor")
     )
     ui_we_want_to_set.dock_menu.addAction(ui_we_want_to_set.dock_menu.new_tab_dock_editor_action)
     # FrontEngine
-    ui_we_want_to_set.dock_menu.new_frontengine = QAction("New Dock FrontEngine")
+    ui_we_want_to_set.dock_menu.new_frontengine = QAction(
+        language_wrapper.language_word_dict.get("dock_frontengine_label"))
     ui_we_want_to_set.dock_menu.new_frontengine.triggered.connect(
         lambda: add_dock_widget(ui_we_want_to_set, "frontengine")
     )
@@ -63,13 +69,13 @@ def add_dock_widget(ui_we_want_to_set: EditorMain, widget_type: str = None):
             widget.code_edit.setPlainText(
                 file_content
             )
-            dock_widget.setWindowTitle("editor")
+            dock_widget.setWindowTitle(language_wrapper.language_word_dict.get("dock_editor_title"))
             dock_widget.setWidget(widget)
     elif widget_type == "frontengine":
-        dock_widget.setWindowTitle("frontengine")
+        dock_widget.setWindowTitle(language_wrapper.language_word_dict.get("dock_frontengine_title"))
         dock_widget.setWidget(FrontEngineMainUI())
     else:
-        dock_widget.setWindowTitle("browser")
+        dock_widget.setWindowTitle(language_wrapper.language_word_dict.get("dock_browser_title"))
         dock_widget.setWidget(JEBrowser())
     if dock_widget.widget() is not None:
         ui_we_want_to_set.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, dock_widget)

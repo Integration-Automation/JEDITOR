@@ -9,17 +9,21 @@ from je_editor.pyside_ui.main_ui.save_settings.user_setting_file import user_set
 
 if TYPE_CHECKING:
     from je_editor.pyside_ui.main_ui.main_editor import EditorMain
+from je_editor.utils.multi_language.multi_language_wrapper import language_wrapper
 
 
 def set_text_menu(ui_we_want_to_set: EditorMain):
-    ui_we_want_to_set.text_menu = ui_we_want_to_set.menu.addMenu("Text")
-    ui_we_want_to_set.text_menu.font_menu = ui_we_want_to_set.text_menu.addMenu("Font")
+    ui_we_want_to_set.text_menu = ui_we_want_to_set.menu.addMenu(
+        language_wrapper.language_word_dict.get("text_menu_label"))
+    ui_we_want_to_set.text_menu.font_menu = ui_we_want_to_set.text_menu.addMenu(
+        language_wrapper.language_word_dict.get("text_menu_label_font"))
     for family in ui_we_want_to_set.font_database.families():
         font_action = QAction(family, parent=ui_we_want_to_set.text_menu.font_menu)
         font_action.triggered.connect(
             lambda checked=False, action=font_action: set_font(ui_we_want_to_set, action))
         ui_we_want_to_set.text_menu.font_menu.addAction(font_action)
-    ui_we_want_to_set.text_menu.font_size_menu = ui_we_want_to_set.text_menu.addMenu("Font Size")
+    ui_we_want_to_set.text_menu.font_size_menu = ui_we_want_to_set.text_menu.addMenu(
+        language_wrapper.language_word_dict.get("text_menu_label_font_size"))
     for size in range(12, 38, 2):
         font_action = QAction(str(size), parent=ui_we_want_to_set.text_menu.font_size_menu)
         font_action.triggered.connect(

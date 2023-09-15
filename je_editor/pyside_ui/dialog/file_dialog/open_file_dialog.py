@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -48,3 +49,18 @@ def choose_file_get_open_file_path(parent_qt_instance: EditorMain) -> None:
                 widget.code_save_thread.file = widget.current_file
             user_setting_dict.update({"last_file": str(widget.current_file)})
             widget.rename_self_tab()
+
+
+def choose_dir_get_dir_path(parent_qt_instance: EditorMain) -> None:
+    dir_path = QFileDialog().getExistingDirectory(parent=parent_qt_instance,)
+    check_path = Path(dir_path)
+    if check_path.exists() and check_path.is_dir():
+        parent_qt_instance.working_dir = dir_path
+        for code_editor in range(parent_qt_instance.tab_widget.count()):
+            widget = parent_qt_instance.tab_widget.widget(code_editor)
+            if isinstance(widget, EditorWidget):
+                widget.project_treeview.setRootIndex(widget.project_treeview_model.index(dir_path))
+                widget.code_edit.check_env()
+        os.chdir(dir_path)
+        parent_qt_instance.startup_setting()
+

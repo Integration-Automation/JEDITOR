@@ -27,8 +27,11 @@ class CodeEditSaveThread(Thread):
         """
         loop and save current edit file
         """
-        if self.file is not None and self.still_run:
+        if self.file is not None:
             path = Path(self.file)
             while path.is_file() and self.editor is not None:
                 time.sleep(5)
-                write_file(self.file, self.editor.toPlainText())
+                if self.still_run:
+                    write_file(self.file, self.editor.toPlainText())
+                else:
+                    break

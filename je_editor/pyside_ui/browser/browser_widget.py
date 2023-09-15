@@ -3,6 +3,7 @@ from PySide6.QtWidgets import QWidget, QGridLayout, QPushButton, QInputDialog
 
 from je_editor.pyside_ui.browser.browser_serach_lineedit import BrowserLineSearch
 from je_editor.pyside_ui.browser.browser_view import BrowserView
+from je_editor.utils.multi_language.multi_language_wrapper import language_wrapper
 
 
 class JEBrowser(QWidget):
@@ -14,13 +15,13 @@ class JEBrowser(QWidget):
         self.browser = BrowserView(start_url)
         self.search_prefix = search_prefix
         # Top bar
-        self.back_button = QPushButton("Back")
+        self.back_button = QPushButton(language_wrapper.language_word_dict.get("browser_back_button"))
         self.back_button.clicked.connect(self.browser.back)
-        self.forward_button = QPushButton("Forward")
+        self.forward_button = QPushButton(language_wrapper.language_word_dict.get("browser_forward_button"))
         self.forward_button.clicked.connect(self.browser.forward)
-        self.reload_button = QPushButton("Reload")
+        self.reload_button = QPushButton(language_wrapper.language_word_dict.get("browser_reload_button"))
         self.reload_button.clicked.connect(self.browser.reload)
-        self.search_button = QPushButton("Search")
+        self.search_button = QPushButton(language_wrapper.language_word_dict.get("browser_search_button"))
         self.search_button.clicked.connect(self.search)
         self.url_input = BrowserLineSearch(self)
         # Action
@@ -43,7 +44,9 @@ class JEBrowser(QWidget):
 
     def find_text(self):
         search_box = QInputDialog(self)
-        search_text, press_ok = search_box.getText(self, "Search Text", "Input a text")
+        search_text, press_ok = search_box.getText(
+            self, language_wrapper.language_word_dict.get("browser_find_text"),
+            language_wrapper.language_word_dict.get("browser_find_text_input"))
         if press_ok:
             self.browser.findText(search_text)
         else:

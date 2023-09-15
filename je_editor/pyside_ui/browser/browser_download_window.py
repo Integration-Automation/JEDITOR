@@ -1,6 +1,8 @@
 from PySide6.QtWebEngineCore import QWebEngineDownloadRequest
 from PySide6.QtWidgets import QWidget, QBoxLayout, QPlainTextEdit
 
+from je_editor.utils.multi_language.multi_language_wrapper import language_wrapper
+
 
 class BrowserDownloadWindow(QWidget):
 
@@ -9,7 +11,7 @@ class BrowserDownloadWindow(QWidget):
         self.box_layout = QBoxLayout(QBoxLayout.Direction.TopToBottom)
         self.show_download_detail_plaintext = QPlainTextEdit()
         self.show_download_detail_plaintext.setReadOnly(True)
-        self.setWindowTitle("Download Detail")
+        self.setWindowTitle(language_wrapper.language_word_dict.get("browser_download_detail"))
         self.download_instance = download_instance
         self.download_instance.isFinishedChanged.connect(self.print_finish)
         self.download_instance.interruptReasonChanged.connect(self.print_interrupt)

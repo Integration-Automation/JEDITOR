@@ -10,10 +10,14 @@ if TYPE_CHECKING:
 from PySide6.QtGui import QAction
 from PySide6.QtWidgets import QMessageBox
 
+from je_editor.utils.multi_language.multi_language_wrapper import language_wrapper
+
 
 def set_help_menu(ui_we_want_to_set: EditorMain) -> None:
-    ui_we_want_to_set.help_menu = ui_we_want_to_set.menu.addMenu("Help")
-    ui_we_want_to_set.help_menu.help_github_action = QAction("GitHub")
+    ui_we_want_to_set.help_menu = ui_we_want_to_set.menu.addMenu(
+        language_wrapper.language_word_dict.get("help_menu_label"))
+    ui_we_want_to_set.help_menu.help_github_action = QAction(
+        language_wrapper.language_word_dict.get("help_menu_open_github_label"))
     ui_we_want_to_set.help_menu.help_github_action.triggered.connect(
         lambda: open_web_browser(
             ui_we_want_to_set,
@@ -21,7 +25,8 @@ def set_help_menu(ui_we_want_to_set: EditorMain) -> None:
     )
     ui_we_want_to_set.help_menu.addAction(ui_we_want_to_set.help_menu.help_github_action)
 
-    ui_we_want_to_set.help_menu.help_doc_action = QAction("Doc")
+    ui_we_want_to_set.help_menu.help_doc_action = QAction(
+        language_wrapper.language_word_dict.get("help_menu_open_about_label"))
     ui_we_want_to_set.help_menu.help_doc_action.triggered.connect(
         lambda: open_web_browser(
             ui_we_want_to_set,
@@ -29,13 +34,15 @@ def set_help_menu(ui_we_want_to_set: EditorMain) -> None:
     )
     ui_we_want_to_set.help_menu.addAction(ui_we_want_to_set.help_menu.help_doc_action)
 
-    ui_we_want_to_set.help_menu.help_about_action = QAction("About")
+    ui_we_want_to_set.help_menu.help_about_action = QAction(
+        language_wrapper.language_word_dict.get("help_menu_open_about_label"))
     ui_we_want_to_set.help_menu.help_about_action.triggered.connect(
         show_about
     )
     ui_we_want_to_set.help_menu.addAction(ui_we_want_to_set.help_menu.help_about_action)
     # Open Doc
-    ui_we_want_to_set.help_menu.open_bing_gpt_menu_doc_action = QAction("Open ReEdgeGPT Doc")
+    ui_we_want_to_set.help_menu.open_bing_gpt_menu_doc_action = QAction(
+        language_wrapper.language_word_dict.get("help_menu_open_re_edge_gpt_doc_label"))
     ui_we_want_to_set.help_menu.open_bing_gpt_menu_doc_action.triggered.connect(
         lambda: open_web_browser(
             ui_we_want_to_set,
@@ -47,7 +54,8 @@ def set_help_menu(ui_we_want_to_set: EditorMain) -> None:
         ui_we_want_to_set.help_menu.open_bing_gpt_menu_doc_action
     )
     # Open Github
-    ui_we_want_to_set.help_menu.open_re_edge_gpt_github_action = QAction("Open ReEdgeGPT GitHub")
+    ui_we_want_to_set.help_menu.open_re_edge_gpt_github_action = QAction(
+        language_wrapper.language_word_dict.get("help_menu_open_re_edge_gpt_github_label"))
     ui_we_want_to_set.help_menu.open_re_edge_gpt_github_action.triggered.connect(
         lambda: open_web_browser(
             ui_we_want_to_set,

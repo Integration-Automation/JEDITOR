@@ -4,6 +4,7 @@ import sys
 from pathlib import Path
 from typing import Dict, Type
 
+import jedi.settings
 from PySide6.QtCore import QTimer
 from PySide6.QtGui import QFontDatabase, QIcon, Qt
 from PySide6.QtWidgets import QMainWindow, QWidget, QTabWidget
@@ -15,12 +16,13 @@ from je_editor.pyside_ui.browser.browser_widget import JEBrowser
 from je_editor.pyside_ui.code.auto_save.auto_save_manager import init_new_auto_save_thread, file_is_open_manager_dict
 from je_editor.pyside_ui.main_ui.editor.editor_widget import EditorWidget
 from je_editor.pyside_ui.main_ui.menu.set_menu_bar import set_menu_bar
-from je_editor.pyside_ui.main_ui.save_settings.user_setting_color_file import write_user_color_setting, \
+from je_editor.pyside_ui.main_ui.save_settings.user_color_setting_file import write_user_color_setting, \
     read_user_color_setting, update_actually_color_dict
 from je_editor.pyside_ui.main_ui.save_settings.user_setting_file import user_setting_dict, read_user_setting, \
     write_user_setting
 from je_editor.pyside_ui.main_ui.system_tray.extend_system_tray import ExtendSystemTray
 from je_editor.utils.file.open.open_file import read_file
+from je_editor.utils.multi_language.multi_language_wrapper import language_wrapper
 from je_editor.utils.redirect_manager.redirect_manager_class import redirect_manager_instance
 
 EDITOR_EXTEND_TAB: Dict[str, Type[QWidget]] = {}
@@ -38,14 +40,17 @@ class EditorMain(QMainWindow, QtStyleTools):
         self.encoding_menu = None
         self.font_size_menu = None
         self.font_menu = None
+        self.working_dir = None
+        # Jedi run on thread safe
+        jedi.settings.fast_parser = False
+        # Jedi only show right case_insensitive
+        jedi.settings.case_insensitive_completion = False
         # Project compiler if user not choose this will use which to find
         self.python_compiler = None
         # Debug mode
         self.debug_mode: bool = debug_mode
         # Windows setup
-        self.id = "JEditor"
-        # Venv
-        self.venv_path = None
+        self.id = language_wrapper.language_word_dict.get("application_name")
         if sys.platform in ["win32", "cygwin", "msys"]:
             from ctypes import windll
             windll.shell32.SetCurrentProcessExplicitAppUserModelID(self.id)
@@ -68,7 +73,7 @@ class EditorMain(QMainWindow, QtStyleTools):
         self.redirect_timer = QTimer(self)
         self.redirect_timer.setInterval(1)
         self.redirect_timer.start()
-        self.setWindowTitle("JEditor")
+        self.setWindowTitle(language_wrapper.language_word_dict.get("application_name"))
         set_menu_bar(self)
         # Set Icon
         self.icon_path = Path(os.getcwd() + "/je_driver_icon.ico")
@@ -80,7 +85,7 @@ class EditorMain(QMainWindow, QtStyleTools):
                 self.system_tray.setIcon(self.icon)
                 self.system_tray.setVisible(True)
                 self.system_tray.show()
-                self.system_tray.setToolTip("JEditor")
+                self.system_tray.setToolTip(language_wrapper.language_word_dict.get("application_name"))
         # Put Redirect on last to trace exception
         RedirectManager.restore_std()
         redirect_manager_instance.set_redirect()
@@ -90,9 +95,11 @@ class EditorMain(QMainWindow, QtStyleTools):
         self.redirect_timer.timeout.connect(self.redirect)
         self.redirect_timer.start()
         # TAB Add
-        self.tab_widget.addTab(EditorWidget(self.tab_widget), "Editor")
-        self.tab_widget.addTab(FrontEngineMainUI(show_system_tray_ray=False), "FrontEngine")
-        self.tab_widget.addTab(JEBrowser(), "Web Browser")
+        self.tab_widget.addTab(EditorWidget(self), language_wrapper.language_word_dict.get("tab_name_editor"))
+        self.tab_widget.addTab(
+            FrontEngineMainUI(show_system_tray_ray=False),
+            language_wrapper.language_word_dict.get("tab_name_frontengine"))
+        self.tab_widget.addTab(JEBrowser(), language_wrapper.language_word_dict.get("tab_name_web_browser"))
         self.tab_widget.addTab(
             JEBrowser(start_url="https://stackoverflow.com/", search_prefix="https://stackoverflow.com/search?q="),
             "Stackoverflow")
@@ -179,6 +186,9 @@ class EditorMain(QMainWindow, QtStyleTools):
             super().closeEvent(event)
 
     def close_tab(self, index: int):
+        widget = self.tab_widget.widget(index)
+        if widget is not None:
+            widget.close()
         self.tab_widget.removeTab(index)
 
     @classmethod
