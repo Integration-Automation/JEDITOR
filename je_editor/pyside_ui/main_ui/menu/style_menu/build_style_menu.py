@@ -9,9 +9,13 @@ from je_editor.pyside_ui.main_ui.save_settings.user_setting_file import user_set
 if TYPE_CHECKING:
     from je_editor.pyside_ui.main_ui.main_editor import EditorMain
 
+from je_editor.utils.multi_language.multi_language_wrapper import language_wrapper
+
 
 def set_style_menu(ui_we_want_to_set: EditorMain) -> None:
-    ui_we_want_to_set.menu.style_menu = ui_we_want_to_set.menu.addMenu("UI Style")
+    ui_we_want_to_set.menu.style_menu = ui_we_want_to_set.menu.addMenu(
+        language_wrapper.language_word_dict.get("style_menu_label")
+    )
     for style in [
         'dark_amber.xml', 'dark_blue.xml', 'dark_cyan.xml', 'dark_lightgreen.xml', 'dark_pink.xml',
         'dark_purple.xml', 'dark_red.xml', 'dark_teal.xml', 'dark_yellow.xml', 'light_amber.xml',

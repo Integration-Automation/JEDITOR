@@ -1,5 +1,7 @@
 from PySide6.QtWidgets import QWidget, QLineEdit, QPushButton, QBoxLayout, QHBoxLayout
 
+from je_editor.utils.multi_language.multi_language_wrapper import language_wrapper
+
 
 class SearchResultBox(QWidget):
 
@@ -8,9 +10,9 @@ class SearchResultBox(QWidget):
         self.box_layout = QBoxLayout(QBoxLayout.Direction.TopToBottom)
         self.search_input = QLineEdit()
         self.search_next_button = QPushButton()
-        self.search_next_button.setText("Search Next")
+        self.search_next_button.setText(language_wrapper.language_word_dict.get("dialog_search_next"))
         self.search_back_button = QPushButton()
-        self.search_back_button.setText("Search Back")
+        self.search_back_button.setText(language_wrapper.language_word_dict.get("dialog_search_back"))
         self.box_h_layout = QHBoxLayout()
         self.box_h_layout.addWidget(self.search_back_button)
         self.box_h_layout.addWidget(self.search_next_button)

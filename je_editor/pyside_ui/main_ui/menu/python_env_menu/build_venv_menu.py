@@ -15,11 +15,15 @@ from PySide6.QtWidgets import QMessageBox, QInputDialog, QFileDialog
 
 from je_editor.pyside_ui.code.shell_process.shell_exec import ShellManager
 
+from je_editor.utils.multi_language.multi_language_wrapper import language_wrapper
+
 
 def set_venv_menu(ui_we_want_to_set: EditorMain) -> None:
-    ui_we_want_to_set.venv_menu = ui_we_want_to_set.menu.addMenu("Python Env")
+    ui_we_want_to_set.venv_menu = ui_we_want_to_set.menu.addMenu(
+        language_wrapper.language_word_dict.get("python_env_menu_label"))
     # Create an venv
-    ui_we_want_to_set.venv_menu.create_venv_action = QAction("Create Venv")
+    ui_we_want_to_set.venv_menu.create_venv_action = QAction(
+        language_wrapper.language_word_dict.get("python_env_menu_create_venv_label"))
     ui_we_want_to_set.venv_menu.create_venv_action.setShortcut(
         QKeySequence("Ctrl+Shift+V")
     )
@@ -28,7 +32,9 @@ def set_venv_menu(ui_we_want_to_set: EditorMain) -> None:
     )
     ui_we_want_to_set.venv_menu.addAction(ui_we_want_to_set.venv_menu.create_venv_action)
     # pip upgrade package
-    ui_we_want_to_set.venv_menu.pip_upgrade_action = QAction("pip upgrade package")
+    ui_we_want_to_set.venv_menu.pip_upgrade_action = QAction(
+        language_wrapper.language_word_dict.get("python_env_menu_pip_upgrade_label")
+    )
     ui_we_want_to_set.venv_menu.pip_upgrade_action.setShortcut(
         QKeySequence("Ctrl+Shift+U")
     )
@@ -37,7 +43,8 @@ def set_venv_menu(ui_we_want_to_set: EditorMain) -> None:
     )
     ui_we_want_to_set.venv_menu.addAction(ui_we_want_to_set.venv_menu.pip_upgrade_action)
     # pip package
-    ui_we_want_to_set.venv_menu.pip_action = QAction("pip package")
+    ui_we_want_to_set.venv_menu.pip_action = QAction(
+        language_wrapper.language_word_dict.get("python_env_menu_pip_label"))
     ui_we_want_to_set.venv_menu.pip_action.setShortcut(
         QKeySequence("Ctrl+Shift+P")
     )
@@ -46,7 +53,8 @@ def set_venv_menu(ui_we_want_to_set: EditorMain) -> None:
     )
     ui_we_want_to_set.venv_menu.addAction(ui_we_want_to_set.venv_menu.pip_action)
     # choose python interpreter
-    ui_we_want_to_set.venv_menu.choose_interpreter_action = QAction("choose python interpreter")
+    ui_we_want_to_set.venv_menu.choose_interpreter_action = QAction(
+        language_wrapper.language_word_dict.get("python_env_menu_choose_interpreter_label"))
     ui_we_want_to_set.venv_menu.choose_interpreter_action.triggered.connect(
         lambda: chose_python_interpreter(ui_we_want_to_set)
     )
@@ -64,11 +72,14 @@ def create_venv(ui_we_want_to_set: EditorMain) -> None:
             create_venv_shell.exec_shell(
                 [f"{create_venv_shell.compiler_path}", "-m", "venv", "venv"]
             )
-            print("Creating venv please waiting for shell exit code.")
+            widget.code_result.append(
+                language_wrapper.language_word_dict.get("python_env_menu_creating_venv_message"))
         else:
             message_box = QMessageBox()
-            message_box.setText("venv already exists.")
+            message_box.setText(
+                language_wrapper.language_word_dict.get("python_env_menu_venv_exists"))
             message_box.exec()
+        widget.code_edit.check_env()
 
 
 def shell_pip_install(ui_we_want_to_set: EditorMain, pip_install_command_list: list):
@@ -78,12 +89,14 @@ def shell_pip_install(ui_we_want_to_set: EditorMain, pip_install_command_list: l
         venv_path = Path(os.getcwd() + "/venv")
         if not venv_path.exists():
             message_box = QMessageBox()
-            message_box.setText("Please create venv first.")
+            message_box.setText(language_wrapper.language_word_dict.get("python_env_menu_please_create_venv"))
             message_box.exec()
         else:
             ask_package_dialog = QInputDialog()
             package_text, press_ok = ask_package_dialog.getText(
-                ui_we_want_to_set, "Install Package", "What Package you want to install"
+                ui_we_want_to_set,
+                language_wrapper.language_word_dict.get("python_env_menu_install_package_messagebox_title"),
+                language_wrapper.language_word_dict.get("python_env_menu_install_package_messagebox_label")
             )
             if press_ok:
                 pip_install_shell = ShellManager(main_window=widget)
@@ -97,7 +110,7 @@ def detect_venv() -> bool:
     venv_path = Path(os.getcwd() + "/venv")
     if not venv_path.exists():
         message_box = QMessageBox()
-        message_box.setText("Please create venv first.")
+        message_box.setText(language_wrapper.language_word_dict.get("python_env_menu_please_create_venv"))
         message_box.exec()
         return False
     return True
@@ -110,7 +123,9 @@ def pip_install_package_update(ui_we_want_to_set: EditorMain) -> None:
         if detect_venv:
             ask_package_dialog = QInputDialog()
             package_text, press_ok = ask_package_dialog.getText(
-                ui_we_want_to_set, "Install Package", "What Package you want to install or update"
+                ui_we_want_to_set,
+                language_wrapper.language_word_dict.get("python_env_menu_install_package_messagebox_title"),
+                language_wrapper.language_word_dict.get("python_env_menu_install_or_update_package_messagebox_label")
             )
             if press_ok:
                 pip_install_shell = ShellManager(main_window=widget)
@@ -127,7 +142,9 @@ def pip_install_package(ui_we_want_to_set: EditorMain) -> None:
         if detect_venv:
             ask_package_dialog = QInputDialog()
             package_text, press_ok = ask_package_dialog.getText(
-                ui_we_want_to_set, "Install Package", "What Package you want to install"
+                ui_we_want_to_set,
+                language_wrapper.language_word_dict.get("python_env_menu_install_package_messagebox_title"),
+                language_wrapper.language_word_dict.get("python_env_menu_install_package_messagebox_label")
             )
             if press_ok:
                 pip_install_shell = ShellManager(main_window=widget)

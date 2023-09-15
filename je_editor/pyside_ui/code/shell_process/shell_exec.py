@@ -13,7 +13,7 @@ from PySide6.QtCore import QTimer
 from PySide6.QtWidgets import QTextEdit
 
 from je_editor.pyside_ui.main_ui.editor.editor_widget import EditorWidget
-from je_editor.pyside_ui.main_ui.save_settings.user_setting_color_file import actually_color_dict
+from je_editor.pyside_ui.main_ui.save_settings.user_color_setting_file import actually_color_dict
 from je_editor.utils.exception.exception_tags import je_editor_init_error
 from je_editor.utils.exception.exceptions import JEditorException
 from je_editor.utils.venv_check.check_venv import check_and_choose_venv

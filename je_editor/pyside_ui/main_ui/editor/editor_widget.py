@@ -1,3 +1,12 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
+from je_editor.utils.multi_language.multi_language_wrapper import language_wrapper
+
+if TYPE_CHECKING:
+    from je_editor.pyside_ui.main_ui.main_editor import EditorMain
+
 import pathlib
 from pathlib import Path
 from typing import Union
@@ -11,14 +20,14 @@ from je_editor.pyside_ui.code.auto_save.auto_save_thread import CodeEditSaveThre
 from je_editor.pyside_ui.code.code_format.pep8_format import PEP8FormatChecker
 from je_editor.pyside_ui.code.plaintext_code_edit.code_edit_plaintext import CodeEditor
 from je_editor.pyside_ui.code.textedit_code_result.code_record import CodeRecord
-from je_editor.pyside_ui.main_ui.save_settings.user_setting_color_file import actually_color_dict
+from je_editor.pyside_ui.main_ui.save_settings.user_color_setting_file import actually_color_dict
 from je_editor.pyside_ui.main_ui.save_settings.user_setting_file import user_setting_dict
 from je_editor.utils.file.open.open_file import read_file
 
 
 class EditorWidget(QWidget):
 
-    def __init__(self, tab_manager: QTabWidget):
+    def __init__(self, main_window: EditorMain):
         super().__init__()
         # Init variable
         self.current_file = None
@@ -26,12 +35,14 @@ class EditorWidget(QWidget):
         self.project_treeview = None
         self.project_treeview_model = None
         self.python_compiler = None
-        self.tab_manager = tab_manager
+        self.main_window = main_window
+        self.tab_manager = self.main_window.tab_widget
+        self.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
         # Autosave
         self.code_save_thread: Union[CodeEditSaveThread, None] = None
         # UI
         self.grid_layout = QGridLayout(self)
-        self.setWindowTitle("JEditor")
+        self.setWindowTitle(language_wrapper.language_word_dict.get("application_name"))
         # Treeview
         self.set_project_treeview()
         # Use to put full ui
@@ -56,8 +67,10 @@ class EditorWidget(QWidget):
         self.format_check_result.setTextColor(actually_color_dict.get("warning_output_color"))
         # Code result tab
         self.code_difference_result = QTabWidget()
-        self.code_difference_result.addTab(self.code_result_scroll_area, "Code result")
-        self.code_difference_result.addTab(self.format_check_result, "Format checker")
+        self.code_difference_result.addTab(
+            self.code_result_scroll_area, language_wrapper.language_word_dict.get("editor_code_result"))
+        self.code_difference_result.addTab(
+            self.format_check_result, language_wrapper.language_word_dict.get("editor_format_check"))
         # Edit splitter
         self.edit_splitter.addWidget(self.code_edit_scroll_area)
         self.edit_splitter.addWidget(self.code_difference_result)
@@ -91,9 +104,14 @@ class EditorWidget(QWidget):
         self.project_treeview_model.setRootPath(QDir.currentPath())
         self.project_treeview = QTreeView()
         self.project_treeview.setModel(self.project_treeview_model)
-        self.project_treeview.setRootIndex(
-            self.project_treeview_model.index(str(Path.cwd()))
-        )
+        if self.main_window.working_dir is None:
+            self.project_treeview.setRootIndex(
+                self.project_treeview_model.index(str(Path.cwd()))
+            )
+        else:
+            self.project_treeview.setRootIndex(
+                self.project_treeview_model.index(self.main_window.working_dir)
+            )
         self.tree_view_scroll_area = QScrollArea()
         self.tree_view_scroll_area.setWidgetResizable(True)
         self.tree_view_scroll_area.setViewportMargins(0, 0, 0, 0)
@@ -107,8 +125,12 @@ class EditorWidget(QWidget):
         path = pathlib.Path(file_info.absoluteFilePath())
         if path.is_file():
             if file_is_open_manager_dict.get(str(path), None) is not None:
-                self.tab_manager.setCurrentWidget(self.tab_manager.findChild(EditorWidget, str(path.name)))
-                return
+                widget: QWidget = self.tab_manager.findChild(EditorWidget, str(path.name))
+                if widget is None:
+                    file_is_open_manager_dict.pop(str(path), None)
+                else:
+                    self.tab_manager.setCurrentWidget(widget)
+                    return
             else:
                 file_is_open_manager_dict.update({str(path): str(path.name)})
             file, file_content = read_file(str(path))
@@ -137,9 +159,10 @@ class EditorWidget(QWidget):
             for error in checker.error_list:
                 self.format_check_result.append(error)
 
-    def closeEvent(self, event) -> None:
+    def close(self) -> bool:
         self.check_format_timer.stop()
         self.code_save_thread.still_run = False
         self.code_save_thread = None
+        file_is_open_manager_dict.pop(self.current_file, None)
         auto_save_manager_dict.pop(self.current_file, None)
-        super().closeEvent(event)
+        return super().close()

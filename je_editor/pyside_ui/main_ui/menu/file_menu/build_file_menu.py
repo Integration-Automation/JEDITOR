@@ -4,19 +4,23 @@ from typing import TYPE_CHECKING
 
 from je_editor.pyside_ui.main_ui.save_settings.user_setting_file import user_setting_dict
 from je_editor.utils.encodings.python_encodings import python_encodings_list
+from je_editor.utils.multi_language.multi_language_wrapper import language_wrapper
 
 if TYPE_CHECKING:
     from je_editor.pyside_ui.main_ui.main_editor import EditorMain
 from PySide6.QtGui import QAction, QFontDatabase
 
 from je_editor.pyside_ui.dialog.file_dialog.create_file_dialog import CreateFileDialog
-from je_editor.pyside_ui.dialog.file_dialog.open_file_dialog import choose_file_get_open_file_path
+from je_editor.pyside_ui.dialog.file_dialog.open_file_dialog import choose_file_get_open_file_path, \
+    choose_dir_get_dir_path
 from je_editor.pyside_ui.dialog.file_dialog.save_file_dialog import choose_file_get_save_file_path
 
 
 def set_file_menu(ui_we_want_to_set: EditorMain) -> None:
-    ui_we_want_to_set.file_menu = ui_we_want_to_set.menu.addMenu("File")
-    ui_we_want_to_set.file_menu.new_file_action = QAction("New File")
+    ui_we_want_to_set.file_menu = ui_we_want_to_set.menu.addMenu(
+        language_wrapper.language_word_dict.get("file_menu_label"))
+    ui_we_want_to_set.file_menu.new_file_action = QAction(
+        language_wrapper.language_word_dict.get("file_menu_new_file_label"))
     ui_we_want_to_set.file_menu.new_file_action.setShortcut(
         "Ctrl+n"
     )
@@ -24,7 +28,8 @@ def set_file_menu(ui_we_want_to_set: EditorMain) -> None:
         lambda: show_create_file_dialog(ui_we_want_to_set)
     )
     ui_we_want_to_set.file_menu.addAction(ui_we_want_to_set.file_menu.new_file_action)
-    ui_we_want_to_set.file_menu.open_file_action = QAction("Open File")
+    ui_we_want_to_set.file_menu.open_file_action = QAction(
+        language_wrapper.language_word_dict.get("file_menu_open_file_label"))
     ui_we_want_to_set.file_menu.open_file_action.setShortcut(
         "Ctrl+o"
     )
@@ -32,7 +37,17 @@ def set_file_menu(ui_we_want_to_set: EditorMain) -> None:
         lambda: choose_file_get_open_file_path(parent_qt_instance=ui_we_want_to_set)
     )
     ui_we_want_to_set.file_menu.addAction(ui_we_want_to_set.file_menu.open_file_action)
-    ui_we_want_to_set.file_menu.save_file_action = QAction("Save File")
+    ui_we_want_to_set.file_menu.open_folder_action = QAction(
+        language_wrapper.language_word_dict.get("file_menu_open_folder_label"))
+    ui_we_want_to_set.file_menu.open_folder_action.setShortcut(
+        "Ctrl+K"
+    )
+    ui_we_want_to_set.file_menu.open_folder_action.triggered.connect(
+        lambda: choose_dir_get_dir_path(parent_qt_instance=ui_we_want_to_set)
+    )
+    ui_we_want_to_set.file_menu.addAction(ui_we_want_to_set.file_menu.open_folder_action)
+    ui_we_want_to_set.file_menu.save_file_action = QAction(
+        language_wrapper.language_word_dict.get("file_menu_save_file_label"))
     ui_we_want_to_set.file_menu.save_file_action.setShortcut(
         "Ctrl+s"
     )
@@ -48,7 +63,8 @@ def set_file_menu(ui_we_want_to_set: EditorMain) -> None:
 
 
 def add_encoding_menu(ui_we_want_to_set: EditorMain) -> None:
-    ui_we_want_to_set.file_menu.encoding_menu = ui_we_want_to_set.file_menu.addMenu("Encodings")
+    ui_we_want_to_set.file_menu.encoding_menu = ui_we_want_to_set.file_menu.addMenu(
+        language_wrapper.language_word_dict.get("file_menu_encoding_label"))
     for encoding in python_encodings_list:
         encoding_action = QAction(encoding, parent=ui_we_want_to_set.file_menu.encoding_menu)
         encoding_action.triggered.connect(
@@ -67,7 +83,8 @@ def show_create_file_dialog(ui_we_want_to_set: EditorMain):
 
 
 def add_font_menu(ui_we_want_to_set: EditorMain) -> None:
-    ui_we_want_to_set.file_menu.font_menu = ui_we_want_to_set.file_menu.addMenu("Font")
+    ui_we_want_to_set.file_menu.font_menu = ui_we_want_to_set.file_menu.addMenu(
+        language_wrapper.language_word_dict.get("file_menu_font_label"))
     for family in QFontDatabase().families():
         font_action = QAction(family, parent=ui_we_want_to_set.file_menu.font_menu)
         font_action.triggered.connect(lambda checked=False, action=font_action: set_font(ui_we_want_to_set, action))
@@ -83,7 +100,8 @@ def set_font(ui_we_want_to_set: EditorMain, action: QAction) -> None:
 
 
 def add_font_size_menu(ui_we_want_to_set: EditorMain) -> None:
-    ui_we_want_to_set.file_menu.font_size_menu = ui_we_want_to_set.file_menu.addMenu("Font Size")
+    ui_we_want_to_set.file_menu.font_size_menu = ui_we_want_to_set.file_menu.addMenu(
+        language_wrapper.language_word_dict.get("file_menu_font_size_label"))
     for size in range(12, 38, 2):
         font_action = QAction(str(size), parent=ui_we_want_to_set.file_menu)
         font_action.triggered.connect(
