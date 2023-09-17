@@ -48,7 +48,7 @@ def update_actually_color_dict():
 user_setting_color_dict: Dict[str, list] = {
     "line_number_color": [255, 255, 255],
     "line_number_background_color": [179, 179, 179],
-    "current_line_color": [194, 194, 214],
+    "current_line_color": [148, 148, 184],
     "normal_output_color": [255, 255, 255],
     "error_output_color": [255, 0, 0],
     "warning_output_color": [204, 204, 0]

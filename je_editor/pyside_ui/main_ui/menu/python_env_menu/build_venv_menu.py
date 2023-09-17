@@ -22,15 +22,15 @@ def set_venv_menu(ui_we_want_to_set: EditorMain) -> None:
     ui_we_want_to_set.venv_menu = ui_we_want_to_set.menu.addMenu(
         language_wrapper.language_word_dict.get("python_env_menu_label"))
     # Create an venv
-    ui_we_want_to_set.venv_menu.create_venv_action = QAction(
+    ui_we_want_to_set.venv_menu.change_language_menu = QAction(
         language_wrapper.language_word_dict.get("python_env_menu_create_venv_label"))
-    ui_we_want_to_set.venv_menu.create_venv_action.setShortcut(
+    ui_we_want_to_set.venv_menu.change_language_menu.setShortcut(
         QKeySequence("Ctrl+Shift+V")
     )
-    ui_we_want_to_set.venv_menu.create_venv_action.triggered.connect(
+    ui_we_want_to_set.venv_menu.change_language_menu.triggered.connect(
         lambda: create_venv(ui_we_want_to_set)
     )
-    ui_we_want_to_set.venv_menu.addAction(ui_we_want_to_set.venv_menu.create_venv_action)
+    ui_we_want_to_set.venv_menu.addAction(ui_we_want_to_set.venv_menu.change_language_menu)
     # pip upgrade package
     ui_we_want_to_set.venv_menu.pip_upgrade_action = QAction(
         language_wrapper.language_word_dict.get("python_env_menu_pip_upgrade_label")

@@ -67,9 +67,12 @@ english_word_dict = {
     "run_menu_run_program_label": "Run Program",
     "run_menu_run_on_shell_label": "Run On Shell",
     "run_menu_clear_result_label": "Clean Result",
-    "run_menu_stop_program_label": "Stop All Program",
+    "run_menu_stop_all_program_label": "Stop All Program",
+    "run_menu_stop_program_label": "Stop current program",
     "run_menu_run_help_label": "Run Help",
     "run_menu_shell_help_label": "Shell Help",
+    "please_stop_current_running_shell": "Please stop current running shell first.",
+    "please_stop_current_running_program": "Please stop current running program first.",
     "run_menu_run_help_tip": """
 If you are unable to run a Python program, please make sure you are have python interpreter,
 And if python conflict please choose another interpreter.
@@ -99,5 +102,9 @@ please make sure that the current encoding is consistent with the default encodi
     "system_tray_maximized": "Maximized",
     "system_tray_normal": "Normal",
     "system_tray_close": "Close",
-
+    # Language Menu
+    "language_menu_label": "Language",
+    "language_menu_bar_english": "English",
+    "language_menu_bar_traditional_chinese": "Traditional Chinese",
+    "language_menu_bar_please_restart_messagebox": "Please restart",
 }

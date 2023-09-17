@@ -7,13 +7,14 @@ from je_editor.utils.json.json_file import read_json
 user_setting_dict = {
     "ui_font": "Lato",
     "ui_font_size": 12,
+    "language": "English",
     "ui_style": "dark_amber.xml",
     "font": "Lato",
     "font_size": 12,
     "encoding": "utf-8",
     "last_file": None,
     "python_compiler": None,
-    "max_line_of_output": 200000
+    "max_line_of_output": 200000,
 }
 
 

@@ -41,6 +41,10 @@ class EditorMain(QMainWindow, QtStyleTools):
         self.font_size_menu = None
         self.font_menu = None
         self.working_dir = None
+        # Read user setting first
+        read_user_setting()
+        # Set language
+        language_wrapper.reset_language(user_setting_dict.get("language", "English"))
         # Jedi run on thread safe
         jedi.settings.fast_parser = False
         # Jedi only show right case_insensitive
@@ -60,8 +64,6 @@ class EditorMain(QMainWindow, QtStyleTools):
         self.auto_save_thread = None
         # Encoding
         self.encoding = "utf-8"
-        # Read user setting first
-        read_user_setting()
         read_user_color_setting()
         # Font
         self.font_database = QFontDatabase()
@@ -107,6 +109,7 @@ class EditorMain(QMainWindow, QtStyleTools):
         for widget_name, widget in EDITOR_EXTEND_TAB.items():
             self.tab_widget.addTab(widget(), widget_name)
         self.setCentralWidget(self.tab_widget)
+        # Read Setting
         self.startup_setting()
         # If debug open 10s and close
         if self.debug_mode:
