@@ -63,13 +63,16 @@ traditional_chinese_word_dict = {
     "python_env_menu_install_package_messagebox_label": "想安裝甚麼套件?",
     "python_env_menu_install_or_update_package_messagebox_label": "想安裝或升級甚麼套件",
     # Run Menu
-    "run_menu_label": "Run",
+    "run_menu_label": "運行",
     "run_menu_run_program_label": "運行程式",
     "run_menu_run_on_shell_label": "在終端運行",
     "run_menu_clear_result_label": "清除結果",
-    "run_menu_stop_program_label": "關閉所有程式",
+    "run_menu_stop_all_program_label": "關閉所有程式",
+    "run_menu_stop_program_label": "關閉當前程式",
     "run_menu_run_help_label": "運行幫助",
     "run_menu_shell_help_label": "終端運行幫助",
+    "please_stop_current_running_shell": "請先關閉目前正在運行的終端",
+    "please_stop_current_running_program": "請先關閉目前正在運行的程式",
     "run_menu_run_help_tip": """
 如果不能運行程式, 請檢查是否有 Python 直譯器,如有 Python 衝突請選擇其他直譯器.
         """,
@@ -97,4 +100,9 @@ traditional_chinese_word_dict = {
     "system_tray_maximized": "最大化",
     "system_tray_normal": "正常顯示",
     "system_tray_close": "關閉",
+    # Language Menu
+    "language_menu_label": "語言",
+    "language_menu_bar_english": "英文",
+    "language_menu_bar_traditional_chinese": "繁體中文",
+    "language_menu_bar_please_restart_messagebox": "請重啟以應用更改",
 }

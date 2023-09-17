@@ -12,6 +12,7 @@ from typing import Union
 from PySide6.QtCore import QTimer
 from PySide6.QtWidgets import QTextEdit
 
+from je_editor.pyside_ui.code.running_process_manager import run_instance_manager
 from je_editor.pyside_ui.main_ui.editor.editor_widget import EditorWidget
 from je_editor.pyside_ui.main_ui.save_settings.user_color_setting_file import actually_color_dict
 from je_editor.utils.exception.exception_tags import je_editor_init_error
@@ -45,6 +46,7 @@ class ShellManager(object):
         self.program_encoding: str = shell_encoding
         self.program_buffer: int = program_buffer
         self.renew_path()
+        run_instance_manager.instance_list.append(self)
 
     def renew_path(self) -> None:
         if self.main_window.python_compiler is None:
@@ -105,6 +107,8 @@ class ShellManager(object):
             self.code_result.setTextColor(actually_color_dict.get("error_output_color"))
             self.code_result.append(str(error))
             self.code_result.setTextColor(actually_color_dict.get("normal_output_color"))
+            if self.process is not None:
+                self.process.terminate()
 
     # tkinter_ui update method
     def pull_text(self) -> None:
@@ -127,9 +131,11 @@ class ShellManager(object):
         if self.process.returncode == 0:
             self.timer.stop()
             self.exit_program()
+            self.main_window.exec_shell = None
         elif self.process.returncode is not None:
             self.timer.stop()
             self.exit_program()
+            self.main_window.exec_shell = None
         if self.still_run_shell:
             # poll return code
             self.process.poll()

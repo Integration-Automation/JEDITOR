@@ -6,6 +6,8 @@ from je_editor.utils.multi_language.multi_language_wrapper import language_wrapp
 
 if TYPE_CHECKING:
     from je_editor.pyside_ui.main_ui.main_editor import EditorMain
+    from je_editor.pyside_ui.code.shell_process.shell_exec import ShellManager
+    from je_editor.pyside_ui.code.code_process.code_exec import ExecManager
 
 import pathlib
 from pathlib import Path
@@ -38,6 +40,9 @@ class EditorWidget(QWidget):
         self.main_window = main_window
         self.tab_manager = self.main_window.tab_widget
         self.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
+        # Current execute instance if none not running
+        self.exec_program: Union[None, ExecManager] = None
+        self.exec_shell: Union[None, ShellManager] = None
         # Autosave
         self.code_save_thread: Union[CodeEditSaveThread, None] = None
         # UI
