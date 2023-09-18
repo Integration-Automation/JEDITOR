@@ -1,10 +1,13 @@
+import importlib.util
+import sys
 from pathlib import Path
 from typing import Union, List
 
 import jedi
 from PySide6 import QtGui
 from PySide6.QtCore import Qt, QRect
-from PySide6.QtGui import QPainter, QTextCharFormat, QTextFormat, QKeyEvent, QAction, QTextDocument, QTextCursor
+from PySide6.QtGui import QPainter, QTextCharFormat, QTextFormat, QKeyEvent, QAction, QTextDocument, QTextCursor, \
+    QKeySequence
 from PySide6.QtWidgets import QPlainTextEdit, QWidget, QTextEdit, QCompleter
 from jedi.api.classes import Completion
 
@@ -57,6 +60,7 @@ class CodeEditor(QPlainTextEdit):
         self.search_action.triggered.connect(
             self.start_search_dialog
         )
+        # Add actions
         self.addAction(self.search_action)
         # Complete
         self.completer: Union[None, QCompleter] = None
@@ -69,6 +73,19 @@ class CodeEditor(QPlainTextEdit):
                 self.env = jedi.create_environment(str(path))
         except Exception as error:
             pass
+
+    def go_to_reference(self):
+        if self.textCursor().selectedText() != "":
+            if self.env is not None:
+                script = jedi.Script(code=self.toPlainText(), environment=self.env)
+            else:
+                script = jedi.Script(code=self.toPlainText())
+            find_ref_list = script.get_references(
+                self.textCursor().blockNumber() + 1, self.textCursor().positionInBlock())
+            # try:
+            #     importlib.util.find_spec()
+            # except ValueError as not_found:
+            #     pass
 
     def set_complete(self, list_to_complete: list) -> None:
         """
@@ -121,7 +138,8 @@ class CodeEditor(QPlainTextEdit):
             script = jedi.Script(code=self.toPlainText(), environment=self.env)
         else:
             script = jedi.Script(code=self.toPlainText())
-        jedi_complete_list: List[Completion] = script.complete()
+        jedi_complete_list: List[Completion] = script.complete(
+            self.textCursor().blockNumber() + 1, self.textCursor().positionInBlock())
         if len(jedi_complete_list) > 0:
             new_complete_list = list()
             for complete_text in jedi_complete_list:
@@ -254,9 +272,7 @@ class CodeEditor(QPlainTextEdit):
         :param event: keypress event
         :return: None
         """
-        if event.modifiers() and Qt.Modifier.CTRL:
-            super().keyPressEvent(event)
-            return
+        # Catch soft wrap shift + return (line nuber not working on soft warp)
         if self.completer.popup().isVisible() and event.key() in self.skip_popup_behavior_list:
             self.completer.popup().close()
             event.ignore()
@@ -265,10 +281,13 @@ class CodeEditor(QPlainTextEdit):
             key = event.key()
             if key == Qt.Key.Key_Enter or key == Qt.Key.Key_Return:
                 event.ignore()
-            else:
-                super().keyPressEvent(event)
-        else:
-            super().keyPressEvent(event)
+                return
+        if event.modifiers() and Qt.Modifier.CTRL:
+            if event.key() == Qt.Key.Key_B:
+                self.go_to_reference()
+                event.ignore()
+                return
+        super().keyPressEvent(event)
         self.highlight_current_line()
         if event.key() in self.need_complete_list and self.completer is not None:
             if self.completer.popup().isVisible():
