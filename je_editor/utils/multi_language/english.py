@@ -21,10 +21,6 @@ english_word_dict = {
     # Editor
     "editor_code_result": "Code result",
     "editor_format_check": "Format checker",
-    # Debugger and menu
-    "editor_debugger": "Debugger",
-    "show_debugger_input": "Show debugger input",
-    "debugger_input_send_command": "send command",
     # Check Code Style Menu
     "check_code_style_menu_label": "Check Code Style",
     "yapf_reformat_label": "yapf",
@@ -87,6 +83,15 @@ And if python conflict please choose another interpreter.
 When executing a shell command, if you encounter a decoding error, 
 please make sure that the current encoding is consistent with the default encoding of the system shell.
         """,
+    # Debugger and menu
+    "editor_debugger_input_title_label": "Debugger",
+    "show_debugger_input": "Show debugger input",
+    # Shell and menu
+    "editor_shell_input_title_label": "Shell",
+    "show_shell_input": "Show shell input",
+    # Program and menu
+    "show_program_input": "Show program input",
+    "process_input_send_command": "send command",
     # Style Menu
     "style_menu_label": "UI Style",
     # Tab Menu

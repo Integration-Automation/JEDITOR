@@ -80,7 +80,7 @@ class EditorWidget(QWidget):
         self.code_difference_result.addTab(
             self.format_check_result, language_wrapper.language_word_dict.get("editor_format_check"))
         self.code_difference_result.addTab(
-            self.debugger_result, language_wrapper.language_word_dict.get("editor_debugger"))
+            self.debugger_result, language_wrapper.language_word_dict.get("editor_debugger_input_title_label"))
         # Edit splitter
         self.edit_splitter.addWidget(self.code_edit_scroll_area)
         self.edit_splitter.addWidget(self.code_difference_result)
