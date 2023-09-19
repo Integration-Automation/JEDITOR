@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+import black
+
 from je_editor.pyside_ui.main_ui.editor.editor_widget import EditorWidget
 from je_editor.utils.multi_language.multi_language_wrapper import language_wrapper
 
@@ -17,16 +19,27 @@ def set_check_menu(ui_we_want_to_set: EditorMain) -> None:
     ui_we_want_to_set.check_menu = ui_we_want_to_set.menu.addMenu(
         language_wrapper.language_word_dict.get("check_code_style_menu_label"))
     # Yapf code check
-    ui_we_want_to_set.check_menu.check_python_action = QAction(
+    ui_we_want_to_set.check_menu.yapf_check_python_action = QAction(
         language_wrapper.language_word_dict.get("yapf_reformat_label"))
-    ui_we_want_to_set.check_menu.check_python_action.setShortcut(
+    ui_we_want_to_set.check_menu.yapf_check_python_action.setShortcut(
         QKeySequence("Ctrl+Shift+Y"))
-    ui_we_want_to_set.check_menu.check_python_action.triggered.connect(
-        lambda: check_python_code(
+    ui_we_want_to_set.check_menu.yapf_check_python_action.triggered.connect(
+        lambda: yapf_check_python_code(
             ui_we_want_to_set
         )
     )
-    ui_we_want_to_set.check_menu.addAction(ui_we_want_to_set.check_menu.check_python_action)
+    ui_we_want_to_set.check_menu.addAction(ui_we_want_to_set.check_menu.yapf_check_python_action)
+    # Black code check
+    ui_we_want_to_set.check_menu.black_check_python_action = QAction(
+        language_wrapper.language_word_dict.get("black_reformat_label"))
+    ui_we_want_to_set.check_menu.black_check_python_action.setShortcut(
+        QKeySequence("Ctrl+Shift+L"))
+    ui_we_want_to_set.check_menu.black_check_python_action.triggered.connect(
+        lambda: black_check_python_code(
+            ui_we_want_to_set
+        )
+    )
+    ui_we_want_to_set.check_menu.addAction(ui_we_want_to_set.check_menu.black_check_python_action)
     # Reformat JSON
     ui_we_want_to_set.check_menu.reformat_json_action = QAction(
         language_wrapper.language_word_dict.get("reformat_json_label"))
@@ -39,7 +52,7 @@ def set_check_menu(ui_we_want_to_set: EditorMain) -> None:
     ui_we_want_to_set.check_menu.addAction(ui_we_want_to_set.check_menu.reformat_json_action)
 
 
-def check_python_code(ui_we_want_to_set: EditorMain) -> None:
+def yapf_check_python_code(ui_we_want_to_set: EditorMain) -> None:
     widget = ui_we_want_to_set.tab_widget.currentWidget()
     if isinstance(widget, EditorWidget):
         code_text = widget.code_edit.toPlainText()
@@ -51,6 +64,13 @@ def check_python_code(ui_we_want_to_set: EditorMain) -> None:
         )
         if isinstance(format_code, tuple):
             widget.code_edit.setPlainText(format_code[0])
+
+
+def black_check_python_code(ui_we_want_to_set: EditorMain) -> None:
+    widget = ui_we_want_to_set.tab_widget.currentWidget()
+    if isinstance(widget, EditorWidget):
+        code_text = widget.code_edit.toPlainText()
+        widget.code_edit.setPlainText(black.format_str(code_text, mode=black.Mode()))
 
 
 def reformat_json_text(ui_we_want_to_set: EditorMain) -> None:

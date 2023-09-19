@@ -20,6 +20,7 @@ class RunInstanceManager(object):
                 manager.process.terminate()
             manager.main_window.exec_program = None
             manager.main_window.exec_shell = None
+            manager.main_window.exec_python_debugger = None
 
 
 run_instance_manager = RunInstanceManager()

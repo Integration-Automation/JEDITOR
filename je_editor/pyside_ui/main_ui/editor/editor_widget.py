@@ -43,6 +43,7 @@ class EditorWidget(QWidget):
         # Current execute instance if none not running
         self.exec_program: Union[None, ExecManager] = None
         self.exec_shell: Union[None, ShellManager] = None
+        self.exec_python_debugger: Union[None, ExecManager] = None
         # Autosave
         self.code_save_thread: Union[CodeEditSaveThread, None] = None
         # UI
@@ -70,12 +71,16 @@ class EditorWidget(QWidget):
         # Code format checker
         self.format_check_result = CodeRecord()
         self.format_check_result.setTextColor(actually_color_dict.get("warning_output_color"))
+        # Debugger
+        self.debugger_result = CodeRecord()
         # Code result tab
         self.code_difference_result = QTabWidget()
         self.code_difference_result.addTab(
             self.code_result_scroll_area, language_wrapper.language_word_dict.get("editor_code_result"))
         self.code_difference_result.addTab(
             self.format_check_result, language_wrapper.language_word_dict.get("editor_format_check"))
+        self.code_difference_result.addTab(
+            self.debugger_result, language_wrapper.language_word_dict.get("editor_debugger"))
         # Edit splitter
         self.edit_splitter.addWidget(self.code_edit_scroll_area)
         self.edit_splitter.addWidget(self.code_difference_result)

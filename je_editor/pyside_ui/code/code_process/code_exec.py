@@ -67,9 +67,10 @@ class ExecManager(object):
         else:
             raise JEditorException(je_editor_init_error)
 
-    def exec_code(self, exec_file_name) -> None:
+    def exec_code(self, exec_file_name, exec_prefix: Union[str, list] = None) -> None:
         """
         :param exec_file_name: string file will open to run
+        :param exec_prefix: user define exec prefix
         :return: if error return result and True else return result and False
         """
         try:
@@ -81,11 +82,22 @@ class ExecManager(object):
             # detect file is exist
             exec_file = reformat_os_file_path
             # run program
-            execute_program_list = [self.compiler_path, exec_file]
+            if exec_prefix is None:
+                execute_program_list = [self.compiler_path, exec_file]
+            else:
+                if isinstance(exec_prefix, str):
+                    execute_program_list = [self.compiler_path, exec_prefix, exec_file]
+                else:
+                    execute_program_list = list()
+                    execute_program_list.append(self.compiler_path)
+                    for prefix in exec_prefix:
+                        execute_program_list.append(prefix)
+                    execute_program_list.append(exec_file)
             self.process = subprocess.Popen(
                 execute_program_list,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
+                stdin=subprocess.PIPE,
                 shell=True
             )
             self.still_run_program = True

@@ -25,7 +25,7 @@ def read_file(file_path: str) -> typing.List[typing.Union[str, str]]:
         if file_path != "" and file_path is not None:
             file_path = Path(file_path)
             if file_path.exists() and file_path.is_file():
-                with open(file_path, "r+") as open_read_file:
+                with open(file_path, "r+", encoding="utf-8") as open_read_file:
                     return [file_path, open_read_file.read()]
     except JEditorOpenFileException:
         raise JEditorOpenFileException

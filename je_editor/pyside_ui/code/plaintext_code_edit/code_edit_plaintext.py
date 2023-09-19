@@ -57,6 +57,7 @@ class CodeEditor(QPlainTextEdit):
         self.search_action.triggered.connect(
             self.start_search_dialog
         )
+        # Add actions
         self.addAction(self.search_action)
         # Complete
         self.completer: Union[None, QCompleter] = None
@@ -68,7 +69,7 @@ class CodeEditor(QPlainTextEdit):
             if path.exists():
                 self.env = jedi.create_environment(str(path))
         except Exception as error:
-            pass
+            error.with_traceback()
 
     def set_complete(self, list_to_complete: list) -> None:
         """
@@ -121,7 +122,8 @@ class CodeEditor(QPlainTextEdit):
             script = jedi.Script(code=self.toPlainText(), environment=self.env)
         else:
             script = jedi.Script(code=self.toPlainText())
-        jedi_complete_list: List[Completion] = script.complete()
+        jedi_complete_list: List[Completion] = script.complete(
+            self.textCursor().blockNumber() + 1, self.textCursor().positionInBlock())
         if len(jedi_complete_list) > 0:
             new_complete_list = list()
             for complete_text in jedi_complete_list:
@@ -155,7 +157,7 @@ class CodeEditor(QPlainTextEdit):
         :return: None
         """
         if self.search_box.isVisible():
-            text = self.search_box.search_input.text()
+            text = self.search_box.command_input.text()
             self.find(text)
 
     def find_back_text(self) -> None:
@@ -164,7 +166,7 @@ class CodeEditor(QPlainTextEdit):
         :return: None
         """
         if self.search_box.isVisible():
-            text = self.search_box.search_input.text()
+            text = self.search_box.command_input.text()
             self.find(text, QTextDocument.FindFlag.FindBackward)
 
     def line_number_paint(self, event) -> None:
@@ -254,9 +256,7 @@ class CodeEditor(QPlainTextEdit):
         :param event: keypress event
         :return: None
         """
-        if event.modifiers() and Qt.Modifier.CTRL:
-            super().keyPressEvent(event)
-            return
+        # Catch soft wrap shift + return (line nuber not working on soft warp)
         if self.completer.popup().isVisible() and event.key() in self.skip_popup_behavior_list:
             self.completer.popup().close()
             event.ignore()
@@ -265,10 +265,8 @@ class CodeEditor(QPlainTextEdit):
             key = event.key()
             if key == Qt.Key.Key_Enter or key == Qt.Key.Key_Return:
                 event.ignore()
-            else:
-                super().keyPressEvent(event)
-        else:
-            super().keyPressEvent(event)
+                return
+        super().keyPressEvent(event)
         self.highlight_current_line()
         if event.key() in self.need_complete_list and self.completer is not None:
             if self.completer.popup().isVisible():
