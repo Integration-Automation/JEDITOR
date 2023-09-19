@@ -21,16 +21,18 @@ def set_help_menu(ui_we_want_to_set: EditorMain) -> None:
     ui_we_want_to_set.help_menu.help_github_action.triggered.connect(
         lambda: open_web_browser(
             ui_we_want_to_set,
-            "https://github.com/Integrated-Testing-Environment/je_editor", "GitHub")
+            "https://github.com/Integrated-Testing-Environment/je_editor",
+            language_wrapper.language_word_dict.get("help_menu_open_github_label"))
     )
     ui_we_want_to_set.help_menu.addAction(ui_we_want_to_set.help_menu.help_github_action)
 
     ui_we_want_to_set.help_menu.help_doc_action = QAction(
-        language_wrapper.language_word_dict.get("help_menu_open_about_label"))
+        language_wrapper.language_word_dict.get("help_menu_open_doc_label"))
     ui_we_want_to_set.help_menu.help_doc_action.triggered.connect(
         lambda: open_web_browser(
             ui_we_want_to_set,
-            "https://je-editor.readthedocs.io/en/latest/", "Doc")
+            "https://je-editor.readthedocs.io/en/latest/",
+            language_wrapper.language_word_dict.get("help_menu_open_doc_label"))
     )
     ui_we_want_to_set.help_menu.addAction(ui_we_want_to_set.help_menu.help_doc_action)
 

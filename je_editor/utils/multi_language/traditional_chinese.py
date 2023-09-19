@@ -21,9 +21,14 @@ traditional_chinese_word_dict = {
     # Editor
     "editor_code_result": "程式運行結果",
     "editor_format_check": "程式格式檢查",
+    # Debugger
+    "editor_debugger": "除錯器",
+    "show_debugger_input": "開啟除錯輸入",
+    "debugger_input_send_command": "傳送指令",
     # Check Code Style Menu
     "check_code_style_menu_label": "程式碼格式檢查器",
     "yapf_reformat_label": "yapf",
+    "black_reformat_label": "Black",
     "reformat_json_label": "重新格式化 JSON",
     # Dock Menu
     "dock_menu_label": "區域",
@@ -65,6 +70,7 @@ traditional_chinese_word_dict = {
     # Run Menu
     "run_menu_label": "運行",
     "run_menu_run_program_label": "運行程式",
+    "run_menu_run_debugger": "運行除錯器",
     "run_menu_run_on_shell_label": "在終端運行",
     "run_menu_clear_result_label": "清除結果",
     "run_menu_stop_all_program_label": "關閉所有程式",

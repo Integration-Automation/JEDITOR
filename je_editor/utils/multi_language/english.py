@@ -21,9 +21,14 @@ english_word_dict = {
     # Editor
     "editor_code_result": "Code result",
     "editor_format_check": "Format checker",
+    # Debugger and menu
+    "editor_debugger": "Debugger",
+    "show_debugger_input": "Show debugger input",
+    "debugger_input_send_command": "send command",
     # Check Code Style Menu
     "check_code_style_menu_label": "Check Code Style",
     "yapf_reformat_label": "yapf",
+    "black_reformat_label": "Black",
     "reformat_json_label": "Reformat JSON",
     # Dock Menu
     "dock_menu_label": "Dock",
@@ -65,6 +70,7 @@ english_word_dict = {
     # Run Menu
     "run_menu_label": "Run",
     "run_menu_run_program_label": "Run Program",
+    "run_menu_run_debugger": "Run Debugger",
     "run_menu_run_on_shell_label": "Run On Shell",
     "run_menu_clear_result_label": "Clean Result",
     "run_menu_stop_all_program_label": "Stop All Program",
