@@ -1,5 +1,6 @@
 from typing import List
 
+from PySide6.QtCore import Qt
 from PySide6.QtWebEngineCore import QWebEngineDownloadRequest
 from PySide6.QtWebEngineWidgets import QWebEngineView
 
@@ -14,6 +15,7 @@ class BrowserView(QWebEngineView):
         self.download_list: List[QWebEngineDownloadRequest] = list()
         self.download_window_list: List[BrowserDownloadWindow] = list()
         self.page().profile().downloadRequested.connect(self.download_file)
+        self.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
 
     def download_file(self, download_instance: QWebEngineDownloadRequest):
         self.download_list.append(download_instance)

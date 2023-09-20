@@ -1,4 +1,4 @@
-from PySide6.QtGui import QAction
+from PySide6.QtGui import QAction, Qt
 from PySide6.QtWidgets import QWidget, QGridLayout, QPushButton, QInputDialog
 
 from je_editor.pyside_ui.browser.browser_serach_lineedit import BrowserLineSearch
@@ -14,6 +14,7 @@ class JEBrowser(QWidget):
         # Browser setting
         self.browser = BrowserView(start_url)
         self.search_prefix = search_prefix
+        self.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
         # Top bar
         self.back_button = QPushButton(language_wrapper.language_word_dict.get("browser_back_button"))
         self.back_button.clicked.connect(self.browser.back)

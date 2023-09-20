@@ -21,10 +21,6 @@ traditional_chinese_word_dict = {
     # Editor
     "editor_code_result": "程式運行結果",
     "editor_format_check": "程式格式檢查",
-    # Debugger
-    "editor_debugger": "除錯器",
-    "show_debugger_input": "開啟除錯輸入",
-    "debugger_input_send_command": "傳送指令",
     # Check Code Style Menu
     "check_code_style_menu_label": "程式碼格式檢查器",
     "yapf_reformat_label": "yapf",
@@ -85,6 +81,15 @@ traditional_chinese_word_dict = {
     "run_menu_shell_run_tip": """
 如果有亂碼等問題請重新選擇編碼至與系統 Shell 編碼相同
         """,
+    # Debugger
+    "editor_debugger_input_title_label": "除錯器",
+    "show_debugger_input": "開啟除錯輸入",
+    # Shell and menu
+    "editor_shell_input_title_label": "Shell",
+    "show_shell_input": "開啟 Shell 輸入",
+    # Program and menu
+    "show_program_input": "開啟程式輸入",
+    "process_input_send_command": "傳送指令",
     # Style Menu
     "style_menu_label": "UI 風格",
     # Tab Menu
