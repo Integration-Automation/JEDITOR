@@ -13,6 +13,7 @@ class BrowserLineSearch(QLineEdit):
 
     def __init__(self, browser_widget: JEBrowser):
         super().__init__()
+        self.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
         self.browser = browser_widget
 
     def keyPressEvent(self, event) -> None:

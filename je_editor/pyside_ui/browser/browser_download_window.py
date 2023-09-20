@@ -1,3 +1,4 @@
+from PySide6.QtCore import Qt
 from PySide6.QtWebEngineCore import QWebEngineDownloadRequest
 from PySide6.QtWidgets import QWidget, QBoxLayout, QPlainTextEdit
 
@@ -8,6 +9,7 @@ class BrowserDownloadWindow(QWidget):
 
     def __init__(self, download_instance: QWebEngineDownloadRequest):
         super().__init__()
+        self.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
         self.box_layout = QBoxLayout(QBoxLayout.Direction.TopToBottom)
         self.show_download_detail_plaintext = QPlainTextEdit()
         self.show_download_detail_plaintext.setReadOnly(True)

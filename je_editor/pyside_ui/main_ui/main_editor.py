@@ -76,6 +76,7 @@ class EditorMain(QMainWindow, QtStyleTools):
         self.redirect_timer.setInterval(1)
         self.redirect_timer.start()
         self.setWindowTitle(language_wrapper.language_word_dict.get("application_name"))
+        self.setToolTip(language_wrapper.language_word_dict.get("application_name"))
         set_menu_bar(self)
         # Set Icon
         self.icon_path = Path(os.getcwd() + "/je_driver_icon.ico")

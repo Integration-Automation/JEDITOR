@@ -1,5 +1,6 @@
 from pathlib import Path
 
+from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QWidget, QGridLayout, QScrollArea
 from frontengine.utils.multi_language.language_wrapper import language_wrapper
 
@@ -15,6 +16,8 @@ class FullEditorWidget(QWidget):
         # Init variable
         self.auto_save_thread = None
         self.current_file = current_file
+        # Attr
+        self.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
         # UI
         self.grid_layout = QGridLayout(self)
         self.setWindowTitle(language_wrapper.language_word_dict.get("application_name"))

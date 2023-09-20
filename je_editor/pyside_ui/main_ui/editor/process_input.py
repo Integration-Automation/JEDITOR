@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QWidget, QLineEdit, QBoxLayout, QPushButton, QHBoxLayout
 
 if TYPE_CHECKING:
@@ -14,6 +15,7 @@ class ProcessInput(QWidget):
 
     def __init__(self, main_window: EditorWidget, process_type: str = "debugger"):
         super().__init__()
+        self.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
         self.main_window = main_window
         self.box_layout = QBoxLayout(QBoxLayout.Direction.TopToBottom)
         self.command_input = QLineEdit()
