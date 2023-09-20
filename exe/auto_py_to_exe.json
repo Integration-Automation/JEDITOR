@@ -78,12 +78,16 @@
    "value": "C:/CodeWorkspace/je_editor/exe/je_driver_icon.ico;."
   },
   {
+   "optionDest": "datas",
+   "value": "C:/CodeWorkspace/je_editor/venv/Lib/site-packages/yapf_third_party;yapf_third_party/"
+  },
+  {
    "optionDest": "pathex",
    "value": "C:/CodeWorkspace/je_editor/venv"
   },
   {
-   "optionDest": "datas",
-   "value": "C:/CodeWorkspace/je_editor/venv/Lib/site-packages/yapf_third_party;yapf_third_party/"
+   "optionDest": "pathex",
+   "value": "C:/CodeWorkspace/je_editor/venv/Lib/site-packages"
   }
  ],
  "nonPyinstallerOptions": {
