@@ -56,10 +56,12 @@ def set_tab_menu(ui_we_want_to_set: EditorMain) -> None:
 
 
 def add_editor_tab(ui_we_want_to_set: EditorMain):
+    widget = EditorWidget(ui_we_want_to_set)
     ui_we_want_to_set.tab_widget.addTab(
-        EditorWidget(ui_we_want_to_set),
+        widget,
         f"{language_wrapper.language_word_dict.get('tab_menu_editor_tab_name')} "
         f"{ui_we_want_to_set.tab_widget.count()}")
+    return widget
 
 
 def add_frontengine_tab(ui_we_want_to_set: EditorMain):
@@ -85,6 +87,6 @@ def add_stackoverflow(ui_we_want_to_set: EditorMain):
 
 def add_ipython(ui_we_want_to_set: EditorMain):
     ui_we_want_to_set.tab_widget.addTab(
-        IpythonWidget(),
+        IpythonWidget(ui_we_want_to_set),
         f"{language_wrapper.language_word_dict.get('tab_menu_ipython_tab_name')} "
         f"{ui_we_want_to_set.tab_widget.count()}")

@@ -84,7 +84,7 @@ def add_dock_widget(ui_we_want_to_set: EditorMain, widget_type: str = None):
         dock_widget.setWidget(FrontEngineMainUI())
     elif widget_type == "ipython":
         dock_widget.setWindowTitle(language_wrapper.language_word_dict.get("dock_ipython_title"))
-        dock_widget.setWidget(IpythonWidget())
+        dock_widget.setWidget(IpythonWidget(ui_we_want_to_set))
     else:
         dock_widget.setWindowTitle(language_wrapper.language_word_dict.get("dock_browser_title"))
         dock_widget.setWidget(JEBrowser())

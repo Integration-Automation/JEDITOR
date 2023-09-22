@@ -1,4 +1,13 @@
+from __future__ import annotations
+
 from pathlib import Path
+from typing import TYPE_CHECKING
+
+
+if TYPE_CHECKING:
+    from je_editor.pyside_ui.main_ui.editor.editor_widget import EditorWidget
+    from je_editor.pyside_ui.main_ui.editor.editor_widget_dock import FullEditorWidget
+
 from typing import Union, List
 
 import jedi
@@ -24,10 +33,15 @@ class CodeEditor(QPlainTextEdit):
     Add line, edit tab distance, add highlighter, add search text
     """
 
-    def __init__(self):
+    def __init__(self, main_window: Union[EditorWidget, FullEditorWidget]):
         super().__init__()
+        # Jedi
         self.env = None
         self.check_env()
+        self.project = jedi.Project(str(Path.cwd()))
+        # Self main window (parent)
+        self.main_window = main_window
+
         self.skip_popup_behavior_list = [
             Qt.Key.Key_Enter, Qt.Key.Key_Return, Qt.Key.Key_Up, Qt.Key.Key_Down,
             Qt.Key.Key_Tab, Qt.Key.Key_Backtab, Qt.Key.Key_Space, Qt.Key.Key_Backspace
@@ -68,6 +82,7 @@ class CodeEditor(QPlainTextEdit):
         try:
             if path.exists():
                 self.env = jedi.create_environment(str(path))
+            self.project = jedi.Project(str(Path.cwd()))
         except Exception as error:
             error.with_traceback()
 
@@ -257,18 +272,34 @@ class CodeEditor(QPlainTextEdit):
         :return: None
         """
         # Catch soft wrap shift + return (line nuber not working on soft warp)
-        if self.completer.popup().isVisible() and event.key() in self.skip_popup_behavior_list:
+        key = event.key()
+        if event.modifiers() and Qt.Modifier.CTRL:
+            if key == Qt.Key.Key_B:
+                if self.env is not None:
+                    script = jedi.Script(code=self.toPlainText(), environment=self.env)
+                else:
+                    script = jedi.Script(code=self.toPlainText())
+                goto_list: List[jedi.api.classes.Name] = script.goto(
+                    self.textCursor().blockNumber() + 1, self.textCursor().positionInBlock())
+                if len(goto_list) > 0:
+                    path = goto_list[0].module_path
+                    if path is not None and path.exists():
+                        if self.main_window.current_file != str(path):
+                            self.main_window.main_window.go_to_new_tab(path)
+                    else:
+                        self.textCursor().setPosition(goto_list[0].line - 1)
+                return
+        if self.completer.popup().isVisible() and key in self.skip_popup_behavior_list:
             self.completer.popup().close()
             event.ignore()
             return
         if event.modifiers() and Qt.Modifier.SHIFT:
-            key = event.key()
             if key == Qt.Key.Key_Enter or key == Qt.Key.Key_Return:
                 event.ignore()
                 return
         super().keyPressEvent(event)
         self.highlight_current_line()
-        if event.key() in self.need_complete_list and self.completer is not None:
+        if key in self.need_complete_list and self.completer is not None:
             if self.completer.popup().isVisible():
                 self.completer.popup().close()
             self.complete()

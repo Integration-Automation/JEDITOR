@@ -58,7 +58,7 @@ class EditorWidget(QWidget):
         self.edit_splitter = QSplitter(self.full_splitter)
         self.edit_splitter.setOrientation(Qt.Orientation.Vertical)
         # code edit and code result plaintext
-        self.code_edit = CodeEditor()
+        self.code_edit = CodeEditor(self)
         self.code_result = CodeRecord()
         self.code_edit_scroll_area = QScrollArea()
         self.code_edit_scroll_area.setWidgetResizable(True)
@@ -129,37 +129,50 @@ class EditorWidget(QWidget):
         self.grid_layout.addWidget(self.tree_view_scroll_area, 0, 0, 0, 1)
         self.project_treeview.clicked.connect(self.treeview_click)
 
+    def check_is_open(self, path: Path):
+        if file_is_open_manager_dict.get(str(path), None) is not None:
+            widget: QWidget = self.tab_manager.findChild(EditorWidget, str(path))
+            if widget is None:
+                file_is_open_manager_dict.pop(str(path), None)
+            else:
+                self.tab_manager.setCurrentWidget(widget)
+                return False
+        else:
+            file_is_open_manager_dict.update({str(path): str(path)})
+            return True
+
+    def open_an_file(self, path: Path) -> bool:
+        """
+        :param path: open file path
+        :return: return False if file tab exists
+        """
+        if not self.check_is_open(path):
+            return False
+        file, file_content = read_file(str(path))
+        self.code_edit.setPlainText(
+            file_content
+        )
+        self.current_file = file
+        user_setting_dict.update({"last_file": str(self.current_file)})
+        if self.current_file is not None and self.code_save_thread is None:
+            init_new_auto_save_thread(self.current_file, self)
+        else:
+            self.code_save_thread.file = self.current_file
+        self.rename_self_tab()
+        return True
+
     def treeview_click(self) -> None:
         clicked_item: QFileSystemModel = self.project_treeview.selectedIndexes()[0]
         file_info: QFileInfo = self.project_treeview.model().fileInfo(clicked_item)
         path = pathlib.Path(file_info.absoluteFilePath())
         if path.is_file():
-            if file_is_open_manager_dict.get(str(path), None) is not None:
-                widget: QWidget = self.tab_manager.findChild(EditorWidget, str(path.name))
-                if widget is None:
-                    file_is_open_manager_dict.pop(str(path), None)
-                else:
-                    self.tab_manager.setCurrentWidget(widget)
-                    return
-            else:
-                file_is_open_manager_dict.update({str(path): str(path.name)})
-            file, file_content = read_file(str(path))
-            self.code_edit.setPlainText(
-                file_content
-            )
-            self.current_file = file
-            user_setting_dict.update({"last_file": str(self.current_file)})
-            if self.current_file is not None and self.code_save_thread is None:
-                init_new_auto_save_thread(self.current_file, self)
-            else:
-                self.code_save_thread.file = self.current_file
-            self.rename_self_tab()
+            self.open_an_file(path)
 
     def rename_self_tab(self):
         if self.tab_manager.currentWidget() is self:
             self.tab_manager.setTabText(
-                self.tab_manager.currentIndex(), str(Path(self.current_file).name))
-            self.setObjectName(str(Path(self.current_file).name))
+                self.tab_manager.currentIndex(), str(Path(self.current_file)))
+            self.setObjectName(str(Path(self.current_file)))
 
     def check_file_format(self):
         if self.current_file:

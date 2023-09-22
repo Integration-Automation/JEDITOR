@@ -181,6 +181,19 @@ class EditorMain(QMainWindow, QtStyleTools):
         # Color
         update_actually_color_dict()
 
+    def go_to_new_tab(self, file_path: Path):
+        if file_is_open_manager_dict.get(str(file_path), None) is None:
+            editor_widget = EditorWidget(self)
+            self.tab_widget.addTab(
+                editor_widget,
+                f"{language_wrapper.language_word_dict.get('tab_menu_editor_tab_name')} "
+                f"{self.tab_widget.count()}")
+            self.tab_widget.setCurrentWidget(editor_widget)
+            editor_widget.open_an_file(file_path)
+        else:
+            widget: QWidget = self.tab_widget.findChild(EditorWidget, str(file_path))
+            self.tab_widget.setCurrentWidget(widget)
+
     def closeEvent(self, event) -> None:
         if self.system_tray.isVisible():
             self.hide()
