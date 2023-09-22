@@ -39,7 +39,7 @@ class EditorWidget(QWidget):
         self.python_compiler = None
         self.main_window = main_window
         self.tab_manager = self.main_window.tab_widget
-        self.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
+        # Attr
         # Current execute instance if none not running
         self.exec_program: Union[None, ExecManager] = None
         self.exec_shell: Union[None, ShellManager] = None

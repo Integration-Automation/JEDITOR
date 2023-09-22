@@ -1,6 +1,7 @@
 frontengine
 PySide6
 sphinx
+auto-py-to-exe
 twine
 yapf
 pycodestyle

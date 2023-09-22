@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Dict, Type
 
 import jedi.settings
-from PySide6.QtCore import QTimer
+from PySide6.QtCore import QTimer, QEvent
 from PySide6.QtGui import QFontDatabase, QIcon, Qt
 from PySide6.QtWidgets import QMainWindow, QWidget, QTabWidget
 from frontengine import FrontEngineMainUI
@@ -15,7 +15,6 @@ from qt_material import QtStyleTools
 from je_editor.pyside_ui.browser.browser_widget import JEBrowser
 from je_editor.pyside_ui.code.auto_save.auto_save_manager import init_new_auto_save_thread, file_is_open_manager_dict
 from je_editor.pyside_ui.main_ui.editor.editor_widget import EditorWidget
-from je_editor.pyside_ui.main_ui.ipython_widget.rich_jupyter import IpythonWidget
 from je_editor.pyside_ui.main_ui.menu.set_menu_bar import set_menu_bar
 from je_editor.pyside_ui.main_ui.save_settings.user_color_setting_file import write_user_color_setting, \
     read_user_color_setting, update_actually_color_dict
@@ -42,6 +41,7 @@ class EditorMain(QMainWindow, QtStyleTools):
         self.font_size_menu = None
         self.font_menu = None
         self.working_dir = None
+        # Self attr
         # Read user setting first
         read_user_setting()
         # Set language
@@ -71,6 +71,7 @@ class EditorMain(QMainWindow, QtStyleTools):
         # TabWidget
         self.tab_widget = QTabWidget()
         self.tab_widget.setTabsClosable(True)
+        self.tab_widget.setAttribute(Qt.WidgetAttribute.WA_AlwaysShowToolTips, on=False)
         self.tab_widget.tabCloseRequested.connect(self.close_tab)
         # Timer to redirect error or message
         self.redirect_timer = QTimer(self)
@@ -107,7 +108,6 @@ class EditorMain(QMainWindow, QtStyleTools):
         self.tab_widget.addTab(
             JEBrowser(start_url="https://stackoverflow.com/", search_prefix="https://stackoverflow.com/search?q="),
             language_wrapper.language_word_dict.get("tab_menu_stackoverflow_tab_name"))
-        self.tab_widget.addTab(IpythonWidget(), language_wrapper.language_word_dict.get("tab_menu_ipython_tab_name"))
         for widget_name, widget in EDITOR_EXTEND_TAB.items():
             self.tab_widget.addTab(widget(), widget_name)
         self.setCentralWidget(self.tab_widget)
@@ -189,6 +189,13 @@ class EditorMain(QMainWindow, QtStyleTools):
             write_user_setting()
             write_user_color_setting()
             super().closeEvent(event)
+
+    def event(self, event: QEvent) -> bool:
+        if event.type() == QEvent.Type.ToolTip:
+            event.ignore()
+            return False
+        else:
+            return super().event(event)
 
     def close_tab(self, index: int):
         widget = self.tab_widget.widget(index)
