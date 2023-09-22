@@ -22,7 +22,7 @@ class FullEditorWidget(QWidget):
         self.grid_layout = QGridLayout(self)
         self.setWindowTitle(language_wrapper.language_word_dict.get("application_name"))
         # code edit and code result plaintext
-        self.code_edit = CodeEditor()
+        self.code_edit = CodeEditor(self)
         self.code_edit_scroll_area = QScrollArea()
         self.code_edit_scroll_area.setWidgetResizable(True)
         self.code_edit_scroll_area.setViewportMargins(0, 0, 0, 0)

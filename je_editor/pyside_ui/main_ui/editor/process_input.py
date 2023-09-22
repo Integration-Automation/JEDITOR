@@ -15,7 +15,9 @@ class ProcessInput(QWidget):
 
     def __init__(self, main_window: EditorWidget, process_type: str = "debugger"):
         super().__init__()
+        # Attr
         self.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
+        # UI setting
         self.main_window = main_window
         self.box_layout = QBoxLayout(QBoxLayout.Direction.TopToBottom)
         self.command_input = QLineEdit()

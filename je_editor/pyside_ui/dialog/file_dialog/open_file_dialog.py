@@ -55,13 +55,15 @@ def choose_dir_get_dir_path(parent_qt_instance: EditorMain) -> None:
     dir_path = QFileDialog().getExistingDirectory(parent=parent_qt_instance,)
     if dir_path != "":
         check_path = Path(dir_path)
-        if check_path.exists() and check_path.is_dir():
-            parent_qt_instance.working_dir = dir_path
-            for code_editor in range(parent_qt_instance.tab_widget.count()):
-                widget = parent_qt_instance.tab_widget.widget(code_editor)
-                if isinstance(widget, EditorWidget):
-                    widget.project_treeview.setRootIndex(widget.project_treeview_model.index(dir_path))
-                    widget.code_edit.check_env()
-            os.chdir(dir_path)
-            parent_qt_instance.startup_setting()
+    else:
+        return
+    if check_path.exists() and check_path.is_dir():
+        parent_qt_instance.working_dir = dir_path
+        os.chdir(dir_path)
+        for code_editor in range(parent_qt_instance.tab_widget.count()):
+            widget = parent_qt_instance.tab_widget.widget(code_editor)
+            if isinstance(widget, EditorWidget):
+                widget.project_treeview.setRootIndex(widget.project_treeview_model.index(dir_path))
+                widget.code_edit.check_env()
+        parent_qt_instance.startup_setting()
 

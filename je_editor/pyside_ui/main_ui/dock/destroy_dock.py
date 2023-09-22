@@ -7,8 +7,9 @@ class DestroyDock(QDockWidget):
     def __init__(self):
         super().__init__()
         self.setAllowedAreas(Qt.DockWidgetArea.AllDockWidgetAreas)
+        # Attr
         self.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
 
     def closeEvent(self, event) -> None:
-        self.widget().closeEvent(event)
-        super().closeEvent(event)
+        self.widget().close()
+        super().close()

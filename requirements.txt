@@ -1,9 +1,9 @@
 frontengine
 PySide6
 sphinx
+auto-py-to-exe
 twine
 yapf
-je_editor
 pycodestyle
 jedi
 attrs
@@ -13,4 +13,5 @@ setuptools
 pyinstaller
 requests
 gevent
-black
+je_editor
+Ipython

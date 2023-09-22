@@ -32,9 +32,11 @@ traditional_chinese_word_dict = {
     "dock_stackoverflow_label": "新 Stackoverflow 區域",
     "dock_editor_label": "新編輯器區域",
     "dock_frontengine_label": "新前景引擎區域",
+    "dock_ipython_label": "New Ipython(Jupyter)",
     "dock_editor_title": "編輯器",
     "dock_frontengine_title": "前景引擎",
     "dock_browser_title": "瀏覽器",
+    "dock_ipython_title": "IPython(Jupyter)",
     # File Menu
     "file_menu_label": "檔案",
     "file_menu_new_file_label": "新檔案",
@@ -102,6 +104,7 @@ traditional_chinese_word_dict = {
     "tab_menu_frontengine_tab_name": "前景引擎",
     "tab_menu_web_tab_name": "瀏覽器",
     "tab_menu_stackoverflow_tab_name": "Stackoverflow",
+    "tab_menu_ipython_tab_name": "IPython(Jupyter)",
     # Text Menu
     "text_menu_label": "文字",
     "text_menu_label_font": "字體",
@@ -116,4 +119,6 @@ traditional_chinese_word_dict = {
     "language_menu_bar_english": "英文",
     "language_menu_bar_traditional_chinese": "繁體中文",
     "language_menu_bar_please_restart_messagebox": "請重啟以應用更改",
+    # Qtconsole
+    "please_install_qtcontsole_label": "請先 python -m pip install qtconsole",
 }

@@ -32,9 +32,11 @@ english_word_dict = {
     "dock_stackoverflow_label": "New Dock Stackoverflow",
     "dock_editor_label": "New Dock Editor",
     "dock_frontengine_label": "New Dock FrontEngine",
+    "dock_ipython_label": "New Ipython(Jupyter)",
     "dock_editor_title": "Editor",
     "dock_frontengine_title": "FrontEngine",
     "dock_browser_title": "Browser",
+    "dock_ipython_title": "IPython",
     # File Menu
     "file_menu_label": "File",
     "file_menu_new_file_label": "New File",
@@ -104,6 +106,7 @@ please make sure that the current encoding is consistent with the default encodi
     "tab_menu_frontengine_tab_name": "FrontEngine",
     "tab_menu_web_tab_name": "WEB Browser",
     "tab_menu_stackoverflow_tab_name": "Stackoverflow",
+    "tab_menu_ipython_tab_name": "IPython(Jupyter)",
     # Text Menu
     "text_menu_label": "Text",
     "text_menu_label_font": "Font",
@@ -118,4 +121,6 @@ please make sure that the current encoding is consistent with the default encodi
     "language_menu_bar_english": "English",
     "language_menu_bar_traditional_chinese": "Traditional Chinese",
     "language_menu_bar_please_restart_messagebox": "Please restart",
+    # Qtconsole
+    "please_install_qtcontsole_label": "Please python -m pip install qtconsole first.",
 }

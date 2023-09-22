@@ -7,7 +7,7 @@ import subprocess
 import sys
 from pathlib import Path
 from threading import Thread
-from typing import Union
+from typing import Union, Callable
 
 from PySide6.QtCore import QTimer
 from PySide6.QtWidgets import QTextEdit
@@ -27,6 +27,7 @@ class ShellManager(object):
             main_window: Union[EditorWidget, None] = None,
             shell_encoding: str = "utf-8",
             program_buffer: int = 8192000,
+            after_done_function: Union[None, Callable] = None
     ):
         """
         :param main_window: Pyside main window
@@ -45,6 +46,7 @@ class ShellManager(object):
         self.run_error_queue: queue = queue.Queue()
         self.program_encoding: str = shell_encoding
         self.program_buffer: int = program_buffer
+        self.after_done_function = after_done_function
         self.renew_path()
         run_instance_manager.instance_list.append(self)
 
@@ -130,16 +132,19 @@ class ShellManager(object):
         except queue.Empty:
             pass
         if self.process.returncode == 0:
-            self.timer.stop()
-            self.exit_program()
-            self.main_window.exec_shell = None
+            self.process_run_over()
         elif self.process.returncode is not None:
-            self.timer.stop()
-            self.exit_program()
-            self.main_window.exec_shell = None
+            self.process_run_over()
         if self.still_run_shell:
             # poll return code
             self.process.poll()
+
+    def process_run_over(self):
+        self.timer.stop()
+        self.exit_program()
+        self.main_window.exec_shell = None
+        if self.after_done_function is not None:
+            self.after_done_function()
 
     # exit program change run flag to false and clean read thread and queue and process
     def exit_program(self) -> None:
