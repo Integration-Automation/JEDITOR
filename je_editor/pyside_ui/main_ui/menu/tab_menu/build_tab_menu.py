@@ -6,6 +6,7 @@ from frontengine import FrontEngineMainUI
 
 from je_editor.pyside_ui.browser.browser_widget import JEBrowser
 from je_editor.pyside_ui.main_ui.editor.editor_widget import EditorWidget
+from je_editor.pyside_ui.main_ui.ipython_widget.rich_jupyter import IpythonWidget
 
 if TYPE_CHECKING:
     from je_editor.pyside_ui.main_ui.main_editor import EditorMain
@@ -45,6 +46,13 @@ def set_tab_menu(ui_we_want_to_set: EditorMain) -> None:
         lambda: add_stackoverflow(ui_we_want_to_set)
     )
     ui_we_want_to_set.tab_menu.addAction(ui_we_want_to_set.tab_menu.add_stackoverflow_action)
+    # IPython
+    ui_we_want_to_set.tab_menu.add_ipython_action = QAction(
+        language_wrapper.language_word_dict.get("tab_menu_ipython_tab_name"))
+    ui_we_want_to_set.tab_menu.add_ipython_action.triggered.connect(
+        lambda: add_ipython(ui_we_want_to_set)
+    )
+    ui_we_want_to_set.tab_menu.addAction(ui_we_want_to_set.tab_menu.add_ipython_action)
 
 
 def add_editor_tab(ui_we_want_to_set: EditorMain):
@@ -72,4 +80,11 @@ def add_stackoverflow(ui_we_want_to_set: EditorMain):
     ui_we_want_to_set.tab_widget.addTab(
         JEBrowser(start_url="https://stackoverflow.com/", search_prefix="https://stackoverflow.com/search?q="),
         f"{language_wrapper.language_word_dict.get('tab_menu_stackoverflow_tab_name')} "
+        f"{ui_we_want_to_set.tab_widget.count()}")
+
+
+def add_ipython(ui_we_want_to_set: EditorMain):
+    ui_we_want_to_set.tab_widget.addTab(
+        IpythonWidget(),
+        f"{language_wrapper.language_word_dict.get('tab_menu_ipython_tab_name')} "
         f"{ui_we_want_to_set.tab_widget.count()}")

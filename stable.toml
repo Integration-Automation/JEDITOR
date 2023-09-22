@@ -1,12 +1,12 @@
-# Rename to build dev version
-# This is dev version
+# Rename to build stable version
+# This is stable version
 [build-system]
-requires = ["setuptools"]
+requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "je_editor_dev"
-version = "0.0.169"
+name = "je_editor"
+version = "0.0.161"
 authors = [
     { name = "JE-Chen", email = "jechenmailman@gmail.com" },
 ]
@@ -14,7 +14,7 @@ description = "JEditor is basic but powerful editor include GPT"
 requires-python = ">=3.9"
 license = { text = "MIT" }
 dependencies = [
-    "PySide6", "qt-material", "yapf", "frontengine", "pycodestyle", "jedi", "black"
+    "PySide6", "qt-material", "yapf", "frontengine", "pycodestyle", "jedi", "qtconsole"
 ]
 classifiers = [
     "Programming Language :: Python :: 3.9",
@@ -25,6 +25,7 @@ classifiers = [
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent"
 ]
+
 
 [project.urls]
 Homepage = "https://github.com/JE-Chen/je_editor"

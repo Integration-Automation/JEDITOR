@@ -15,6 +15,7 @@ from qt_material import QtStyleTools
 from je_editor.pyside_ui.browser.browser_widget import JEBrowser
 from je_editor.pyside_ui.code.auto_save.auto_save_manager import init_new_auto_save_thread, file_is_open_manager_dict
 from je_editor.pyside_ui.main_ui.editor.editor_widget import EditorWidget
+from je_editor.pyside_ui.main_ui.ipython_widget.rich_jupyter import IpythonWidget
 from je_editor.pyside_ui.main_ui.menu.set_menu_bar import set_menu_bar
 from je_editor.pyside_ui.main_ui.save_settings.user_color_setting_file import write_user_color_setting, \
     read_user_color_setting, update_actually_color_dict
@@ -105,8 +106,8 @@ class EditorMain(QMainWindow, QtStyleTools):
         self.tab_widget.addTab(JEBrowser(), language_wrapper.language_word_dict.get("tab_name_web_browser"))
         self.tab_widget.addTab(
             JEBrowser(start_url="https://stackoverflow.com/", search_prefix="https://stackoverflow.com/search?q="),
-            "Stackoverflow")
-
+            language_wrapper.language_word_dict.get("tab_menu_stackoverflow_tab_name"))
+        self.tab_widget.addTab(IpythonWidget(), language_wrapper.language_word_dict.get("tab_menu_ipython_tab_name"))
         for widget_name, widget in EDITOR_EXTEND_TAB.items():
             self.tab_widget.addTab(widget(), widget_name)
         self.setCentralWidget(self.tab_widget)

@@ -11,6 +11,7 @@ from frontengine import FrontEngineMainUI
 from je_editor.pyside_ui.browser.browser_widget import JEBrowser
 from je_editor.pyside_ui.main_ui.dock.destroy_dock import DestroyDock
 from je_editor.pyside_ui.main_ui.editor.editor_widget_dock import FullEditorWidget
+from je_editor.pyside_ui.main_ui.ipython_widget.rich_jupyter import IpythonWidget
 from je_editor.utils.file.open.open_file import read_file
 from je_editor.utils.multi_language.multi_language_wrapper import language_wrapper
 
@@ -49,6 +50,13 @@ def set_dock_menu(ui_we_want_to_set: EditorMain) -> None:
         lambda: add_dock_widget(ui_we_want_to_set, "frontengine")
     )
     ui_we_want_to_set.dock_menu.addAction(ui_we_want_to_set.dock_menu.new_frontengine)
+    # Ipython
+    ui_we_want_to_set.dock_menu.new_ipython = QAction(
+        language_wrapper.language_word_dict.get("dock_ipython_label"))
+    ui_we_want_to_set.dock_menu.new_ipython.triggered.connect(
+        lambda: add_dock_widget(ui_we_want_to_set, "ipython")
+    )
+    ui_we_want_to_set.dock_menu.addAction(ui_we_want_to_set.dock_menu.new_ipython)
 
 
 def add_dock_widget(ui_we_want_to_set: EditorMain, widget_type: str = None):
@@ -74,6 +82,9 @@ def add_dock_widget(ui_we_want_to_set: EditorMain, widget_type: str = None):
     elif widget_type == "frontengine":
         dock_widget.setWindowTitle(language_wrapper.language_word_dict.get("dock_frontengine_title"))
         dock_widget.setWidget(FrontEngineMainUI())
+    elif widget_type == "ipython":
+        dock_widget.setWindowTitle(language_wrapper.language_word_dict.get("dock_ipython_title"))
+        dock_widget.setWidget(IpythonWidget())
     else:
         dock_widget.setWindowTitle(language_wrapper.language_word_dict.get("dock_browser_title"))
         dock_widget.setWidget(JEBrowser())

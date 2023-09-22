@@ -3,7 +3,6 @@ PySide6
 sphinx
 twine
 yapf
-je_editor
 pycodestyle
 jedi
 attrs
@@ -13,4 +12,4 @@ setuptools
 pyinstaller
 requests
 gevent
-black
+je_editor

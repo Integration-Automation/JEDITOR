@@ -10,5 +10,5 @@ class DestroyDock(QDockWidget):
         self.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
 
     def closeEvent(self, event) -> None:
-        self.widget().closeEvent(event)
-        super().closeEvent(event)
+        self.widget().close()
+        super().close()

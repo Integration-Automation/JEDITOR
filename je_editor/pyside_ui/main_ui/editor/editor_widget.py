@@ -171,8 +171,9 @@ class EditorWidget(QWidget):
 
     def close(self) -> bool:
         self.check_format_timer.stop()
-        self.code_save_thread.still_run = False
-        self.code_save_thread = None
+        if self.code_save_thread is not None:
+            self.code_save_thread.still_run = False
+            self.code_save_thread = None
         file_is_open_manager_dict.pop(self.current_file, None)
         auto_save_manager_dict.pop(self.current_file, None)
         return super().close()
