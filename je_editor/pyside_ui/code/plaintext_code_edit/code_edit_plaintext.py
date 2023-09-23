@@ -38,7 +38,6 @@ class CodeEditor(QPlainTextEdit):
         # Jedi
         self.env = None
         self.check_env()
-        self.project = jedi.Project(str(Path.cwd()))
         # Self main window (parent)
         self.main_window = main_window
 
@@ -82,9 +81,8 @@ class CodeEditor(QPlainTextEdit):
         try:
             if path.exists():
                 self.env = jedi.create_environment(str(path))
-            self.project = jedi.Project(str(Path.cwd()))
         except Exception as error:
-            error.with_traceback()
+            raise error
 
     def set_complete(self, list_to_complete: list) -> None:
         """

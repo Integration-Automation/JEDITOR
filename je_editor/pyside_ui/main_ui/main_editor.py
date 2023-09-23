@@ -30,7 +30,7 @@ EDITOR_EXTEND_TAB: Dict[str, Type[QWidget]] = {}
 
 class EditorMain(QMainWindow, QtStyleTools):
 
-    def __init__(self, debug_mode: bool = False, show_system_tray_ray: bool = True):
+    def __init__(self, debug_mode: bool = False, show_system_tray_ray: bool = False):
         super(EditorMain, self).__init__()
         # Init variable
         self.file_menu = None
@@ -41,6 +41,7 @@ class EditorMain(QMainWindow, QtStyleTools):
         self.font_size_menu = None
         self.font_menu = None
         self.working_dir = None
+        self.show_system_tray_ray = show_system_tray_ray
         # Self attr
         # Read user setting first
         read_user_setting()
@@ -85,7 +86,7 @@ class EditorMain(QMainWindow, QtStyleTools):
         self.icon = QIcon(str(self.icon_path))
         if self.icon.isNull() is False:
             self.setWindowIcon(self.icon)
-            if ExtendSystemTray.isSystemTrayAvailable() and show_system_tray_ray:
+            if ExtendSystemTray.isSystemTrayAvailable() and self.show_system_tray_ray:
                 self.system_tray = ExtendSystemTray(main_window=self)
                 self.system_tray.setIcon(self.icon)
                 self.system_tray.setVisible(True)
@@ -195,13 +196,9 @@ class EditorMain(QMainWindow, QtStyleTools):
             self.tab_widget.setCurrentWidget(widget)
 
     def closeEvent(self, event) -> None:
-        if self.system_tray.isVisible():
-            self.hide()
-            event.ignore()
-        else:
-            write_user_setting()
-            write_user_color_setting()
-            super().closeEvent(event)
+        write_user_setting()
+        write_user_color_setting()
+        super().closeEvent(event)
 
     def event(self, event: QEvent) -> bool:
         if event.type() == QEvent.Type.ToolTip:
