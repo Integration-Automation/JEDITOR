@@ -209,7 +209,7 @@ class EditorMain(QMainWindow, QtStyleTools):
 
     def close_tab(self, index: int):
         widget = self.tab_widget.widget(index)
-        if widget is not None:
+        if widget:
             widget.close()
         self.tab_widget.removeTab(index)
 

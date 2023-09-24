@@ -14,7 +14,6 @@ class FullEditorWidget(QWidget):
     def __init__(self, current_file: str):
         super().__init__()
         # Init variable
-        self.auto_save_thread = None
         self.current_file = current_file
         # Attr
         self.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)

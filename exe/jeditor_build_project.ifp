@@ -3,7 +3,7 @@
 ProjectFileVersion = 1.1
 [General]
 Program name = jeditor
-Program version = 1.0.2
+Program version = 1.0.3
 Windows XP = 0
 Windows Server 2003 = 0
 Windows Vista = 0
@@ -78,6 +78,42 @@ Execdlls = 0
 2
 21
 [Files/Dirs]
+C:\CodeWorkspace\je_editor\output\JEditor\JEditor\libzmq-v141-mt-4_3_4-0a6f51ca.dll
+513 KB
+dll
+C:\CodeWorkspace\je_editor\output\JEditor\JEditor\msvcp140.dll
+607.4 KB
+dll
+C:\CodeWorkspace\je_editor\output\JEditor\JEditor\pyexpat.pyd
+194.3 KB
+pyd
+C:\CodeWorkspace\je_editor\output\JEditor\JEditor\python3.dll
+64.8 KB
+dll
+C:\CodeWorkspace\je_editor\output\JEditor\JEditor\python310.dll
+4.3 MB
+dll
+C:\CodeWorkspace\je_editor\output\JEditor\JEditor\select.pyd
+29.3 KB
+pyd
+C:\CodeWorkspace\je_editor\output\JEditor\JEditor\sqlite3.dll
+1.4 MB
+dll
+C:\CodeWorkspace\je_editor\output\JEditor\JEditor\tcl86t.dll
+1.8 MB
+dll
+C:\CodeWorkspace\je_editor\output\JEditor\JEditor\tk86t.dll
+1.5 MB
+dll
+C:\CodeWorkspace\je_editor\output\JEditor\JEditor\unicodedata.pyd
+1.1 MB
+pyd
+C:\CodeWorkspace\je_editor\output\JEditor\JEditor\VCRUNTIME140.dll
+95.9 KB
+dll
+C:\CodeWorkspace\je_editor\output\JEditor\JEditor\VCRUNTIME140_1.dll
+36.4 KB
+dll
 C:\CodeWorkspace\je_editor\output\JEditor\JEditor\aiohttp
 N/A
 [Folder]
@@ -317,42 +353,6 @@ C:\CodeWorkspace\je_editor\output\JEditor\JEditor\libsodium-ac42d648.dll
 dll
 C:\CodeWorkspace\je_editor\output\JEditor\JEditor\libssl-1_1.dll
 688.3 KB
-dll
-C:\CodeWorkspace\je_editor\output\JEditor\JEditor\libzmq-v141-mt-4_3_4-0a6f51ca.dll
-513 KB
-dll
-C:\CodeWorkspace\je_editor\output\JEditor\JEditor\msvcp140.dll
-607.4 KB
-dll
-C:\CodeWorkspace\je_editor\output\JEditor\JEditor\pyexpat.pyd
-194.3 KB
-pyd
-C:\CodeWorkspace\je_editor\output\JEditor\JEditor\python3.dll
-64.8 KB
-dll
-C:\CodeWorkspace\je_editor\output\JEditor\JEditor\python310.dll
-4.3 MB
-dll
-C:\CodeWorkspace\je_editor\output\JEditor\JEditor\select.pyd
-29.3 KB
-pyd
-C:\CodeWorkspace\je_editor\output\JEditor\JEditor\sqlite3.dll
-1.4 MB
-dll
-C:\CodeWorkspace\je_editor\output\JEditor\JEditor\tcl86t.dll
-1.8 MB
-dll
-C:\CodeWorkspace\je_editor\output\JEditor\JEditor\tk86t.dll
-1.5 MB
-dll
-C:\CodeWorkspace\je_editor\output\JEditor\JEditor\unicodedata.pyd
-1.1 MB
-pyd
-C:\CodeWorkspace\je_editor\output\JEditor\JEditor\VCRUNTIME140.dll
-95.9 KB
-dll
-C:\CodeWorkspace\je_editor\output\JEditor\JEditor\VCRUNTIME140_1.dll
-36.4 KB
 dll
 [Licence_Begin]
 1609
