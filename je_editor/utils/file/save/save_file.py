@@ -19,7 +19,7 @@ def write_file(file_path: str, content: str) -> None:
     try:
         lock.acquire()
         if file_path != "" and file_path is not None:
-            with open(file_path, "w+") as file_to_write:
+            with open(file_path, "w+", encoding="utf-8") as file_to_write:
                 file_to_write.write(content)
     except JEditorSaveFileException:
         raise JEditorSaveFileException
