@@ -41,7 +41,7 @@ def run_debugger(ui_we_want_to_set: EditorMain) -> None:
         if widget.exec_python_debugger is None:
             widget.python_compiler = ui_we_want_to_set.python_compiler
             if choose_file_get_save_file_path(ui_we_want_to_set):
-                code_exec = ExecManager(widget)
+                code_exec = ExecManager(widget, program_encoding=ui_we_want_to_set.encoding)
                 code_exec.later_init()
                 code_exec.code_result = widget.debugger_result
                 code_exec.exec_code(
