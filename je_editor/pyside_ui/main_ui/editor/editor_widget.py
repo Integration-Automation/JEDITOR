@@ -187,6 +187,6 @@ class EditorWidget(QWidget):
         if self.code_save_thread is not None:
             self.code_save_thread.still_run = False
             self.code_save_thread = None
-        file_is_open_manager_dict.pop(self.current_file, None)
+        file_is_open_manager_dict.pop(str(Path(self.current_file)), None)
         auto_save_manager_dict.pop(self.current_file, None)
         return super().close()

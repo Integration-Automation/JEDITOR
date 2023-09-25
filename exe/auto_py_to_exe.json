@@ -132,6 +132,14 @@
   {
    "optionDest": "datas",
    "value": "C:/CodeWorkspace/je_editor/exe/venv/Lib/site-packages/debugpy;debugpy/"
+  },
+  {
+   "optionDest": "datas",
+   "value": "C:/CodeWorkspace/je_editor/venv/Lib/site-packages/parso;parso/"
+  },
+  {
+   "optionDest": "datas",
+   "value": "C:/CodeWorkspace/je_editor/venv/Lib/site-packages/jedi;jedi/"
   }
  ],
  "nonPyinstallerOptions": {
