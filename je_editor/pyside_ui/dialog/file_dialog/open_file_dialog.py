@@ -1,11 +1,14 @@
 from __future__ import annotations
 
 import os
+import sys
 from pathlib import Path
 from typing import TYPE_CHECKING
 
 from je_editor.pyside_ui.code.auto_save.auto_save_manager import init_new_auto_save_thread, file_is_open_manager_dict
-from je_editor.pyside_ui.main_ui.save_settings.user_setting_file import user_setting_dict
+from je_editor.pyside_ui.main_ui.save_settings.user_setting_file import user_setting_dict, read_user_setting
+from je_editor.utils.multi_language.multi_language_wrapper import language_wrapper
+from je_editor.utils.venv_check.check_venv import check_and_choose_venv
 
 if TYPE_CHECKING:
     from je_editor.pyside_ui.main_ui.main_editor import EditorMain
@@ -52,7 +55,7 @@ def choose_file_get_open_file_path(parent_qt_instance: EditorMain) -> None:
 
 
 def choose_dir_get_dir_path(parent_qt_instance: EditorMain) -> None:
-    dir_path = QFileDialog().getExistingDirectory(parent=parent_qt_instance,)
+    dir_path = QFileDialog().getExistingDirectory(parent=parent_qt_instance, )
     if dir_path != "":
         check_path = Path(dir_path)
     else:
@@ -65,5 +68,11 @@ def choose_dir_get_dir_path(parent_qt_instance: EditorMain) -> None:
             if isinstance(widget, EditorWidget):
                 widget.project_treeview.setRootIndex(widget.project_treeview_model.index(dir_path))
                 widget.code_edit.check_env()
+        if sys.platform in ["win32", "cygwin", "msys"]:
+            venv_path = Path(os.getcwd() + "/venv/Scripts")
+        else:
+            venv_path = Path(os.getcwd() + "/venv/bin")
+        parent_qt_instance.python_compiler = check_and_choose_venv(venv_path)
+        read_user_setting()
         parent_qt_instance.startup_setting()
-
+        language_wrapper.reset_language(user_setting_dict.get("language", "English"))
