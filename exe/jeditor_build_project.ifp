@@ -3,7 +3,7 @@
 ProjectFileVersion = 1.1
 [General]
 Program name = jeditor
-Program version = 1.0.3
+Program version = 1.0.4
 Windows XP = 0
 Windows Server 2003 = 0
 Windows Vista = 0
@@ -78,282 +78,282 @@ Execdlls = 0
 2
 21
 [Files/Dirs]
-C:\CodeWorkspace\je_editor\output\JEditor\JEditor\libzmq-v141-mt-4_3_4-0a6f51ca.dll
-513 KB
-dll
-C:\CodeWorkspace\je_editor\output\JEditor\JEditor\msvcp140.dll
-607.4 KB
-dll
-C:\CodeWorkspace\je_editor\output\JEditor\JEditor\pyexpat.pyd
-194.3 KB
-pyd
-C:\CodeWorkspace\je_editor\output\JEditor\JEditor\python3.dll
-64.8 KB
-dll
-C:\CodeWorkspace\je_editor\output\JEditor\JEditor\python310.dll
-4.3 MB
-dll
-C:\CodeWorkspace\je_editor\output\JEditor\JEditor\select.pyd
-29.3 KB
-pyd
-C:\CodeWorkspace\je_editor\output\JEditor\JEditor\sqlite3.dll
-1.4 MB
-dll
-C:\CodeWorkspace\je_editor\output\JEditor\JEditor\tcl86t.dll
-1.8 MB
-dll
-C:\CodeWorkspace\je_editor\output\JEditor\JEditor\tk86t.dll
-1.5 MB
-dll
-C:\CodeWorkspace\je_editor\output\JEditor\JEditor\unicodedata.pyd
-1.1 MB
-pyd
-C:\CodeWorkspace\je_editor\output\JEditor\JEditor\VCRUNTIME140.dll
-95.9 KB
-dll
-C:\CodeWorkspace\je_editor\output\JEditor\JEditor\VCRUNTIME140_1.dll
-36.4 KB
-dll
-C:\CodeWorkspace\je_editor\output\JEditor\JEditor\aiohttp
+C:\CodeWorkspace\je_editor\output\JEditor\certifi
 N/A
 [Folder]
-C:\CodeWorkspace\je_editor\output\JEditor\JEditor\attrs-23.1.0.dist-info
+C:\CodeWorkspace\je_editor\output\JEditor\cffi-1.15.1.dist-info
 N/A
 [Folder]
-C:\CodeWorkspace\je_editor\output\JEditor\JEditor\black
+C:\CodeWorkspace\je_editor\output\JEditor\charset_normalizer
 N/A
 [Folder]
-C:\CodeWorkspace\je_editor\output\JEditor\JEditor\certifi
+C:\CodeWorkspace\je_editor\output\JEditor\debugpy
 N/A
 [Folder]
-C:\CodeWorkspace\je_editor\output\JEditor\JEditor\cffi-1.15.1.dist-info
+C:\CodeWorkspace\je_editor\output\JEditor\docutils
 N/A
 [Folder]
-C:\CodeWorkspace\je_editor\output\JEditor\JEditor\charset_normalizer
+C:\CodeWorkspace\je_editor\output\JEditor\frozenlist
 N/A
 [Folder]
-C:\CodeWorkspace\je_editor\output\JEditor\JEditor\debugpy
+C:\CodeWorkspace\je_editor\output\JEditor\gevent
 N/A
 [Folder]
-C:\CodeWorkspace\je_editor\output\JEditor\JEditor\docutils
+C:\CodeWorkspace\je_editor\output\JEditor\gevent-23.9.1.dist-info
 N/A
 [Folder]
-C:\CodeWorkspace\je_editor\output\JEditor\JEditor\frozenlist
+C:\CodeWorkspace\je_editor\output\JEditor\greenlet
 N/A
 [Folder]
-C:\CodeWorkspace\je_editor\output\JEditor\JEditor\gevent
+C:\CodeWorkspace\je_editor\output\JEditor\greenlet-2.0.2.dist-info
 N/A
 [Folder]
-C:\CodeWorkspace\je_editor\output\JEditor\JEditor\gevent-23.9.1.dist-info
+C:\CodeWorkspace\je_editor\output\JEditor\importlib_metadata-6.8.0.dist-info
 N/A
 [Folder]
-C:\CodeWorkspace\je_editor\output\JEditor\JEditor\greenlet
+C:\CodeWorkspace\je_editor\output\JEditor\IPython
 N/A
 [Folder]
-C:\CodeWorkspace\je_editor\output\JEditor\JEditor\greenlet-2.0.2.dist-info
+C:\CodeWorkspace\je_editor\output\JEditor\ipython_genutils
 N/A
 [Folder]
-C:\CodeWorkspace\je_editor\output\JEditor\JEditor\importlib_metadata-6.8.0.dist-info
+C:\CodeWorkspace\je_editor\output\JEditor\ipython_genutils-0.2.0.dist-info
 N/A
 [Folder]
-C:\CodeWorkspace\je_editor\output\JEditor\JEditor\IPython
+C:\CodeWorkspace\je_editor\output\JEditor\ipython-8.15.0.dist-info
 N/A
 [Folder]
-C:\CodeWorkspace\je_editor\output\JEditor\JEditor\ipython_genutils
+C:\CodeWorkspace\je_editor\output\JEditor\jedi
 N/A
 [Folder]
-C:\CodeWorkspace\je_editor\output\JEditor\JEditor\ipython_genutils-0.2.0.dist-info
+C:\CodeWorkspace\je_editor\output\JEditor\jupyter_client
 N/A
 [Folder]
-C:\CodeWorkspace\je_editor\output\JEditor\JEditor\ipython-8.15.0.dist-info
+C:\CodeWorkspace\je_editor\output\JEditor\jupyter_client-8.3.1.dist-info
 N/A
 [Folder]
-C:\CodeWorkspace\je_editor\output\JEditor\JEditor\jedi
+C:\CodeWorkspace\je_editor\output\JEditor\jupyter_core
 N/A
 [Folder]
-C:\CodeWorkspace\je_editor\output\JEditor\JEditor\jupyter_client
+C:\CodeWorkspace\je_editor\output\JEditor\jupyter_core-5.3.1.dist-info
 N/A
 [Folder]
-C:\CodeWorkspace\je_editor\output\JEditor\JEditor\jupyter_client-8.3.1.dist-info
+C:\CodeWorkspace\je_editor\output\JEditor\lib2to3
 N/A
 [Folder]
-C:\CodeWorkspace\je_editor\output\JEditor\JEditor\jupyter_core
+C:\CodeWorkspace\je_editor\output\JEditor\markupsafe
 N/A
 [Folder]
-C:\CodeWorkspace\je_editor\output\JEditor\JEditor\jupyter_core-5.3.1.dist-info
+C:\CodeWorkspace\je_editor\output\JEditor\multidict
 N/A
 [Folder]
-C:\CodeWorkspace\je_editor\output\JEditor\JEditor\lib2to3
+C:\CodeWorkspace\je_editor\output\JEditor\parso
 N/A
 [Folder]
-C:\CodeWorkspace\je_editor\output\JEditor\JEditor\markupsafe
+C:\CodeWorkspace\je_editor\output\JEditor\psutil
 N/A
 [Folder]
-C:\CodeWorkspace\je_editor\output\JEditor\JEditor\multidict
+C:\CodeWorkspace\je_editor\output\JEditor\pyaudio
 N/A
 [Folder]
-C:\CodeWorkspace\je_editor\output\JEditor\JEditor\parso
+C:\CodeWorkspace\je_editor\output\JEditor\pycparser-2.21.dist-info
 N/A
 [Folder]
-C:\CodeWorkspace\je_editor\output\JEditor\JEditor\psutil
+C:\CodeWorkspace\je_editor\output\JEditor\pydev_ipython
 N/A
 [Folder]
-C:\CodeWorkspace\je_editor\output\JEditor\JEditor\pyaudio
+C:\CodeWorkspace\je_editor\output\JEditor\PySide6
 N/A
 [Folder]
-C:\CodeWorkspace\je_editor\output\JEditor\JEditor\pycparser-2.21.dist-info
+C:\CodeWorkspace\je_editor\output\JEditor\pywin32_system32
 N/A
 [Folder]
-C:\CodeWorkspace\je_editor\output\JEditor\JEditor\pydev_ipython
+C:\CodeWorkspace\je_editor\output\JEditor\pyzmq.libs
 N/A
 [Folder]
-C:\CodeWorkspace\je_editor\output\JEditor\JEditor\PySide6
+C:\CodeWorkspace\je_editor\output\JEditor\qt_material
 N/A
 [Folder]
-C:\CodeWorkspace\je_editor\output\JEditor\JEditor\pywin32_system32
+C:\CodeWorkspace\je_editor\output\JEditor\qtconsole
 N/A
 [Folder]
-C:\CodeWorkspace\je_editor\output\JEditor\JEditor\pyzmq.libs
+C:\CodeWorkspace\je_editor\output\JEditor\qtconsole-5.4.4.dist-info
 N/A
 [Folder]
-C:\CodeWorkspace\je_editor\output\JEditor\JEditor\qt_material
+C:\CodeWorkspace\je_editor\output\JEditor\regex
 N/A
 [Folder]
-C:\CodeWorkspace\je_editor\output\JEditor\JEditor\qtconsole
+C:\CodeWorkspace\je_editor\output\JEditor\setuptools-68.1.2.dist-info
 N/A
 [Folder]
-C:\CodeWorkspace\je_editor\output\JEditor\JEditor\qtconsole-5.4.4.dist-info
+C:\CodeWorkspace\je_editor\output\JEditor\shiboken6
 N/A
 [Folder]
-C:\CodeWorkspace\je_editor\output\JEditor\JEditor\regex
+C:\CodeWorkspace\je_editor\output\JEditor\speech_recognition
 N/A
 [Folder]
-C:\CodeWorkspace\je_editor\output\JEditor\JEditor\setuptools-68.1.2.dist-info
+C:\CodeWorkspace\je_editor\output\JEditor\tcl
 N/A
 [Folder]
-C:\CodeWorkspace\je_editor\output\JEditor\JEditor\shiboken6
+C:\CodeWorkspace\je_editor\output\JEditor\tcl8
 N/A
 [Folder]
-C:\CodeWorkspace\je_editor\output\JEditor\JEditor\speech_recognition
+C:\CodeWorkspace\je_editor\output\JEditor\tk
 N/A
 [Folder]
-C:\CodeWorkspace\je_editor\output\JEditor\JEditor\tcl
+C:\CodeWorkspace\je_editor\output\JEditor\tornado
 N/A
 [Folder]
-C:\CodeWorkspace\je_editor\output\JEditor\JEditor\tcl8
+C:\CodeWorkspace\je_editor\output\JEditor\wheel-0.41.2.dist-info
 N/A
 [Folder]
-C:\CodeWorkspace\je_editor\output\JEditor\JEditor\tk
+C:\CodeWorkspace\je_editor\output\JEditor\win32
 N/A
 [Folder]
-C:\CodeWorkspace\je_editor\output\JEditor\JEditor\tornado
+C:\CodeWorkspace\je_editor\output\JEditor\yapf_third_party
 N/A
 [Folder]
-C:\CodeWorkspace\je_editor\output\JEditor\JEditor\wheel-0.41.2.dist-info
+C:\CodeWorkspace\je_editor\output\JEditor\yapf-0.40.1.dist-info
 N/A
 [Folder]
-C:\CodeWorkspace\je_editor\output\JEditor\JEditor\win32
+C:\CodeWorkspace\je_editor\output\JEditor\yarl
 N/A
 [Folder]
-C:\CodeWorkspace\je_editor\output\JEditor\JEditor\yapf_third_party
+C:\CodeWorkspace\je_editor\output\JEditor\zmq
 N/A
 [Folder]
-C:\CodeWorkspace\je_editor\output\JEditor\JEditor\yapf-0.40.1.dist-info
+C:\CodeWorkspace\je_editor\output\JEditor\zope
 N/A
 [Folder]
-C:\CodeWorkspace\je_editor\output\JEditor\JEditor\yarl
+C:\CodeWorkspace\je_editor\output\JEditor\zope.event-5.0.dist-info
 N/A
 [Folder]
-C:\CodeWorkspace\je_editor\output\JEditor\JEditor\zmq
+C:\CodeWorkspace\je_editor\output\JEditor\zope.interface-6.0.dist-info
 N/A
 [Folder]
-C:\CodeWorkspace\je_editor\output\JEditor\JEditor\zope
-N/A
-[Folder]
-C:\CodeWorkspace\je_editor\output\JEditor\JEditor\zope.event-5.0.dist-info
-N/A
-[Folder]
-C:\CodeWorkspace\je_editor\output\JEditor\JEditor\zope.interface-6.0.dist-info
-N/A
-[Folder]
-C:\CodeWorkspace\je_editor\output\JEditor\JEditor\_asyncio.pyd
+C:\CodeWorkspace\je_editor\output\JEditor\_asyncio.pyd
 63.8 KB
 pyd
-C:\CodeWorkspace\je_editor\output\JEditor\JEditor\_bz2.pyd
+C:\CodeWorkspace\je_editor\output\JEditor\_bz2.pyd
 81.8 KB
 pyd
-C:\CodeWorkspace\je_editor\output\JEditor\JEditor\_cffi_backend.cp310-win_amd64.pyd
+C:\CodeWorkspace\je_editor\output\JEditor\_cffi_backend.cp310-win_amd64.pyd
 177 KB
 pyd
-C:\CodeWorkspace\je_editor\output\JEditor\JEditor\_ctypes.pyd
+C:\CodeWorkspace\je_editor\output\JEditor\_ctypes.pyd
 120.8 KB
 pyd
-C:\CodeWorkspace\je_editor\output\JEditor\JEditor\_decimal.pyd
+C:\CodeWorkspace\je_editor\output\JEditor\_decimal.pyd
 248.8 KB
 pyd
-C:\CodeWorkspace\je_editor\output\JEditor\JEditor\_elementtree.pyd
+C:\CodeWorkspace\je_editor\output\JEditor\_elementtree.pyd
 125.3 KB
 pyd
-C:\CodeWorkspace\je_editor\output\JEditor\JEditor\_hashlib.pyd
+C:\CodeWorkspace\je_editor\output\JEditor\_hashlib.pyd
 63.3 KB
 pyd
-C:\CodeWorkspace\je_editor\output\JEditor\JEditor\_lzma.pyd
+C:\CodeWorkspace\je_editor\output\JEditor\_lzma.pyd
 154.8 KB
 pyd
-C:\CodeWorkspace\je_editor\output\JEditor\JEditor\_multiprocessing.pyd
+C:\CodeWorkspace\je_editor\output\JEditor\_multiprocessing.pyd
 33.8 KB
 pyd
-C:\CodeWorkspace\je_editor\output\JEditor\JEditor\_overlapped.pyd
+C:\CodeWorkspace\je_editor\output\JEditor\_overlapped.pyd
 48.8 KB
 pyd
-C:\CodeWorkspace\je_editor\output\JEditor\JEditor\_queue.pyd
+C:\CodeWorkspace\je_editor\output\JEditor\_queue.pyd
 30.8 KB
 pyd
-C:\CodeWorkspace\je_editor\output\JEditor\JEditor\_socket.pyd
+C:\CodeWorkspace\je_editor\output\JEditor\_socket.pyd
 77.3 KB
 pyd
-C:\CodeWorkspace\je_editor\output\JEditor\JEditor\_sqlite3.pyd
+C:\CodeWorkspace\je_editor\output\JEditor\_sqlite3.pyd
 96.8 KB
 pyd
-C:\CodeWorkspace\je_editor\output\JEditor\JEditor\_ssl.pyd
+C:\CodeWorkspace\je_editor\output\JEditor\_ssl.pyd
 156.8 KB
 pyd
-C:\CodeWorkspace\je_editor\output\JEditor\JEditor\_testcapi.pyd
+C:\CodeWorkspace\je_editor\output\JEditor\_testcapi.pyd
 130.8 KB
 pyd
-C:\CodeWorkspace\je_editor\output\JEditor\JEditor\_testinternalcapi.pyd
+C:\CodeWorkspace\je_editor\output\JEditor\_testinternalcapi.pyd
 31.3 KB
 pyd
-C:\CodeWorkspace\je_editor\output\JEditor\JEditor\_tkinter.pyd
+C:\CodeWorkspace\je_editor\output\JEditor\_tkinter.pyd
 64.3 KB
 pyd
-C:\CodeWorkspace\je_editor\output\JEditor\JEditor\_uuid.pyd
+C:\CodeWorkspace\je_editor\output\JEditor\_uuid.pyd
 24.8 KB
 pyd
-C:\CodeWorkspace\je_editor\output\JEditor\JEditor\base_library.zip
+C:\CodeWorkspace\je_editor\output\JEditor\base_library.zip
 1 MB
 zip
-C:\CodeWorkspace\je_editor\output\JEditor\JEditor\concrt140.dll
+C:\CodeWorkspace\je_editor\output\JEditor\concrt140.dll
 319.9 KB
 dll
-C:\CodeWorkspace\je_editor\output\JEditor\JEditor\je_driver_icon.ico
+C:\CodeWorkspace\je_editor\output\JEditor\je_driver_icon.ico
 4.2 KB
 ico
-C:\CodeWorkspace\je_editor\output\JEditor\JEditor\JEditor.exe
+C:\CodeWorkspace\je_editor\output\JEditor\JEditor.exe
 10.9 MB
 exe
-C:\CodeWorkspace\je_editor\output\JEditor\JEditor\libcrypto-1_1.dll
+C:\CodeWorkspace\je_editor\output\JEditor\libcrypto-1_1.dll
 3.3 MB
 dll
-C:\CodeWorkspace\je_editor\output\JEditor\JEditor\libffi-7.dll
+C:\CodeWorkspace\je_editor\output\JEditor\libffi-7.dll
 32 KB
 dll
-C:\CodeWorkspace\je_editor\output\JEditor\JEditor\libsodium-ac42d648.dll
+C:\CodeWorkspace\je_editor\output\JEditor\libsodium-ac42d648.dll
 301 KB
 dll
-C:\CodeWorkspace\je_editor\output\JEditor\JEditor\libssl-1_1.dll
+C:\CodeWorkspace\je_editor\output\JEditor\libssl-1_1.dll
 688.3 KB
 dll
+C:\CodeWorkspace\je_editor\output\JEditor\libzmq-v141-mt-4_3_4-0a6f51ca.dll
+513 KB
+dll
+C:\CodeWorkspace\je_editor\output\JEditor\msvcp140.dll
+607.4 KB
+dll
+C:\CodeWorkspace\je_editor\output\JEditor\pyexpat.pyd
+194.3 KB
+pyd
+C:\CodeWorkspace\je_editor\output\JEditor\python3.dll
+64.8 KB
+dll
+C:\CodeWorkspace\je_editor\output\JEditor\python310.dll
+4.3 MB
+dll
+C:\CodeWorkspace\je_editor\output\JEditor\select.pyd
+29.3 KB
+pyd
+C:\CodeWorkspace\je_editor\output\JEditor\sqlite3.dll
+1.4 MB
+dll
+C:\CodeWorkspace\je_editor\output\JEditor\tcl86t.dll
+1.8 MB
+dll
+C:\CodeWorkspace\je_editor\output\JEditor\tk86t.dll
+1.5 MB
+dll
+C:\CodeWorkspace\je_editor\output\JEditor\unicodedata.pyd
+1.1 MB
+pyd
+C:\CodeWorkspace\je_editor\output\JEditor\VCRUNTIME140.dll
+95.9 KB
+dll
+C:\CodeWorkspace\je_editor\output\JEditor\VCRUNTIME140_1.dll
+36.4 KB
+dll
+C:\CodeWorkspace\je_editor\output\JEditor\aiohttp
+N/A
+[Folder]
+C:\CodeWorkspace\je_editor\output\JEditor\attrs-23.1.0.dist-info
+N/A
+[Folder]
+C:\CodeWorkspace\je_editor\output\JEditor\black
+N/A
+[Folder]
 [Licence_Begin]
 1609
 {\rtf1\ansi\ansicpg950\deff0\nouicompat\deflang1033\deflangfe1028{\fonttbl{\f0\fnil Arial;}}

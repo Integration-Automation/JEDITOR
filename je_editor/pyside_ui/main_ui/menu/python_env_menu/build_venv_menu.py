@@ -67,7 +67,8 @@ def create_venv(ui_we_want_to_set: EditorMain) -> None:
         widget.python_compiler = ui_we_want_to_set.python_compiler
         venv_path = Path(os.getcwd() + "/venv")
         if not venv_path.exists():
-            create_venv_shell = ShellManager(main_window=widget, after_done_function=widget.code_edit.check_env)
+            create_venv_shell = ShellManager(main_window=widget, after_done_function=widget.code_edit.check_env,
+                                             shell_encoding=ui_we_want_to_set.encoding)
             create_venv_shell.later_init()
             create_venv_shell.exec_shell(
                 [f"{create_venv_shell.compiler_path}", "-m", "venv", "venv"]
@@ -98,7 +99,7 @@ def shell_pip_install(ui_we_want_to_set: EditorMain, pip_install_command_list: l
                 language_wrapper.language_word_dict.get("python_env_menu_install_package_messagebox_label")
             )
             if press_ok:
-                pip_install_shell = ShellManager(main_window=widget)
+                pip_install_shell = ShellManager(main_window=widget, shell_encoding=ui_we_want_to_set.encoding)
                 pip_install_shell.later_init()
                 pip_install_shell.exec_shell(
                     pip_install_command_list
@@ -127,7 +128,8 @@ def pip_install_package_update(ui_we_want_to_set: EditorMain) -> None:
                 language_wrapper.language_word_dict.get("python_env_menu_install_or_update_package_messagebox_label")
             )
             if press_ok:
-                pip_install_shell = ShellManager(main_window=widget, after_done_function=widget.code_edit.check_env)
+                pip_install_shell = ShellManager(main_window=widget, after_done_function=widget.code_edit.check_env,
+                                                 shell_encoding=ui_we_want_to_set.encoding)
                 pip_install_shell.later_init()
                 pip_install_shell.exec_shell(
                     [f"{pip_install_shell.compiler_path}", "-m", "pip", "install", f"{package_text}", "-U"]
@@ -146,7 +148,8 @@ def pip_install_package(ui_we_want_to_set: EditorMain) -> None:
                 language_wrapper.language_word_dict.get("python_env_menu_install_package_messagebox_label")
             )
             if press_ok:
-                pip_install_shell = ShellManager(main_window=widget, after_done_function=widget.code_edit.check_env)
+                pip_install_shell = ShellManager(main_window=widget, after_done_function=widget.code_edit.check_env,
+                                                 shell_encoding=ui_we_want_to_set.encoding)
                 pip_install_shell.later_init()
                 pip_install_shell.exec_shell(
                     [f"{pip_install_shell.compiler_path}", "-m", "pip", "install", f"{package_text}"]
