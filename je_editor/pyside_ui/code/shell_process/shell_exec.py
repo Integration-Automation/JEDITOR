@@ -26,7 +26,7 @@ class ShellManager(object):
             self,
             main_window: Union[EditorWidget, None] = None,
             shell_encoding: str = "utf-8",
-            program_buffer: int = 8192000,
+            program_buffer: int = 1024,
             after_done_function: Union[None, Callable] = None
     ):
         """
@@ -165,14 +165,14 @@ class ShellManager(object):
 
     def read_program_output_from_process(self) -> None:
         while self.still_run_shell:
-            program_output_data = self.process.stdout.raw.read(
+            program_output_data = self.process.stdout.read(
                 self.program_buffer) \
-                .decode(self.program_encoding)
+                .decode(self.program_encoding, "replace")
             self.run_output_queue.put_nowait(program_output_data)
 
     def read_program_error_output_from_process(self) -> None:
         while self.still_run_shell:
-            program_error_output_data = self.process.stderr.raw.read(
+            program_error_output_data = self.process.stderr.read(
                 self.program_buffer) \
-                .decode(self.program_encoding)
+                .decode(self.program_encoding, "replace")
             self.run_error_queue.put_nowait(program_error_output_data)

@@ -25,7 +25,7 @@ class ExecManager(object):
             main_window: Union[EditorWidget, None] = None,
             program_language: str = "python",
             program_encoding: str = "utf-8",
-            program_buffer: int = 8192000,
+            program_buffer: int = 1024,
     ):
         """
         :param main_window: Pyside main window
@@ -178,12 +178,12 @@ class ExecManager(object):
 
     def read_program_output_from_process(self) -> None:
         while self.still_run_program:
-            program_output_data: str = self.process.stdout.raw.read(self.program_buffer).decode(self.program_encoding,
-                                                                                                errors="replace")
+            program_output_data: str = self.process.stdout.read(
+                self.program_buffer).decode(self.program_encoding, "replace")
             self.run_output_queue.put_nowait(program_output_data)
 
     def read_program_error_output_from_process(self) -> None:
         while self.still_run_program:
-            program_error_output_data: str = self.process.stderr.raw.read(self.program_buffer).decode(
-                self.program_encoding, errors="replace")
+            program_error_output_data: str = self.process.stderr.read(
+                self.program_buffer).decode(self.program_encoding, "replace")
             self.run_error_queue.put_nowait(program_error_output_data)
