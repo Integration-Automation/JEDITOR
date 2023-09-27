@@ -168,6 +168,8 @@ class ShellManager(object):
             program_output_data = self.process.stdout.read(
                 self.program_buffer) \
                 .decode(self.program_encoding, "replace")
+            if self.process:
+                self.process.stdout.flush()
             self.run_output_queue.put_nowait(program_output_data)
 
     def read_program_error_output_from_process(self) -> None:
@@ -175,4 +177,6 @@ class ShellManager(object):
             program_error_output_data = self.process.stderr.read(
                 self.program_buffer) \
                 .decode(self.program_encoding, "replace")
+            if self.process:
+                self.process.stderr.flush()
             self.run_error_queue.put_nowait(program_error_output_data)
