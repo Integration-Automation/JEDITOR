@@ -25,7 +25,7 @@ class ExecManager(object):
             main_window: Union[EditorWidget, None] = None,
             program_language: str = "python",
             program_encoding: str = "utf-8",
-            program_buffer: int = 8192000,
+            program_buffer: int = 1024,
     ):
         """
         :param main_window: Pyside main window
@@ -83,18 +83,20 @@ class ExecManager(object):
             exec_file = reformat_os_file_path
             # run program
             if exec_prefix is None:
-                execute_program_list = [self.compiler_path, exec_file]
+                execute_program_param = [self.compiler_path, exec_file]
             else:
                 if isinstance(exec_prefix, str):
-                    execute_program_list = [self.compiler_path, exec_prefix, exec_file]
+                    execute_program_param = [self.compiler_path, exec_prefix, exec_file]
                 else:
-                    execute_program_list = list()
-                    execute_program_list.append(self.compiler_path)
+                    execute_program_param = list()
+                    execute_program_param.append(self.compiler_path)
                     for prefix in exec_prefix:
-                        execute_program_list.append(prefix)
-                    execute_program_list.append(exec_file)
+                        execute_program_param.append(prefix)
+                    execute_program_param.append(exec_file)
+            if sys.platform not in ["win32", "cygwin", "msys"]:
+                execute_program_param = " ".join(execute_program_param)
             self.process = subprocess.Popen(
-                execute_program_list,
+                execute_program_param,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
                 stdin=subprocess.PIPE,
@@ -178,12 +180,16 @@ class ExecManager(object):
 
     def read_program_output_from_process(self) -> None:
         while self.still_run_program:
-            program_output_data: str = self.process.stdout.raw.read(self.program_buffer).decode(self.program_encoding,
-                                                                                                errors="replace")
+            program_output_data: str = self.process.stdout.read(
+                self.program_buffer).decode(self.program_encoding, "replace")
+            if self.process:
+                self.process.stdout.flush()
             self.run_output_queue.put_nowait(program_output_data)
 
     def read_program_error_output_from_process(self) -> None:
         while self.still_run_program:
-            program_error_output_data: str = self.process.stderr.raw.read(self.program_buffer).decode(
-                self.program_encoding, errors="replace")
+            program_error_output_data: str = self.process.stderr.read(
+                self.program_buffer).decode(self.program_encoding, "replace")
+            if self.process:
+                self.process.stderr.flush()
             self.run_error_queue.put_nowait(program_error_output_data)

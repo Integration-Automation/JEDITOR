@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "je_editor_dev"
-version = "0.0.186"
+version = "0.0.190"
 authors = [
     { name = "JE-Chen", email = "jechenmailman@gmail.com" },
 ]

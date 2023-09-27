@@ -136,7 +136,9 @@ class CodeEditor(QPlainTextEdit):
         else:
             script = jedi.Script(code=self.toPlainText())
         jedi_complete_list: List[Completion] = script.complete(
-            self.textCursor().blockNumber() + 1, self.textCursor().positionInBlock())
+            self.textCursor().blockNumber() + 1,
+            len(self.textCursor().document().findBlockByLineNumber(self.textCursor().blockNumber()).text())
+        )
         if len(jedi_complete_list) > 0:
             new_complete_list = list()
             for complete_text in jedi_complete_list:
