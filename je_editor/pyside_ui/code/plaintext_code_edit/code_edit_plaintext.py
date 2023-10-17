@@ -59,7 +59,7 @@ class CodeEditor(QPlainTextEdit):
         self.update_line_number_area_width(0)
         self.textChanged.connect(self.highlight_current_line)
         self.setTabStopDistance(
-            QtGui.QFontMetricsF(self.font()).horizontalAdvance(' ') * 4
+            QtGui.QFontMetricsF(self.font()).horizontalAdvance("        ")
         )
         self.highlighter = PythonHighlighter(self.document())
         self.highlight_current_line()
