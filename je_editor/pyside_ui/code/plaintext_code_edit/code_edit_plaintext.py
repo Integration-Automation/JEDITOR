@@ -3,7 +3,6 @@ from __future__ import annotations
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-
 if TYPE_CHECKING:
     from je_editor.pyside_ui.main_ui.editor.editor_widget import EditorWidget
     from je_editor.pyside_ui.main_ui.editor.editor_widget_dock import FullEditorWidget

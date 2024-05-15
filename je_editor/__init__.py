@@ -18,9 +18,9 @@ from je_editor.utils.exception.exceptions import JEditorJsonException
 from je_editor.utils.exception.exceptions import JEditorOpenFileException
 from je_editor.utils.exception.exceptions import JEditorRunOnShellException
 from je_editor.utils.exception.exceptions import JEditorSaveFileException
-from je_editor.utils.multi_language.traditional_chinese import traditional_chinese_word_dict
 from je_editor.utils.multi_language.english import english_word_dict
 from je_editor.utils.multi_language.multi_language_wrapper import language_wrapper
+from je_editor.utils.multi_language.traditional_chinese import traditional_chinese_word_dict
 
 __all__ = [
     "start_editor", "EditorMain", "EDITOR_EXTEND_TAB",
