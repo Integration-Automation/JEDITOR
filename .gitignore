@@ -116,3 +116,7 @@ dmypy.json
 # User setting
 **/.jeditor
 
+.idea/misc.xml
+/.idea
+.idea/misc.xml
+/.idea
