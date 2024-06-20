@@ -5,6 +5,7 @@ english_word_dict = {
     "tab_name_editor": "Editor",
     "tab_name_web_browser": "Web Browser",
     "tab_name_frontengine": "FrontEngine",
+    "tab_name_re_edge_gpt": "Re-EdgeGPT",
     # Browser
     "browser_download_detail": "Download Detail",
     "browser_find_text": "Find Text",
@@ -107,6 +108,7 @@ please make sure that the current encoding is consistent with the default encodi
     "tab_menu_web_tab_name": "WEB Browser",
     "tab_menu_stackoverflow_tab_name": "Stackoverflow",
     "tab_menu_ipython_tab_name": "IPython(Jupyter)",
+    "tab_menu_re_re_edge_gpt_tab_name": "ReEdgeGPT",
     # Text Menu
     "text_menu_label": "Text",
     "text_menu_label_font": "Font",

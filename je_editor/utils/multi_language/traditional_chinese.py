@@ -5,6 +5,7 @@ traditional_chinese_word_dict = {
     "tab_name_editor": "編輯器",
     "tab_name_web_browser": "網頁瀏覽器",
     "tab_name_frontengine": "前景引擎",
+    "tab_name_re_edge_gpt": "Re-EdgeGPT",
     # Browser
     "browser_download_detail": "下載資訊",
     "browser_find_text": "搜尋文字",
@@ -105,6 +106,7 @@ traditional_chinese_word_dict = {
     "tab_menu_web_tab_name": "瀏覽器",
     "tab_menu_stackoverflow_tab_name": "Stackoverflow",
     "tab_menu_ipython_tab_name": "IPython(Jupyter)",
+    "tab_menu_re_re_edge_gpt_tab_name": "ReEdgeGPT",
     # Text Menu
     "text_menu_label": "文字",
     "text_menu_label_font": "字體",
