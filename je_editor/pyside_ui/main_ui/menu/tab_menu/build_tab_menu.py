@@ -74,7 +74,7 @@ def add_editor_tab(ui_we_want_to_set: EditorMain):
 
 def add_frontengine_tab(ui_we_want_to_set: EditorMain):
     ui_we_want_to_set.tab_widget.addTab(
-        FrontEngineMainUI(show_system_tray_ray=False),
+        FrontEngineMainUI(show_system_tray_ray=False, redirect_output=False),
         f"{language_wrapper.language_word_dict.get('tab_menu_frontengine_tab_name')} "
         f"{ui_we_want_to_set.tab_widget.count()}")
 
