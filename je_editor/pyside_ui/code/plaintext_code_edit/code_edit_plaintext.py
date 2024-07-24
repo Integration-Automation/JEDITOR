@@ -77,11 +77,8 @@ class CodeEditor(QPlainTextEdit):
 
     def check_env(self):
         path = venv_check()
-        try:
-            if path.exists():
-                self.env = jedi.create_environment(str(path))
-        except Exception as error:
-            raise error
+        if path.exists():
+            self.env = jedi.create_environment(str(path))
 
     def set_complete(self, list_to_complete: list) -> None:
         """

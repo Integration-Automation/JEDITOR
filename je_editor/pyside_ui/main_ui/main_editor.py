@@ -103,7 +103,7 @@ class EditorMain(QMainWindow, QtStyleTools):
         # TAB Add
         self.tab_widget.addTab(EditorWidget(self), language_wrapper.language_word_dict.get("tab_name_editor"))
         self.tab_widget.addTab(
-            FrontEngineMainUI(show_system_tray_ray=False),
+            FrontEngineMainUI(show_system_tray_ray=False, redirect_output=False),
             language_wrapper.language_word_dict.get("tab_name_frontengine"))
         self.tab_widget.addTab(JEBrowser(), language_wrapper.language_word_dict.get("tab_name_web_browser"))
         self.tab_widget.addTab(

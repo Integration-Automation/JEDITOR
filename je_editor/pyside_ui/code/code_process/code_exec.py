@@ -130,6 +130,11 @@ class ExecManager(object):
             if self.process is not None:
                 self.process.terminate()
 
+    def full_exit_program(self):
+        self.timer.stop()
+        self.exit_program()
+        self.main_window.exec_program = None
+
     def pull_text(self) -> None:
         # Pull text from queue and put in code result area
         try:
@@ -149,13 +154,9 @@ class ExecManager(object):
         except queue.Empty:
             pass
         if self.process.returncode == 0:
-            self.timer.stop()
-            self.exit_program()
-            self.main_window.exec_program = None
+            self.full_exit_program()
         elif self.process.returncode is not None:
-            self.timer.stop()
-            self.exit_program()
-            self.main_window.exec_program = None
+            self.full_exit_program()
         if self.still_run_program:
             # poll return code
             self.process.poll()
