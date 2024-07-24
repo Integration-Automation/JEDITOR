@@ -24,9 +24,7 @@ class PEP8FormatChecker(pycodestyle.Checker):
         self.error_list: list = list()
 
     def replace_report_error(self, line_number, offset, text, check):
-        if text.startswith("W191"):
-            pass
-        else:
+        if not text.startswith("W191"):
             self.error_list.append(f"{text} on line: {line_number}, offset: {offset}")
 
     def check_all_format(self, expected=None, line_offset=0) -> int:

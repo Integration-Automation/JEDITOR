@@ -2,4 +2,4 @@ frontengine
 PySide6
 sphinx
 twine
-je_editor_dev
+build
