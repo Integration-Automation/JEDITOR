@@ -13,7 +13,7 @@ syntax_rule_setting_dict: dict = {
     },
     "string_rule": {
         "rules": (
-            r"'[^'\\]*(\\.[^'\\]*)*'",  # Singel
+            r"'[^'\\]*(\\.[^'\\]*)*'",  # Single
             r'"[^"\\]*(\\.[^"\\]*)*"',  # Double
         ),
         "color": QColor(0, 153, 0)
