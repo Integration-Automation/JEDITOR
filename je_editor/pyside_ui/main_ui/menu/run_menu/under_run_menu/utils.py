@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING
 
 from PySide6.QtWidgets import QMessageBox
 
+from je_editor.utils.logging.loggin_instance import jeditor_logger
 from je_editor.utils.multi_language.multi_language_wrapper import language_wrapper
 
 if TYPE_CHECKING:
@@ -11,6 +12,7 @@ if TYPE_CHECKING:
 
 
 def please_close_current_running_messagebox(ui_we_want_to_set: EditorMain):
+    jeditor_logger.info(f"utils.py please_close_current_running_messagebox ui_we_want_to_set: {ui_we_want_to_set}")
     please_stop_current_running_program_messagebox = QMessageBox(ui_we_want_to_set)
     please_stop_current_running_program_messagebox.setText(
         language_wrapper.language_word_dict.get("please_stop_current_running_program")

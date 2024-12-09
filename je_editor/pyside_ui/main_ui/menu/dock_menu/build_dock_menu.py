@@ -8,11 +8,12 @@ from PySide6.QtGui import QAction
 from PySide6.QtWidgets import QFileDialog
 from frontengine import FrontEngineMainUI
 
-from je_editor.pyside_ui.browser.browser_widget import JEBrowser
+from je_editor.pyside_ui.browser.browser_widget import BrowserWidget
 from je_editor.pyside_ui.main_ui.dock.destroy_dock import DestroyDock
 from je_editor.pyside_ui.main_ui.editor.editor_widget_dock import FullEditorWidget
 from je_editor.pyside_ui.main_ui.ipython_widget.rich_jupyter import IpythonWidget
 from je_editor.utils.file.open.open_file import read_file
+from je_editor.utils.logging.loggin_instance import jeditor_logger
 from je_editor.utils.multi_language.multi_language_wrapper import language_wrapper
 
 if TYPE_CHECKING:
@@ -20,6 +21,7 @@ if TYPE_CHECKING:
 
 
 def set_dock_menu(ui_we_want_to_set: EditorMain) -> None:
+    jeditor_logger.info(f"build_dock_menu.py set_dock_menu ui_we_want_to_set: {ui_we_want_to_set}")
     # Browser
     ui_we_want_to_set.dock_menu = ui_we_want_to_set.menu.addMenu(
         language_wrapper.language_word_dict.get("dock_menu_label"))
@@ -60,11 +62,14 @@ def set_dock_menu(ui_we_want_to_set: EditorMain) -> None:
 
 
 def add_dock_widget(ui_we_want_to_set: EditorMain, widget_type: str = None):
+    jeditor_logger.info(f"build_dock_menu.py add_dock_widget "
+                        f"ui_we_want_to_set: {ui_we_want_to_set} "
+                        f"widget_type: {widget_type}")
     # Dock widget
     dock_widget = DestroyDock()
     if widget_type == "stackoverflow":
         dock_widget.setWindowTitle("stackoverflow")
-        dock_widget.setWidget(JEBrowser(
+        dock_widget.setWidget(BrowserWidget(
             start_url="https://stackoverflow.com/", search_prefix="https://stackoverflow.com/search?q="))
     elif widget_type == "editor":
         file_path = QFileDialog().getOpenFileName(
@@ -87,6 +92,6 @@ def add_dock_widget(ui_we_want_to_set: EditorMain, widget_type: str = None):
         dock_widget.setWidget(IpythonWidget(ui_we_want_to_set))
     else:
         dock_widget.setWindowTitle(language_wrapper.language_word_dict.get("dock_browser_title"))
-        dock_widget.setWidget(JEBrowser())
+        dock_widget.setWidget(BrowserWidget())
     if dock_widget.widget() is not None:
         ui_we_want_to_set.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, dock_widget)

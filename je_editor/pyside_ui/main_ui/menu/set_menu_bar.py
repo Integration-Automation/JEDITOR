@@ -7,6 +7,7 @@ from je_editor.pyside_ui.main_ui.menu.language_menu.build_language_server import
 from je_editor.pyside_ui.main_ui.menu.style_menu.build_style_menu import set_style_menu
 from je_editor.pyside_ui.main_ui.menu.tab_menu.build_tab_menu import set_tab_menu
 from je_editor.pyside_ui.main_ui.menu.text_menu.build_text_menu import set_text_menu
+from je_editor.utils.logging.loggin_instance import jeditor_logger
 
 if TYPE_CHECKING:
     from je_editor.pyside_ui.main_ui.main_editor import EditorMain
@@ -20,6 +21,7 @@ from je_editor.pyside_ui.main_ui.menu.python_env_menu.build_venv_menu import set
 
 
 def set_menu_bar(ui_we_want_to_set: EditorMain) -> None:
+    jeditor_logger.info(f"set_menu_bar.py set_menu_bar ui_we_want_to_set: {ui_we_want_to_set}")
     # set menu
     ui_we_want_to_set.menu = QMenuBar()
     set_file_menu(ui_we_want_to_set)

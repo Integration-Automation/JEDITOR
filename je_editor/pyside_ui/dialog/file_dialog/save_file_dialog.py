@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 from je_editor.pyside_ui.code.auto_save.auto_save_manager import file_is_open_manager_dict
+from je_editor.utils.logging.loggin_instance import jeditor_logger
 
 if TYPE_CHECKING:
     from je_editor.pyside_ui.main_ui.main_editor import EditorMain
@@ -19,6 +20,8 @@ def choose_file_get_save_file_path(parent_qt_instance: EditorMain) -> bool:
     :param parent_qt_instance: Pyside parent
     :return: save code edit content to file
     """
+    jeditor_logger.info(f"save_file_dialog.py choose_file_get_save_file_path"
+                        f" parent_qt_instance: {parent_qt_instance}")
     widget = parent_qt_instance.tab_widget.currentWidget()
     if isinstance(widget, EditorWidget):
         file_path = QFileDialog().getSaveFileName(

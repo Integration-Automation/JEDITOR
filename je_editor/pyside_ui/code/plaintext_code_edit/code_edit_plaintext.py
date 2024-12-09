@@ -3,6 +3,8 @@ from __future__ import annotations
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+from je_editor.utils.logging.loggin_instance import jeditor_logger
+
 if TYPE_CHECKING:
     from je_editor.pyside_ui.main_ui.editor.editor_widget import EditorWidget
     from je_editor.pyside_ui.main_ui.editor.editor_widget_dock import FullEditorWidget
@@ -22,6 +24,7 @@ from je_editor.pyside_ui.main_ui.save_settings.user_color_setting_file import ac
 
 
 def venv_check():
+    jeditor_logger.info("code_edit_plaintext.py venv check")
     venv_path = Path(str(Path.cwd()) + "/venv")
     return venv_path
 
@@ -33,6 +36,7 @@ class CodeEditor(QPlainTextEdit):
     """
 
     def __init__(self, main_window: Union[EditorWidget, FullEditorWidget]):
+        jeditor_logger.info(f"Init CodeEditor main_window: {main_window}")
         super().__init__()
         # Jedi
         self.env = None
@@ -76,6 +80,7 @@ class CodeEditor(QPlainTextEdit):
         self.set_complete([])
 
     def check_env(self):
+        jeditor_logger.info("CodeEditor check_env")
         path = venv_check()
         if path.exists():
             self.env = jedi.create_environment(str(path))
@@ -86,6 +91,7 @@ class CodeEditor(QPlainTextEdit):
         :param list_to_complete: keyword list to complete.
         :return: None
         """
+        jeditor_logger.info(f"CodeEditor set_complete list_to_complete: {list_to_complete}")
         completer = QCompleter(list_to_complete)
         completer.activated.connect(self.insert_completion)
         completer.setWidget(self)
@@ -100,6 +106,7 @@ class CodeEditor(QPlainTextEdit):
         :param completion: completion text
         :return: None
         """
+        jeditor_logger.info(f"CodeEditor insert_completion completion:{completion}")
         if self.completer.widget() != self:
             return
         text_cursor = self.textCursor()
@@ -111,12 +118,14 @@ class CodeEditor(QPlainTextEdit):
 
     @property
     def text_under_cursor(self):
+        jeditor_logger.info("CodeEditor text_under_cursor")
         # Find text under cursor
         text_cursor = self.textCursor()
         text_cursor.select(QTextCursor.SelectionType.WordUnderCursor)
         return text_cursor.selectedText()
 
     def focusInEvent(self, e) -> None:
+        jeditor_logger.info(f"CodeEditor focusInEvent event: {e}")
         if self.completer:
             self.completer.setWidget(self)
         QPlainTextEdit.focusInEvent(self, e)
@@ -126,6 +135,7 @@ class CodeEditor(QPlainTextEdit):
         Keyword autocomplete
         :return:  None
         """
+        jeditor_logger.info("CodeEditor complete")
         prefix = self.text_under_cursor
         if self.env is not None:
             script = jedi.Script(code=self.toPlainText(), environment=self.env)
@@ -152,6 +162,7 @@ class CodeEditor(QPlainTextEdit):
         Show search box ui and bind.
         :return: None
         """
+        jeditor_logger.info("CodeEditor start_search_dialog")
         # Search box connect to function
         self.search_box = SearchBox()
         self.search_box.search_back_button.clicked.connect(
@@ -167,6 +178,7 @@ class CodeEditor(QPlainTextEdit):
         Find next match text.
         :return: None
         """
+        jeditor_logger.info("CodeEditor find_next_text")
         if self.search_box.isVisible():
             text = self.search_box.command_input.text()
             self.find(text)
@@ -176,11 +188,13 @@ class CodeEditor(QPlainTextEdit):
         Find back match text.
         :return: None
         """
+        jeditor_logger.info("CodeEditor find_back_text")
         if self.search_box.isVisible():
             text = self.search_box.command_input.text()
             self.find(text, QTextDocument.FindFlag.FindBackward)
 
     def line_number_paint(self, event) -> None:
+        jeditor_logger.info(f"CodeEditor line_number_paint event: {event}")
         painter = QPainter(self.line_number)
         painter.fillRect(event.rect(), actually_color_dict.get("line_number_background_color"))
         block = self.firstVisibleBlock()
@@ -205,11 +219,13 @@ class CodeEditor(QPlainTextEdit):
             block_number += 1
 
     def line_number_width(self) -> int:
+        jeditor_logger.info("CodeEditor line_number_width")
         digits = len(str(self.blockCount()))
         space = 12 * digits
         return space
 
     def update_line_number_area_width(self, value) -> None:
+        jeditor_logger.info(f"CodeEditor update_line_number_area_width value: {value}")
         self.setViewportMargins(self.line_number_width(), 0, 0, 0)
 
     def resizeEvent(self, event) -> None:
@@ -218,6 +234,7 @@ class CodeEditor(QPlainTextEdit):
         :param event: QT event.
         :return: None
         """
+        jeditor_logger.info(f"CodeEditor resizeEvent event:{event}")
         QPlainTextEdit.resizeEvent(self, event)
         cr = self.contentsRect()
         self.line_number.setGeometry(
@@ -231,6 +248,7 @@ class CodeEditor(QPlainTextEdit):
         :param dy: update or not.
         :return: None
         """
+        jeditor_logger.info(f"CodeEditor update_line_number_area rect: {rect}, dy: {dy}")
         if dy:
             self.line_number.scroll(0, dy)
         else:
@@ -248,6 +266,7 @@ class CodeEditor(QPlainTextEdit):
         Change current line color.
         :return: None
         """
+        jeditor_logger.info("CodeEditor highlight_current_line")
         selections = []
         if not self.isReadOnly():
             formats = QTextCharFormat()
@@ -269,6 +288,7 @@ class CodeEditor(QPlainTextEdit):
         """
         # Catch soft wrap shift + return (line nuber not working on soft warp)
         key = event.key()
+        jeditor_logger.info(f"CodeEditor keyPressEvent event: {event} key: {key}")
         if event.modifiers() and Qt.Modifier.CTRL:
             if key == Qt.Key.Key_B:
                 if self.env is not None:
@@ -301,6 +321,7 @@ class CodeEditor(QPlainTextEdit):
             self.complete()
 
     def mousePressEvent(self, event) -> None:
+        jeditor_logger.info(f"CodeEditor mousePressEvent event: {event}")
         # Highlight mouse click line
         super().mousePressEvent(event)
         self.highlight_current_line()
@@ -312,8 +333,10 @@ class LineNumber(QWidget):
     """
 
     def __init__(self, editor):
+        jeditor_logger.info("Init LineNumber")
         QWidget.__init__(self, parent=editor)
         self.editor = editor
 
     def paintEvent(self, event) -> None:
+        jeditor_logger.info(f"LineNumber paintEvent event: {event}")
         self.editor.line_number_paint(event)

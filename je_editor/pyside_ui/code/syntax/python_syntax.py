@@ -3,10 +3,12 @@ from PySide6.QtGui import QSyntaxHighlighter
 from PySide6.QtGui import QTextCharFormat
 
 from je_editor.pyside_ui.code.syntax.syntax_setting import syntax_word_setting_dict, syntax_rule_setting_dict
+from je_editor.utils.logging.loggin_instance import jeditor_logger
 
 
 class PythonHighlighter(QSyntaxHighlighter):
     def __init__(self, parent=None):
+        jeditor_logger.info(f"Init PythonHighlighter parent: {parent}")
         super().__init__(parent)
 
         self.highlight_rules = []
@@ -29,6 +31,7 @@ class PythonHighlighter(QSyntaxHighlighter):
                 self.highlight_rules.append((pattern, text_char_format))
 
     def highlightBlock(self, text) -> None:
+        jeditor_logger.info(f"PythonHighlighter highlightBlock text: {text}")
         for pattern, pattern_format in self.highlight_rules:
             match_iterator = pattern.globalMatch(text)
             while match_iterator.hasNext():

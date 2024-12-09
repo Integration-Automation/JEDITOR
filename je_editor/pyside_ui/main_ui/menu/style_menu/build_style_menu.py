@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING
 from PySide6.QtGui import QAction
 
 from je_editor.pyside_ui.main_ui.save_settings.user_setting_file import user_setting_dict
+from je_editor.utils.logging.loggin_instance import jeditor_logger
 
 if TYPE_CHECKING:
     from je_editor.pyside_ui.main_ui.main_editor import EditorMain
@@ -13,6 +14,7 @@ from je_editor.utils.multi_language.multi_language_wrapper import language_wrapp
 
 
 def set_style_menu(ui_we_want_to_set: EditorMain) -> None:
+    jeditor_logger.info(f"build_style_menu.py set_style_menu ui_we_want_to_set: {ui_we_want_to_set}")
     ui_we_want_to_set.menu.style_menu = ui_we_want_to_set.menu.addMenu(
         language_wrapper.language_word_dict.get("style_menu_label")
     )
@@ -29,5 +31,8 @@ def set_style_menu(ui_we_want_to_set: EditorMain) -> None:
 
 
 def set_style(ui_we_want_to_set: EditorMain, action: QAction) -> None:
+    jeditor_logger.info(f"build_style_menu.py set_style "
+                        f"ui_we_want_to_set: {ui_we_want_to_set} "
+                        f"action: {action}")
     ui_we_want_to_set.apply_stylesheet(ui_we_want_to_set, action.text())
     user_setting_dict.update({"ui_style": action.text()})

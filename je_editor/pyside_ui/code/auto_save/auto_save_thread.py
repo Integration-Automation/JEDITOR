@@ -5,6 +5,7 @@ from typing import Union
 
 from je_editor.pyside_ui.code.plaintext_code_edit.code_edit_plaintext import CodeEditor
 from je_editor.utils.file.save.save_file import write_file
+from je_editor.utils.logging.loggin_instance import jeditor_logger
 
 
 class CodeEditSaveThread(Thread):
@@ -16,6 +17,9 @@ class CodeEditSaveThread(Thread):
         :param file_to_save: file we want to auto save
         :param editor: code editor to auto save
         """
+        jeditor_logger.info(f"Init CodeEditSaveThread "
+                            f"file_to_save: {file_to_save} "
+                            f"editor: {editor}")
         super().__init__()
         self.file: str = file_to_save
         self.editor: Union[None, CodeEditor] = editor
@@ -27,6 +31,7 @@ class CodeEditSaveThread(Thread):
         """
         loop and save current edit file
         """
+        jeditor_logger.info("CodeEditSaveThread run")
         if self.file is not None:
             path = Path(self.file)
             while path.is_file() and self.editor is not None:

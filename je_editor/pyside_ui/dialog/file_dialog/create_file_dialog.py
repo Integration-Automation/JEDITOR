@@ -1,11 +1,13 @@
 from PySide6.QtWidgets import QWidget, QBoxLayout, QLineEdit, QPushButton, QHBoxLayout, QMessageBox
 
+from je_editor.utils.logging.loggin_instance import jeditor_logger
 from je_editor.utils.multi_language.multi_language_wrapper import language_wrapper
 
 
 class CreateFileDialog(QWidget):
 
     def __init__(self):
+        jeditor_logger.info("Init CreateFileDialog")
         super().__init__()
         self.box_layout = QBoxLayout(QBoxLayout.Direction.TopToBottom)
         self.file_name_input = QLineEdit()
@@ -20,6 +22,7 @@ class CreateFileDialog(QWidget):
         self.setLayout(self.box_layout)
 
     def create_file(self):
+        jeditor_logger.info("CreateFileDialog create_file")
         file_name = self.file_name_input.text().strip()
         if file_name == "":
             create_file_message_box = QMessageBox(self)

@@ -1,6 +1,7 @@
 from threading import Lock
 
 from je_editor.utils.exception.exceptions import JEditorSaveFileException
+from je_editor.utils.logging.loggin_instance import jeditor_logger
 
 
 def write_file(file_path: str, content: str) -> None:
@@ -14,6 +15,9 @@ def write_file(file_path: str, content: str) -> None:
     finally
         release lock
     """
+    jeditor_logger.info(f"save_file.py write_file "
+                        f"file_path: {file_path} "
+                        f"content: {content}")
     lock = Lock()
     content = str(content)
     try:

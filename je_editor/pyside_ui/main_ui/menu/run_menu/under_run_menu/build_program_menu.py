@@ -9,6 +9,7 @@ from je_editor.pyside_ui.dialog.file_dialog.save_file_dialog import choose_file_
 from je_editor.pyside_ui.main_ui.editor.editor_widget import EditorWidget
 from je_editor.pyside_ui.main_ui.editor.process_input import ProcessInput
 from je_editor.pyside_ui.main_ui.menu.run_menu.under_run_menu.utils import please_close_current_running_messagebox
+from je_editor.utils.logging.loggin_instance import jeditor_logger
 from je_editor.utils.multi_language.multi_language_wrapper import language_wrapper
 
 if TYPE_CHECKING:
@@ -16,6 +17,7 @@ if TYPE_CHECKING:
 
 
 def set_program_menu(ui_we_want_to_set: EditorMain) -> None:
+    jeditor_logger.info(f"build_program_menu.py set_program_menu ui_we_want_to_set: {ui_we_want_to_set}")
     ui_we_want_to_set.run_program_menu = ui_we_want_to_set.run_menu.addMenu(
         language_wrapper.language_word_dict.get("run_menu_run_program_label"))
     # Run program
@@ -35,6 +37,7 @@ def set_program_menu(ui_we_want_to_set: EditorMain) -> None:
 
 
 def run_program(ui_we_want_to_set: EditorMain) -> None:
+    jeditor_logger.info(f"build_program_menu.py run_program ui_we_want_to_set: {ui_we_want_to_set}")
     widget = ui_we_want_to_set.tab_widget.currentWidget()
     if isinstance(widget, EditorWidget):
         if widget.exec_program is None:
@@ -51,6 +54,7 @@ def run_program(ui_we_want_to_set: EditorMain) -> None:
 
 
 def show_program_input(ui_we_want_to_set: EditorMain) -> None:
+    jeditor_logger.info(f"build_program_menu.py show_program_input ui_we_want_to_set: {ui_we_want_to_set}")
     widget = ui_we_want_to_set.tab_widget.currentWidget()
     if isinstance(widget, EditorWidget):
         widget.program_input = ProcessInput(widget, "program")

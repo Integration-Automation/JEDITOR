@@ -7,12 +7,16 @@ from PySide6.QtWidgets import QWidget, QGridLayout
 from qtconsole.inprocess import QtInProcessKernelManager
 from qtconsole.rich_jupyter_widget import RichJupyterWidget
 
+from je_editor.utils.logging.loggin_instance import jeditor_logger
+
 if TYPE_CHECKING:
     from je_editor.pyside_ui.main_ui.main_editor import EditorMain
 
 
 class IpythonWidget(QWidget):
+
     def __init__(self, main_window: EditorMain):
+        jeditor_logger.info(f"Init IpythonWidget main_window: {main_window}")
         super().__init__()
         self.grid_layout = QGridLayout()
         app = guisupport.get_app_qt4()
@@ -30,6 +34,7 @@ class IpythonWidget(QWidget):
         self.setLayout(self.grid_layout)
 
     def close(self):
+        jeditor_logger.info(f"IpythonWidget close")
         if self.kernel_client:
             self.kernel_client.stop_channels()
         if self.kernel_manager:

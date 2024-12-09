@@ -2,10 +2,15 @@ import tokenize
 
 import pycodestyle
 
+from je_editor.utils.logging.loggin_instance import jeditor_logger
+
 
 class PEP8FormatChecker(pycodestyle.Checker):
 
     def __init__(self, filename: str, **kwargs):
+        jeditor_logger.info(f"Init PEP8FormatChecker "
+                            f"filename: {filename} "
+                            f"kwargs: {kwargs}")
         super().__init__(filename, **kwargs)
         # Init variable
         self.physical_line = None
@@ -21,14 +26,22 @@ class PEP8FormatChecker(pycodestyle.Checker):
         self.total_lines = None
         self.new_line = frozenset([tokenize.NL, tokenize.NEWLINE])
         self.report_error = self.replace_report_error
+        self.current_file: str = filename
         self.error_list: list = list()
 
     def replace_report_error(self, line_number, offset, text, check):
+        jeditor_logger.info(f"PEP8FormatChecker replace_report_error "
+                            f"line_number: {line_number} "
+                            f"offset: {offset} "
+                            f"text: {text}")
         if not text.startswith("W191"):
             self.error_list.append(f"{text} on line: {line_number}, offset: {offset}")
 
     def check_all_format(self, expected=None, line_offset=0) -> int:
         """Run all checks on the input file."""
+        jeditor_logger.info(f"PEP8FormatChecker check_all_format "
+                            f"expected: {expected} "
+                            f"line_offset: {line_offset}")
         self.report.init_file(self.filename, self.lines, expected, line_offset)
         self.total_lines = len(self.lines)
         if self._ast_checks:

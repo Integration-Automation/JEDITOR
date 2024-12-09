@@ -17,6 +17,7 @@ from je_editor.pyside_ui.main_ui.editor.editor_widget import EditorWidget
 from je_editor.pyside_ui.main_ui.save_settings.user_color_setting_file import actually_color_dict
 from je_editor.utils.exception.exception_tags import je_editor_init_error
 from je_editor.utils.exception.exceptions import JEditorException
+from je_editor.utils.logging.loggin_instance import jeditor_logger
 from je_editor.utils.venv_check.check_venv import check_and_choose_venv
 
 
@@ -29,6 +30,11 @@ class ShellManager(object):
             program_buffer: int = 1024,
             after_done_function: Union[None, Callable] = None
     ):
+        jeditor_logger.info(f"Init ShellManager "
+                            f"main_window: {main_window} "
+                            f"shell_encoding: {shell_encoding} "
+                            f"program_buffer: {program_buffer} "
+                            f"after_done_function: {after_done_function}")
         """
         :param main_window: Pyside main window
         :param shell_encoding: shell command read output encoding
@@ -51,6 +57,7 @@ class ShellManager(object):
         run_instance_manager.instance_list.append(self)
 
     def renew_path(self) -> None:
+        jeditor_logger.info("ShellManager renew_path")
         if self.main_window.python_compiler is None:
             # Renew compiler path
             if sys.platform in ["win32", "cygwin", "msys"]:
@@ -62,6 +69,7 @@ class ShellManager(object):
             self.compiler_path = self.main_window.python_compiler
 
     def later_init(self) -> None:
+        jeditor_logger.info("ShellManager later_init")
         if self.main_window is not None:
             self.code_result: QTextEdit = self.main_window.code_result
         else:
@@ -72,6 +80,7 @@ class ShellManager(object):
         :param shell_command: shell command will run
         :return: if error return result and True else return result and False
         """
+        jeditor_logger.info(f"ShellManager exec_shell, shell_command: {shell_command}")
         try:
             self.exit_program()
             self.code_result.setTextColor(actually_color_dict.get("normal_output_color"))
@@ -115,6 +124,7 @@ class ShellManager(object):
 
     # tkinter_ui update method
     def pull_text(self) -> None:
+        jeditor_logger.info("ShellManager pull_text")
         try:
             self.code_result.setTextColor(actually_color_dict.get("normal_output_color"))
             if not self.run_output_queue.empty():
@@ -140,6 +150,7 @@ class ShellManager(object):
             self.process.poll()
 
     def process_run_over(self):
+        jeditor_logger.info("ShellManager process_run_over")
         self.timer.stop()
         self.exit_program()
         self.main_window.exec_shell = None
@@ -148,6 +159,7 @@ class ShellManager(object):
 
     # exit program change run flag to false and clean read thread and queue and process
     def exit_program(self) -> None:
+        jeditor_logger.info("ShellManager exit_program")
         self.still_run_shell = False
         if self.read_program_output_from_thread is not None:
             self.read_program_output_from_thread = None
@@ -160,10 +172,12 @@ class ShellManager(object):
             self.process = None
 
     def print_and_clear_queue(self) -> None:
+        jeditor_logger.info("ShellManager print_and_clear_queue")
         self.run_output_queue = queue.Queue()
         self.run_error_queue = queue.Queue()
 
     def read_program_output_from_process(self) -> None:
+        jeditor_logger.info("ShellManager read_program_output_from_process")
         while self.still_run_shell:
             program_output_data = self.process.stdout.read(
                 self.program_buffer) \
@@ -173,6 +187,7 @@ class ShellManager(object):
             self.run_output_queue.put_nowait(program_output_data)
 
     def read_program_error_output_from_process(self) -> None:
+        jeditor_logger.info("ShellManager read_program_error_output_from_process")
         while self.still_run_shell:
             program_error_output_data = self.process.stderr.read(
                 self.program_buffer) \

@@ -12,7 +12,7 @@ from frontengine import FrontEngineMainUI
 from frontengine import RedirectManager
 from qt_material import QtStyleTools
 
-from je_editor.pyside_ui.browser.browser_widget import JEBrowser
+from je_editor.pyside_ui.browser.browser_widget import BrowserWidget
 from je_editor.pyside_ui.code.auto_save.auto_save_manager import init_new_auto_save_thread, file_is_open_manager_dict
 from je_editor.pyside_ui.main_ui.editor.editor_widget import EditorWidget
 from je_editor.pyside_ui.main_ui.menu.set_menu_bar import set_menu_bar
@@ -22,6 +22,7 @@ from je_editor.pyside_ui.main_ui.save_settings.user_setting_file import user_set
     write_user_setting
 from je_editor.pyside_ui.main_ui.system_tray.extend_system_tray import ExtendSystemTray
 from je_editor.utils.file.open.open_file import read_file
+from je_editor.utils.logging.loggin_instance import jeditor_logger
 from je_editor.utils.multi_language.multi_language_wrapper import language_wrapper
 from je_editor.utils.redirect_manager.redirect_manager_class import redirect_manager_instance
 
@@ -31,6 +32,9 @@ EDITOR_EXTEND_TAB: Dict[str, Type[QWidget]] = {}
 class EditorMain(QMainWindow, QtStyleTools):
 
     def __init__(self, debug_mode: bool = False, show_system_tray_ray: bool = False):
+        jeditor_logger.info(f"Init EditorMain "
+                            f"debug_mode: {debug_mode} "
+                            f"show_system_tray_ray: {show_system_tray_ray}")
         super(EditorMain, self).__init__()
         # Init variable
         self.file_menu = None
@@ -105,9 +109,9 @@ class EditorMain(QMainWindow, QtStyleTools):
         self.tab_widget.addTab(
             FrontEngineMainUI(show_system_tray_ray=False, redirect_output=False),
             language_wrapper.language_word_dict.get("tab_name_frontengine"))
-        self.tab_widget.addTab(JEBrowser(), language_wrapper.language_word_dict.get("tab_name_web_browser"))
+        self.tab_widget.addTab(BrowserWidget(), language_wrapper.language_word_dict.get("tab_name_web_browser"))
         self.tab_widget.addTab(
-            JEBrowser(start_url="https://stackoverflow.com/", search_prefix="https://stackoverflow.com/search?q="),
+            BrowserWidget(start_url="https://stackoverflow.com/", search_prefix="https://stackoverflow.com/search?q="),
             language_wrapper.language_word_dict.get("tab_menu_stackoverflow_tab_name"))
         for widget_name, widget in EDITOR_EXTEND_TAB.items():
             self.tab_widget.addTab(widget(), widget_name)
@@ -122,11 +126,13 @@ class EditorMain(QMainWindow, QtStyleTools):
             close_timer.start()
 
     def clear_code_result(self):
+        jeditor_logger.info(f"EditorMain clear_code_result")
         widget = self.tab_widget.currentWidget()
         if isinstance(widget, EditorWidget):
             widget.code_result.clear()
 
     def redirect(self) -> None:
+        jeditor_logger.info(f"EditorMain redirect")
         for code_editor in range(self.tab_widget.count()):
             widget = self.tab_widget.widget(code_editor)
             if isinstance(widget, EditorWidget):
@@ -146,6 +152,7 @@ class EditorMain(QMainWindow, QtStyleTools):
                 break
 
     def startup_setting(self) -> None:
+        jeditor_logger.info(f"EditorMain startup_setting")
         # Set font and font size, then try to open last edit file
         self.setStyleSheet(
             f"font-size: {user_setting_dict.get('ui_font_size', 12)}pt;"
@@ -183,6 +190,7 @@ class EditorMain(QMainWindow, QtStyleTools):
         update_actually_color_dict()
 
     def go_to_new_tab(self, file_path: Path):
+        jeditor_logger.info(f"EditorMain go_to_new_tab file_path: {file_path}")
         if file_is_open_manager_dict.get(str(file_path), None) is None:
             editor_widget = EditorWidget(self)
             self.tab_widget.addTab(
@@ -196,11 +204,13 @@ class EditorMain(QMainWindow, QtStyleTools):
             self.tab_widget.setCurrentWidget(widget)
 
     def closeEvent(self, event) -> None:
+        jeditor_logger.info(f"EditorMain closeEvent")
         write_user_setting()
         write_user_color_setting()
         super().closeEvent(event)
 
     def event(self, event: QEvent) -> bool:
+        jeditor_logger.info(f"EditorMain event: {event}")
         if event.type() == QEvent.Type.ToolTip:
             event.ignore()
             return False

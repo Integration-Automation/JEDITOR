@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING
 from je_editor.pyside_ui.main_ui.editor.editor_widget import EditorWidget
 from je_editor.pyside_ui.main_ui.editor.process_input import ProcessInput
 from je_editor.pyside_ui.main_ui.menu.run_menu.under_run_menu.utils import please_close_current_running_messagebox
+from je_editor.utils.logging.loggin_instance import jeditor_logger
 
 if TYPE_CHECKING:
     from je_editor.pyside_ui.main_ui.main_editor import EditorMain
@@ -15,6 +16,7 @@ from je_editor.utils.multi_language.multi_language_wrapper import language_wrapp
 
 
 def set_shell_menu(ui_we_want_to_set: EditorMain) -> None:
+    jeditor_logger.info(f"build_shell_menu.py set_shell_menu ui_we_want_to_set: {ui_we_want_to_set}")
     ui_we_want_to_set.run_shell_menu = ui_we_want_to_set.run_menu.addMenu(
         language_wrapper.language_word_dict.get("run_menu_run_on_shell_label"))
     # Run on shell
@@ -34,6 +36,7 @@ def set_shell_menu(ui_we_want_to_set: EditorMain) -> None:
 
 
 def shell_exec(ui_we_want_to_set: EditorMain) -> None:
+    jeditor_logger.info(f"build_shell_menu.py shell_exec ui_we_want_to_set: {ui_we_want_to_set}")
     widget = ui_we_want_to_set.tab_widget.currentWidget()
     if isinstance(widget, EditorWidget):
         if widget.exec_shell is None:
@@ -50,6 +53,7 @@ def shell_exec(ui_we_want_to_set: EditorMain) -> None:
 
 
 def show_shell_input(ui_we_want_to_set: EditorMain) -> None:
+    jeditor_logger.info(f"build_shell_menu.py show_shell_input ui_we_want_to_set: {ui_we_want_to_set}")
     widget = ui_we_want_to_set.tab_widget.currentWidget()
     if isinstance(widget, EditorWidget):
         widget.shell_input = ProcessInput(widget, "shell")

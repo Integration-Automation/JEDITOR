@@ -4,10 +4,12 @@ from typing import TYPE_CHECKING
 
 from frontengine import FrontEngineMainUI
 
-from je_editor.pyside_ui.browser.browser_widget import JEBrowser
+from je_editor.pyside_ui.browser.browser_widget import BrowserWidget
 from je_editor.pyside_ui.main_ui.editor.editor_widget import EditorWidget
 from je_editor.pyside_ui.main_ui.ipython_widget.rich_jupyter import IpythonWidget
 from re_edge_gpt.ui.chat.main_ui import ChatMainUI
+
+from je_editor.utils.logging.loggin_instance import jeditor_logger
 
 if TYPE_CHECKING:
     from je_editor.pyside_ui.main_ui.main_editor import EditorMain
@@ -16,6 +18,7 @@ from je_editor.utils.multi_language.multi_language_wrapper import language_wrapp
 
 
 def set_tab_menu(ui_we_want_to_set: EditorMain) -> None:
+    jeditor_logger.info(f"build_tab_menu.py set_tab_menu ui_we_want_to_set:{ui_we_want_to_set}")
     # Editor
     ui_we_want_to_set.tab_menu = ui_we_want_to_set.menu.addMenu(
         language_wrapper.language_word_dict.get("tab_menu_label")
@@ -44,26 +47,27 @@ def set_tab_menu(ui_we_want_to_set: EditorMain) -> None:
     ui_we_want_to_set.tab_menu.add_stackoverflow_action = QAction(
         language_wrapper.language_word_dict.get("tab_menu_add_stackoverflow_label"))
     ui_we_want_to_set.tab_menu.add_stackoverflow_action.triggered.connect(
-        lambda: add_stackoverflow(ui_we_want_to_set)
+        lambda: add_stackoverflow_tab(ui_we_want_to_set)
     )
     ui_we_want_to_set.tab_menu.addAction(ui_we_want_to_set.tab_menu.add_stackoverflow_action)
     # IPython
     ui_we_want_to_set.tab_menu.add_ipython_action = QAction(
         language_wrapper.language_word_dict.get("tab_menu_ipython_tab_name"))
     ui_we_want_to_set.tab_menu.add_ipython_action.triggered.connect(
-        lambda: add_ipython(ui_we_want_to_set)
+        lambda: add_ipython_tab(ui_we_want_to_set)
     )
     ui_we_want_to_set.tab_menu.addAction(ui_we_want_to_set.tab_menu.add_ipython_action)
-    # ReEdgeGPT
-    ui_we_want_to_set.tab_menu.add_re_edge_gpt_action = QAction(
-        language_wrapper.language_word_dict.get("tab_menu_re_re_edge_gpt_tab_name"))
-    ui_we_want_to_set.tab_menu.add_re_edge_gpt_action.triggered.connect(
-        lambda: add_re_edge_gpt(ui_we_want_to_set)
-    )
-    ui_we_want_to_set.tab_menu.addAction(ui_we_want_to_set.tab_menu.add_re_edge_gpt_action)
+    # ReEdgeGPT (Need fix it first)
+    # ui_we_want_to_set.tab_menu.add_re_edge_gpt_action = QAction(
+    #     language_wrapper.language_word_dict.get("tab_menu_re_re_edge_gpt_tab_name"))
+    # ui_we_want_to_set.tab_menu.add_re_edge_gpt_action.triggered.connect(
+    #     lambda: add_re_edge_gpt_tab(ui_we_want_to_set)
+    # )
+    # ui_we_want_to_set.tab_menu.addAction(ui_we_want_to_set.tab_menu.add_re_edge_gpt_action)
 
 
 def add_editor_tab(ui_we_want_to_set: EditorMain):
+    jeditor_logger.info(f"build_tab_menu.py add_editor_tab ui_we_want_to_set: {ui_we_want_to_set}")
     widget = EditorWidget(ui_we_want_to_set)
     ui_we_want_to_set.tab_widget.addTab(
         widget,
@@ -73,6 +77,7 @@ def add_editor_tab(ui_we_want_to_set: EditorMain):
 
 
 def add_frontengine_tab(ui_we_want_to_set: EditorMain):
+    jeditor_logger.info(f"build_tab_menu.py add_frontengine_tab ui_we_want_to_set: {ui_we_want_to_set}")
     ui_we_want_to_set.tab_widget.addTab(
         FrontEngineMainUI(show_system_tray_ray=False, redirect_output=False),
         f"{language_wrapper.language_word_dict.get('tab_menu_frontengine_tab_name')} "
@@ -80,27 +85,31 @@ def add_frontengine_tab(ui_we_want_to_set: EditorMain):
 
 
 def add_web_tab(ui_we_want_to_set: EditorMain):
+    jeditor_logger.info(f"build_tab_menu.py add_web_tab ui_we_want_to_set: {ui_we_want_to_set}")
     ui_we_want_to_set.tab_widget.addTab(
-        JEBrowser(),
+        BrowserWidget(),
         f"{language_wrapper.language_word_dict.get('tab_menu_web_tab_name')} "
         f"{ui_we_want_to_set.tab_widget.count()}")
 
 
-def add_stackoverflow(ui_we_want_to_set: EditorMain):
+def add_stackoverflow_tab(ui_we_want_to_set: EditorMain):
+    jeditor_logger.info(f"build_tab_menu.py add_stackoverflow_tab ui_we_want_to_set: {ui_we_want_to_set}")
     ui_we_want_to_set.tab_widget.addTab(
-        JEBrowser(start_url="https://stackoverflow.com/", search_prefix="https://stackoverflow.com/search?q="),
+        BrowserWidget(start_url="https://stackoverflow.com/", search_prefix="https://stackoverflow.com/search?q="),
         f"{language_wrapper.language_word_dict.get('tab_menu_stackoverflow_tab_name')} "
         f"{ui_we_want_to_set.tab_widget.count()}")
 
 
-def add_ipython(ui_we_want_to_set: EditorMain):
+def add_ipython_tab(ui_we_want_to_set: EditorMain):
+    jeditor_logger.info(f"build_tab_menu.py add_ipython_tab ui_we_want_to_set: {ui_we_want_to_set}")
     ui_we_want_to_set.tab_widget.addTab(
         IpythonWidget(ui_we_want_to_set),
         f"{language_wrapper.language_word_dict.get('tab_menu_ipython_tab_name')} "
         f"{ui_we_want_to_set.tab_widget.count()}")
 
 
-def add_re_edge_gpt(ui_we_want_to_set: EditorMain):
+def add_re_edge_gpt_tab(ui_we_want_to_set: EditorMain):
+    jeditor_logger.info(f"build_tab_menu.py add_re_edge_gpt_tab ui_we_want_to_set: {ui_we_want_to_set}")
     ui_we_want_to_set.tab_widget.addTab(
         ChatMainUI(),
         f"{language_wrapper.language_word_dict.get('tab_name_re_edge_gpt')} "
