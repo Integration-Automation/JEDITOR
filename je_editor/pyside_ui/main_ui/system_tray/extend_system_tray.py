@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from je_editor.utils.logging.loggin_instance import jeditor_logger
+
 if TYPE_CHECKING:
     from je_editor.pyside_ui.main_ui.main_editor import EditorMain
 import sys
@@ -14,6 +16,7 @@ from je_editor.utils.multi_language.multi_language_wrapper import language_wrapp
 class ExtendSystemTray(QSystemTrayIcon):
 
     def __init__(self, main_window: EditorMain):
+        jeditor_logger.info(f"Init ExtendSystemTray main_window: {main_window}")
         super().__init__(parent=main_window)
         self.menu = QMenu()
         self.main_window = main_window
@@ -37,10 +40,12 @@ class ExtendSystemTray(QSystemTrayIcon):
         self.activated.connect(self.clicked)
 
     def close_all(self):
+        jeditor_logger.info(f"ExtendSystemTray close_all")
         self.setVisible(False)
         self.main_window.close()
         sys.exit(0)
 
     def clicked(self, reason):
         if reason == self.ActivationReason.DoubleClick:
+            jeditor_logger.info(f"ExtendSystemTray DoubleClick")
             self.main_window.showMaximized()

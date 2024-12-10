@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING
 
 from je_editor.pyside_ui.code.auto_save.auto_save_manager import init_new_auto_save_thread, file_is_open_manager_dict
 from je_editor.pyside_ui.main_ui.save_settings.user_setting_file import user_setting_dict, read_user_setting
+from je_editor.utils.logging.loggin_instance import jeditor_logger
 from je_editor.utils.multi_language.multi_language_wrapper import language_wrapper
 from je_editor.utils.venv_check.check_venv import check_and_choose_venv
 
@@ -25,6 +26,8 @@ def choose_file_get_open_file_path(parent_qt_instance: EditorMain) -> None:
     :param parent_qt_instance: Pyside parent
     :return: None
     """
+    jeditor_logger.info(f"open_file_dialog.py choose_file_get_open_file_path"
+                        f" parent_qt_instance: {parent_qt_instance}")
     widget = parent_qt_instance.tab_widget.currentWidget()
     if isinstance(widget, EditorWidget):
         file_path = QFileDialog().getOpenFileName(
@@ -55,6 +58,8 @@ def choose_file_get_open_file_path(parent_qt_instance: EditorMain) -> None:
 
 
 def choose_dir_get_dir_path(parent_qt_instance: EditorMain) -> None:
+    jeditor_logger.info(f"open_file_dialog.py choose_dir_get_dir_path"
+                        f" parent_qt_instance: {parent_qt_instance}")
     dir_path = QFileDialog().getExistingDirectory(parent=parent_qt_instance, )
     if dir_path != "":
         check_path = Path(dir_path)

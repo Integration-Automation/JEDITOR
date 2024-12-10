@@ -1,11 +1,13 @@
 from PySide6.QtWidgets import QWidget, QLineEdit, QPushButton, QBoxLayout, QHBoxLayout
 
+from je_editor.utils.logging.loggin_instance import jeditor_logger
 from je_editor.utils.multi_language.multi_language_wrapper import language_wrapper
 
 
 class SearchBox(QWidget):
 
     def __init__(self):
+        jeditor_logger.info("Init SearchBox")
         super().__init__()
         self.box_layout = QBoxLayout(QBoxLayout.Direction.TopToBottom)
         self.search_input = QLineEdit()

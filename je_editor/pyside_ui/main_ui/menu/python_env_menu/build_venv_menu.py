@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING
 
 from je_editor.pyside_ui.main_ui.editor.editor_widget import EditorWidget
 from je_editor.pyside_ui.main_ui.save_settings.user_setting_file import user_setting_dict
+from je_editor.utils.logging.loggin_instance import jeditor_logger
 
 if TYPE_CHECKING:
     from je_editor.pyside_ui.main_ui.main_editor import EditorMain
@@ -19,6 +20,7 @@ from je_editor.utils.multi_language.multi_language_wrapper import language_wrapp
 
 
 def set_venv_menu(ui_we_want_to_set: EditorMain) -> None:
+    jeditor_logger.info(f"build_venv_menu.py set_venv_menu ui_we_want_to_set: {ui_we_want_to_set}")
     ui_we_want_to_set.venv_menu = ui_we_want_to_set.menu.addMenu(
         language_wrapper.language_word_dict.get("python_env_menu_label"))
     # Create an venv
@@ -62,6 +64,7 @@ def set_venv_menu(ui_we_want_to_set: EditorMain) -> None:
 
 
 def create_venv(ui_we_want_to_set: EditorMain) -> None:
+    jeditor_logger.info(f"build_venv_menu.py create_venv ui_we_want_to_set: {ui_we_want_to_set}")
     widget = ui_we_want_to_set.tab_widget.currentWidget()
     if isinstance(widget, EditorWidget):
         widget.python_compiler = ui_we_want_to_set.python_compiler
@@ -83,6 +86,9 @@ def create_venv(ui_we_want_to_set: EditorMain) -> None:
 
 
 def shell_pip_install(ui_we_want_to_set: EditorMain, pip_install_command_list: list):
+    jeditor_logger.info(f"build_venv_menu.py create_venv "
+                        f"ui_we_want_to_set: {ui_we_want_to_set} "
+                        f"pip_install_command_list: {pip_install_command_list}")
     widget = ui_we_want_to_set.tab_widget.currentWidget()
     if isinstance(widget, EditorWidget):
         widget.python_compiler = ui_we_want_to_set.python_compiler
@@ -107,6 +113,7 @@ def shell_pip_install(ui_we_want_to_set: EditorMain, pip_install_command_list: l
 
 
 def detect_venv() -> bool:
+    jeditor_logger.info(f"build_venv_menu.py detect_venv")
     venv_path = Path(os.getcwd() + "/venv")
     if not venv_path.exists():
         message_box = QMessageBox()
@@ -117,6 +124,7 @@ def detect_venv() -> bool:
 
 
 def pip_install_package_update(ui_we_want_to_set: EditorMain) -> None:
+    jeditor_logger.info(f"build_venv_menu.py pip_install_package_update ui_we_want_to_set: {ui_we_want_to_set}")
     widget = ui_we_want_to_set.tab_widget.currentWidget()
     if isinstance(widget, EditorWidget):
         widget.python_compiler = ui_we_want_to_set.python_compiler
@@ -137,6 +145,7 @@ def pip_install_package_update(ui_we_want_to_set: EditorMain) -> None:
 
 
 def pip_install_package(ui_we_want_to_set: EditorMain) -> None:
+    jeditor_logger.info(f"build_venv_menu.py pip_install_package ui_we_want_to_set: {ui_we_want_to_set}")
     widget = ui_we_want_to_set.tab_widget.currentWidget()
     if isinstance(widget, EditorWidget):
         widget.python_compiler = ui_we_want_to_set.python_compiler
@@ -157,6 +166,7 @@ def pip_install_package(ui_we_want_to_set: EditorMain) -> None:
 
 
 def chose_python_interpreter(ui_we_want_to_set: EditorMain):
+    jeditor_logger.info(f"build_venv_menu.py chose_python_interpreter ui_we_want_to_set: {ui_we_want_to_set}")
     file_path = QFileDialog().getOpenFileName(
         parent=ui_we_want_to_set,
         dir=str(Path.cwd())

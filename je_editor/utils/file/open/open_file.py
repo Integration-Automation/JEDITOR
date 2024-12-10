@@ -3,6 +3,7 @@ from pathlib import Path
 from threading import Lock
 
 from je_editor.utils.exception.exceptions import JEditorOpenFileException
+from je_editor.utils.logging.loggin_instance import jeditor_logger
 
 
 def read_file(file_path: str) -> typing.List[typing.Union[str, str]]:
@@ -19,6 +20,7 @@ def read_file(file_path: str) -> typing.List[typing.Union[str, str]]:
     finally
         release lock
     """
+    jeditor_logger.info(f"open_file.py read_file file_path: {file_path}")
     lock = Lock()
     try:
         lock.acquire()

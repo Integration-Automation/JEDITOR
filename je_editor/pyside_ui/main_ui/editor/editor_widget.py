@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from je_editor.utils.logging.loggin_instance import jeditor_logger
 from je_editor.utils.multi_language.multi_language_wrapper import language_wrapper
 
 if TYPE_CHECKING:
@@ -30,8 +31,10 @@ from je_editor.utils.file.open.open_file import read_file
 class EditorWidget(QWidget):
 
     def __init__(self, main_window: EditorMain):
+        jeditor_logger.info(f"Init EditorWidget main_window: {main_window}")
         super().__init__()
         # Init variable
+        self.checker: Union[PEP8FormatChecker, None] = None
         self.current_file = None
         self.tree_view_scroll_area = None
         self.project_treeview = None
@@ -110,6 +113,7 @@ class EditorWidget(QWidget):
         self.check_format_timer.start()
 
     def set_project_treeview(self) -> None:
+        jeditor_logger.info(f"EditorWidget set_project_treeview")
         self.project_treeview_model = QFileSystemModel()
         self.project_treeview_model.setRootPath(QDir.currentPath())
         self.project_treeview = QTreeView()
@@ -130,6 +134,7 @@ class EditorWidget(QWidget):
         self.project_treeview.clicked.connect(self.treeview_click)
 
     def check_is_open(self, path: Path):
+        jeditor_logger.info(f"EditorWidget check_is_open path: {path}")
         if file_is_open_manager_dict.get(str(path), None) is not None:
             widget: QWidget = self.tab_manager.findChild(EditorWidget, str(path))
             if widget is None:
@@ -146,6 +151,7 @@ class EditorWidget(QWidget):
         :param path: open file path
         :return: return False if file tab exists
         """
+        jeditor_logger.info(f"EditorWidget open_an_file path: {path}")
         if not self.check_is_open(path):
             return False
         file, file_content = read_file(str(path))
@@ -162,6 +168,7 @@ class EditorWidget(QWidget):
         return True
 
     def treeview_click(self) -> None:
+        jeditor_logger.info(f"EditorWidget treeview_click")
         clicked_item: QFileSystemModel = self.project_treeview.selectedIndexes()[0]
         file_info: QFileInfo = self.project_treeview.model().fileInfo(clicked_item)
         path = pathlib.Path(file_info.absoluteFilePath())
@@ -169,20 +176,27 @@ class EditorWidget(QWidget):
             self.open_an_file(path)
 
     def rename_self_tab(self):
+        jeditor_logger.info(f"EditorWidget rename_self_tab")
         if self.tab_manager.currentWidget() is self:
             self.tab_manager.setTabText(
                 self.tab_manager.currentIndex(), str(Path(self.current_file)))
             self.setObjectName(str(Path(self.current_file)))
 
     def check_file_format(self):
+        jeditor_logger.info(f"EditorWidget check_file_format")
         if self.current_file:
-            checker = PEP8FormatChecker(self.current_file)
-            checker.check_all_format()
-            self.format_check_result.clear()
-            for error in checker.error_list:
-                self.format_check_result.append(error)
+            if self.checker is None:
+                self.checker = PEP8FormatChecker(self.current_file)
+            elif self.checker.current_file != self.current_file:
+                self.checker = PEP8FormatChecker(self.current_file)
+            else:
+                self.checker.check_all_format()
+                self.format_check_result.clear()
+                for error in self.checker.error_list:
+                    self.format_check_result.append(error)
 
     def close(self) -> bool:
+        jeditor_logger.info(f"EditorWidget close")
         self.check_format_timer.stop()
         if self.code_save_thread is not None:
             self.code_save_thread.still_run = False

@@ -3,14 +3,18 @@ from PySide6.QtWidgets import QWidget, QGridLayout, QPushButton, QInputDialog
 
 from je_editor.pyside_ui.browser.browser_serach_lineedit import BrowserLineSearch
 from je_editor.pyside_ui.browser.browser_view import BrowserView
+from je_editor.utils.logging.loggin_instance import jeditor_logger
 from je_editor.utils.multi_language.multi_language_wrapper import language_wrapper
 
 
-class JEBrowser(QWidget):
+class BrowserWidget(QWidget):
 
     def __init__(self, start_url: str = "https://www.google.com/",
                  search_prefix: str = "https://www.google.com.tw/search?q="):
         super().__init__()
+        jeditor_logger.info(f"Init BrowserWidget "
+                            f"start_url: {start_url} "
+                            f"search_prefix: {search_prefix}")
         # Browser setting
         self.browser = BrowserView(start_url)
         self.search_prefix = search_prefix
@@ -41,9 +45,11 @@ class JEBrowser(QWidget):
         self.setLayout(self.grid_layout)
 
     def search(self):
+        jeditor_logger.info("BrowserWidget Search")
         self.browser.setUrl(f"{self.search_prefix}{self.url_input.text()}")
 
     def find_text(self):
+        jeditor_logger.info("BrowserWidget Find Text")
         search_box = QInputDialog(self)
         search_text, press_ok = search_box.getText(
             self, language_wrapper.language_word_dict.get("browser_find_text"),

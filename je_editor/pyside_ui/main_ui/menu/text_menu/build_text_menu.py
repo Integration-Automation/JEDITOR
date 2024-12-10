@@ -6,6 +6,7 @@ from PySide6.QtGui import QAction
 
 from je_editor.pyside_ui.main_ui.editor.editor_widget import EditorWidget
 from je_editor.pyside_ui.main_ui.save_settings.user_setting_file import user_setting_dict
+from je_editor.utils.logging.loggin_instance import jeditor_logger
 
 if TYPE_CHECKING:
     from je_editor.pyside_ui.main_ui.main_editor import EditorMain
@@ -13,6 +14,7 @@ from je_editor.utils.multi_language.multi_language_wrapper import language_wrapp
 
 
 def set_text_menu(ui_we_want_to_set: EditorMain):
+    jeditor_logger.info(f"build_text_menu.py set_text_menu ui_we_want_to_set: {ui_we_want_to_set}")
     ui_we_want_to_set.text_menu = ui_we_want_to_set.menu.addMenu(
         language_wrapper.language_word_dict.get("text_menu_label"))
     ui_we_want_to_set.text_menu.font_menu = ui_we_want_to_set.text_menu.addMenu(
@@ -32,6 +34,9 @@ def set_text_menu(ui_we_want_to_set: EditorMain):
 
 
 def set_font(ui_we_want_to_set: EditorMain, action: QAction) -> None:
+    jeditor_logger.info(f"build_text_menu.py set_font "
+                        f"ui_we_want_to_set: {ui_we_want_to_set} "
+                        f"action: {action}")
     for code_editor in range(ui_we_want_to_set.tab_widget.count()):
         widget = ui_we_want_to_set.tab_widget.widget(code_editor)
         if isinstance(widget, EditorWidget):
@@ -47,6 +52,9 @@ def set_font(ui_we_want_to_set: EditorMain, action: QAction) -> None:
 
 
 def set_font_size(ui_we_want_to_set: EditorMain, action: QAction) -> None:
+    jeditor_logger.info(f"build_text_menu.py set_font_size "
+                        f"ui_we_want_to_set: {ui_we_want_to_set} "
+                        f"action: {action}")
     for code_editor in range(ui_we_want_to_set.tab_widget.count()):
         widget = ui_we_want_to_set.tab_widget.widget(code_editor)
         if type(widget) is EditorWidget:

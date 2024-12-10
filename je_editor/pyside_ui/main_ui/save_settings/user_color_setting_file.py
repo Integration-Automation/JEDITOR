@@ -6,9 +6,11 @@ from PySide6.QtGui import QColor
 
 from je_editor.pyside_ui.main_ui.save_settings.setting_utils import write_setting
 from je_editor.utils.json.json_file import read_json
+from je_editor.utils.logging.loggin_instance import jeditor_logger
 
 
 def update_actually_color_dict():
+    jeditor_logger.info(f"user_color_setting_file.py update_actually_color_dict")
     actually_color_dict.update(
         {
             "line_number_color": QColor(
@@ -60,10 +62,12 @@ update_actually_color_dict()
 
 
 def write_user_color_setting() -> None:
+    jeditor_logger.info(f"user_color_setting_file.py write_user_color_setting")
     write_setting(user_setting_color_dict, "user_color_setting.json")
 
 
 def read_user_color_setting() -> None:
+    jeditor_logger.info(f"user_color_setting_file.py read_user_color_setting")
     user_color_setting_file = Path(getcwd() + "/.jeditor/user_color_setting.json")
     if user_color_setting_file.exists() and user_color_setting_file.is_file():
         user_setting_color_dict.update(read_json(str(user_color_setting_file)))

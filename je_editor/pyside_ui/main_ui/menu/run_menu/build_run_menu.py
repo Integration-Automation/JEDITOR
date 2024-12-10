@@ -9,6 +9,7 @@ from je_editor.pyside_ui.main_ui.editor.editor_widget import EditorWidget
 from je_editor.pyside_ui.main_ui.menu.run_menu.under_run_menu.build_debug_menu import set_debug_menu
 from je_editor.pyside_ui.main_ui.menu.run_menu.under_run_menu.build_program_menu import set_program_menu
 from je_editor.pyside_ui.main_ui.menu.run_menu.under_run_menu.build_shell_menu import set_shell_menu
+from je_editor.utils.logging.loggin_instance import jeditor_logger
 
 if TYPE_CHECKING:
     from je_editor.pyside_ui.main_ui.main_editor import EditorMain
@@ -18,6 +19,7 @@ from je_editor.utils.multi_language.multi_language_wrapper import language_wrapp
 
 
 def set_run_menu(ui_we_want_to_set: EditorMain) -> None:
+    jeditor_logger.info(f"build_run_menu.py set_run_menu ui_we_want_to_set: {ui_we_want_to_set}")
     ui_we_want_to_set.run_menu = ui_we_want_to_set.menu.addMenu(
         language_wrapper.language_word_dict.get("run_menu_label"))
     set_program_menu(ui_we_want_to_set)
@@ -64,6 +66,7 @@ def set_run_menu(ui_we_want_to_set: EditorMain) -> None:
 
 
 def stop_program(ui_we_want_to_set: EditorMain) -> None:
+    jeditor_logger.info(f"build_run_menu.py stop_program ui_we_want_to_set: {ui_we_want_to_set}")
     widget = ui_we_want_to_set.tab_widget.currentWidget()
     if isinstance(widget, EditorWidget):
         if widget.exec_program is not None:
@@ -81,16 +84,19 @@ def stop_program(ui_we_want_to_set: EditorMain) -> None:
 
 
 def stop_all_program() -> None:
+    jeditor_logger.info(f"build_run_menu.py stop_all_program")
     run_instance_manager.close_all_instance()
 
 
 def clean_result(ui_we_want_to_set: EditorMain) -> None:
+    jeditor_logger.info(f"build_run_menu.py clean_result ui_we_want_to_set: {ui_we_want_to_set}")
     widget = ui_we_want_to_set.tab_widget.currentWidget()
     if isinstance(widget, EditorWidget):
         widget.code_result.setPlainText("")
 
 
 def show_run_help() -> None:
+    jeditor_logger.info(f"build_run_menu.py show_run_help")
     message_box = QMessageBox()
     message_box.setText(
         language_wrapper.language_word_dict.get("run_menu_run_help_tip")
@@ -99,6 +105,7 @@ def show_run_help() -> None:
 
 
 def show_shell_help() -> None:
+    jeditor_logger.info(f"build_run_menu.py show_shell_help")
     message_box = QMessageBox()
     message_box.setText(
         language_wrapper.language_word_dict.get("run_menu_shell_run_tip")

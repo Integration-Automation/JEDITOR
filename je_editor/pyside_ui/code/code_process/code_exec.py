@@ -15,6 +15,7 @@ from je_editor.pyside_ui.main_ui.editor.editor_widget import EditorWidget
 from je_editor.pyside_ui.main_ui.save_settings.user_color_setting_file import actually_color_dict
 from je_editor.utils.exception.exception_tags import je_editor_init_error
 from je_editor.utils.exception.exceptions import JEditorException
+from je_editor.utils.logging.loggin_instance import jeditor_logger
 from je_editor.utils.venv_check.check_venv import check_and_choose_venv
 
 
@@ -32,6 +33,11 @@ class ExecManager(object):
         :param program_language: which program language
         :param program_encoding: which encoding
         """
+        jeditor_logger.info(f"Init ExecManager "
+                            f"main_window: {main_window} "
+                            f"program_language: {program_language} "
+                            f"program_encoding: {program_encoding} "
+                            f"program_buffer: {program_buffer}")
         self.read_program_error_output_from_thread = None
         self.read_program_output_from_thread = None
         self.main_window: EditorWidget = main_window
@@ -49,6 +55,7 @@ class ExecManager(object):
         run_instance_manager.instance_list.append(self)
 
     def renew_path(self) -> None:
+        jeditor_logger.info("ExecManager renew_path")
         if self.main_window.python_compiler is None:
             # Renew compiler path
             if sys.platform in ["win32", "cygwin", "msys"]:
@@ -60,6 +67,7 @@ class ExecManager(object):
             self.compiler_path = self.main_window.python_compiler
 
     def later_init(self) -> None:
+        jeditor_logger.info("ExecManager later_init")
         # Enable timer and code result area
         if self.main_window is not None:
             self.code_result: QTextEdit = self.main_window.code_result
@@ -73,6 +81,9 @@ class ExecManager(object):
         :param exec_prefix: user define exec prefix
         :return: if error return result and True else return result and False
         """
+        jeditor_logger.info(f"ExecManager exec_code "
+                            f"exec_file_name: {exec_file_name} "
+                            f"exec_prefix: {exec_prefix}")
         try:
             self.exit_program()
             self.code_result.setTextColor(actually_color_dict.get("normal_output_color"))
@@ -131,11 +142,13 @@ class ExecManager(object):
                 self.process.terminate()
 
     def full_exit_program(self):
+        jeditor_logger.info("ExecManager full_exit_program")
         self.timer.stop()
         self.exit_program()
         self.main_window.exec_program = None
 
     def pull_text(self) -> None:
+        jeditor_logger.info("ExecManager pull_text")
         # Pull text from queue and put in code result area
         try:
             self.code_result.setTextColor(actually_color_dict.get("normal_output_color"))
@@ -163,6 +176,7 @@ class ExecManager(object):
 
     # Exit program change run flag to false and clean read thread and queue and process
     def exit_program(self) -> None:
+        jeditor_logger.info("ExecManager exit_program")
         self.still_run_program = False
         if self.read_program_output_from_thread is not None:
             self.read_program_output_from_thread = None
@@ -176,10 +190,12 @@ class ExecManager(object):
 
     # Pull all remain string on queue and add to code result area
     def print_and_clear_queue(self) -> None:
+        jeditor_logger.info("ExecManager print_and_clear_queue")
         self.run_output_queue = queue.Queue()
         self.run_error_queue = queue.Queue()
 
     def read_program_output_from_process(self) -> None:
+        jeditor_logger.info("ExecManager read_program_output_from_process")
         while self.still_run_program:
             program_output_data: str = self.process.stdout.read(
                 self.program_buffer).decode(self.program_encoding, "replace")
@@ -188,6 +204,7 @@ class ExecManager(object):
             self.run_output_queue.put_nowait(program_output_data)
 
     def read_program_error_output_from_process(self) -> None:
+        jeditor_logger.info("ExecManager read_program_error_output_from_process")
         while self.still_run_program:
             program_error_output_data: str = self.process.stderr.read(
                 self.program_buffer).decode(self.program_encoding, "replace")
