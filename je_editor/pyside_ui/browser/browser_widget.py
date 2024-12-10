@@ -12,7 +12,7 @@ class BrowserWidget(QWidget):
     def __init__(self, start_url: str = "https://www.google.com/",
                  search_prefix: str = "https://www.google.com.tw/search?q="):
         super().__init__()
-        jeditor_logger.info(f"Init BrowserWidget "
+        jeditor_logger.info("Init BrowserWidget "
                             f"start_url: {start_url} "
                             f"search_prefix: {search_prefix}")
         # Browser setting

@@ -31,7 +31,7 @@ def set_style_menu(ui_we_want_to_set: EditorMain) -> None:
 
 
 def set_style(ui_we_want_to_set: EditorMain, action: QAction) -> None:
-    jeditor_logger.info(f"build_style_menu.py set_style "
+    jeditor_logger.info("build_style_menu.py set_style "
                         f"ui_we_want_to_set: {ui_we_want_to_set} "
                         f"action: {action}")
     ui_we_want_to_set.apply_stylesheet(ui_we_want_to_set, action.text())

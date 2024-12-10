@@ -35,7 +35,7 @@ def write_json(json_save_path: str, data_to_output: Union[list, dict]) -> None:
     :param json_save_path  json save path
     :param data_to_output data to output
     """
-    jeditor_logger.info(f"json_file.py write_json "
+    jeditor_logger.info("json_file.py write_json "
                         f"json_save_path: {json_save_path} "
                         f"data_to_output: {data_to_output}")
     _lock.acquire()

@@ -106,7 +106,7 @@ class CodeEditor(QPlainTextEdit):
         :param completion: completion text
         :return: None
         """
-        jeditor_logger.info(f"CodeEditor insert_completion completion:{completion}")
+        jeditor_logger.info(f"CodeEditor insert_completion completion: {completion}")
         if self.completer.widget() != self:
             return
         text_cursor = self.textCursor()

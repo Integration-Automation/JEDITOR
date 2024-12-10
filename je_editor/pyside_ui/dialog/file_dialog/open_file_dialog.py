@@ -26,7 +26,7 @@ def choose_file_get_open_file_path(parent_qt_instance: EditorMain) -> None:
     :param parent_qt_instance: Pyside parent
     :return: None
     """
-    jeditor_logger.info(f"open_file_dialog.py choose_file_get_open_file_path"
+    jeditor_logger.info("open_file_dialog.py choose_file_get_open_file_path"
                         f" parent_qt_instance: {parent_qt_instance}")
     widget = parent_qt_instance.tab_widget.currentWidget()
     if isinstance(widget, EditorWidget):
@@ -58,7 +58,7 @@ def choose_file_get_open_file_path(parent_qt_instance: EditorMain) -> None:
 
 
 def choose_dir_get_dir_path(parent_qt_instance: EditorMain) -> None:
-    jeditor_logger.info(f"open_file_dialog.py choose_dir_get_dir_path"
+    jeditor_logger.info("open_file_dialog.py choose_dir_get_dir_path"
                         f" parent_qt_instance: {parent_qt_instance}")
     dir_path = QFileDialog().getExistingDirectory(parent=parent_qt_instance, )
     if dir_path != "":

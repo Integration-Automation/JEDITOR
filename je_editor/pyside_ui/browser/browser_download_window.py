@@ -10,7 +10,7 @@ class BrowserDownloadWindow(QWidget):
 
     def __init__(self, download_instance: QWebEngineDownloadRequest):
         super().__init__()
-        jeditor_logger.info(f"Init BrowserDownloadWindow "
+        jeditor_logger.info("Init BrowserDownloadWindow "
                             f"download_instance: {download_instance}")
         self.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
         self.box_layout = QBoxLayout(QBoxLayout.Direction.TopToBottom)

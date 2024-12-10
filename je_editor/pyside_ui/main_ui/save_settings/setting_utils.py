@@ -6,7 +6,7 @@ from je_editor.utils.logging.loggin_instance import jeditor_logger
 
 
 def write_setting(save_dict: dict, file_name: str) -> None:
-    jeditor_logger.info(f"setting_utils.py write_setting "
+    jeditor_logger.info("setting_utils.py write_setting "
                         f"save_dict: {save_dict} "
                         f"file_name: {file_name}")
     save_dir = Path(getcwd() + "/.jeditor")

@@ -18,7 +18,7 @@ from je_editor.pyside_ui.dialog.file_dialog.save_file_dialog import choose_file_
 
 
 def set_file_menu(ui_we_want_to_set: EditorMain) -> None:
-    jeditor_logger.info(f"build_file_menu.py add_dock_widget "
+    jeditor_logger.info("build_file_menu.py add_dock_widget "
                         f"ui_we_want_to_set: {ui_we_want_to_set}")
     ui_we_want_to_set.file_menu = ui_we_want_to_set.menu.addMenu(
         language_wrapper.language_word_dict.get("file_menu_label"))
@@ -66,7 +66,7 @@ def set_file_menu(ui_we_want_to_set: EditorMain) -> None:
 
 
 def add_encoding_menu(ui_we_want_to_set: EditorMain) -> None:
-    jeditor_logger.info(f"build_file_menu.py add_encoding_menu "
+    jeditor_logger.info("build_file_menu.py add_encoding_menu "
                         f"ui_we_want_to_set: {ui_we_want_to_set}")
     ui_we_want_to_set.file_menu.encoding_menu = ui_we_want_to_set.file_menu.addMenu(
         language_wrapper.language_word_dict.get("file_menu_encoding_label"))
@@ -78,7 +78,7 @@ def add_encoding_menu(ui_we_want_to_set: EditorMain) -> None:
 
 
 def set_encoding(ui_we_want_to_set: EditorMain, action: QAction) -> None:
-    jeditor_logger.info(f"build_file_menu.py set_encoding "
+    jeditor_logger.info("build_file_menu.py set_encoding "
                         f"ui_we_want_to_set: {ui_we_want_to_set} "
                         f"action: {action}")
     ui_we_want_to_set.encoding = action.text()
@@ -86,14 +86,14 @@ def set_encoding(ui_we_want_to_set: EditorMain, action: QAction) -> None:
 
 
 def show_create_file_dialog(ui_we_want_to_set: EditorMain):
-    jeditor_logger.info(f"build_file_menu.py show_create_file_dialog "
+    jeditor_logger.info("build_file_menu.py show_create_file_dialog "
                         f"ui_we_want_to_set: {ui_we_want_to_set}")
     ui_we_want_to_set.create_file_dialog = CreateFileDialog()
     ui_we_want_to_set.create_file_dialog.show()
 
 
 def add_font_menu(ui_we_want_to_set: EditorMain) -> None:
-    jeditor_logger.info(f"build_file_menu.py add_font_menu "
+    jeditor_logger.info("build_file_menu.py add_font_menu "
                         f"ui_we_want_to_set: {ui_we_want_to_set}")
     ui_we_want_to_set.file_menu.font_menu = ui_we_want_to_set.file_menu.addMenu(
         language_wrapper.language_word_dict.get("file_menu_font_label"))
@@ -104,7 +104,7 @@ def add_font_menu(ui_we_want_to_set: EditorMain) -> None:
 
 
 def set_font(ui_we_want_to_set: EditorMain, action: QAction) -> None:
-    jeditor_logger.info(f"build_file_menu.py set_font "
+    jeditor_logger.info("build_file_menu.py set_font "
                         f"ui_we_want_to_set: {ui_we_want_to_set}")
     ui_we_want_to_set.setStyleSheet(
         f"font-size: {ui_we_want_to_set.font().pointSize()}pt;"
@@ -114,7 +114,7 @@ def set_font(ui_we_want_to_set: EditorMain, action: QAction) -> None:
 
 
 def add_font_size_menu(ui_we_want_to_set: EditorMain) -> None:
-    jeditor_logger.info(f"build_file_menu.py add_font_size_menu "
+    jeditor_logger.info("build_file_menu.py add_font_size_menu "
                         f"ui_we_want_to_set: {ui_we_want_to_set}")
     ui_we_want_to_set.file_menu.font_size_menu = ui_we_want_to_set.file_menu.addMenu(
         language_wrapper.language_word_dict.get("file_menu_font_size_label"))
@@ -126,7 +126,7 @@ def add_font_size_menu(ui_we_want_to_set: EditorMain) -> None:
 
 
 def set_font_size(ui_we_want_to_set: EditorMain, action: QAction) -> None:
-    jeditor_logger.info(f"build_file_menu.py set_font_size "
+    jeditor_logger.info("build_file_menu.py set_font_size "
                         f"ui_we_want_to_set: {ui_we_want_to_set} "
                         f"action: {action}")
     ui_we_want_to_set.setStyleSheet(

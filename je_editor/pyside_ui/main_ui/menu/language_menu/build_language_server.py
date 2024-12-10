@@ -40,7 +40,7 @@ def set_language_menu(ui_we_want_to_set: EditorMain) -> None:
 
 
 def set_language(language: str, ui_we_want_to_set: EditorMain) -> None:
-    jeditor_logger.info(f"build_language_server.py set_language "
+    jeditor_logger.info("build_language_server.py set_language "
                         f"language: {language} "
                         f"ui_we_want_to_set: {ui_we_want_to_set}")
     language_wrapper.reset_language(language)

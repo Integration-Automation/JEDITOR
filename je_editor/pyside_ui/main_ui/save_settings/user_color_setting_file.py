@@ -62,12 +62,12 @@ update_actually_color_dict()
 
 
 def write_user_color_setting() -> None:
-    jeditor_logger.info(f"user_color_setting_file.py write_user_color_setting")
+    jeditor_logger.info("user_color_setting_file.py write_user_color_setting")
     write_setting(user_setting_color_dict, "user_color_setting.json")
 
 
 def read_user_color_setting() -> None:
-    jeditor_logger.info(f"user_color_setting_file.py read_user_color_setting")
+    jeditor_logger.info("user_color_setting_file.py read_user_color_setting")
     user_color_setting_file = Path(getcwd() + "/.jeditor/user_color_setting.json")
     if user_color_setting_file.exists() and user_color_setting_file.is_file():
         user_setting_color_dict.update(read_json(str(user_color_setting_file)))

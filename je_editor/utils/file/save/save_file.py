@@ -15,7 +15,7 @@ def write_file(file_path: str, content: str) -> None:
     finally
         release lock
     """
-    jeditor_logger.info(f"save_file.py write_file "
+    jeditor_logger.info("save_file.py write_file "
                         f"file_path: {file_path} "
                         f"content: {content}")
     lock = Lock()
