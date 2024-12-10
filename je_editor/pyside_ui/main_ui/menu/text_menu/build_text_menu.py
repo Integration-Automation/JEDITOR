@@ -34,7 +34,7 @@ def set_text_menu(ui_we_want_to_set: EditorMain):
 
 
 def set_font(ui_we_want_to_set: EditorMain, action: QAction) -> None:
-    jeditor_logger.info(f"build_text_menu.py set_font "
+    jeditor_logger.info("build_text_menu.py set_font "
                         f"ui_we_want_to_set: {ui_we_want_to_set} "
                         f"action: {action}")
     for code_editor in range(ui_we_want_to_set.tab_widget.count()):
@@ -52,7 +52,7 @@ def set_font(ui_we_want_to_set: EditorMain, action: QAction) -> None:
 
 
 def set_font_size(ui_we_want_to_set: EditorMain, action: QAction) -> None:
-    jeditor_logger.info(f"build_text_menu.py set_font_size "
+    jeditor_logger.info("build_text_menu.py set_font_size "
                         f"ui_we_want_to_set: {ui_we_want_to_set} "
                         f"action: {action}")
     for code_editor in range(ui_we_want_to_set.tab_widget.count()):

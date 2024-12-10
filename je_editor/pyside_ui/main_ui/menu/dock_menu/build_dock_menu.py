@@ -62,7 +62,7 @@ def set_dock_menu(ui_we_want_to_set: EditorMain) -> None:
 
 
 def add_dock_widget(ui_we_want_to_set: EditorMain, widget_type: str = None):
-    jeditor_logger.info(f"build_dock_menu.py add_dock_widget "
+    jeditor_logger.info("build_dock_menu.py add_dock_widget "
                         f"ui_we_want_to_set: {ui_we_want_to_set} "
                         f"widget_type: {widget_type}")
     # Dock widget

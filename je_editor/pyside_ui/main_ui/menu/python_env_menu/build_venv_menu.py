@@ -86,7 +86,7 @@ def create_venv(ui_we_want_to_set: EditorMain) -> None:
 
 
 def shell_pip_install(ui_we_want_to_set: EditorMain, pip_install_command_list: list):
-    jeditor_logger.info(f"build_venv_menu.py create_venv "
+    jeditor_logger.info("build_venv_menu.py create_venv "
                         f"ui_we_want_to_set: {ui_we_want_to_set} "
                         f"pip_install_command_list: {pip_install_command_list}")
     widget = ui_we_want_to_set.tab_widget.currentWidget()
@@ -113,7 +113,7 @@ def shell_pip_install(ui_we_want_to_set: EditorMain, pip_install_command_list: l
 
 
 def detect_venv() -> bool:
-    jeditor_logger.info(f"build_venv_menu.py detect_venv")
+    jeditor_logger.info("build_venv_menu.py detect_venv")
     venv_path = Path(os.getcwd() + "/venv")
     if not venv_path.exists():
         message_box = QMessageBox()

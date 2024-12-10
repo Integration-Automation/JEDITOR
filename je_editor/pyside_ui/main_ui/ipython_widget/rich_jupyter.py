@@ -34,7 +34,7 @@ class IpythonWidget(QWidget):
         self.setLayout(self.grid_layout)
 
     def close(self):
-        jeditor_logger.info(f"IpythonWidget close")
+        jeditor_logger.info("IpythonWidget close")
         if self.kernel_client:
             self.kernel_client.stop_channels()
         if self.kernel_manager:

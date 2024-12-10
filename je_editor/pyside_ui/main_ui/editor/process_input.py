@@ -16,7 +16,7 @@ from je_editor.utils.multi_language.multi_language_wrapper import language_wrapp
 class ProcessInput(QWidget):
 
     def __init__(self, main_window: EditorWidget, process_type: str = "debugger"):
-        jeditor_logger.info(f"Init ProcessInput "
+        jeditor_logger.info("Init ProcessInput "
                             f"main_window: {main_window} "
                             f"process_type: {process_type}")
         super().__init__()
@@ -45,7 +45,7 @@ class ProcessInput(QWidget):
         self.setLayout(self.box_layout)
 
     def debugger_send_command(self):
-        jeditor_logger.info(f"EditorWidget debugger_send_command")
+        jeditor_logger.info("EditorWidget debugger_send_command")
         if self.main_window.exec_python_debugger is not None:
             process_stdin = self.main_window.exec_python_debugger.process.stdin
             if process_stdin is not None:
@@ -53,7 +53,7 @@ class ProcessInput(QWidget):
                 process_stdin.flush()
 
     def shell_send_command(self):
-        jeditor_logger.info(f"EditorWidget shell_send_command")
+        jeditor_logger.info("EditorWidget shell_send_command")
         if self.main_window.exec_shell is not None:
             process_stdin = self.main_window.exec_shell.process.stdin
             if process_stdin is not None:
@@ -61,7 +61,7 @@ class ProcessInput(QWidget):
                 process_stdin.flush()
 
     def program_send_command(self):
-        jeditor_logger.info(f"EditorWidget program_send_command")
+        jeditor_logger.info("EditorWidget program_send_command")
         if self.main_window.exec_program is not None:
             process_stdin = self.main_window.exec_program.process.stdin
             if process_stdin is not None:

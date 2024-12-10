@@ -40,12 +40,12 @@ class ExtendSystemTray(QSystemTrayIcon):
         self.activated.connect(self.clicked)
 
     def close_all(self):
-        jeditor_logger.info(f"ExtendSystemTray close_all")
+        jeditor_logger.info("ExtendSystemTray close_all")
         self.setVisible(False)
         self.main_window.close()
         sys.exit(0)
 
     def clicked(self, reason):
         if reason == self.ActivationReason.DoubleClick:
-            jeditor_logger.info(f"ExtendSystemTray DoubleClick")
+            jeditor_logger.info("ExtendSystemTray DoubleClick")
             self.main_window.showMaximized()

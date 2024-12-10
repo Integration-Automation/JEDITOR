@@ -113,7 +113,7 @@ class EditorWidget(QWidget):
         self.check_format_timer.start()
 
     def set_project_treeview(self) -> None:
-        jeditor_logger.info(f"EditorWidget set_project_treeview")
+        jeditor_logger.info("EditorWidget set_project_treeview")
         self.project_treeview_model = QFileSystemModel()
         self.project_treeview_model.setRootPath(QDir.currentPath())
         self.project_treeview = QTreeView()
@@ -168,7 +168,7 @@ class EditorWidget(QWidget):
         return True
 
     def treeview_click(self) -> None:
-        jeditor_logger.info(f"EditorWidget treeview_click")
+        jeditor_logger.info("EditorWidget treeview_click")
         clicked_item: QFileSystemModel = self.project_treeview.selectedIndexes()[0]
         file_info: QFileInfo = self.project_treeview.model().fileInfo(clicked_item)
         path = pathlib.Path(file_info.absoluteFilePath())
@@ -176,14 +176,14 @@ class EditorWidget(QWidget):
             self.open_an_file(path)
 
     def rename_self_tab(self):
-        jeditor_logger.info(f"EditorWidget rename_self_tab")
+        jeditor_logger.info("EditorWidget rename_self_tab")
         if self.tab_manager.currentWidget() is self:
             self.tab_manager.setTabText(
                 self.tab_manager.currentIndex(), str(Path(self.current_file)))
             self.setObjectName(str(Path(self.current_file)))
 
     def check_file_format(self):
-        jeditor_logger.info(f"EditorWidget check_file_format")
+        jeditor_logger.info("EditorWidget check_file_format")
         if self.current_file:
             if self.checker is None:
                 self.checker = PEP8FormatChecker(self.current_file)
@@ -196,7 +196,7 @@ class EditorWidget(QWidget):
                     self.format_check_result.append(error)
 
     def close(self) -> bool:
-        jeditor_logger.info(f"EditorWidget close")
+        jeditor_logger.info("EditorWidget close")
         self.check_format_timer.stop()
         if self.code_save_thread is not None:
             self.code_save_thread.still_run = False

@@ -20,7 +20,7 @@ def choose_file_get_save_file_path(parent_qt_instance: EditorMain) -> bool:
     :param parent_qt_instance: Pyside parent
     :return: save code edit content to file
     """
-    jeditor_logger.info(f"save_file_dialog.py choose_file_get_save_file_path"
+    jeditor_logger.info("save_file_dialog.py choose_file_get_save_file_path"
                         f" parent_qt_instance: {parent_qt_instance}")
     widget = parent_qt_instance.tab_widget.currentWidget()
     if isinstance(widget, EditorWidget):

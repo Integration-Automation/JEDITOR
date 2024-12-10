@@ -15,7 +15,7 @@ from je_editor.utils.multi_language.multi_language_wrapper import language_wrapp
 
 
 def set_help_menu(ui_we_want_to_set: EditorMain) -> None:
-    jeditor_logger.info(f"build_help_menu.py set_help_menu "
+    jeditor_logger.info("build_help_menu.py set_help_menu "
                         f"ui_we_want_to_set: {ui_we_want_to_set}")
     ui_we_want_to_set.help_menu = ui_we_want_to_set.menu.addMenu(
         language_wrapper.language_word_dict.get("help_menu_label"))
@@ -74,7 +74,7 @@ def set_help_menu(ui_we_want_to_set: EditorMain) -> None:
 
 
 def open_web_browser(ui_we_want_to_set: EditorMain, url: str, tab_name: str):
-    jeditor_logger.info(f"build_help_menu.py open_web_browser "
+    jeditor_logger.info("build_help_menu.py open_web_browser "
                         f"ui_we_want_to_set: {ui_we_want_to_set} "
                         f"url: {url} "
                         f"tab_name: {tab_name}")
@@ -85,7 +85,7 @@ def open_web_browser(ui_we_want_to_set: EditorMain, url: str, tab_name: str):
 
 
 def show_about():
-    jeditor_logger.info(f"build_help_menu.py show_about")
+    jeditor_logger.info("build_help_menu.py show_about")
     message_box = QMessageBox()
     message_box.setText(
         """

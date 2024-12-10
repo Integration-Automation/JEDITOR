@@ -84,7 +84,7 @@ def stop_program(ui_we_want_to_set: EditorMain) -> None:
 
 
 def stop_all_program() -> None:
-    jeditor_logger.info(f"build_run_menu.py stop_all_program")
+    jeditor_logger.info("build_run_menu.py stop_all_program")
     run_instance_manager.close_all_instance()
 
 
@@ -96,7 +96,7 @@ def clean_result(ui_we_want_to_set: EditorMain) -> None:
 
 
 def show_run_help() -> None:
-    jeditor_logger.info(f"build_run_menu.py show_run_help")
+    jeditor_logger.info("build_run_menu.py show_run_help")
     message_box = QMessageBox()
     message_box.setText(
         language_wrapper.language_word_dict.get("run_menu_run_help_tip")
@@ -105,7 +105,7 @@ def show_run_help() -> None:
 
 
 def show_shell_help() -> None:
-    jeditor_logger.info(f"build_run_menu.py show_shell_help")
+    jeditor_logger.info("build_run_menu.py show_shell_help")
     message_box = QMessageBox()
     message_box.setText(
         language_wrapper.language_word_dict.get("run_menu_shell_run_tip")

@@ -12,7 +12,7 @@ class BrowserView(QWebEngineView):
 
     def __init__(self, start_url: str = "https://www.google.com/"):
         super().__init__()
-        jeditor_logger.info(f"Init BrowserView "
+        jeditor_logger.info("Init BrowserView "
                             f"start_url: {start_url}")
         self.setUrl(start_url)
         self.download_list: List[QWebEngineDownloadRequest] = list()
@@ -21,7 +21,7 @@ class BrowserView(QWebEngineView):
         self.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
 
     def download_file(self, download_instance: QWebEngineDownloadRequest):
-        jeditor_logger.info(f"Download File "
+        jeditor_logger.info("Download File "
                             f"download_instance: {download_instance}")
         self.download_list.append(download_instance)
         download_detail_window = BrowserDownloadWindow(download_instance)

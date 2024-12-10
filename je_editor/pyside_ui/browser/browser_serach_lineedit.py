@@ -15,7 +15,7 @@ class BrowserLineSearch(QLineEdit):
 
     def __init__(self, browser_widget: BrowserWidget):
         super().__init__()
-        jeditor_logger.info(f"Init BrowserLineSearch "
+        jeditor_logger.info("Init BrowserLineSearch "
                             f"browser_widget: {browser_widget}")
         self.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
         self.browser = browser_widget
