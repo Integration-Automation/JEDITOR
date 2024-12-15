@@ -12,6 +12,7 @@ from frontengine import FrontEngineMainUI
 from frontengine import RedirectManager
 from qt_material import QtStyleTools
 
+from je_editor.utils.logging.loggin_instance import jeditor_logger
 from je_editor.pyside_ui.browser.browser_widget import BrowserWidget
 from je_editor.pyside_ui.code.auto_save.auto_save_manager import init_new_auto_save_thread, file_is_open_manager_dict
 from je_editor.pyside_ui.main_ui.editor.editor_widget import EditorWidget
@@ -22,7 +23,6 @@ from je_editor.pyside_ui.main_ui.save_settings.user_setting_file import user_set
     write_user_setting
 from je_editor.pyside_ui.main_ui.system_tray.extend_system_tray import ExtendSystemTray
 from je_editor.utils.file.open.open_file import read_file
-from je_editor.utils.logging.loggin_instance import jeditor_logger
 from je_editor.utils.multi_language.multi_language_wrapper import language_wrapper
 from je_editor.utils.redirect_manager.redirect_manager_class import redirect_manager_instance
 
@@ -97,7 +97,7 @@ class EditorMain(QMainWindow, QtStyleTools):
                 self.system_tray.show()
                 self.system_tray.setToolTip(language_wrapper.language_word_dict.get("application_name"))
         # Put Redirect on last to trace exception
-        RedirectManager.restore_std()
+        redirect_manager_instance.restore_std()
         redirect_manager_instance.set_redirect()
         # Timer to redirect error or message
         self.redirect_timer = QTimer(self)
@@ -204,7 +204,7 @@ class EditorMain(QMainWindow, QtStyleTools):
             self.tab_widget.setCurrentWidget(widget)
 
     def closeEvent(self, event) -> None:
-        jeditor_logger.info(f"EditorMain closeEvent")
+        jeditor_logger.info("EditorMain closeEvent")
         write_user_setting()
         write_user_color_setting()
         super().closeEvent(event)

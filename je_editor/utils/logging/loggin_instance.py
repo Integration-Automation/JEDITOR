@@ -17,12 +17,11 @@ class JEditorLoggingHandler(RotatingFileHandler):
         self.setLevel(logging.DEBUG)
 
     def emit(self, record: logging.LogRecord) -> None:
-        print(self.format(record))
+        super().emit(record)
 
 
 # File handler
 file_handler = JEditorLoggingHandler()
-file_handler.setFormatter(formatter)
 jeditor_logger.addHandler(file_handler)
 
 
