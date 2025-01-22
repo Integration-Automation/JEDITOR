@@ -43,7 +43,7 @@ class PythonHighlighter(QSyntaxHighlighter):
                     self.highlight_rules.append((pattern, text_char_format))
         else:
             if syntax_extend_setting_dict.get(current_file_suffix):
-                for rule_variable_dict in syntax_extend_setting_dict.get("current_file_suffix").values():
+                for rule_variable_dict in syntax_extend_setting_dict.get(current_file_suffix).values():
                     color = rule_variable_dict.get("color")
                     text_char_format = QTextCharFormat()
                     text_char_format.setForeground(color)
