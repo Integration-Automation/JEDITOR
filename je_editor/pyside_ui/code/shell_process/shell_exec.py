@@ -112,7 +112,7 @@ class ShellManager(object):
             self.read_program_error_output_from_thread.start()
             # start timer
             self.timer = QTimer(self.main_window)
-            self.timer.setInterval(1)
+            self.timer.setInterval(100)
             self.timer.timeout.connect(self.pull_text)
             self.timer.start()
         except Exception as error:

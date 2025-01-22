@@ -14,7 +14,8 @@ from typing import Union, List
 import jedi
 from PySide6 import QtGui
 from PySide6.QtCore import Qt, QRect
-from PySide6.QtGui import QPainter, QTextCharFormat, QTextFormat, QKeyEvent, QAction, QTextDocument, QTextCursor
+from PySide6.QtGui import QPainter, QTextCharFormat, QTextFormat, QKeyEvent, QAction, QTextDocument, QTextCursor, \
+    QTextOption
 from PySide6.QtWidgets import QPlainTextEdit, QWidget, QTextEdit, QCompleter
 from jedi.api.classes import Completion
 
@@ -68,6 +69,7 @@ class CodeEditor(QPlainTextEdit):
         self.highlighter = PythonHighlighter(self.document(), main_window=self)
         self.highlight_current_line()
         self.setLineWrapMode(self.LineWrapMode.NoWrap)
+        self.setWordWrapMode(QTextOption.WrapMode.WrapAnywhere)
         # Search Text
         self.search_action = QAction("Search")
         self.search_action.setShortcut("Ctrl+f")
@@ -81,6 +83,7 @@ class CodeEditor(QPlainTextEdit):
         self.set_complete([])
 
     def reset_highlighter(self):
+        jeditor_logger.info("CodeEditor reset_highlighter")
         self.highlighter = PythonHighlighter(self.document(), main_window=self)
         self.highlight_current_line()
 
