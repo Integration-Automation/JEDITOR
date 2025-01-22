@@ -181,6 +181,7 @@ class EditorMain(QMainWindow, QtStyleTools):
                     if last_file_path.is_file() and last_file_path.exists() and widget.code_save_thread is None:
                         init_new_auto_save_thread(str(last_file_path), widget)
                         widget.code_edit.setPlainText(read_file(widget.current_file)[1])
+                        widget.code_edit.reset_highlighter()
                         file_is_open_manager_dict.update({str(last_file_path): str(last_file_path.name)})
                         widget.rename_self_tab()
 

@@ -43,6 +43,7 @@ class CodeEditor(QPlainTextEdit):
         self.check_env()
         # Self main window (parent)
         self.main_window = main_window
+        self.current_file = main_window.current_file
 
         self.skip_popup_behavior_list = [
             Qt.Key.Key_Enter, Qt.Key.Key_Return, Qt.Key.Key_Up, Qt.Key.Key_Down,
@@ -64,7 +65,7 @@ class CodeEditor(QPlainTextEdit):
         self.setTabStopDistance(
             QtGui.QFontMetricsF(self.font()).horizontalAdvance("        ")
         )
-        self.highlighter = PythonHighlighter(self.document())
+        self.highlighter = PythonHighlighter(self.document(), main_window=self)
         self.highlight_current_line()
         self.setLineWrapMode(self.LineWrapMode.NoWrap)
         # Search Text
@@ -78,6 +79,10 @@ class CodeEditor(QPlainTextEdit):
         # Complete
         self.completer: Union[None, QCompleter] = None
         self.set_complete([])
+
+    def reset_highlighter(self):
+        self.highlighter = PythonHighlighter(self.document(), main_window=self)
+        self.highlight_current_line()
 
     def check_env(self):
         jeditor_logger.info("CodeEditor check_env")

@@ -2,7 +2,7 @@ if __name__ == "__main__":
     # argparse
     import argparse
 
-    from je_editor.tkinter_ui.editor_main_ui.tkinter_editor import start_editor
+    from je_editor.start_editor import start_editor
 
     argparse_event_dict = {
         "start": start_editor,
