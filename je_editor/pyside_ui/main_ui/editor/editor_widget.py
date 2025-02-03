@@ -108,7 +108,7 @@ class EditorWidget(QWidget):
         self.grid_layout.addWidget(self.full_splitter)
         # Check format time
         self.check_format_timer = QTimer()
-        self.check_format_timer.setInterval(10)
+        self.check_format_timer.setInterval(100)
         self.check_format_timer.timeout.connect(self.check_file_format)
         self.check_format_timer.start()
 

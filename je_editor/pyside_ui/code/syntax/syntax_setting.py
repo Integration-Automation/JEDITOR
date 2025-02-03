@@ -61,5 +61,7 @@ syntax_word_setting_dict: dict = {
         "words": ("self",),
         "color": QColor(204, 0, 204)
     }
+}
 
+syntax_extend_setting_dict: dict = {
 }

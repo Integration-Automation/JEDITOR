@@ -52,8 +52,9 @@ class RedirectManager(object):
         sys.stderr = redirect_err
         default_logger = logging.getLogger("RedirectManager")
         default_logger.addHandler(redirect_err)
+        skip_logger_list = ["JEditor", "FrontEngine", "AutomationIDE"]
         for name in logging.root.manager.loggerDict.keys():
-            if name == "JEditor":
+            if name in skip_logger_list:
                 continue
             else:
                 logging.getLogger(name).addHandler(redirect_err)

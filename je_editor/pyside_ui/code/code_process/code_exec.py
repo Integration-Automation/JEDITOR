@@ -131,7 +131,7 @@ class ExecManager(object):
             # start tkinter_ui update
             # start timer
             self.timer = QTimer(self.main_window)
-            self.timer.setInterval(1)
+            self.timer.setInterval(100)
             self.timer.timeout.connect(self.pull_text)
             self.timer.start()
         except Exception as error:

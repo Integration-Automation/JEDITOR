@@ -9,10 +9,8 @@ from PySide6.QtCore import QTimer, QEvent
 from PySide6.QtGui import QFontDatabase, QIcon, Qt
 from PySide6.QtWidgets import QMainWindow, QWidget, QTabWidget
 from frontengine import FrontEngineMainUI
-from frontengine import RedirectManager
 from qt_material import QtStyleTools
 
-from je_editor.utils.logging.loggin_instance import jeditor_logger
 from je_editor.pyside_ui.browser.browser_widget import BrowserWidget
 from je_editor.pyside_ui.code.auto_save.auto_save_manager import init_new_auto_save_thread, file_is_open_manager_dict
 from je_editor.pyside_ui.main_ui.editor.editor_widget import EditorWidget
@@ -23,6 +21,7 @@ from je_editor.pyside_ui.main_ui.save_settings.user_setting_file import user_set
     write_user_setting
 from je_editor.pyside_ui.main_ui.system_tray.extend_system_tray import ExtendSystemTray
 from je_editor.utils.file.open.open_file import read_file
+from je_editor.utils.logging.loggin_instance import jeditor_logger
 from je_editor.utils.multi_language.multi_language_wrapper import language_wrapper
 from je_editor.utils.redirect_manager.redirect_manager_class import redirect_manager_instance
 
@@ -80,7 +79,7 @@ class EditorMain(QMainWindow, QtStyleTools):
         self.tab_widget.tabCloseRequested.connect(self.close_tab)
         # Timer to redirect error or message
         self.redirect_timer = QTimer(self)
-        self.redirect_timer.setInterval(1)
+        self.redirect_timer.setInterval(100)
         self.redirect_timer.start()
         self.setWindowTitle(language_wrapper.language_word_dict.get("application_name"))
         self.setToolTip(language_wrapper.language_word_dict.get("application_name"))
@@ -101,7 +100,7 @@ class EditorMain(QMainWindow, QtStyleTools):
         redirect_manager_instance.set_redirect()
         # Timer to redirect error or message
         self.redirect_timer = QTimer(self)
-        self.redirect_timer.setInterval(1)
+        self.redirect_timer.setInterval(100)
         self.redirect_timer.timeout.connect(self.redirect)
         self.redirect_timer.start()
         # TAB Add
@@ -181,6 +180,8 @@ class EditorMain(QMainWindow, QtStyleTools):
                     if last_file_path.is_file() and last_file_path.exists() and widget.code_save_thread is None:
                         init_new_auto_save_thread(str(last_file_path), widget)
                         widget.code_edit.setPlainText(read_file(widget.current_file)[1])
+                        widget.code_edit.current_file = widget.current_file
+                        widget.code_edit.reset_highlighter()
                         file_is_open_manager_dict.update({str(last_file_path): str(last_file_path.name)})
                         widget.rename_self_tab()
 
