@@ -108,7 +108,7 @@ class EditorWidget(QWidget):
         self.grid_layout.addWidget(self.full_splitter)
         # Check format time
         self.check_format_timer = QTimer()
-        self.check_format_timer.setInterval(100)
+        self.check_format_timer.setInterval(50)
         self.check_format_timer.timeout.connect(self.check_file_format)
         self.check_format_timer.start()
 
@@ -159,6 +159,8 @@ class EditorWidget(QWidget):
             file_content
         )
         self.current_file = file
+        self.code_edit.current_file = file
+        self.code_edit.reset_highlighter()
         user_setting_dict.update({"last_file": str(self.current_file)})
         if self.current_file is not None and self.code_save_thread is None:
             init_new_auto_save_thread(self.current_file, self)
