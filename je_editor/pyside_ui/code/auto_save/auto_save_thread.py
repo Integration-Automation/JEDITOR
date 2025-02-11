@@ -26,6 +26,7 @@ class CodeEditSaveThread(Thread):
         self.still_run: bool = True
         # set daemon
         self.daemon = True
+        self.skip_this_round: bool = False
 
     def run(self) -> None:
         """
@@ -37,6 +38,9 @@ class CodeEditSaveThread(Thread):
             while path.is_file() and self.editor is not None:
                 time.sleep(5)
                 if self.still_run:
-                    write_file(self.file, self.editor.toPlainText())
+                    if self.skip_this_round:
+                        pass
+                    else:
+                        write_file(self.file, self.editor.toPlainText())
                 else:
                     break

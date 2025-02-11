@@ -25,8 +25,9 @@ english_word_dict = {
     # Check Code Style Menu
     "check_code_style_menu_label": "Check Code Style",
     "yapf_reformat_label": "yapf",
-    "black_reformat_label": "Black",
+    "python_format_checker": "Python format check",
     "reformat_json_label": "Reformat JSON",
+    "python_format_checker_only_support_python_message": "Only support python file",
     # Dock Menu
     "dock_menu_label": "Dock",
     "dock_browser_label": "New Dock Browser",

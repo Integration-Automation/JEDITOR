@@ -79,7 +79,7 @@ class EditorMain(QMainWindow, QtStyleTools):
         self.tab_widget.tabCloseRequested.connect(self.close_tab)
         # Timer to redirect error or message
         self.redirect_timer = QTimer(self)
-        self.redirect_timer.setInterval(50)
+        self.redirect_timer.setInterval(10)
         self.redirect_timer.start()
         self.setWindowTitle(language_wrapper.language_word_dict.get("application_name"))
         self.setToolTip(language_wrapper.language_word_dict.get("application_name"))
@@ -100,7 +100,7 @@ class EditorMain(QMainWindow, QtStyleTools):
         redirect_manager_instance.set_redirect()
         # Timer to redirect error or message
         self.redirect_timer = QTimer(self)
-        self.redirect_timer.setInterval(50)
+        self.redirect_timer.setInterval(10)
         self.redirect_timer.timeout.connect(self.redirect)
         self.redirect_timer.start()
         # TAB Add

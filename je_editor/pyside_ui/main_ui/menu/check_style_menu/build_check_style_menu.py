@@ -39,6 +39,16 @@ def set_check_menu(ui_we_want_to_set: EditorMain) -> None:
         )
     )
     ui_we_want_to_set.check_menu.addAction(ui_we_want_to_set.check_menu.reformat_json_action)
+    # Python formate check
+    ui_we_want_to_set.check_menu.check_python_format = QAction(
+        language_wrapper.language_word_dict.get("python_format_checker"))
+    ui_we_want_to_set.check_menu.check_python_format.setShortcut("Ctrl+Alt+p")
+    ui_we_want_to_set.check_menu.check_python_format.triggered.connect(
+        lambda: check_python_format(
+            ui_we_want_to_set
+        )
+    )
+    ui_we_want_to_set.check_menu.addAction(ui_we_want_to_set.check_menu.check_python_format)
 
 
 def yapf_check_python_code(ui_we_want_to_set: EditorMain) -> None:
@@ -62,3 +72,10 @@ def reformat_json_text(ui_we_want_to_set: EditorMain) -> None:
         code_text = widget.code_edit.toPlainText()
         widget.code_result.setPlainText("")
         widget.code_edit.setPlainText(reformat_json(code_text))
+
+
+def check_python_format(ui_we_want_to_set: EditorMain) -> None:
+    jeditor_logger.info(f"build_check_style_menu.py check_python_format ui_we_want_to_set: {ui_we_want_to_set}")
+    widget = ui_we_want_to_set.tab_widget.currentWidget()
+    if isinstance(widget, EditorWidget):
+        widget.check_file_format()
