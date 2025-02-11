@@ -25,7 +25,8 @@ traditional_chinese_word_dict = {
     # Check Code Style Menu
     "check_code_style_menu_label": "程式碼格式檢查器",
     "yapf_reformat_label": "yapf",
-    "black_reformat_label": "Black",
+    "python_format_checker": "Python 格式檢查",
+    "python_format_checker_only_support_python_message": "只支援 Python 檔案",
     "reformat_json_label": "重新格式化 JSON",
     # Dock Menu
     "dock_menu_label": "區域",

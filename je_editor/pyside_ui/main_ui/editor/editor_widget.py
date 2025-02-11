@@ -14,8 +14,9 @@ import pathlib
 from pathlib import Path
 from typing import Union
 
-from PySide6.QtCore import Qt, QFileInfo, QDir, QTimer
-from PySide6.QtWidgets import QWidget, QGridLayout, QSplitter, QScrollArea, QFileSystemModel, QTreeView, QTabWidget
+from PySide6.QtCore import Qt, QFileInfo, QDir
+from PySide6.QtWidgets import QWidget, QGridLayout, QSplitter, QScrollArea, QFileSystemModel, QTreeView, QTabWidget, \
+    QMessageBox
 
 from je_editor.pyside_ui.code.auto_save.auto_save_manager import auto_save_manager_dict, init_new_auto_save_thread, \
     file_is_open_manager_dict
@@ -106,11 +107,6 @@ class EditorWidget(QWidget):
         )
         # Add to layout
         self.grid_layout.addWidget(self.full_splitter)
-        # Check format time
-        self.check_format_timer = QTimer()
-        self.check_format_timer.setInterval(50)
-        self.check_format_timer.timeout.connect(self.check_file_format)
-        self.check_format_timer.start()
 
     def set_project_treeview(self) -> None:
         jeditor_logger.info("EditorWidget set_project_treeview")
@@ -154,6 +150,7 @@ class EditorWidget(QWidget):
         jeditor_logger.info(f"EditorWidget open_an_file path: {path}")
         if not self.check_is_open(path):
             return False
+        self.code_save_thread.skip_this_round = True
         file, file_content = read_file(str(path))
         self.code_edit.setPlainText(
             file_content
@@ -166,6 +163,7 @@ class EditorWidget(QWidget):
             init_new_auto_save_thread(self.current_file, self)
         else:
             self.code_save_thread.file = self.current_file
+            self.code_save_thread.skip_this_round = False
         self.rename_self_tab()
         return True
 
@@ -185,21 +183,24 @@ class EditorWidget(QWidget):
             self.setObjectName(str(Path(self.current_file)))
 
     def check_file_format(self):
-        jeditor_logger.info("EditorWidget check_file_format")
         if self.current_file:
-            if self.checker is None:
+            jeditor_logger.info("EditorWidget check_file_format")
+            suffix_checker = Path(self.current_file).suffix
+            if suffix_checker == ".py":
                 self.checker = PEP8FormatChecker(self.current_file)
-            elif self.checker.current_file != self.current_file:
-                self.checker = PEP8FormatChecker(self.current_file)
-            else:
                 self.checker.check_all_format()
-                self.format_check_result.clear()
+                self.format_check_result.setPlainText("")
                 for error in self.checker.error_list:
                     self.format_check_result.append(error)
+                self.checker.error_list.clear()
+            else:
+                message_box = QMessageBox()
+                message_box.setText(
+                    language_wrapper.language_word_dict.get("python_format_checker_only_support_python_message"))
+                message_box.exec_()
 
     def close(self) -> bool:
         jeditor_logger.info("EditorWidget close")
-        self.check_format_timer.stop()
         if self.code_save_thread is not None:
             self.code_save_thread.still_run = False
             self.code_save_thread = None
