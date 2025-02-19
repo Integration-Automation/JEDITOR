@@ -1,3 +1,9 @@
-PySide6==6.8.2.1
+PySide6
 sphinx
 auto-py-to-exe
+pycodestyle
+jedi
+frontengine
+yapf
+ipython
+qtconsole
