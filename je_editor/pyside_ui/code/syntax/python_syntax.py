@@ -25,8 +25,16 @@ class PythonHighlighter(QSyntaxHighlighter):
             current_file_suffix = Path(main_window.current_file).suffix
         else:
             current_file_suffix = ".py"
+        # Basic Highlight
+        for rule_variable_dict in syntax_rule_setting_dict.values():
+            color = rule_variable_dict.get("color")
+            text_char_format = QTextCharFormat()
+            text_char_format.setForeground(color)
+            for rule in rule_variable_dict.get("rules"):
+                pattern = QRegularExpression(rule)
+                self.highlight_rules.append((pattern, text_char_format))
         if current_file_suffix == ".py":
-            # Highlight
+            # Python Highlight
             for rule_variable_dict in syntax_word_setting_dict.values():
                 color = rule_variable_dict.get("color")
                 text_char_format = QTextCharFormat()
@@ -34,14 +42,8 @@ class PythonHighlighter(QSyntaxHighlighter):
                 for word in rule_variable_dict.get("words"):
                     pattern = QRegularExpression(rf"\b{word}\b")
                     self.highlight_rules.append((pattern, text_char_format))
-            for rule_variable_dict in syntax_rule_setting_dict.values():
-                color = rule_variable_dict.get("color")
-                text_char_format = QTextCharFormat()
-                text_char_format.setForeground(color)
-                for rule in rule_variable_dict.get("rules"):
-                    pattern = QRegularExpression(rule)
-                    self.highlight_rules.append((pattern, text_char_format))
         else:
+            # Another Highlight
             if syntax_extend_setting_dict.get(current_file_suffix):
                 for rule_variable_dict in syntax_extend_setting_dict.get(current_file_suffix).values():
                     color = rule_variable_dict.get("color")
