@@ -7,8 +7,6 @@ from frontengine import FrontEngineMainUI
 from je_editor.pyside_ui.browser.browser_widget import BrowserWidget
 from je_editor.pyside_ui.main_ui.editor.editor_widget import EditorWidget
 from je_editor.pyside_ui.main_ui.ipython_widget.rich_jupyter import IpythonWidget
-from re_edge_gpt.ui.chat.main_ui import ChatMainUI
-
 from je_editor.utils.logging.loggin_instance import jeditor_logger
 
 if TYPE_CHECKING:
@@ -57,13 +55,6 @@ def set_tab_menu(ui_we_want_to_set: EditorMain) -> None:
         lambda: add_ipython_tab(ui_we_want_to_set)
     )
     ui_we_want_to_set.tab_menu.addAction(ui_we_want_to_set.tab_menu.add_ipython_action)
-    # ReEdgeGPT (Need fix it first)
-    # ui_we_want_to_set.tab_menu.add_re_edge_gpt_action = QAction(
-    #     language_wrapper.language_word_dict.get("tab_menu_re_re_edge_gpt_tab_name"))
-    # ui_we_want_to_set.tab_menu.add_re_edge_gpt_action.triggered.connect(
-    #     lambda: add_re_edge_gpt_tab(ui_we_want_to_set)
-    # )
-    # ui_we_want_to_set.tab_menu.addAction(ui_we_want_to_set.tab_menu.add_re_edge_gpt_action)
 
 
 def add_editor_tab(ui_we_want_to_set: EditorMain):
@@ -107,10 +98,3 @@ def add_ipython_tab(ui_we_want_to_set: EditorMain):
         f"{language_wrapper.language_word_dict.get('tab_menu_ipython_tab_name')} "
         f"{ui_we_want_to_set.tab_widget.count()}")
 
-
-def add_re_edge_gpt_tab(ui_we_want_to_set: EditorMain):
-    jeditor_logger.info(f"build_tab_menu.py add_re_edge_gpt_tab ui_we_want_to_set: {ui_we_want_to_set}")
-    ui_we_want_to_set.tab_widget.addTab(
-        ChatMainUI(),
-        f"{language_wrapper.language_word_dict.get('tab_name_re_edge_gpt')} "
-        f"{ui_we_want_to_set.tab_widget.count()}")

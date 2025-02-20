@@ -18,12 +18,11 @@ def set_style_menu(ui_we_want_to_set: EditorMain) -> None:
     ui_we_want_to_set.menu.style_menu = ui_we_want_to_set.menu.addMenu(
         language_wrapper.language_word_dict.get("style_menu_label")
     )
-    for style in [
-        'dark_amber.xml', 'dark_blue.xml', 'dark_cyan.xml', 'dark_lightgreen.xml', 'dark_pink.xml',
-        'dark_purple.xml', 'dark_red.xml', 'dark_teal.xml', 'dark_yellow.xml', 'light_amber.xml',
-        'light_blue.xml', 'light_cyan.xml', 'light_cyan_500.xml', 'light_lightgreen.xml',
-        'light_pink.xml', 'light_purple.xml', 'light_red.xml', 'light_teal.xml', 'light_yellow.xml'
-    ]:
+    for style in ['dark_amber.xml', 'dark_blue.xml', 'dark_cyan.xml', 'dark_lightgreen.xml',
+                  'dark_pink.xml', 'dark_purple.xml', 'dark_red.xml', 'dark_teal.xml',
+                  'dark_yellow.xml', 'light_amber.xml', 'light_blue.xml', 'light_cyan.xml',
+                  'light_cyan_500.xml', 'light_lightgreen.xml', 'light_pink.xml', 'light_purple.xml'
+                  ]:
         change_style_action = QAction(style, parent=ui_we_want_to_set.menu.style_menu)
         change_style_action.triggered.connect(
             lambda checked=False, action=change_style_action: set_style(ui_we_want_to_set, action))
