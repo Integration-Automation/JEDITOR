@@ -64,6 +64,10 @@
   {
    "optionDest": "pathex",
    "value": "C:/CodeWorkspace/Python/JEDITOR/.venv"
+  },
+  {
+   "optionDest": "datas",
+   "value": "C:/CodeWorkspace/Python/JEDITOR/.venv/Lib/site-packages/debugpy;debugpy/"
   }
  ],
  "nonPyinstallerOptions": {
