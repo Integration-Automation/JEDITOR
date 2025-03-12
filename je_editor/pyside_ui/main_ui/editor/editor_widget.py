@@ -150,7 +150,8 @@ class EditorWidget(QWidget):
         jeditor_logger.info(f"EditorWidget open_an_file path: {path}")
         if not self.check_is_open(path):
             return False
-        self.code_save_thread.skip_this_round = True
+        if self.code_save_thread:
+            self.code_save_thread.skip_this_round = True
         file, file_content = read_file(str(path))
         self.code_edit.setPlainText(
             file_content
