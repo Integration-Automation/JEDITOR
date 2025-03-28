@@ -1,20 +1,20 @@
-# Rename to build stable version
-# This is stable version
+# Rename to build dev version
+# This is dev version
 [build-system]
-requires = ["setuptools>=61.0"]
+requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "je_editor"
-version = "0.0.202"
+name = "je_editor_dev"
+version = "0.0.223"
 authors = [
     { name = "JE-Chen", email = "jechenmailman@gmail.com" },
 ]
 description = "JEditor is basic but powerful editor include GPT"
 requires-python = ">=3.9"
-license = { text = "MIT" }
+license-files = ["LICENSE"]
 dependencies = [
-    "PySide6==6.8.2.1", "qt-material", "yapf", "frontengine", "pycodestyle", "jedi", "qtconsole"
+    "PySide6==6.8.3", "qt-material", "yapf", "frontengine", "pycodestyle", "jedi", "qtconsole"
 ]
 classifiers = [
     "Programming Language :: Python :: 3.9",
@@ -22,10 +22,8 @@ classifiers = [
     "Environment :: Win32 (MS Windows)",
     "Environment :: MacOS X",
     "Environment :: X11 Applications",
-    "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent"
 ]
-
 
 [project.urls]
 Homepage = "https://github.com/JE-Chen/je_editor"
@@ -36,8 +34,6 @@ Code = "https://github.com/JE-Chen/je_editor"
 file = "README.md"
 content-type = "text/markdown"
 
-[tool.setuptools]
-license-files = ["LICENSE"]
 
 [tool.setuptools.packages]
 find = { namespaces = false }
