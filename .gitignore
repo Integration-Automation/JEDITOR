@@ -116,6 +116,9 @@ dmypy.json
 # User setting
 **/.jeditor
 
+# AI config
+**/.ai_config.json
+
 .idea/misc.xml
 /.idea
 .idea/misc.xml

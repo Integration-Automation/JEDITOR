@@ -122,4 +122,8 @@ please make sure that the current encoding is consistent with the default encodi
     "language_menu_bar_please_restart_messagebox": "Please restart",
     # Qtconsole
     "please_install_qtcontsole_label": "Please python -m pip install qtconsole first.",
+    # Chat UI
+    "font_size": "Font Size",
+    "set_ai_model_waring_title": "Can not set AI Model",
+    "set_ai_model_waring_text": "Please check [ai_base_url, ai_api_key, chat_model]",
 }

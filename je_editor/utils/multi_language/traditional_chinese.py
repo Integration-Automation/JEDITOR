@@ -120,4 +120,8 @@ traditional_chinese_word_dict = {
     "language_menu_bar_please_restart_messagebox": "請重啟以應用更改",
     # Qtconsole
     "please_install_qtcontsole_label": "請先 python -m pip install qtconsole",
+    # Chat UI
+    "font_size": "字體大小",
+    "set_ai_model_waring_title": "無法設置 AI Model",
+    "set_ai_model_warring_text": "請檢查 [ai_base_url, ai_api_key, chat_model]",
 }

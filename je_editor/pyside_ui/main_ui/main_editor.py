@@ -7,7 +7,7 @@ from typing import Dict, Type
 import jedi.settings
 from PySide6.QtCore import QTimer, QEvent
 from PySide6.QtGui import QFontDatabase, QIcon, Qt
-from PySide6.QtWidgets import QMainWindow, QWidget, QTabWidget
+from PySide6.QtWidgets import QMainWindow, QWidget, QTabWidget, QMessageBox
 from frontengine import FrontEngineMainUI
 from qt_material import QtStyleTools
 
