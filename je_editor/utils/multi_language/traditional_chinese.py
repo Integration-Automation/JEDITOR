@@ -14,10 +14,13 @@ traditional_chinese_word_dict = {
     "browser_reload_button": "重新載入",
     "browser_search_button": "搜尋",
     # Dialog
-    "dialog_create_file": "建立檔案",
-    "dialog_input_file_name": "請輸入正確格式的檔案名稱",
-    "dialog_search_next": "搜尋下一個",
-    "dialog_search_back": "搜尋上一個",
+    "create_file_dialog_pushbutton": "建立檔案",
+    "input_file_name_dialog_pushbutton": "請輸入正確格式的檔案名稱",
+    "search_next_dialog_pushbutton": "搜尋下一個",
+    "search_back_dialog_pushbutton": "搜尋上一個",
+    "search_box_dialog_title": "搜尋文字",
+    "add_ai_model_title": "請填寫 AI 模型資訊",
+    "add_ai_model_pushbutton": "新增 AI 模型",
     # Editor
     "editor_code_result": "程式運行結果",
     "editor_format_check": "程式格式檢查",
@@ -124,4 +127,6 @@ traditional_chinese_word_dict = {
     "font_size": "字體大小",
     "set_ai_model_waring_title": "無法設置 AI Model",
     "set_ai_model_warring_text": "請檢查 [ai_base_url, ai_api_key, chat_model]",
+    "call_ai_model_error_title": "無法連線到 AI 模型",
+    "call_ai_model_error_text": "請檢查 [ai_base_url, ai_api_key, chat_model]",
 }

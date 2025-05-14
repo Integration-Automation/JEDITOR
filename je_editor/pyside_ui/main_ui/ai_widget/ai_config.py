@@ -21,7 +21,8 @@ if __name__ == "__main__":
         if json_data:
             if json_data.get("AI_model") and len(json_data.get("AI_model")) == 3:
                 ai_info: dict = json_data.get("AI_model")
-                if ai_info.get("ai_base_url") and ai_info.get("ai_api_key") and ai_info.get("chat_model"):
+                if ai_info.get("ai_base_url") and ai_info.get("chat_model"):
                     ai_config.choosable_ai.update(json_data)
+                    print(ai_config.choosable_ai)
                 else:
                     print("OOO")

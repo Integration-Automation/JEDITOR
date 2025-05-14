@@ -14,10 +14,13 @@ english_word_dict = {
     "browser_reload_button": "Reload",
     "browser_search_button": "Search",
     # Dialog
-    "dialog_create_file": "Create File",
-    "dialog_input_file_name": "Please enter right file name",
-    "dialog_search_next": "Search next",
-    "dialog_search_back": "Search back",
+    "create_file_dialog_pushbutton": "Create File",
+    "input_file_name_dialog_pushbutton": "Please enter right file name",
+    "search_next_dialog_pushbutton": "Search next",
+    "search_back_dialog_pushbutton": "Search back",
+    "search_box_dialog_title": "Search Text",
+    "add_ai_model_title": "Please fill in AI model information",
+    "add_ai_model_pushbutton": "Add AI Model",
     # Editor
     "editor_code_result": "Code result",
     "editor_format_check": "Format checker",
@@ -126,4 +129,6 @@ please make sure that the current encoding is consistent with the default encodi
     "font_size": "Font Size",
     "set_ai_model_waring_title": "Can not set AI Model",
     "set_ai_model_waring_text": "Please check [ai_base_url, ai_api_key, chat_model]",
+    "call_ai_model_error_title": "Can't connect to AI Model",
+    "call_ai_model_error_text": "Please check [ai_base_url, ai_api_key, chat_model]"
 }

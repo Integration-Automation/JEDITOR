@@ -42,3 +42,4 @@ def choose_file_get_save_file_path(parent_qt_instance: EditorMain) -> bool:
             widget.rename_self_tab()
             return True
         return False
+    return False

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -5,9 +7,9 @@ from PySide6.QtCore import Qt
 from PySide6.QtGui import QFontDatabase
 from PySide6.QtWidgets import QWidget, QPlainTextEdit, QScrollArea, QLabel, QComboBox, QGridLayout, QMessageBox
 
-from je_editor import language_wrapper
 from je_editor.pyside_ui.main_ui.ai_widget.ai_config import AIConfig
 from je_editor.utils.json.json_file import read_json
+from je_editor.utils.multi_language.multi_language_wrapper import language_wrapper
 
 if TYPE_CHECKING:
     from je_editor.pyside_ui.main_ui.main_editor import EditorMain
@@ -39,8 +41,8 @@ class ChatUI(QWidget):
         self.grid_layout = QGridLayout()
         self.grid_layout.addWidget(self.chat_panel_scroll_area, 1, 0, -1, -1)
         self.grid_layout.addWidget(self.font_size_combobox, 0, 1)
-        # Read ai config json and set AI config
         ai_config = AIConfig()
+        # Load AI config if exists
         ai_config_file = Path(str(Path.cwd()) + "/" + ".jeditor/ai_config.json")
         if ai_config_file.exists():
             with open(ai_config_file, "r", encoding="utf-8") as file:
@@ -48,7 +50,7 @@ class ChatUI(QWidget):
             if json_data:
                 if json_data.get("AI_model") and len(json_data.get("AI_model")) == 3:
                     ai_info: dict = json_data.get("AI_model")
-                    if ai_info.get("ai_base_url") and ai_info.get("ai_api_key") and ai_info.get("chat_model"):
+                    if ai_info.get("ai_base_url") and ai_info.get("chat_model"):
                         ai_config.choosable_ai.update(json_data)
                     else:
                         QMessageBox.warning(self.main_window,
