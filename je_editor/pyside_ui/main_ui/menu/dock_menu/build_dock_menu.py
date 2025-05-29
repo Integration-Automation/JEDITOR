@@ -9,6 +9,7 @@ from PySide6.QtWidgets import QFileDialog
 from frontengine import FrontEngineMainUI
 
 from je_editor.pyside_ui.browser.browser_widget import BrowserWidget
+from je_editor.pyside_ui.main_ui.ai_widget.chat_ui import ChatUI
 from je_editor.pyside_ui.main_ui.dock.destroy_dock import DestroyDock
 from je_editor.pyside_ui.main_ui.editor.editor_widget_dock import FullEditorWidget
 from je_editor.pyside_ui.main_ui.ipython_widget.rich_jupyter import IpythonWidget
@@ -59,7 +60,13 @@ def set_dock_menu(ui_we_want_to_set: EditorMain) -> None:
         lambda: add_dock_widget(ui_we_want_to_set, "ipython")
     )
     ui_we_want_to_set.dock_menu.addAction(ui_we_want_to_set.dock_menu.new_ipython)
-
+    # ChatUI
+    ui_we_want_to_set.dock_menu.new_chat_ui = QAction(
+        language_wrapper.language_word_dict.get("chat_ui_dock_label"))
+    ui_we_want_to_set.dock_menu.new_chat_ui.triggered.connect(
+        lambda: add_dock_widget(ui_we_want_to_set, "chat_ui")
+    )
+    ui_we_want_to_set.dock_menu.addAction(ui_we_want_to_set.dock_menu.new_chat_ui)
 
 def add_dock_widget(ui_we_want_to_set: EditorMain, widget_type: str = None):
     jeditor_logger.info("build_dock_menu.py add_dock_widget "
@@ -90,6 +97,9 @@ def add_dock_widget(ui_we_want_to_set: EditorMain, widget_type: str = None):
     elif widget_type == "ipython":
         dock_widget.setWindowTitle(language_wrapper.language_word_dict.get("dock_ipython_title"))
         dock_widget.setWidget(IpythonWidget(ui_we_want_to_set))
+    elif widget_type == "chat_ui":
+        dock_widget.setWindowTitle(language_wrapper.language_word_dict.get("chat_ui_dock_label"))
+        dock_widget.setWidget(ChatUI(ui_we_want_to_set))
     else:
         dock_widget.setWindowTitle(language_wrapper.language_word_dict.get("dock_browser_title"))
         dock_widget.setWidget(BrowserWidget())

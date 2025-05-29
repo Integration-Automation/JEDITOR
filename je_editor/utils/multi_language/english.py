@@ -109,6 +109,7 @@ please make sure that the current encoding is consistent with the default encodi
     "tab_menu_web_tab_name": "WEB Browser",
     "tab_menu_stackoverflow_tab_name": "Stackoverflow",
     "tab_menu_ipython_tab_name": "IPython(Jupyter)",
+    "tab_menu_chat_ui_tab_name": "ChatUI",
     # Text Menu
     "text_menu_label": "Text",
     "text_menu_label_font": "Font",
@@ -130,5 +131,9 @@ please make sure that the current encoding is consistent with the default encodi
     "set_ai_model_waring_title": "Can not set AI Model",
     "set_ai_model_waring_text": "Please check [ai_base_url, ai_api_key, chat_model]",
     "call_ai_model_error_title": "Can't connect to AI Model",
-    "call_ai_model_error_text": "Please check [ai_base_url, ai_api_key, chat_model]"
+    "call_ai_model_error_text": "Please check [ai_base_url, ai_api_key, chat_model]",
+    "chat_ui_dock_label": "Chat UI",
+    "chat_ui_set_ai_button": "Set AI setting",
+    "chat_ui_load_ai_button": "Load AI setting",
+    "chat_ui_call_ai_model_button": "Send prompt",
 }

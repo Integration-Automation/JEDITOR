@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING
 from frontengine import FrontEngineMainUI
 
 from je_editor.pyside_ui.browser.browser_widget import BrowserWidget
+from je_editor.pyside_ui.main_ui.ai_widget.chat_ui import ChatUI
 from je_editor.pyside_ui.main_ui.editor.editor_widget import EditorWidget
 from je_editor.pyside_ui.main_ui.ipython_widget.rich_jupyter import IpythonWidget
 from je_editor.utils.logging.loggin_instance import jeditor_logger
@@ -55,6 +56,13 @@ def set_tab_menu(ui_we_want_to_set: EditorMain) -> None:
         lambda: add_ipython_tab(ui_we_want_to_set)
     )
     ui_we_want_to_set.tab_menu.addAction(ui_we_want_to_set.tab_menu.add_ipython_action)
+    # ChatUI
+    ui_we_want_to_set.tab_menu.add_chat_ui_action = QAction(
+        language_wrapper.language_word_dict.get("tab_menu_chat_ui_tab_name"))
+    ui_we_want_to_set.tab_menu.add_chat_ui_action.triggered.connect(
+        lambda: add_chat_ui_tab(ui_we_want_to_set)
+    )
+    ui_we_want_to_set.tab_menu.addAction(ui_we_want_to_set.tab_menu.add_chat_ui_action)
 
 
 def add_editor_tab(ui_we_want_to_set: EditorMain):
@@ -97,4 +105,13 @@ def add_ipython_tab(ui_we_want_to_set: EditorMain):
         IpythonWidget(ui_we_want_to_set),
         f"{language_wrapper.language_word_dict.get('tab_menu_ipython_tab_name')} "
         f"{ui_we_want_to_set.tab_widget.count()}")
+
+
+def add_chat_ui_tab(ui_we_want_to_set: EditorMain):
+    jeditor_logger.info(f"build_tab_menu.py add_ipython_tab ui_we_want_to_set: {ui_we_want_to_set}")
+    ui_we_want_to_set.tab_widget.addTab(
+        ChatUI(ui_we_want_to_set),
+        f"{language_wrapper.language_word_dict.get('tab_menu_chat_ui_tab_name')} "
+        f"{ui_we_want_to_set.tab_widget.count()}")
+
 

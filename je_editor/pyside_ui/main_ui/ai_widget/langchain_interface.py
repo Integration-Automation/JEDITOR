@@ -12,11 +12,11 @@ from pydantic import SecretStr
 from je_editor.utils.multi_language.multi_language_wrapper import language_wrapper
 
 if TYPE_CHECKING:
-    from je_editor.pyside_ui.main_ui.main_editor import EditorMain
+    from je_editor.pyside_ui.main_ui.ai_widget.chat_ui import ChatUI
 
 class LangChainInterface(object):
 
-    def __init__(self, main_window: EditorMain, prompt_template: str, base_url: str, api_key: Union[SecretStr, str],
+    def __init__(self, main_window: ChatUI, prompt_template: str, base_url: str, api_key: Union[SecretStr, str],
                  chat_model: str):
         self.system_message_prompt = SystemMessagePromptTemplate.from_template(prompt_template)
         self.base_url = base_url
@@ -41,5 +41,5 @@ class LangChainInterface(object):
         except Exception as error:
             QMessageBox.warning(self.main_window,
                                 language_wrapper.language_word_dict.get("call_ai_model_error_title"),
-                                language_wrapper.language_word_dict.get(repr(error)))
+                                str(error))
         return message

@@ -107,6 +107,7 @@ traditional_chinese_word_dict = {
     "tab_menu_web_tab_name": "瀏覽器",
     "tab_menu_stackoverflow_tab_name": "Stackoverflow",
     "tab_menu_ipython_tab_name": "IPython(Jupyter)",
+    "tab_menu_chat_ui_tab_name": "ChatUI",
     # Text Menu
     "text_menu_label": "文字",
     "text_menu_label_font": "字體",
@@ -129,4 +130,8 @@ traditional_chinese_word_dict = {
     "set_ai_model_warring_text": "請檢查 [ai_base_url, ai_api_key, chat_model]",
     "call_ai_model_error_title": "無法連線到 AI 模型",
     "call_ai_model_error_text": "請檢查 [ai_base_url, ai_api_key, chat_model]",
+    "chat_ui_dock_label": "聊天 UI",
+    "chat_ui_set_ai_button": "設定 AI 設定",
+    "chat_ui_load_ai_button": "載入 AI 設定",
+    "chat_ui_call_ai_model_button": "傳送 prompt",
 }
