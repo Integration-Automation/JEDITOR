@@ -1,4 +1,4 @@
-from PySide6.QtWidgets import QWidget, QBoxLayout, QLineEdit, QHBoxLayout, QPushButton, QMessageBox
+from PySide6.QtWidgets import QWidget, QBoxLayout, QLineEdit, QHBoxLayout, QPushButton, QMessageBox, QGridLayout, QLabel
 
 from je_editor.pyside_ui.main_ui.ai_widget.ai_config import ai_config
 from je_editor.utils.logging.loggin_instance import jeditor_logger
@@ -10,21 +10,25 @@ class SetAIDialog(QWidget):
     def __init__(self):
         jeditor_logger.info("Init SetAIDialog")
         super().__init__()
-        self.box_layout = QBoxLayout(QBoxLayout.Direction.TopToBottom)
+        self.base_url_label = QLabel(language_wrapper.language_word_dict.get("base_url_label"))
         self.base_url_input = QLineEdit()
+        self.api_key_label = QLabel(language_wrapper.language_word_dict.get("api_key_label"))
         self.api_key_input = QLineEdit()
+        self.chat_model_label = QLabel(language_wrapper.language_word_dict.get("ai_model_label"))
         self.chat_model_input = QLineEdit()
         self.add_ai_info_button = QPushButton()
         self.add_ai_info_button.setText(language_wrapper.language_word_dict.get("add_ai_model_pushbutton"))
         self.add_ai_info_button.clicked.connect(self.update_ai_config)
-        self.box_h_layout = QHBoxLayout()
-        self.box_h_layout.addWidget(self.add_ai_info_button)
-        self.box_layout.addWidget(self.base_url_input)
-        self.box_layout.addWidget(self.api_key_input)
-        self.box_layout.addWidget(self.chat_model_input)
-        self.box_layout.addLayout(self.box_h_layout)
+        self.grid_layout = QGridLayout()
+        self.grid_layout.addWidget(self.base_url_label, 0, 0)
+        self.grid_layout.addWidget(self.base_url_input, 0, 1)
+        self.grid_layout.addWidget(self.api_key_label, 1, 0)
+        self.grid_layout.addWidget(self.api_key_input, 1, 1)
+        self.grid_layout.addWidget(self.chat_model_label, 2, 0)
+        self.grid_layout.addWidget(self.chat_model_input, 2, 1)
+        self.grid_layout.addWidget(self.add_ai_info_button, 3, 1)
         self.setWindowTitle(language_wrapper.language_word_dict.get("add_ai_model_title"))
-        self.setLayout(self.box_layout)
+        self.setLayout(self.grid_layout)
 
     def update_ai_config(self):
         base_url = self.base_url_input.text().strip()

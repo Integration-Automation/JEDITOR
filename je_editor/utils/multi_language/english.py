@@ -136,4 +136,9 @@ please make sure that the current encoding is consistent with the default encodi
     "chat_ui_set_ai_button": "Set AI setting",
     "chat_ui_load_ai_button": "Load AI setting",
     "chat_ui_call_ai_model_button": "Send prompt",
+    "base_url_label": "AI server URL",
+    "api_key_label": "AI server API Key",
+    "ai_model_label": "AI Model",
+    "load_ai_messagebox_title": "Load complete",
+    "load_ai_messagebox_text": "Load complete",
 }

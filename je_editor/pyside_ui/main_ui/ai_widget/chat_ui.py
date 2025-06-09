@@ -19,12 +19,6 @@ if TYPE_CHECKING:
     from je_editor.pyside_ui.main_ui.main_editor import EditorMain
 
 
-def set_ai_config():
-    # Set and output AI a config file
-    set_ai_config_dialog = SetAIDialog()
-    set_ai_config_dialog.show()
-
-
 class ChatUI(QWidget):
 
     def __init__(self, main_window: EditorMain):
@@ -53,9 +47,9 @@ class ChatUI(QWidget):
         self.font_size_combobox.currentTextChanged.connect(self.update_panel_text_size)
         # Buttons
         self.set_ai_config_button = QPushButton(language_wrapper.language_word_dict.get("chat_ui_set_ai_button"))
-        self.set_ai_config_button.clicked.connect(set_ai_config)
+        self.set_ai_config_button.clicked.connect(self.set_ai_config)
         self.load_ai_config_button = QPushButton(language_wrapper.language_word_dict.get("chat_ui_load_ai_button"))
-        self.load_ai_config_button.clicked.connect(self.load_ai_config)
+        self.load_ai_config_button.clicked.connect(lambda: self.load_ai_config(show_load_complete=True))
         self.call_ai_model_button = QPushButton(language_wrapper.language_word_dict.get("chat_ui_call_ai_model_button"))
         self.call_ai_model_button.clicked.connect(self.call_ai_model)
         # Add to layout
@@ -70,6 +64,8 @@ class ChatUI(QWidget):
         # Variable
         self.ai_config: AIConfig = ai_config
         self.lang_chain_interface: Union[LangChainInterface, None] = None
+        self.set_ai_config_dialog = None
+        # Timer to pop queue
         self.pull_message_timer = QTimer(self)
         self.pull_message_timer.setInterval(1000)
         self.pull_message_timer.timeout.connect(self.pull_message)
@@ -84,7 +80,7 @@ class ChatUI(QWidget):
         self.chat_panel.setFont(
             QFontDatabase.font(self.font().family(), "", int(self.font_size_combobox.currentText())))
 
-    def load_ai_config(self):
+    def load_ai_config(self, show_load_complete: bool = False):
         ai_config_file = Path(str(Path.cwd()) + "/" + ".jeditor/ai_config.json")
         if ai_config_file.exists():
             with open(ai_config_file, "r", encoding="utf-8"):
@@ -101,6 +97,12 @@ class ChatUI(QWidget):
                         chat_model=ai_info.get("chat_model"),
                         prompt_template=ai_info.get("prompt_template"),
                     )
+            if show_load_complete:
+                load_complete = QMessageBox(self)
+                load_complete.setWindowTitle(language_wrapper.language_word_dict.get("load_ai_messagebox_title"))
+                load_complete.setText(language_wrapper.language_word_dict.get("load_ai_messagebox_text"))
+                load_complete.exec()
+
 
     def call_ai_model(self):
         if isinstance(self.lang_chain_interface, LangChainInterface):
@@ -121,3 +123,8 @@ class ChatUI(QWidget):
             ai_response = ai_config.message_queue.get_nowait()
             self.chat_panel.appendPlainText(ai_response)
             self.chat_panel.appendPlainText("\n")
+
+    def set_ai_config(self):
+        # Set and output AI a config file
+        self.set_ai_config_dialog = SetAIDialog()
+        self.set_ai_config_dialog.show()
