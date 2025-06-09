@@ -1,4 +1,4 @@
-from PySide6.QtWidgets import QWidget, QBoxLayout, QLineEdit, QHBoxLayout, QPushButton, QMessageBox, QGridLayout, QLabel
+from PySide6.QtWidgets import QWidget, QLineEdit, QPushButton, QMessageBox, QGridLayout, QLabel
 
 from je_editor.pyside_ui.main_ui.ai_widget.ai_config import ai_config
 from je_editor.utils.logging.loggin_instance import jeditor_logger
