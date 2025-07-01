@@ -111,7 +111,7 @@ class ExecManager(object):
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
                 stdin=subprocess.PIPE,
-                shell=True
+                shell=False
             )
             self.still_run_program = True
             # program output message queue thread

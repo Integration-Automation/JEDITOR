@@ -14,10 +14,13 @@ traditional_chinese_word_dict = {
     "browser_reload_button": "重新載入",
     "browser_search_button": "搜尋",
     # Dialog
-    "dialog_create_file": "建立檔案",
-    "dialog_input_file_name": "請輸入正確格式的檔案名稱",
-    "dialog_search_next": "搜尋下一個",
-    "dialog_search_back": "搜尋上一個",
+    "create_file_dialog_pushbutton": "建立檔案",
+    "input_file_name_dialog_pushbutton": "請輸入正確格式的檔案名稱",
+    "search_next_dialog_pushbutton": "搜尋下一個",
+    "search_back_dialog_pushbutton": "搜尋上一個",
+    "search_box_dialog_title": "搜尋文字",
+    "add_ai_model_title": "請填寫 AI 模型資訊",
+    "add_ai_model_pushbutton": "新增 AI 模型",
     # Editor
     "editor_code_result": "程式運行結果",
     "editor_format_check": "程式格式檢查",
@@ -104,6 +107,7 @@ traditional_chinese_word_dict = {
     "tab_menu_web_tab_name": "瀏覽器",
     "tab_menu_stackoverflow_tab_name": "Stackoverflow",
     "tab_menu_ipython_tab_name": "IPython(Jupyter)",
+    "tab_menu_chat_ui_tab_name": "ChatUI",
     # Text Menu
     "text_menu_label": "文字",
     "text_menu_label_font": "字體",
@@ -120,4 +124,19 @@ traditional_chinese_word_dict = {
     "language_menu_bar_please_restart_messagebox": "請重啟以應用更改",
     # Qtconsole
     "please_install_qtcontsole_label": "請先 python -m pip install qtconsole",
+    # Chat UI
+    "font_size": "字體大小",
+    "set_ai_model_waring_title": "無法設置 AI Model",
+    "set_ai_model_warring_text": "請檢查 [ai_base_url, ai_api_key, chat_model]",
+    "call_ai_model_error_title": "無法連線到 AI 模型",
+    "call_ai_model_error_text": "請檢查 [ai_base_url, ai_api_key, chat_model]",
+    "chat_ui_dock_label": "聊天 UI",
+    "chat_ui_set_ai_button": "設定 AI 設定",
+    "chat_ui_load_ai_button": "載入 AI 設定",
+    "chat_ui_call_ai_model_button": "傳送 prompt",
+    "base_url_label":"AI 伺服器 URL",
+    "api_key_label": "AI 伺服器 API Key",
+    "ai_model_label": "AI Model",
+    "load_ai_messagebox_title": "載入成功",
+    "load_ai_messagebox_text": "載入成功",
 }

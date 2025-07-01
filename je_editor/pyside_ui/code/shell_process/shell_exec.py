@@ -44,8 +44,8 @@ class ShellManager(object):
         self.read_program_output_from_thread = None
         self.main_window: EditorWidget = main_window
         self.compiler_path = None
-        self.code_result: [QTextEdit, None] = None
-        self.timer: [QTimer, None] = None
+        self.code_result: Union[QTextEdit, None] = None
+        self.timer: Union[QTimer, None] = None
         self.still_run_shell: bool = True
         self.process = None
         self.run_output_queue: queue = queue.Queue()
@@ -157,7 +157,7 @@ class ShellManager(object):
         if self.after_done_function is not None:
             self.after_done_function()
 
-    # exit program change run flag to false and clean read thread and queue and process
+    # exit program change runs flag to false and clean read thread and queue and process
     def exit_program(self) -> None:
         jeditor_logger.info("ShellManager exit_program")
         self.still_run_shell = False

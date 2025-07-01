@@ -7,3 +7,6 @@ frontengine
 yapf
 ipython
 qtconsole
+langchain_openai
+langchain
+pydantic
