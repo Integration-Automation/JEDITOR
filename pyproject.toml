@@ -6,19 +6,19 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "je_editor"
-version = "0.0.205"
+version = "0.0.207"
 authors = [
     { name = "JE-Chen", email = "jechenmailman@gmail.com" },
 ]
 description = "JEditor is basic but powerful editor include GPT"
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 license-files = ["LICENSE"]
 dependencies = [
-    "PySide6==6.9.0", "qt-material", "yapf", "frontengine", "pycodestyle", "jedi",
+    "PySide6==6.9.1", "qt-material", "yapf", "frontengine", "pycodestyle", "jedi",
     "qtconsole", "langchain_openai", "langchain", "pydantic"
 ]
 classifiers = [
-    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
     "Development Status :: 2 - Pre-Alpha",
     "Environment :: Win32 (MS Windows)",
     "Environment :: MacOS X",

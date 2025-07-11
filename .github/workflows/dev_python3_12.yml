@@ -1,10 +1,10 @@
-name: JE_Editor Stable Python3.9
+name: JE_Editor Dev Python3.9
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "dev" ]
   pull_request:
-    branches: [ "main" ]
+    branches: [ "dev" ]
   schedule:
     - cron: "0 4 * * *"
 
@@ -12,15 +12,15 @@ permissions:
   contents: read
 
 jobs:
-  build_stable_version:
+  build_dev_version:
     runs-on: windows-latest
 
     steps:
       - uses: actions/checkout@v3
-      - name: Set up Python 3.9
+      - name: Set up Python 3.12
         uses: actions/setup-python@v3
         with:
-          python-version: "3.9"
+          python-version: "3.12"
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip wheel
