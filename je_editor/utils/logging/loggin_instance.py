@@ -3,8 +3,8 @@ from logging.handlers import RotatingFileHandler
 
 logging.root.setLevel(logging.DEBUG)
 jeditor_logger = logging.getLogger("JEditor")
+jeditor_logger.setLevel(logging.WARNING)
 formatter = logging.Formatter('%(asctime)s | %(name)s | %(levelname)s | %(message)s')
-
 
 class JEditorLoggingHandler(RotatingFileHandler):
 
