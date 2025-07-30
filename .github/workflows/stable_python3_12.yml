@@ -1,4 +1,4 @@
-name: JE_Editor Stable Python3.9
+name: JE_Editor Stable Python3.12
 
 on:
   push:

@@ -112,6 +112,7 @@ class EditorMain(QMainWindow, QtStyleTools):
         self.tab_widget.addTab(
             BrowserWidget(start_url="https://stackoverflow.com/", search_prefix="https://stackoverflow.com/search?q="),
             language_wrapper.language_word_dict.get("tab_menu_stackoverflow_tab_name"))
+
         for widget_name, widget in EDITOR_EXTEND_TAB.items():
             self.tab_widget.addTab(widget(), widget_name)
         self.setCentralWidget(self.tab_widget)
