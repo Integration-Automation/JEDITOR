@@ -184,9 +184,10 @@ class Gitgui(QWidget):
             else:
                 self._refresh_branches()
                 self._load_commits_async(branch)
-                self._info(self.language_wrapper_get("info_checkout_title"),
-                           f"{self.language_wrapper_get("info_checkout_msg")} {branch}")
-
+                self._info(
+                    self.language_wrapper_get("info_checkout_title"),
+                    f"{self.language_wrapper_get("info_checkout_msg")} {branch}"
+                )
         self.worker = Worker(self.git.checkout, branch)
         self.worker.done.connect(after)
         self.worker.start()
@@ -289,9 +290,3 @@ class Gitgui(QWidget):
         except Exception as e:
             QMessageBox.critical(self, self.language_wrapper_get("err_clone_failed_title"), str(e))
 
-
-if __name__ == '__main__':
-    app = QApplication(sys.argv)
-    gui = Gitgui()
-    gui.show()
-    sys.exit(app.exec_())

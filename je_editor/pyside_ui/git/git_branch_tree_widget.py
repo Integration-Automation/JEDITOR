@@ -118,10 +118,3 @@ class GitTreeViewGUI(QWidget):
             QMessageBox.critical(self, self.language_wrapper_get("git_graph_title"),
                                  f"{self.language_wrapper_get('git_graph_error_exec_failed')}\n{e}")
 
-
-if __name__ == "__main__":
-    app = QApplication(sys.argv)
-    win = GitTreeViewGUI()
-    win.resize(1200, 800)
-    win.show()
-    sys.exit(app.exec())

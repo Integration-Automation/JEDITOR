@@ -112,6 +112,8 @@ please make sure that the current encoding is consistent with the default encodi
     "tab_menu_chat_ui_tab_name": "ChatUI",
     "tab_menu_git_client_tab_name": "GitClient",
     "tab_menu_git_branch_tree_view_tab_name": "GitBranchTreeView",
+    "tab_menu_variable_inspector_tab_name": "VariableInspector",
+    "tab_menu_console_widget_tab_name": "ConsoleWidget",
     # Text Menu
     "text_menu_label": "Text",
     "text_menu_label_font": "Font",
@@ -195,4 +197,24 @@ please make sure that the current encoding is consistent with the default encodi
     "git_graph_tooltip_commit": "Commit: {short}\nAuthor: {author}\nDate: {date}\nMessage: {msg}",
     "git_graph_toolbar_open": "Open",
     "git_graph_toolbar_refresh": "Refresh",
+    # Variable inspector
+    "variable_inspector_title": "Variable Inspector",
+    "variable_inspector_search": "Search Variables:",
+    "variable_inspector_var_name": "Variable Name",
+    "variable_inspector_var_type": "Type",
+    "variable_inspector_var_value": "Value",
+    # Dynamic Console
+    "dynamic_console_title": "Dynamic Console",
+    "dynamic_console_run": "Run",
+    "dynamic_console_stop": "Stop",
+    "dynamic_console_clear": "Clear",
+    "dynamic_console_cwd": "CWD",
+    "dynamic_console_shell": "Shell",
+    "dynamic_console_prompt": "❯ ",
+    "dynamic_console_running": "[running]",
+    "dynamic_console_ready": "[ready]",
+    "dynamic_console_process_running": "Process is running; stop it first",
+    "dynamic_console_done": "[done] exit={code}, status={status}",
+    "dynamic_console_system_prefix": "[system] ",
+
 }

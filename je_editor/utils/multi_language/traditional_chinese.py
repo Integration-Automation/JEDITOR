@@ -106,6 +106,8 @@ traditional_chinese_word_dict = {
     "tab_menu_chat_ui_tab_name": "ChatUI",
     "tab_menu_git_client_tab_name": "GitClient",
     "tab_menu_git_branch_tree_view_tab_name": "GitBranchTreeView",
+    "tab_menu_variable_inspector_tab_name": "VariableInspector",
+    "tab_menu_console_widget_tab_name": "ConsoleWidget",
     # Text Menu
     "text_menu_label": "文字",
     "text_menu_label_font": "字體",
@@ -188,5 +190,25 @@ traditional_chinese_word_dict = {
     "git_graph_error_exec_failed": "Git 指令執行失敗。",
     "git_graph_tooltip_commit": "提交：{short}\n作者：{author}\n日期：{date}\n訊息：{msg}",
     "git_graph_toolbar_open": "開啟",
-    "git_graph_toolbar_refresh": "重新整理"
+    "git_graph_toolbar_refresh": "重新整理",
+    # Variable inspector
+    "variable_inspector_title": "變數查看器",
+    "variable_inspector_search": "搜尋變數：",
+    "variable_inspector_var_name": "變數名稱",
+    "variable_inspector_var_type": "型別",
+    "variable_inspector_var_value": "值",
+    # Dynamic Console
+    "dynamic_console_title": "動態主控台",
+    "dynamic_console_run": "執行",
+    "dynamic_console_stop": "停止",
+    "dynamic_console_clear": "清除",
+    "dynamic_console_cwd": "工作目錄",
+    "dynamic_console_shell": "Shell",
+    "dynamic_console_prompt": "❯ ",
+    "dynamic_console_running": "[執行中]",
+    "dynamic_console_ready": "[就緒]",
+    "dynamic_console_process_running": "程序正在執行；請先停止",
+    "dynamic_console_done": "[完成] 退出碼={code}, 狀態={status}",
+    "dynamic_console_system_prefix": "[系統] ",
+
 }
