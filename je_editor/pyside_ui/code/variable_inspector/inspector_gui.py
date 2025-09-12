@@ -1,7 +1,7 @@
-import sys
 import ast
+
 from PySide6.QtCore import QAbstractTableModel, Qt, QTimer, QSortFilterProxyModel
-from PySide6.QtWidgets import QApplication, QTableView, QVBoxLayout, QWidget, QLineEdit, QLabel
+from PySide6.QtWidgets import QTableView, QVBoxLayout, QWidget, QLineEdit, QLabel
 
 from je_editor.utils.multi_language.multi_language_wrapper import language_wrapper
 
