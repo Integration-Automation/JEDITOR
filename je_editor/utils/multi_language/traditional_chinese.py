@@ -104,9 +104,9 @@ traditional_chinese_word_dict = {
     "tab_menu_stackoverflow_tab_name": "Stackoverflow",
     "tab_menu_ipython_tab_name": "IPython(Jupyter)",
     "tab_menu_chat_ui_tab_name": "ChatUI",
-    "tab_menu_git_client_tab_name": "GitClient",
-    "tab_menu_git_branch_tree_view_tab_name": "GitBranchTreeView",
-    "tab_menu_variable_inspector_tab_name": "VariableInspector",
+    "tab_menu_git_client_tab_name": "Git Client",
+    "tab_menu_git_branch_tree_view_tab_name": "Git BranchTreeViewer",
+    "tab_menu_variable_inspector_tab_name": "Variable Inspector",
     "tab_menu_console_widget_tab_name": "ConsoleWidget",
     # Text Menu
     "text_menu_label": "文字",

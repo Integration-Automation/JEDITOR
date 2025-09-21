@@ -84,16 +84,16 @@ class CommitGraphView(QGraphicsView):
 
         edge_pen = QPen(EDGE_COLOR, 2)
         for row, node in enumerate(self.graph.nodes):
-            if not node.parents:
+            if not node.parent_shas:
                 continue
-            x0 = self._lane_x(node.lane)
+            x0 = self._lane_x(node.lane_index)
             y0 = self._row_y(row)
-            for p in node.parents:
+            for p in node.parent_shas:
                 if p not in self.graph.index:
                     continue
                 prow = self.graph.index[p]
                 parent_node = self.graph.nodes[prow]
-                x1 = self._lane_x(parent_node.lane)
+                x1 = self._lane_x(parent_node.lane_index)
                 y1 = self._row_y(prow)
                 path = QPainterPath(QPointF(x0, y0))
                 ctrl_y = (y0 + y1) / 2.0
@@ -103,20 +103,20 @@ class CommitGraphView(QGraphicsView):
                 self._scene.addItem(edge_item)
 
         for row, node in enumerate(self.graph.nodes):
-            cx = self._lane_x(node.lane)
+            cx = self._lane_x(node.lane_index)
             cy = self._row_y(row)
 
             circle = QGraphicsEllipseItem(
                 QRectF(cx - NODE_RADIUS, cy - NODE_RADIUS, NODE_RADIUS * 2, NODE_RADIUS * 2)
             )
-            circle.setBrush(QBrush(lane_color(node.lane)))
+            circle.setBrush(QBrush(lane_color(node.lane_index)))
             circle.setPen(QPen(Qt.PenStyle.NoPen))
             circle.setToolTip(self.language_wrapper_get(
                 "git_graph_tooltip_commit"
-            ).format(short=node.sha[:7],
-                     author=node.author,
-                     date=node.date,
-                     msg=node.message))
+            ).format(short=node.commit_sha[:7],
+                     author=node.author_name,
+                     date=node.commit_date,
+                     msg=node.commit_message))
             self._scene.addItem(circle)
 
             label_item = QGraphicsSimpleTextItem(str(row + 1))
@@ -126,7 +126,7 @@ class CommitGraphView(QGraphicsView):
 
         self._scene.setSceneRect(
             QRectF(-40, 0,
-                   self._lane_x(max(n.lane for n in self.graph.nodes) + 1) + self._padding,
+                   self._lane_x(max(n.lane_index for n in self.graph.nodes) + 1) + self._padding,
                    self._row_y(len(self.graph.nodes)) + self._padding)
         )
 

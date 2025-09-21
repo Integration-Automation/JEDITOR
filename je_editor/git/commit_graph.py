@@ -7,13 +7,12 @@ log = logging.getLogger(__name__)
 
 @dataclass
 class CommitNode:
-    sha: str
-    author: str
-    date: str
-    message: str
-    parents: List[str]
-    lane: int = -1  # assigned later
-
+    commit_sha: str
+    author_name: str
+    commit_date: str
+    commit_message: str
+    parent_shas: List[str]
+    lane_index: int = -1  # assigned later
 
 @dataclass
 class CommitGraph:
@@ -24,14 +23,14 @@ class CommitGraph:
         # commits are topo-ordered by git log --topo-order; we keep it.
         self.nodes = [
             CommitNode(
-                sha=c["sha"],
-                author=c["author"],
-                date=c["date"],
-                message=c["message"],
-                parents=c["parents"],
+                commit_sha=c["sha"],
+                author_name=c["author"],
+                commit_date=c["date"],
+                commit_message=c["message"],
+                parent_shas=c["parents"],
             ) for c in commits
         ]
-        self.index = {n.sha: i for i, n in enumerate(self.nodes)}
+        self.index = {n.commit_sha: i for i, n in enumerate(self.nodes)}
         self._assign_lanes()
 
     def _assign_lanes(self) -> None:
@@ -46,30 +45,30 @@ class CommitGraph:
             # If any active lane points to this commit, use that lane
             lane_found = None
             for lane, sha in list(active.items()):
-                if sha == node.sha:
+                if sha == node.commit_sha:
                     lane_found = lane
                     break
 
             if lane_found is None:
                 if free_lanes:
-                    node.lane = free_lanes.pop(0)
+                    node.lane_index = free_lanes.pop(0)
                 else:
-                    node.lane = 0 if not active else max(active.keys()) + 1
+                    node.lane_index = 0 if not active else max(active.keys()) + 1
             else:
-                node.lane = lane_found
+                node.lane_index = lane_found
 
             # Update active: current node consumes its lane, parents occupy lanes
             # Remove the current sha from any lane that pointed to it
             for lane, sha in list(active.items()):
-                if sha == node.sha:
+                if sha == node.commit_sha:
                     del active[lane]
 
             # First parent continues in the same lane; others go to free/new lanes
-            if node.parents:
-                first = node.parents[0]
-                active[node.lane] = first
+            if node.parent_shas:
+                first = node.parent_shas[0]
+                active[node.lane_index] = first
                 # Side branches
-                for p in node.parents[1:]:
+                for p in node.parent_shas[1:]:
                     # Pick a free lane or new one
                     if free_lanes:
                         pl = free_lanes.pop(0)
