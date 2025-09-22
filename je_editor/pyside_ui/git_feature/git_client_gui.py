@@ -6,8 +6,8 @@ from PySide6.QtWidgets import QWidget, QLabel, QPushButton, QComboBox, QHBoxLayo
     QSizePolicy, QSplitter, QLineEdit, QVBoxLayout, QMessageBox, QFileDialog, QApplication, QInputDialog
 
 from je_editor.utils.multi_language.multi_language_wrapper import language_wrapper
-from je_editor.git.git import Worker, GitService
-from je_editor.git.github import GitCloneHandler
+from je_editor.git_feature.git import Worker, GitService
+from je_editor.git_feature.github import GitCloneHandler
 
 
 class Gitgui(QWidget):

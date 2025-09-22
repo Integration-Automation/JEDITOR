@@ -197,7 +197,7 @@ class ExecManager(object):
     def read_program_output_from_process(self) -> None:
         jeditor_logger.info("ExecManager read_program_output_from_process")
         while self.still_run_program:
-            program_output_data: str = self.process.stdout.read(
+            program_output_data: str = self.process.stdout.readline(
                 self.program_buffer).decode(self.program_encoding, "replace")
             if self.process:
                 self.process.stdout.flush()
@@ -206,7 +206,7 @@ class ExecManager(object):
     def read_program_error_output_from_process(self) -> None:
         jeditor_logger.info("ExecManager read_program_error_output_from_process")
         while self.still_run_program:
-            program_error_output_data: str = self.process.stderr.read(
+            program_error_output_data: str = self.process.stderr.readline(
                 self.program_buffer).decode(self.program_encoding, "replace")
             if self.process:
                 self.process.stderr.flush()

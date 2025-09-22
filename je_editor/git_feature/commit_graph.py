@@ -20,7 +20,7 @@ class CommitGraph:
     index: Dict[str, int] = field(default_factory=dict)  # sha -> row
 
     def build(self, commits: List[Dict], refs: Dict[str, str]) -> None:
-        # commits are topo-ordered by git log --topo-order; we keep it.
+        # commits are topo-ordered by git_feature log --topo-order; we keep it.
         self.nodes = [
             CommitNode(
                 commit_sha=c["sha"],
@@ -35,7 +35,7 @@ class CommitGraph:
 
     def _assign_lanes(self) -> None:
         """
-        Simple lane assignment similar to 'git log --graph' lanes.
+        Simple lane assignment similar to 'git_feature log --graph' lanes.
         Greedy: reuse freed lanes; parents may create new lanes.
         """
         active: Dict[int, str] = {}  # lane -> sha

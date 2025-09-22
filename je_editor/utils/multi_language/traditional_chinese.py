@@ -163,7 +163,7 @@ traditional_chinese_word_dict = {
     "err_read_diff": "讀取差異失敗",
     "err_stage": "暫存失敗",
     "info_stage_title": "暫存",
-    "info_stage_msg": "已執行 git add -A",
+    "info_stage_msg": "已執行 git_feature add -A",
     "err_commit": "提交失敗",
     "info_commit_title": "提交",
     "info_commit_msg": "已建立提交",

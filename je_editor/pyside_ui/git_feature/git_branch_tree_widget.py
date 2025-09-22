@@ -8,10 +8,10 @@ from PySide6.QtWidgets import (
     QSplitter, QWidget, QVBoxLayout
 )
 
-from je_editor.git.commit_graph import CommitGraph
-from je_editor.git.git_cli import GitCLI
-from je_editor.pyside_ui.git.commit_table import CommitTable
-from je_editor.pyside_ui.git.graph_view import CommitGraphView
+from je_editor.git_feature.commit_graph import CommitGraph
+from je_editor.git_feature.git_cli import GitCLI
+from je_editor.pyside_ui.git_feature.commit_table import CommitTable
+from je_editor.pyside_ui.git_feature.graph_view import CommitGraphView
 from je_editor.utils.multi_language.multi_language_wrapper import language_wrapper
 
 logging.basicConfig(level=logging.INFO)
@@ -89,7 +89,7 @@ class GitTreeViewGUI(QWidget):
         self.watcher.removePaths(self.watcher.directories())
         if not self.repo_path:
             return
-        git_dir = self.repo_path / ".git"
+        git_dir = self.repo_path / ".git_feature"
         if git_dir.exists():
             self.watcher.addPath(str(git_dir))
             for f in ["HEAD", "packed-refs"]:
