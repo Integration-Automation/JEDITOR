@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from PySide6.QtGui import QTextCharFormat
+
 from je_editor.utils.logging.loggin_instance import jeditor_logger
 from je_editor.utils.multi_language.multi_language_wrapper import language_wrapper
 
@@ -38,7 +40,7 @@ class EditorWidget(QWidget):
         self.checker: Union[PEP8FormatChecker, None] = None
         self.current_file = None
         self.tree_view_scroll_area = None
-        self.project_treeview = None
+        self.project_treeview: Union[QTreeView, None] = None
         self.project_treeview_model = None
         self.python_compiler = None
         self.main_window = main_window
@@ -64,6 +66,7 @@ class EditorWidget(QWidget):
         # code edit and code result plaintext
         self.code_edit = CodeEditor(self)
         self.code_result = CodeRecord()
+        self.code_result_cursor = self.code_result.textCursor()
         self.code_edit_scroll_area = QScrollArea()
         self.code_edit_scroll_area.setWidgetResizable(True)
         self.code_edit_scroll_area.setViewportMargins(0, 0, 0, 0)
@@ -74,7 +77,6 @@ class EditorWidget(QWidget):
         self.code_result_scroll_area.setWidget(self.code_result)
         # Code format checker
         self.format_check_result = CodeRecord()
-        self.format_check_result.setTextColor(actually_color_dict.get("warning_output_color"))
         # Debugger
         self.debugger_result = CodeRecord()
         # Code result tab
@@ -192,7 +194,11 @@ class EditorWidget(QWidget):
                 self.checker.check_all_format()
                 self.format_check_result.setPlainText("")
                 for error in self.checker.error_list:
-                    self.format_check_result.append(error)
+                    text_cursor = self.format_check_result.textCursor()
+                    text_format = QTextCharFormat()
+                    text_format.setForeground(actually_color_dict.get("error_output_color"))
+                    text_cursor.insertText(error, text_format)
+                    text_cursor.insertBlock()
                 self.checker.error_list.clear()
             else:
                 message_box = QMessageBox()

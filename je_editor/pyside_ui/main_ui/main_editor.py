@@ -6,7 +6,7 @@ from typing import Dict, Type
 
 import jedi.settings
 from PySide6.QtCore import QTimer, QEvent
-from PySide6.QtGui import QFontDatabase, QIcon, Qt
+from PySide6.QtGui import QFontDatabase, QIcon, Qt, QTextCharFormat
 from PySide6.QtWidgets import QMainWindow, QWidget, QTabWidget, QMessageBox
 from frontengine import FrontEngineMainUI
 from qt_material import QtStyleTools
@@ -16,7 +16,7 @@ from je_editor.pyside_ui.code.auto_save.auto_save_manager import init_new_auto_s
 from je_editor.pyside_ui.main_ui.editor.editor_widget import EditorWidget
 from je_editor.pyside_ui.main_ui.menu.set_menu_bar import set_menu_bar
 from je_editor.pyside_ui.main_ui.save_settings.user_color_setting_file import write_user_color_setting, \
-    read_user_color_setting, update_actually_color_dict
+    read_user_color_setting, update_actually_color_dict, actually_color_dict
 from je_editor.pyside_ui.main_ui.save_settings.user_setting_file import user_setting_dict, read_user_setting, \
     write_user_setting
 from je_editor.pyside_ui.main_ui.system_tray.extend_system_tray import ExtendSystemTray
@@ -141,14 +141,20 @@ class EditorMain(QMainWindow, QtStyleTools):
                     output_message = redirect_manager_instance.std_out_queue.get_nowait()
                     output_message = str(output_message).strip()
                     if output_message:
-                        widget.code_result.append(output_message)
-                widget.code_result.setTextColor(Qt.GlobalColor.red)
+                        text_cursor = self.code_result.textCursor()
+                        text_format = QTextCharFormat()
+                        text_format.setForeground(actually_color_dict.get("normal_output_color"))
+                        text_cursor.insertText(output_message, text_format)
+                        text_cursor.insertBlock()
                 if not redirect_manager_instance.std_err_queue.empty():
                     error_message = redirect_manager_instance.std_err_queue.get_nowait()
                     error_message = str(error_message).strip()
                     if error_message:
-                        widget.code_result.append(error_message)
-                widget.code_result.setTextColor(Qt.GlobalColor.black)
+                        text_cursor = self.code_result.textCursor()
+                        text_format = QTextCharFormat()
+                        text_format.setForeground(actually_color_dict.get("error_output_color"))
+                        text_cursor.insertText(error_message, text_format)
+                        text_cursor.insertBlock()
                 break
 
     def startup_setting(self) -> None:

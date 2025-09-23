@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from je_editor.pyside_ui.main_ui.save_settings.user_color_setting_file import actually_color_dict
+
 from je_editor.pyside_ui.main_ui.editor.editor_widget import EditorWidget
 from je_editor.pyside_ui.main_ui.save_settings.user_setting_file import user_setting_dict
 from je_editor.utils.logging.loggin_instance import jeditor_logger
@@ -11,7 +13,7 @@ if TYPE_CHECKING:
 import os
 from pathlib import Path
 
-from PySide6.QtGui import QAction, QKeySequence
+from PySide6.QtGui import QAction, QKeySequence, QTextCharFormat
 from PySide6.QtWidgets import QMessageBox, QInputDialog, QFileDialog
 
 from je_editor.pyside_ui.code.shell_process.shell_exec import ShellManager
@@ -76,8 +78,12 @@ def create_venv(ui_we_want_to_set: EditorMain) -> None:
             create_venv_shell.exec_shell(
                 [f"{create_venv_shell.compiler_path}", "-m", "venv", "venv"]
             )
-            widget.code_result.append(
-                language_wrapper.language_word_dict.get("python_env_menu_creating_venv_message"))
+            text_cursor =  widget.code_result.textCursor()
+            text_format = QTextCharFormat()
+            text_format.setForeground(actually_color_dict.get("normal_output_color"))
+            text_cursor.insertText(
+                language_wrapper.language_word_dict.get("python_env_menu_creating_venv_message"), text_format)
+            text_cursor.insertBlock()
         else:
             message_box = QMessageBox()
             message_box.setText(
