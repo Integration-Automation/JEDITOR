@@ -185,7 +185,7 @@ class Gitgui(QWidget):
                 self._load_commits_async(branch)
                 self._info(
                     self.language_wrapper_get("info_checkout_title"),
-                    f"{self.language_wrapper_get("info_checkout_msg")} {branch}"
+                    f"{self.language_wrapper_get('info_checkout_msg')} {branch}"
                 )
         self.worker = Worker(self.git.checkout, branch)
         self.worker.done.connect(after)
