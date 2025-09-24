@@ -1,8 +1,5 @@
-import pathlib
 from typing import List
 
-from PySide6.QtCore import Qt
-from PySide6.QtNetwork import QNetworkCookie
 from PySide6.QtWebEngineCore import QWebEngineDownloadRequest
 from PySide6.QtWebEngineWidgets import QWebEngineView
 

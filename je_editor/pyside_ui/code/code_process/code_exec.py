@@ -8,6 +8,7 @@ from threading import Thread
 from typing import Union
 
 from PySide6.QtCore import QTimer
+from PySide6.QtGui import QTextCharFormat
 from PySide6.QtWidgets import QTextEdit
 
 from je_editor.pyside_ui.code.running_process_manager import run_instance_manager
@@ -43,6 +44,7 @@ class ExecManager(object):
         self.main_window: EditorWidget = main_window
         self.compiler_path = None
         self.code_result: Union[QTextEdit, None] = None
+        self.code_result_cursor: Union[QTextEdit.textCursor, None] = None
         self.timer: Union[QTimer, None] = None
         self.still_run_program = True
         self.process: Union[subprocess.Popen, None] = None
@@ -86,7 +88,6 @@ class ExecManager(object):
                             f"exec_prefix: {exec_prefix}")
         try:
             self.exit_program()
-            self.code_result.setTextColor(actually_color_dict.get("normal_output_color"))
             self.code_result.setPlainText("")
             file_path = Path(exec_file_name)
             reformat_os_file_path = str(file_path.absolute())
@@ -127,7 +128,11 @@ class ExecManager(object):
             )
             self.read_program_error_output_from_thread.start()
             # show which file execute
-            self.code_result.append(self.compiler_path + " " + reformat_os_file_path)
+            text_cursor = self.code_result.textCursor()
+            text_format = QTextCharFormat()
+            text_format.setForeground(actually_color_dict.get("normal_output_color"))
+            text_cursor.insertText(self.compiler_path + " " + reformat_os_file_path, text_format)
+            text_cursor.insertBlock()
             # start tkinter_ui update
             # start timer
             self.timer = QTimer(self.main_window)
@@ -135,9 +140,11 @@ class ExecManager(object):
             self.timer.timeout.connect(self.pull_text)
             self.timer.start()
         except Exception as error:
-            self.code_result.setTextColor(actually_color_dict.get("error_output_color"))
-            self.code_result.append(str(error))
-            self.code_result.setTextColor(actually_color_dict.get("normal_output_color"))
+            text_cursor = self.code_result.textCursor()
+            text_format = QTextCharFormat()
+            text_format.setForeground(actually_color_dict.get("normal_output_color"))
+            text_cursor.insertText(str(error), text_format)
+            text_cursor.insertBlock()
             if self.process is not None:
                 self.process.terminate()
 
@@ -151,19 +158,24 @@ class ExecManager(object):
         jeditor_logger.info("ExecManager pull_text")
         # Pull text from queue and put in code result area
         try:
-            self.code_result.setTextColor(actually_color_dict.get("normal_output_color"))
             if not self.run_output_queue.empty():
                 output_message = self.run_output_queue.get_nowait()
                 output_message = str(output_message).strip()
                 if output_message:
-                    self.code_result.append(output_message)
-            self.code_result.setTextColor(actually_color_dict.get("error_output_color"))
+                    text_cursor = self.code_result.textCursor()
+                    text_format = QTextCharFormat()
+                    text_format.setForeground(actually_color_dict.get("normal_output_color"))
+                    text_cursor.insertText(output_message, text_format)
+                    text_cursor.insertBlock()
             if not self.run_error_queue.empty():
                 error_message = self.run_error_queue.get_nowait()
                 error_message = str(error_message).strip()
                 if error_message:
-                    self.code_result.append(error_message)
-            self.code_result.setTextColor(actually_color_dict.get("normal_output_color"))
+                    text_cursor = self.code_result.textCursor()
+                    text_format = QTextCharFormat()
+                    text_format.setForeground(actually_color_dict.get("error_output_color"))
+                    text_cursor.insertText(error_message, text_format)
+                    text_cursor.insertBlock()
         except queue.Empty:
             pass
         if self.process.returncode == 0:
@@ -185,7 +197,11 @@ class ExecManager(object):
         self.print_and_clear_queue()
         if self.process is not None:
             self.process.terminate()
-            self.code_result.append(f"Program exit with code {self.process.returncode}")
+            text_cursor = self.code_result.textCursor()
+            text_format = QTextCharFormat()
+            text_format.setForeground(actually_color_dict.get("normal_output_color"))
+            text_cursor.insertText(f"Program exit with code {self.process.returncode}", text_format)
+            text_cursor.insertBlock()
             self.process = None
 
     # Pull all remain string on queue and add to code result area
@@ -197,7 +213,7 @@ class ExecManager(object):
     def read_program_output_from_process(self) -> None:
         jeditor_logger.info("ExecManager read_program_output_from_process")
         while self.still_run_program:
-            program_output_data: str = self.process.stdout.read(
+            program_output_data: str = self.process.stdout.readline(
                 self.program_buffer).decode(self.program_encoding, "replace")
             if self.process:
                 self.process.stdout.flush()
@@ -206,7 +222,7 @@ class ExecManager(object):
     def read_program_error_output_from_process(self) -> None:
         jeditor_logger.info("ExecManager read_program_error_output_from_process")
         while self.still_run_program:
-            program_error_output_data: str = self.process.stderr.read(
+            program_error_output_data: str = self.process.stderr.readline(
                 self.program_buffer).decode(self.program_encoding, "replace")
             if self.process:
                 self.process.stderr.flush()

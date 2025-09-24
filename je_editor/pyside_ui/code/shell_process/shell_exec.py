@@ -10,6 +10,7 @@ from threading import Thread
 from typing import Union, Callable
 
 from PySide6.QtCore import QTimer
+from PySide6.QtGui import QTextCharFormat
 from PySide6.QtWidgets import QTextEdit
 
 from je_editor.pyside_ui.code.running_process_manager import run_instance_manager
@@ -48,8 +49,8 @@ class ShellManager(object):
         self.timer: Union[QTimer, None] = None
         self.still_run_shell: bool = True
         self.process = None
-        self.run_output_queue: queue = queue.Queue()
-        self.run_error_queue: queue = queue.Queue()
+        self.run_output_queue: queue.Queue = queue.Queue()
+        self.run_error_queue: queue.Queue = queue.Queue()
         self.program_encoding: str = shell_encoding
         self.program_buffer: int = program_buffer
         self.after_done_function = after_done_function
@@ -75,7 +76,7 @@ class ShellManager(object):
         else:
             raise JEditorException(je_editor_init_error)
 
-    def exec_shell(self, shell_command: [str, list]) -> None:
+    def exec_shell(self, shell_command: Union[str, list]) -> None:
         """
         :param shell_command: shell command will run
         :return: if error return result and True else return result and False
@@ -83,13 +84,16 @@ class ShellManager(object):
         jeditor_logger.info(f"ShellManager exec_shell, shell_command: {shell_command}")
         try:
             self.exit_program()
-            self.code_result.setTextColor(actually_color_dict.get("normal_output_color"))
             self.code_result.setPlainText("")
             if sys.platform in ["win32", "cygwin", "msys"]:
                 args = shell_command
             else:
                 args = shlex.split(shell_command)
-            self.code_result.append(str(args))
+            text_cursor = self.code_result.textCursor()
+            text_format = QTextCharFormat()
+            text_format.setForeground(actually_color_dict.get("normal_output_color"))
+            text_cursor.insertText(str(args), text_format)
+            text_cursor.insertBlock()
             self.process = subprocess.Popen(
                 args=args,
                 stdout=subprocess.PIPE,
@@ -116,9 +120,11 @@ class ShellManager(object):
             self.timer.timeout.connect(self.pull_text)
             self.timer.start()
         except Exception as error:
-            self.code_result.setTextColor(actually_color_dict.get("error_output_color"))
-            self.code_result.append(str(error))
-            self.code_result.setTextColor(actually_color_dict.get("normal_output_color"))
+            text_cursor = self.code_result.textCursor()
+            text_format = QTextCharFormat()
+            text_format.setForeground(actually_color_dict.get("error_output_color"))
+            text_cursor.insertText(str(error), text_format)
+            text_cursor.insertBlock()
             if self.process is not None:
                 self.process.terminate()
 
@@ -126,19 +132,24 @@ class ShellManager(object):
     def pull_text(self) -> None:
         jeditor_logger.info("ShellManager pull_text")
         try:
-            self.code_result.setTextColor(actually_color_dict.get("normal_output_color"))
             if not self.run_output_queue.empty():
                 output_message = self.run_output_queue.get_nowait()
                 output_message = str(output_message).strip()
                 if output_message:
-                    self.code_result.append(output_message)
-            self.code_result.setTextColor(actually_color_dict.get("error_output_color"))
+                    text_cursor = self.code_result.textCursor()
+                    text_format = QTextCharFormat()
+                    text_format.setForeground(actually_color_dict.get("normal_output_color"))
+                    text_cursor.insertText(output_message, text_format)
+                    text_cursor.insertBlock()
             if not self.run_error_queue.empty():
                 error_message = self.run_error_queue.get_nowait()
                 error_message = str(error_message).strip()
                 if error_message:
-                    self.code_result.append(error_message)
-            self.code_result.setTextColor(actually_color_dict.get("normal_output_color"))
+                    text_cursor = self.code_result.textCursor()
+                    text_format = QTextCharFormat()
+                    text_format.setForeground(actually_color_dict.get("error_output_color"))
+                    text_cursor.insertText(error_message, text_format)
+                    text_cursor.insertBlock()
         except queue.Empty:
             pass
         if self.process.returncode == 0:
@@ -168,7 +179,11 @@ class ShellManager(object):
         self.print_and_clear_queue()
         if self.process is not None:
             self.process.terminate()
-            self.code_result.append(f"Shell command exit with code {self.process.returncode}")
+            text_cursor = self.code_result.textCursor()
+            text_format = QTextCharFormat()
+            text_format.setForeground(actually_color_dict.get("normal_output_color"))
+            text_cursor.insertText(f"Shell command exit with code {self.process.returncode}", text_format)
+            text_cursor.insertBlock()
             self.process = None
 
     def print_and_clear_queue(self) -> None:
@@ -179,7 +194,7 @@ class ShellManager(object):
     def read_program_output_from_process(self) -> None:
         jeditor_logger.info("ShellManager read_program_output_from_process")
         while self.still_run_shell:
-            program_output_data = self.process.stdout.read(
+            program_output_data = self.process.stdout.readline(
                 self.program_buffer) \
                 .decode(self.program_encoding, "replace")
             if self.process:
@@ -189,7 +204,7 @@ class ShellManager(object):
     def read_program_error_output_from_process(self) -> None:
         jeditor_logger.info("ShellManager read_program_error_output_from_process")
         while self.still_run_shell:
-            program_error_output_data = self.process.stderr.read(
+            program_error_output_data = self.process.stderr.readline(
                 self.program_buffer) \
                 .decode(self.program_encoding, "replace")
             if self.process:
