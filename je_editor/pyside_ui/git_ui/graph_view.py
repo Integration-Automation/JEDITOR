@@ -11,7 +11,7 @@ from PySide6.QtWidgets import (
     QGraphicsPathItem, QGraphicsSimpleTextItem,
 )
 
-from je_editor.git_feature.commit_graph import CommitGraph
+from je_editor.git_client.commit_graph import CommitGraph
 from je_editor.utils.multi_language.multi_language_wrapper import language_wrapper
 
 # Layout constants

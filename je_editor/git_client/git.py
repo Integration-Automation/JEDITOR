@@ -104,9 +104,9 @@ class GitService:
         self._ensure_repo()
         try:
             self.repo.git.add(all=True)
-            audit_log(self.repo_path, "stage_all", "git_feature add -A", True)
+            audit_log(self.repo_path, "stage_all", "git_client add -A", True)
         except GitCommandError as e:
-            audit_log(self.repo_path, "stage_all", "git_feature add -A", False, str(e))
+            audit_log(self.repo_path, "stage_all", "git_client add -A", False, str(e))
             raise
 
     def commit(self, message: str):

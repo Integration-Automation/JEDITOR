@@ -11,12 +11,12 @@ class GitCLI:
         self.repo_path = Path(repo_path)
 
     def is_git_repo(self) -> bool:
-        return (self.repo_path / ".git_feature").exists()
+        return (self.repo_path / ".git_client").exists()
 
     def _run(self, args: List[str]) -> str:
-        log.debug("git_feature %s", " ".join(args))
+        log.debug("git_client %s", " ".join(args))
         res = subprocess.run(
-            ["git_feature"] + args,
+            ["git_client"] + args,
             cwd=self.repo_path,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,

@@ -26,7 +26,7 @@ class WatchdogThread(threading.Thread):
 
 
 if __name__ == '__main__':
-    watchdog_thread = WatchdogThread(".")
+    watchdog_thread = WatchdogThread("")
     watchdog_thread.start()
     while True:
         time.sleep(1)

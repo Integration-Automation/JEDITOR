@@ -169,7 +169,7 @@ please make sure that the current encoding is consistent with the default encodi
     "err_read_diff": "Failed to read diff",
     "err_stage": "Stage failed",
     "info_stage_title": "Stage",
-    "info_stage_msg": "Executed git_feature add -A",
+    "info_stage_msg": "Executed git add -A",
     "err_commit": "Commit failed",
     "info_commit_title": "Commit",
     "info_commit_msg": "Commit created",

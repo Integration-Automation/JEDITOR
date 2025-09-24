@@ -10,8 +10,8 @@ from frontengine import FrontEngineMainUI
 
 from je_editor.pyside_ui.browser.browser_widget import BrowserWidget
 from je_editor.pyside_ui.code.variable_inspector.inspector_gui import VariableInspector
-from je_editor.pyside_ui.git_feature.git_branch_tree_widget import GitTreeViewGUI
-from je_editor.pyside_ui.git_feature.git_client_gui import Gitgui
+from je_editor.pyside_ui.git_ui.git_branch_tree_widget import GitTreeViewGUI
+from je_editor.pyside_ui.git_ui.git_client_gui import Gitgui
 from je_editor.pyside_ui.main_ui.ai_widget.chat_ui import ChatUI
 from je_editor.pyside_ui.main_ui.console_widget.console_gui import ConsoleWidget
 from je_editor.pyside_ui.main_ui.dock.destroy_dock import DestroyDock
