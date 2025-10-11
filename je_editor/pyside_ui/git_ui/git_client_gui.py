@@ -285,7 +285,7 @@ class Gitgui(QWidget):
             self.git.open_repo(repo_path)
             QMessageBox.information(self,
                                     self.language_wrapper_get("info_clone_success_title"),
-                                    f"{self.language_wrapper_get("info_clone_success_msg")} {repo_path}")
+                                    f"{self.language_wrapper_get('info_clone_success_msg')} {repo_path}")
         except Exception as e:
             QMessageBox.critical(self, self.language_wrapper_get("err_clone_failed_title"), str(e))
 
