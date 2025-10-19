@@ -4,10 +4,11 @@ from typing import TYPE_CHECKING
 
 from frontengine import FrontEngineMainUI
 
+from je_editor.pyside_ui.git_ui.code_diff_compare.code_diff_viewer_widget import DiffViewerWidget
 from je_editor.pyside_ui.browser.browser_widget import BrowserWidget
 from je_editor.pyside_ui.code.variable_inspector.inspector_gui import VariableInspector
-from je_editor.pyside_ui.git_ui.git_branch_tree_widget import GitTreeViewGUI
-from je_editor.pyside_ui.git_ui.git_client_gui import Gitgui
+from je_editor.pyside_ui.git_ui.git_client.git_branch_tree_widget import GitTreeViewGUI
+from je_editor.pyside_ui.git_ui.git_client.git_client_gui import GitGui
 from je_editor.pyside_ui.main_ui.ai_widget.chat_ui import ChatUI
 from je_editor.pyside_ui.main_ui.console_widget.console_gui import ConsoleWidget
 from je_editor.pyside_ui.main_ui.editor.editor_widget import EditorWidget
@@ -95,6 +96,13 @@ def set_tab_menu(ui_we_want_to_set: EditorMain) -> None:
         lambda: add_console_widget_tab(ui_we_want_to_set)
     )
     ui_we_want_to_set.tab_menu.addAction(ui_we_want_to_set.tab_menu.add_console_widget_ui_action)
+    # Code diff viewer
+    ui_we_want_to_set.tab_menu.add_code_diff_viewer_ui_action = QAction(
+        language_wrapper.language_word_dict.get("tab_code_diff_viewer_tab_name"))
+    ui_we_want_to_set.tab_menu.add_code_diff_viewer_ui_action.triggered.connect(
+        lambda: add_code_diff_compare_tab(ui_we_want_to_set)
+    )
+    ui_we_want_to_set.tab_menu.addAction(ui_we_want_to_set.tab_menu.add_code_diff_viewer_ui_action)
 
 def add_editor_tab(ui_we_want_to_set: EditorMain):
     jeditor_logger.info(f"build_tab_menu.py add editor tab ui_we_want_to_set: {ui_we_want_to_set}")
@@ -149,7 +157,7 @@ def add_chat_ui_tab(ui_we_want_to_set: EditorMain):
 def add_git_client_tab(ui_we_want_to_set: EditorMain):
     jeditor_logger.info(f"build_tab_menu.py add git client tab ui_we_want_to_set: {ui_we_want_to_set}")
     ui_we_want_to_set.tab_widget.addTab(
-        Gitgui(),
+        GitGui(),
         f"{language_wrapper.language_word_dict.get('tab_menu_git_client_tab_name')} "
         f"{ui_we_want_to_set.tab_widget.count()}")
 
@@ -173,4 +181,11 @@ def add_console_widget_tab(ui_we_want_to_set: EditorMain):
     ui_we_want_to_set.tab_widget.addTab(
         ConsoleWidget(),
         f"{language_wrapper.language_word_dict.get('tab_menu_console_widget_tab_name')} "
+        f"{ui_we_want_to_set.tab_widget.count()}")
+
+def add_code_diff_compare_tab(ui_we_want_to_set: EditorMain):
+    jeditor_logger.info(f"build_tab_menu.py add code diff compare tab ui_we_want_to_set: {ui_we_want_to_set}")
+    ui_we_want_to_set.tab_widget.addTab(
+        DiffViewerWidget(),
+        f"{language_wrapper.language_word_dict.get('tab_code_diff_viewer_tab_name')} "
         f"{ui_we_want_to_set.tab_widget.count()}")

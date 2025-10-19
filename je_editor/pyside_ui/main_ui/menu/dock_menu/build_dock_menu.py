@@ -8,10 +8,11 @@ from PySide6.QtGui import QAction
 from PySide6.QtWidgets import QFileDialog
 from frontengine import FrontEngineMainUI
 
+from je_editor.pyside_ui.git_ui.code_diff_compare.code_diff_viewer_widget import DiffViewerWidget
 from je_editor.pyside_ui.browser.browser_widget import BrowserWidget
 from je_editor.pyside_ui.code.variable_inspector.inspector_gui import VariableInspector
-from je_editor.pyside_ui.git_ui.git_branch_tree_widget import GitTreeViewGUI
-from je_editor.pyside_ui.git_ui.git_client_gui import Gitgui
+from je_editor.pyside_ui.git_ui.git_client.git_branch_tree_widget import GitTreeViewGUI
+from je_editor.pyside_ui.git_ui.git_client.git_client_gui import GitGui
 from je_editor.pyside_ui.main_ui.ai_widget.chat_ui import ChatUI
 from je_editor.pyside_ui.main_ui.console_widget.console_gui import ConsoleWidget
 from je_editor.pyside_ui.main_ui.dock.destroy_dock import DestroyDock
@@ -99,6 +100,13 @@ def set_dock_menu(ui_we_want_to_set: EditorMain) -> None:
         lambda: add_dock_widget(ui_we_want_to_set, "console_widget")
     )
     ui_we_want_to_set.dock_menu.addAction(ui_we_want_to_set.dock_menu.new_dynamic_console)
+    # Code diff viewer
+    ui_we_want_to_set.dock_menu.new_code_diff_viewer = QAction(
+        language_wrapper.language_word_dict.get("tab_code_diff_viewer_tab_name"))
+    ui_we_want_to_set.dock_menu.new_code_diff_viewer.triggered.connect(
+        lambda: add_dock_widget(ui_we_want_to_set, "code_diff_viewer")
+    )
+    ui_we_want_to_set.dock_menu.addAction(ui_we_want_to_set.dock_menu.new_code_diff_viewer)
 
 def add_dock_widget(ui_we_want_to_set: EditorMain, widget_type: str = None):
     jeditor_logger.info("build_dock_menu.py add_dock_widget "
@@ -134,7 +142,7 @@ def add_dock_widget(ui_we_want_to_set: EditorMain, widget_type: str = None):
         dock_widget.setWidget(ChatUI(ui_we_want_to_set))
     elif widget_type == "git_client":
         dock_widget.setWindowTitle(language_wrapper.language_word_dict.get("tab_menu_git_client_tab_name"))
-        dock_widget.setWidget(Gitgui())
+        dock_widget.setWidget(GitGui())
     elif widget_type == "git_branch_tree_view":
         dock_widget.setWindowTitle(language_wrapper.language_word_dict.get("tab_menu_git_branch_tree_view_tab_name"))
         dock_widget.setWidget(GitTreeViewGUI())
@@ -144,6 +152,9 @@ def add_dock_widget(ui_we_want_to_set: EditorMain, widget_type: str = None):
     elif widget_type == "console_widget":
         dock_widget.setWindowTitle(language_wrapper.language_word_dict.get("tab_menu_console_widget_tab_name"))
         dock_widget.setWidget(ConsoleWidget())
+    elif widget_type == "code_diff_viewer":
+        dock_widget.setWindowTitle(language_wrapper.language_word_dict.get("tab_code_diff_viewer_tab_name"))
+        dock_widget.setWidget(DiffViewerWidget())
     else:
         dock_widget.setWindowTitle(language_wrapper.language_word_dict.get("dock_browser_title"))
         dock_widget.setWidget(BrowserWidget())

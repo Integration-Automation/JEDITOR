@@ -114,6 +114,7 @@ please make sure that the current encoding is consistent with the default encodi
     "tab_menu_git_branch_tree_view_tab_name": "Git BranchTreeViewer",
     "tab_menu_variable_inspector_tab_name": "Variable Inspector",
     "tab_menu_console_widget_tab_name": "Console Widget",
+    "tab_code_diff_viewer_tab_name": "Code Diff Viewer",
     # Text Menu
     "text_menu_label": "Text",
     "text_menu_label_font": "Font",
@@ -216,5 +217,5 @@ please make sure that the current encoding is consistent with the default encodi
     "dynamic_console_process_running": "Process is running; stop it first",
     "dynamic_console_done": "[done] exit={code}, status={status}",
     "dynamic_console_system_prefix": "[system] ",
-
+    # Code diff viewer
 }
