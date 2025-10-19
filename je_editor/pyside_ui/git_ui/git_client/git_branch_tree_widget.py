@@ -10,8 +10,8 @@ from PySide6.QtWidgets import (
 
 from je_editor.git_client.commit_graph import CommitGraph
 from je_editor.git_client.git_cli import GitCLI
-from je_editor.pyside_ui.git_ui.commit_table import CommitTable
-from je_editor.pyside_ui.git_ui.graph_view import CommitGraphView
+from je_editor.pyside_ui.git_ui.git_client.commit_table import CommitTable
+from je_editor.pyside_ui.git_ui.git_client.graph_view import CommitGraphView
 from je_editor.utils.multi_language.multi_language_wrapper import language_wrapper
 
 logging.basicConfig(level=logging.INFO)
@@ -24,20 +24,20 @@ class GitTreeViewGUI(QWidget):
         self.language_wrapper_get = language_wrapper.language_word_dict.get
         self.setWindowTitle(self.language_wrapper_get("git_graph_title"))
 
-        main_layout = QVBoxLayout(self)
-        main_layout.setContentsMargins(0, 0, 0, 0)
-        main_layout.setSpacing(0)
+        git_treeview_main_layout = QVBoxLayout(self)
+        git_treeview_main_layout.setContentsMargins(0, 0, 0, 0)
+        git_treeview_main_layout.setSpacing(0)
 
-        toolbar = QToolBar()
-        act_open = QAction(self.language_wrapper_get("git_graph_toolbar_open"), self)
-        act_open.triggered.connect(self.open_repo)
-        toolbar.addAction(act_open)
+        git_treeview_toolbar = QToolBar()
+        open_repo_action = QAction(self.language_wrapper_get("git_graph_toolbar_open"), self)
+        open_repo_action.triggered.connect(self.open_repo)
+        git_treeview_toolbar.addAction(open_repo_action)
 
         act_refresh = QAction(self.language_wrapper_get("git_graph_toolbar_refresh"), self)
         act_refresh.triggered.connect(self.refresh_graph)
-        toolbar.addAction(act_refresh)
+        git_treeview_toolbar.addAction(act_refresh)
 
-        main_layout.addWidget(toolbar)
+        git_treeview_main_layout.addWidget(git_treeview_toolbar)
 
         splitter = QSplitter(Qt.Orientation.Horizontal)
         self.graph_view = CommitGraphView()
@@ -45,10 +45,10 @@ class GitTreeViewGUI(QWidget):
         splitter.addWidget(self.graph_view)
         splitter.addWidget(self.commit_table)
         splitter.setSizes([600, 400])
-        main_layout.addWidget(splitter, 1)  # 1 表示可伸縮
+        git_treeview_main_layout.addWidget(splitter, 1)  # 1 表示可伸縮
 
         self.status = QStatusBar()
-        main_layout.addWidget(self.status)
+        git_treeview_main_layout.addWidget(self.status)
 
         self.repo_path = None
         self.git = None
@@ -70,6 +70,7 @@ class GitTreeViewGUI(QWidget):
         self.graph_view.focus_row(row)
 
     def open_repo(self):
+        # Open repo and set up the graph.
         path = QFileDialog.getExistingDirectory(self, self.language_wrapper_get("git_graph_menu_open_repo"))
         if not path:
             return
@@ -100,10 +101,12 @@ class GitTreeViewGUI(QWidget):
             if refs_dir.exists():
                 self.watcher.addPath(str(refs_dir))
 
-    def _on_git_changed(self, path):
+    def _on_git_changed(self):
+        # Refresh git tree timer
         self.refresh_timer.start(500)
 
     def refresh_graph(self):
+        # Refresh git tree
         if not self.git:
             return
         try:

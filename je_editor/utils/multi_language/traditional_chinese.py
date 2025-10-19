@@ -104,10 +104,11 @@ traditional_chinese_word_dict = {
     "tab_menu_stackoverflow_tab_name": "Stackoverflow",
     "tab_menu_ipython_tab_name": "IPython(Jupyter)",
     "tab_menu_chat_ui_tab_name": "ChatUI",
-    "tab_menu_git_client_tab_name": "Git Client",
+    "tab_menu_git_client_tab_name": "Git History",
     "tab_menu_git_branch_tree_view_tab_name": "Git BranchTreeViewer",
     "tab_menu_variable_inspector_tab_name": "Variable Inspector",
     "tab_menu_console_widget_tab_name": "ConsoleWidget",
+    "tab_code_diff_viewer_tab_name": "Code Diff Viewer",
     # Text Menu
     "text_menu_label": "文字",
     "text_menu_label_font": "字體",
@@ -210,5 +211,4 @@ traditional_chinese_word_dict = {
     "dynamic_console_process_running": "程序正在執行；請先停止",
     "dynamic_console_done": "[完成] 退出碼={code}, 狀態={status}",
     "dynamic_console_system_prefix": "[系統] ",
-
 }

@@ -160,7 +160,7 @@ NULL_TREE = "4b825dc642cb6eb9a060e54bf8d69288fbee4904"
 # -----------------------
 # Worker thread wrapper
 # -----------------------
-class Worker(QThread):
+class GitWorker(QThread):
     """
     Runs a function in a separate thread to avoid blocking the UI.
     Emits (result, error) when done.
