@@ -12,3 +12,4 @@ qtconsole
 pycodestyle
 pydantic
 jedi
+je_editor
