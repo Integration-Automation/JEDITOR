@@ -5,7 +5,7 @@ import re
 from typing import Union, TYPE_CHECKING
 
 from PySide6.QtWidgets import QMessageBox
-from langchain.prompts.chat import SystemMessagePromptTemplate
+from langchain_core.prompts.chat import SystemMessagePromptTemplate
 from langchain_openai import ChatOpenAI
 from pydantic import SecretStr
 
