@@ -1,4 +1,11 @@
-from typing import List
+from __future__ import annotations
+
+from typing import List, TYPE_CHECKING
+
+from PySide6.QtCore import Signal
+
+if TYPE_CHECKING:
+    from je_editor.pyside_ui.browser.browser_widget import BrowserWidget
 
 from PySide6.QtWebEngineCore import QWebEngineDownloadRequest
 from PySide6.QtWebEngineWidgets import QWebEngineView
@@ -8,17 +15,19 @@ from je_editor.utils.logging.loggin_instance import jeditor_logger
 
 
 class BrowserView(QWebEngineView):
+    new_tab_requested = Signal(QWebEngineView)
     """
     A custom QWebEngineView that supports file downloads and manages download windows.
     自訂的 QWebEngineView，支援檔案下載並管理下載視窗。
     """
 
-    def __init__(self, start_url: str = "https://www.google.com/"):
+    def __init__(self, start_url: str = "https://www.google.com/",
+                 main_widget: BrowserWidget = None, parent=None):
         """
         Initialize the browser view with a start URL.
         使用指定的起始網址初始化瀏覽器視圖。
         """
-        super().__init__()
+        super().__init__(parent)
         # 記錄初始化訊息
         jeditor_logger.info("Init BrowserView "
                             f"start_url: {start_url}")
@@ -34,6 +43,9 @@ class BrowserView(QWebEngineView):
 
         # 綁定下載事件：當有下載請求時觸發 download_file
         self.page().profile().downloadRequested.connect(self.download_file)
+
+        self.main_widget = main_widget
+
 
     def download_file(self, download_instance: QWebEngineDownloadRequest):
         """

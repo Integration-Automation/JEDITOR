@@ -1,4 +1,4 @@
-from je_editor.pyside_ui.browser.browser_widget import BrowserWidget
+from je_editor.pyside_ui.browser.main_browser_widget import MainBrowserWidget
 from je_editor.pyside_ui.code.code_process.code_exec import ExecManager
 from je_editor.pyside_ui.code.shell_process.shell_exec import ShellManager
 from je_editor.pyside_ui.code.syntax.python_syntax import PythonHighlighter
@@ -28,7 +28,7 @@ __all__ = [
     "JEditorRunOnShellException", "JEditorSaveFileException", "syntax_rule_setting_dict",
     "JEditorOpenFileException", "JEditorContentFileException", "syntax_extend_setting_dict",
     "JEditorCantFindLanguageException", "JEditorJsonException", "PythonHighlighter",
-    "user_setting_dict", "user_setting_color_dict", "EditorWidget", "BrowserWidget",
+    "user_setting_dict", "user_setting_color_dict", "EditorWidget", "MainBrowserWidget",
     "ExecManager", "ShellManager", "traditional_chinese_word_dict", "english_word_dict",
     "language_wrapper"
 ]

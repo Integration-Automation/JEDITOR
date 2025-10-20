@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from je_editor.pyside_ui.browser.browser_widget import BrowserWidget
+from je_editor.pyside_ui.browser.main_browser_widget import MainBrowserWidget
 from je_editor.utils.logging.loggin_instance import jeditor_logger
 
 if TYPE_CHECKING:
@@ -53,7 +53,7 @@ def open_web_browser(ui_we_want_to_set: EditorMain, url: str, tab_name: str):
                         f"url: {url} "
                         f"tab_name: {tab_name}")
     ui_we_want_to_set.tab_widget.addTab(
-        BrowserWidget(start_url=url),
+        MainBrowserWidget(start_url=url),
         f"{tab_name}{ui_we_want_to_set.tab_widget.count()}"
     )
 

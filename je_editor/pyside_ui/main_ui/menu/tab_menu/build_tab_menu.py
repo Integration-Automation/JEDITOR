@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 from frontengine import FrontEngineMainUI
 
 from je_editor.pyside_ui.git_ui.code_diff_compare.code_diff_viewer_widget import DiffViewerWidget
-from je_editor.pyside_ui.browser.browser_widget import BrowserWidget
+from je_editor.pyside_ui.browser.main_browser_widget import MainBrowserWidget
 from je_editor.pyside_ui.code.variable_inspector.inspector_gui import VariableInspector
 from je_editor.pyside_ui.git_ui.git_client.git_branch_tree_widget import GitTreeViewGUI
 from je_editor.pyside_ui.git_ui.git_client.git_client_gui import GitGui
@@ -47,13 +47,6 @@ def set_tab_menu(ui_we_want_to_set: EditorMain) -> None:
         lambda: add_web_tab(ui_we_want_to_set)
     )
     ui_we_want_to_set.tab_menu.addAction(ui_we_want_to_set.tab_menu.add_web_action)
-    # Stackoverflow
-    ui_we_want_to_set.tab_menu.add_stackoverflow_action = QAction(
-        language_wrapper.language_word_dict.get("tab_menu_add_stackoverflow_label"))
-    ui_we_want_to_set.tab_menu.add_stackoverflow_action.triggered.connect(
-        lambda: add_stackoverflow_tab(ui_we_want_to_set)
-    )
-    ui_we_want_to_set.tab_menu.addAction(ui_we_want_to_set.tab_menu.add_stackoverflow_action)
     # IPython
     ui_we_want_to_set.tab_menu.add_ipython_action = QAction(
         language_wrapper.language_word_dict.get("tab_menu_ipython_tab_name"))
@@ -125,16 +118,8 @@ def add_frontengine_tab(ui_we_want_to_set: EditorMain):
 def add_web_tab(ui_we_want_to_set: EditorMain):
     jeditor_logger.info(f"build_tab_menu.py add web tab ui_we_want_to_set: {ui_we_want_to_set}")
     ui_we_want_to_set.tab_widget.addTab(
-        BrowserWidget(),
+        MainBrowserWidget(),
         f"{language_wrapper.language_word_dict.get('tab_menu_web_tab_name')} "
-        f"{ui_we_want_to_set.tab_widget.count()}")
-
-
-def add_stackoverflow_tab(ui_we_want_to_set: EditorMain):
-    jeditor_logger.info(f"build_tab_menu.py add stackoverflow tab ui_we_want_to_set: {ui_we_want_to_set}")
-    ui_we_want_to_set.tab_widget.addTab(
-        BrowserWidget(start_url="https://stackoverflow.com/", search_prefix="https://stackoverflow.com/search?q="),
-        f"{language_wrapper.language_word_dict.get('tab_menu_stackoverflow_tab_name')} "
         f"{ui_we_want_to_set.tab_widget.count()}")
 
 

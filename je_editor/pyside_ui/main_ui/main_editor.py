@@ -8,10 +8,10 @@ import jedi.settings
 from PySide6.QtCore import QTimer, QEvent
 from PySide6.QtGui import QFontDatabase, QIcon, Qt, QTextCharFormat
 from PySide6.QtWidgets import QMainWindow, QWidget, QTabWidget
-from frontengine import FrontEngineMainUI
 from qt_material import QtStyleTools
 
 from je_editor.pyside_ui.browser.browser_widget import BrowserWidget
+from je_editor.pyside_ui.browser.main_browser_widget import MainBrowserWidget
 from je_editor.pyside_ui.code.auto_save.auto_save_manager import init_new_auto_save_thread, file_is_open_manager_dict
 from je_editor.pyside_ui.main_ui.editor.editor_widget import EditorWidget
 from je_editor.pyside_ui.main_ui.menu.set_menu_bar import set_menu_bar
@@ -104,11 +104,11 @@ class EditorMain(QMainWindow, QtStyleTools):
         self.redirect_timer.timeout.connect(self.redirect)
         self.redirect_timer.start()
         # TAB Add
+        main_browser_widget = MainBrowserWidget()
         self.tab_widget.addTab(EditorWidget(self), language_wrapper.language_word_dict.get("tab_name_editor"))
-        self.tab_widget.addTab(BrowserWidget(), language_wrapper.language_word_dict.get("tab_name_web_browser"))
-        self.tab_widget.addTab(
-            BrowserWidget(start_url="https://stackoverflow.com/", search_prefix="https://stackoverflow.com/search?q="),
-            language_wrapper.language_word_dict.get("tab_menu_stackoverflow_tab_name"))
+        self.tab_widget.addTab(main_browser_widget, language_wrapper.language_word_dict.get("tab_name_web_browser"))
+        main_browser_widget.add_browser_tab(
+            BrowserWidget(start_url="https://stackoverflow.com/", search_prefix="https://stackoverflow.com/search?q="))
 
         for widget_name, widget in EDITOR_EXTEND_TAB.items():
             self.tab_widget.addTab(widget(), widget_name)
