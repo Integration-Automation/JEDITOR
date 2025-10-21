@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, QTimer
 from PySide6.QtGui import QTextOption, QTextCharFormat, QColor, QFont, QSyntaxHighlighter, QAction
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel,
@@ -36,6 +36,7 @@ class GitGui(QWidget):
         self.checkout_button = QPushButton("Checkout")
         self.clone_repo_button = QPushButton("Clone Repo")
         self.repo_status_label = QLabel("Status: -")
+        self.commit_status_label = QLabel("Unpushed commits: ...")
 
         top = QHBoxLayout()
         top.addWidget(self.repo_path_label, 1)
@@ -48,7 +49,6 @@ class GitGui(QWidget):
         # === Left: changes list / 左側：變更清單 ===
         self.changes_list_widget = QListWidget()
         self.changes_list_widget.setSelectionMode(QListWidget.SelectionMode.SingleSelection)
-        self.changes_list_widget.setMinimumWidth(420)
 
         # === Right: diff / info viewer / 右側：差異或資訊檢視器 ===
         self.diff_viewer = QPlainTextEdit()
@@ -101,6 +101,7 @@ class GitGui(QWidget):
         center_layout = QVBoxLayout()
         center_layout.addLayout(top)
         center_layout.addWidget(self.repo_status_label)
+        center_layout.addWidget(self.commit_status_label)
         center_layout.addWidget(splitter, 1)
         center_layout.addLayout(bottom)
         self.setLayout(center_layout)
@@ -135,6 +136,12 @@ class GitGui(QWidget):
         dark_action.triggered.connect(self.apply_dark_theme)
 
         center_layout.setMenuBar(menubar)
+
+        # === Timer ===
+        self.update_commit_status_timer = QTimer()
+        self.update_commit_status_timer.setInterval(1000)
+        self.update_commit_status_timer.timeout.connect(self.update_commit_status)
+        self.update_commit_status_timer.start()
 
     # ---------- Repo operations ----------
     # ---------- 儲存庫操作 ----------
@@ -672,6 +679,46 @@ class GitGui(QWidget):
             QMessageBox.information(self, "Push Result", f"Pushed to origin:\n{msg}")
         except Exception as e:
             QMessageBox.critical(self, "Track Untracked Error", str(e))
+
+    def get_unpushed_commit_count(self, remote_name: str = "origin") -> dict:
+        try:
+            repo = self.current_repo
+            if repo is None:
+                return {"ahead": 0, "behind": 0, "error": "No repo loaded"}
+            if repo.bare:
+                return {"ahead": 0, "behind": 0, "error": "Repository is bare"}
+            if repo.head.is_detached:
+                return {"ahead": 0, "behind": 0, "error": "HEAD is detached"}
+
+            branch = repo.active_branch
+            remote = repo.remote(remote_name)
+            remote.fetch()
+
+            upstream_ref = f"{remote_name}/{branch.name}"
+            if upstream_ref not in repo.refs:
+                return {"ahead": 0, "behind": 0, "error": f"No upstream branch for {branch.name}"}
+
+            ahead_commits = list(repo.iter_commits(f"{upstream_ref}..{branch.name}"))
+            behind_commits = list(repo.iter_commits(f"{branch.name}..{upstream_ref}"))
+
+            return {"ahead": len(ahead_commits), "behind": len(behind_commits), "error": None}
+
+        except GitCommandError as e:
+            return {"ahead": 0, "behind": 0, "error": f"Git error: {e}"}
+        except Exception as e:
+            return {"ahead": 0, "behind": 0, "error": str(e)}
+
+    def update_commit_status(self):
+        result = self.get_unpushed_commit_count()
+        if result["error"]:
+            self.commit_status_label.setText(f"Error: {result['error']}")
+        else:
+            self.commit_status_label.setText(
+                f"Ahead (push): {result['ahead']} | Behind (pull): {result['behind']}"
+            )
+
+
+    # ===== Theme =====
 
     def apply_light_theme(self):
         """
