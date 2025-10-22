@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, QTimer
 from PySide6.QtGui import QTextOption, QTextCharFormat, QColor, QFont, QSyntaxHighlighter, QAction
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel,
@@ -15,9 +15,9 @@ class GitChangeItem:
     簡單的資料結構，用來存放檔案變更資訊。
     """
 
-    def __init__(self, file_path: str, change_status: str):
-        self.file_path = file_path  # repo 相對路徑 / repo-relative path
-        self.change_status = change_status  # 狀態，例如 'untracked', 'modified', 'deleted', 'renamed', 'staged'
+    def __init__(self, path: str, status: str):
+        self.path = path  # repo 相對路徑 / repo-relative path
+        self.status = status  # 狀態，例如 'untracked', 'modified', 'deleted', 'renamed', 'staged'
 
 
 class GitGui(QWidget):
@@ -36,6 +36,7 @@ class GitGui(QWidget):
         self.checkout_button = QPushButton("Checkout")
         self.clone_repo_button = QPushButton("Clone Repo")
         self.repo_status_label = QLabel("Status: -")
+        self.commit_status_label = QLabel("Unpushed commits: ...")
 
         top = QHBoxLayout()
         top.addWidget(self.repo_path_label, 1)
@@ -48,7 +49,6 @@ class GitGui(QWidget):
         # === Left: changes list / 左側：變更清單 ===
         self.changes_list_widget = QListWidget()
         self.changes_list_widget.setSelectionMode(QListWidget.SelectionMode.SingleSelection)
-        self.changes_list_widget.setMinimumWidth(420)
 
         # === Right: diff / info viewer / 右側：差異或資訊檢視器 ===
         self.diff_viewer = QPlainTextEdit()
@@ -84,6 +84,7 @@ class GitGui(QWidget):
         self.commit_button = QPushButton("Commit")
         self.unstage_all_button = QPushButton("Unstage All")
         self.track_all_untracked_button = QPushButton("Track All Untracked")
+        self.git_push_button = QPushButton("Push")
 
         bottom = QHBoxLayout()
         bottom.addWidget(QLabel("Message:"))
@@ -94,11 +95,13 @@ class GitGui(QWidget):
         bottom.addWidget(self.stage_all_button)
         bottom.addWidget(self.commit_button)
         bottom.addWidget(self.track_all_untracked_button)
+        bottom.addWidget(self.git_push_button)
 
         # === Main layout / 主版面配置 ===
         center_layout = QVBoxLayout()
         center_layout.addLayout(top)
         center_layout.addWidget(self.repo_status_label)
+        center_layout.addWidget(self.commit_status_label)
         center_layout.addWidget(splitter, 1)
         center_layout.addLayout(bottom)
         self.setLayout(center_layout)
@@ -115,6 +118,7 @@ class GitGui(QWidget):
         self.commit_button.clicked.connect(self.on_commit_staged_changes)
         self.unstage_all_button.clicked.connect(self.on_unstage_all_changes)
         self.track_all_untracked_button.clicked.connect(self.on_track_all_untracked_files)
+        self.git_push_button.clicked.connect(self.on_push_to_github)
 
         self._update_ui_controls(enabled=False)
 
@@ -132,6 +136,12 @@ class GitGui(QWidget):
         dark_action.triggered.connect(self.apply_dark_theme)
 
         center_layout.setMenuBar(menubar)
+
+        # === Timer ===
+        self.update_commit_status_timer = QTimer()
+        self.update_commit_status_timer.setInterval(1000)
+        self.update_commit_status_timer.timeout.connect(self.update_commit_status)
+        self.update_commit_status_timer.start()
 
     # ---------- Repo operations ----------
     # ---------- 儲存庫操作 ----------
@@ -258,16 +268,16 @@ class GitGui(QWidget):
 
         # Normalize paths (for rename "a -> b" 取目的與來源)
         src, dst = None, None
-        if "->" in change.file_path and change.change_status in ("renamed", "staged"):
-            parts = [p.strip() for p in change.file_path.split("->")]
+        if "->" in change.path and change.status in ("renamed", "staged"):
+            parts = [p.strip() for p in change.path.split("->")]
             if len(parts) == 2:
                 src, dst = parts
-        rel = dst or change.file_path
+        rel = dst or change.path
         abs_path = Path(current_repo.working_tree_dir) / Path(rel)
 
         try:
             # Untracked: 顯示新增檔案的內容（模擬 unified diff）
-            if change.change_status == "untracked":
+            if change.status == "untracked":
                 if not abs_path.exists():
                     self._safe_set_diff_text(f"(untracked file missing: {rel})")
                     return
@@ -282,7 +292,7 @@ class GitGui(QWidget):
                 return
 
             # Deleted: 顯示與 HEAD/Index 的差異（若工作樹檔案不存在也能呈現）
-            if change.change_status == "deleted":
+            if change.status == "deleted":
                 # working tree vs index（未暫存刪除）
                 if rel and not current_repo.index.diff(None, paths=[rel]):
                     # 若 diff(None) 空，試試 index vs HEAD
@@ -296,7 +306,7 @@ class GitGui(QWidget):
                 return
 
             # Renamed: 顯示 rename 變更；若僅 rename 無內容改動，diff 可能為空
-            if change.change_status == "renamed":
+            if change.status == "renamed":
                 # 優先顯示 staged rename
                 diff_text = ""
                 try:
@@ -319,7 +329,7 @@ class GitGui(QWidget):
                 return
 
             # Staged vs HEAD
-            if change.change_status == "staged":
+            if change.status == "staged":
                 diff_text = current_repo.git.diff("--cached", rel)
                 if not diff_text.strip():
                     self._safe_set_diff_text("(no staged changes vs HEAD)")
@@ -328,7 +338,7 @@ class GitGui(QWidget):
                 return
 
             # Modified / general unstaged
-            if change.change_status in ("modified",):
+            if change.status in ("modified",):
                 # working tree vs index
                 diff_text = current_repo.git.diff(rel)
                 if not diff_text.strip():
@@ -344,7 +354,7 @@ class GitGui(QWidget):
                 return
 
             # Fallback
-            self._safe_set_diff_text(f"(no diff handler for status: {change.change_status})")
+            self._safe_set_diff_text(f"(no diff handler for status: {change.status})")
 
         except GitCommandError as e:
             self._safe_set_diff_text(f"Git error while generating diff:\n{e}")
@@ -433,7 +443,7 @@ class GitGui(QWidget):
         Add a file change entry to the list.
         將檔案變更項目加入清單。
         """
-        item_text = f"[{change.change_status}] {change.file_path}"
+        item_text = f"[{change.status}] {change.path}"
         list_item = QListWidgetItem(item_text)
         list_item.setData(Qt.ItemDataRole.UserRole, change)  # 存放 GitChangeItem 物件
         list_item.setCheckState(Qt.CheckState.Unchecked)  # 預設未勾選
@@ -513,6 +523,7 @@ class GitGui(QWidget):
         try:
             file_paths = []
             for change_entry in selected_changes:
+                print(change_entry.path)
                 if "->" in change_entry.path and change_entry.status in ("renamed", "staged"):
                     parts = change_entry.path.split("->")
                     source_path = parts[0].strip()
@@ -582,7 +593,7 @@ class GitGui(QWidget):
                 self.branch_selector, self.checkout_button, self.changes_list_widget,
                 self.diff_viewer, self.commit_message_input, self.stage_selected_button,
                 self.unstage_selected_button, self.stage_all_button, self.commit_button,
-                self.unstage_all_button, self.track_all_untracked_button
+                self.unstage_all_button, self.track_all_untracked_button, self.git_push_button
         ):
             widget.setEnabled(enabled)
 
@@ -654,6 +665,60 @@ class GitGui(QWidget):
 
         except GitCommandError as e:
             QMessageBox.critical(self, "Clone Error", str(e))
+
+    # ===== GitHub =====
+
+    def on_push_to_github(self):
+        if not self.current_repo:
+            QMessageBox.warning(self, "Warning", "No repository opened.")
+            return
+        try:
+            origin = self.current_repo.remote(name="origin")
+            result = origin.push()
+            msg = "\n".join(str(r) for r in result)
+            QMessageBox.information(self, "Push Result", f"Pushed to origin:\n{msg}")
+        except Exception as e:
+            QMessageBox.critical(self, "Track Untracked Error", str(e))
+
+    def get_unpushed_commit_count(self, remote_name: str = "origin") -> dict:
+        try:
+            repo = self.current_repo
+            if repo is None:
+                return {"ahead": 0, "behind": 0, "error": "No repo loaded"}
+            if repo.bare:
+                return {"ahead": 0, "behind": 0, "error": "Repository is bare"}
+            if repo.head.is_detached:
+                return {"ahead": 0, "behind": 0, "error": "HEAD is detached"}
+
+            branch = repo.active_branch
+            remote = repo.remote(remote_name)
+            remote.fetch()
+
+            upstream_ref = f"{remote_name}/{branch.name}"
+            if upstream_ref not in repo.refs:
+                return {"ahead": 0, "behind": 0, "error": f"No upstream branch for {branch.name}"}
+
+            ahead_commits = list(repo.iter_commits(f"{upstream_ref}..{branch.name}"))
+            behind_commits = list(repo.iter_commits(f"{branch.name}..{upstream_ref}"))
+
+            return {"ahead": len(ahead_commits), "behind": len(behind_commits), "error": None}
+
+        except GitCommandError as e:
+            return {"ahead": 0, "behind": 0, "error": f"Git error: {e}"}
+        except Exception as e:
+            return {"ahead": 0, "behind": 0, "error": str(e)}
+
+    def update_commit_status(self):
+        result = self.get_unpushed_commit_count()
+        if result["error"]:
+            self.commit_status_label.setText(f"Error: {result['error']}")
+        else:
+            self.commit_status_label.setText(
+                f"Ahead (push): {result['ahead']} | Behind (pull): {result['behind']}"
+            )
+
+
+    # ===== Theme =====
 
     def apply_light_theme(self):
         """

@@ -9,7 +9,7 @@ from PySide6.QtWidgets import QFileDialog
 from frontengine import FrontEngineMainUI
 
 from je_editor.pyside_ui.git_ui.code_diff_compare.code_diff_viewer_widget import DiffViewerWidget
-from je_editor.pyside_ui.browser.browser_widget import BrowserWidget
+from je_editor.pyside_ui.browser.main_browser_widget import MainBrowserWidget
 from je_editor.pyside_ui.code.variable_inspector.inspector_gui import VariableInspector
 from je_editor.pyside_ui.git_ui.git_client.git_branch_tree_widget import GitTreeViewGUI
 from je_editor.pyside_ui.git_ui.git_client.git_client_gui import GitGui
@@ -37,13 +37,6 @@ def set_dock_menu(ui_we_want_to_set: EditorMain) -> None:
         lambda: add_dock_widget(ui_we_want_to_set)
     )
     ui_we_want_to_set.dock_menu.addAction(ui_we_want_to_set.dock_menu.new_dock_browser_action)
-    # Stackoverflow
-    ui_we_want_to_set.dock_menu.new_dock_stackoverflow_action = QAction(
-        language_wrapper.language_word_dict.get("dock_stackoverflow_label"))
-    ui_we_want_to_set.dock_menu.new_dock_stackoverflow_action.triggered.connect(
-        lambda: add_dock_widget(ui_we_want_to_set, "stackoverflow")
-    )
-    ui_we_want_to_set.dock_menu.addAction(ui_we_want_to_set.dock_menu.new_dock_stackoverflow_action)
     # Editor
     ui_we_want_to_set.dock_menu.new_tab_dock_editor_action = QAction(
         language_wrapper.language_word_dict.get("dock_editor_label"))
@@ -114,11 +107,7 @@ def add_dock_widget(ui_we_want_to_set: EditorMain, widget_type: str = None):
                         f"widget_type: {widget_type}")
     # Dock widget
     dock_widget = DestroyDock()
-    if widget_type == "stackoverflow":
-        dock_widget.setWindowTitle("stackoverflow")
-        dock_widget.setWidget(BrowserWidget(
-            start_url="https://stackoverflow.com/", search_prefix="https://stackoverflow.com/search?q="))
-    elif widget_type == "editor":
+    if widget_type == "editor":
         file_path = QFileDialog().getOpenFileName(
             parent=ui_we_want_to_set,
             dir=str(Path.cwd())
@@ -157,6 +146,6 @@ def add_dock_widget(ui_we_want_to_set: EditorMain, widget_type: str = None):
         dock_widget.setWidget(DiffViewerWidget())
     else:
         dock_widget.setWindowTitle(language_wrapper.language_word_dict.get("dock_browser_title"))
-        dock_widget.setWidget(BrowserWidget())
+        dock_widget.setWidget(MainBrowserWidget())
     if dock_widget.widget() is not None:
         ui_we_want_to_set.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, dock_widget)
