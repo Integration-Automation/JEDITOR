@@ -27,15 +27,15 @@ class CommitGraph:
         """
         self.nodes = [
             CommitNode(
-                commit_sha=c["sha"],
-                author_name=c["author"],
-                commit_date=c["date"],
-                commit_message=c["message"],
-                parent_shas=c["parents"],
+                commit_sha=commit["sha"],
+                author_name=commit["author"],
+                commit_date=commit["date"],
+                commit_message=commit["message"],
+                parent_shas=commit["parents"],
             )
-            for c in commits
+            for commit in commits
         ]
-        self.index = {n.commit_sha: i for i, n in enumerate(self.nodes)}
+        self.index = {node.commit_sha: index for index, node in enumerate(self.nodes)}
         self._assign_lanes()
 
     def _assign_lanes(self) -> None:

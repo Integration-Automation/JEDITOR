@@ -5,9 +5,7 @@ from PySide6.QtCore import QThread, Signal
 from git import Repo, GitCommandError, InvalidGitRepositoryError, NoSuchPathError
 
 
-# -----------------------
 # Simple audit logger
-# -----------------------
 def audit_log(repo_path: str, action: str, detail: str, ok: bool, err: str = ""):
     """
     Append an audit log entry to 'audit.log' in the repo directory.
@@ -22,9 +20,7 @@ def audit_log(repo_path: str, action: str, detail: str, ok: bool, err: str = "")
         pass  # Never let audit logging failure break the UI
 
 
-# -----------------------
 # Git service layer
-# -----------------------
 class GitService:
     """
     Encapsulates Git operations using GitPython.
@@ -157,9 +153,7 @@ class GitService:
 NULL_TREE = "4b825dc642cb6eb9a060e54bf8d69288fbee4904"
 
 
-# -----------------------
 # Worker thread wrapper
-# -----------------------
 class GitWorker(QThread):
     """
     Runs a function in a separate thread to avoid blocking the UI.

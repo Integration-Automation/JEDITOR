@@ -34,10 +34,10 @@ class DiffViewerWidget(QWidget):
 
         # === View → Theme switching (exclusive) / 主題切換（單選模式） ===
         theme_group = QActionGroup(self)
-        theme_group.setExclusive(True)  # 確保只能選擇一個主題
+        theme_group.setExclusive(True)  # 確保只能選擇一個主題 / ensure only one theme can be selected
 
-        dark_action = QAction("Dark Mode", self, checkable=True)  # 深色模式
-        light_action = QAction("Light Mode", self, checkable=True)  # 淺色模式
+        dark_action = QAction("Dark Mode", self, checkable=True)  # 深色模式 / dark mode
+        light_action = QAction("Light Mode", self, checkable=True)  # 淺色模式 / light mode
 
         theme_group.addAction(dark_action)
         theme_group.addAction(light_action)
@@ -55,8 +55,8 @@ class DiffViewerWidget(QWidget):
 
         # === Layout / 版面配置 ===
         layout = QVBoxLayout(self)
-        layout.setMenuBar(self.menubar)  # 把選單列放在上方
-        layout.addWidget(self.viewer)  # 把差異檢視器放在主要區域
+        layout.setMenuBar(self.menubar)  # 把選單列放在上方 / put menu bar at the top
+        layout.addWidget(self.viewer)  # 把差異檢視器放在主要區域 / add diff viewer in main area
 
     def open_repo(self):
         """
@@ -67,16 +67,16 @@ class DiffViewerWidget(QWidget):
         if not path:
             return
         try:
-            repo = Repo(path)  # 嘗試載入 Git 專案
-            diff_text = repo.git.diff()  # 取得差異文字
+            repo = Repo(path)  # 嘗試載入 Git 專案 / try to load Git repo
+            diff_text = repo.git.diff()  # 取得差異文字 / get diff text
             if not diff_text.strip():
-                # 如果沒有差異，顯示提示訊息
+                # 如果沒有差異，顯示提示訊息 / show info if no changes
                 QMessageBox.information(self, "Info", "No changes in repo.")
             else:
-                # 如果有差異，顯示在 viewer 中
+                # 如果有差異，顯示在 viewer 中 / show diff in viewer
                 self.viewer.set_diff_text(diff_text)
         except Exception as e:
-            # 如果開啟失敗，顯示錯誤訊息
+            # 如果開啟失敗，顯示錯誤訊息 / show error if failed
             QMessageBox.critical(self, "Error", f"Failed to open repo:\n{e}")
 
     def set_theme(self, mode: str):

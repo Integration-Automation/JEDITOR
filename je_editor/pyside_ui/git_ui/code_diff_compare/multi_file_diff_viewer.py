@@ -32,7 +32,7 @@ class MultiFileDiffViewer(QWidget):
         self.tabs.clear()
         file_diffs = self._split_by_file(diff_text)
         for file_name, ftext in file_diffs:
-            viewer = SideBySideDiffWidget()   # 每個檔案使用 side-by-side viewer
+            viewer = SideBySideDiffWidget()  # 每個檔案使用 side-by-side viewer
             viewer.set_diff_text(ftext)
             self.tabs.addTab(viewer, file_name)  # 新增分頁，標題為檔名
 
