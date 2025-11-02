@@ -160,6 +160,8 @@ def detect_venv() -> bool:
         message_box.setText(language_wrapper.language_word_dict.get("python_env_menu_please_create_venv"))
         message_box.exec()
         return False
+    else:
+        return True
 
 # pip 安裝或更新套件
 # pip install or update package
@@ -198,8 +200,6 @@ def pip_install_package(ui_we_want_to_set: EditorMain) -> None:
     widget = ui_we_want_to_set.tab_widget.currentWidget()
     if isinstance(widget, EditorWidget):
         widget.python_compiler = ui_we_want_to_set.python_compiler
-        # ⚠️ 同樣需要加上 () 呼叫 detect_venv
-        # ⚠️ Same here: should be detect_venv()
         if detect_venv():
             # 彈出輸入框，讓使用者輸入要安裝的套件名稱
             # Ask user to input package name

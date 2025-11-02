@@ -142,4 +142,5 @@ class ChatUI(QWidget):
 
     # 開啟 AI 設定對話框 / Open AI config dialog
     def set_ai_config(self):
-        self.set_ai_config
+        self.set_ai_config_dialog = SetAIDialog()
+        self.set_ai_config_dialog.show()
