@@ -1,9 +1,11 @@
 from __future__ import annotations
-# 啟用未來註解功能，允許型別提示使用字串前向參照
-# Enable future annotations, allowing forward references in type hints
 
 from typing import TYPE_CHECKING
+
 from je_editor.utils.logging.loggin_instance import jeditor_logger
+
+# 啟用未來註解功能，允許型別提示使用字串前向參照
+# Enable future annotations, allowing forward references in type hints
 
 if TYPE_CHECKING:
     from je_editor.pyside_ui.main_ui.main_editor import EditorMain

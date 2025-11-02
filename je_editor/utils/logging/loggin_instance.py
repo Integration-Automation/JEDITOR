@@ -40,8 +40,8 @@ class JEditorLoggingHandler(RotatingFileHandler):
         :param backupCount: 保留的備份檔案數量 / number of backup files to keep
         """
         super().__init__(filename=filename, mode=mode, maxBytes=maxBytes, backupCount=backupCount)
-        self.formatter = formatter   # 設定日誌格式 / set log formatter
-        self.setLevel(logging.DEBUG) # 設定 handler 層級為 DEBUG / set handler level to DEBUG
+        self.formatter = formatter  # 設定日誌格式 / set log formatter
+        self.setLevel(logging.DEBUG)  # 設定 handler 層級為 DEBUG / set handler level to DEBUG
 
     def emit(self, record: logging.LogRecord) -> None:
         """

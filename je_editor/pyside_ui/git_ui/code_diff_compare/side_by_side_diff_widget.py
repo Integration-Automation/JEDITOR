@@ -182,21 +182,35 @@ class SideBySideDiffWidget(QWidget):
 
         for raw in diff_text.splitlines():
             if raw.startswith("diff "):
-                add_left(raw, "HDR"); add_right(raw, "HDR"); align()
+                add_left(raw, "HDR");
+                add_right(raw, "HDR");
+                align()
             elif raw.startswith("--- "):
                 left_name = raw[4:].strip()
-                add_left(raw, "HDR"); add_right("", "HDR"); align()
+                add_left(raw, "HDR");
+                add_right("", "HDR");
+                align()
             elif raw.startswith("+++ "):
                 right_name = raw[4:].strip()
-                add_left("", "HDR"); add_right(raw, "HDR"); align()
+                add_left("", "HDR");
+                add_right(raw, "HDR");
+                align()
             elif raw.startswith("@@"):
-                add_left(raw, "HUNK"); add_right(raw, "HUNK"); align()
+                add_left(raw, "HUNK");
+                add_right(raw, "HUNK");
+                align()
             elif raw.startswith("-"):
-                add_left(raw, "DEL"); add_right("", None); align()
+                add_left(raw, "DEL");
+                add_right("", None);
+                align()
             elif raw.startswith("+"):
-                add_left("", None); add_right(raw, "ADD"); align()
+                add_left("", None);
+                add_right(raw, "ADD");
+                align()
             else:
-                add_left(raw, None); add_right(raw, None); align()
+                add_left(raw, None);
+                add_right(raw, None);
+                align()
 
         return left_lines, right_lines, left_marks, right_marks, left_name, right_name
 
@@ -268,4 +282,3 @@ class SideBySideDiffWidget(QWidget):
         self._reapply_highlights_for_theme()
         self.leftEdit.apply_theme_to_editor(dark=self.is_dark)
         self.rightEdit.apply_theme_to_editor(dark=self.is_dark)
-

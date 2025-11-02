@@ -1,24 +1,24 @@
 from __future__ import annotations
-# 啟用未來註解功能，允許型別提示使用字串前向參照
-# Enable future annotations, allowing forward references in type hints
 
 from typing import TYPE_CHECKING
-# TYPE_CHECKING 用於避免在執行時載入不必要的模組
-# TYPE_CHECKING prevents unnecessary imports at runtime
 
 from PySide6.QtGui import QAction
-# 匯入 QAction，用於建立選單動作
-# Import QAction for creating menu actions
 
 from je_editor.pyside_ui.main_ui.editor.editor_widget import EditorWidget
+from je_editor.pyside_ui.main_ui.save_settings.user_setting_file import user_setting_dict
+from je_editor.utils.logging.loggin_instance import jeditor_logger
+
+# 啟用未來註解功能，允許型別提示使用字串前向參照
+# Enable future annotations, allowing forward references in type hints
+# TYPE_CHECKING 用於避免在執行時載入不必要的模組
+# TYPE_CHECKING prevents unnecessary imports at runtime
+# 匯入 QAction，用於建立選單動作
+# Import QAction for creating menu actions
 # 匯入編輯器元件
 # Import the Editor widget
-
-from je_editor.pyside_ui.main_ui.save_settings.user_setting_file import user_setting_dict
 # 匯入使用者設定字典，用於儲存字型與字體大小
 # Import user setting dictionary to save font and size
 
-from je_editor.utils.logging.loggin_instance import jeditor_logger
 # 匯入日誌工具
 # Import logger
 
@@ -28,6 +28,8 @@ if TYPE_CHECKING:
     # Import EditorMain only for type checking
 
 from je_editor.utils.multi_language.multi_language_wrapper import language_wrapper
+
+
 # 匯入多語言包裝器，用於多語系 UI
 # Import language wrapper for multilingual UI
 

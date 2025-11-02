@@ -9,7 +9,6 @@ from PySide6.QtWidgets import QMessageBox
 # 匯入日誌紀錄器
 # Import logger instance
 from je_editor.utils.logging.loggin_instance import jeditor_logger
-
 # 匯入多語言包裝器，用於多語言顯示
 # Import multi-language wrapper for UI localization
 from je_editor.utils.multi_language.multi_language_wrapper import language_wrapper

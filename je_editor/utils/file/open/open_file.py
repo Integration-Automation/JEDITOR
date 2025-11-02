@@ -1,4 +1,3 @@
-import typing
 from pathlib import Path
 from threading import Lock
 

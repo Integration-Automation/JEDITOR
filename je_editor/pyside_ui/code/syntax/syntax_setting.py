@@ -9,8 +9,8 @@ syntax_rule_setting_dict: dict = {
         # 數字規則 (整數、十六進位、小數/科學記號)
         # Number rules (integer, hex, float/scientific notation)
         "rules": (
-            r"\b[+-]?[0-9]+[lL]?\b",                       # 整數 integer
-            r"\b[+-]?0[xX][0-9A-Fa-f]+[lL]?\b",            # 十六進位 hex
+            r"\b[+-]?[0-9]+[lL]?\b",  # 整數 integer
+            r"\b[+-]?0[xX][0-9A-Fa-f]+[lL]?\b",  # 十六進位 hex
             r"\b[+-]?[0-9]+(?:\.[0-9]+)?(?:[eE][+-]?[0-9]+)?\b"  # 浮點數/科學記號 float/scientific
         ),
         "color": QColor(0, 128, 255)  # 藍色 Blue

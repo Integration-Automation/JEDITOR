@@ -1,12 +1,12 @@
-# Rename to build dev version
-# This is dev version
+# Rename to build stable version
+# This is stable version
 [build-system]
-requires = ["setuptools"]
+requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "je_editor_dev"
-version = "0.0.247"
+name = "je_editor"
+version = "0.0.227"
 authors = [
     { name = "JE-Chen", email = "jechenmailman@gmail.com" },
 ]
@@ -23,8 +23,10 @@ classifiers = [
     "Environment :: Win32 (MS Windows)",
     "Environment :: MacOS X",
     "Environment :: X11 Applications",
+    "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent"
 ]
+
 
 [project.urls]
 Homepage = "https://github.com/JE-Chen/je_editor"
@@ -34,7 +36,6 @@ Code = "https://github.com/JE-Chen/je_editor"
 [project.readme]
 file = "README.md"
 content-type = "text/markdown"
-
 
 [tool.setuptools.packages]
 find = { namespaces = false }

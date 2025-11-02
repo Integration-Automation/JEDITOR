@@ -29,8 +29,8 @@ def read_json(json_file_path: str) -> Any | None:
     try:
         file_path = Path(json_file_path)
         if file_path.exists() and file_path.is_file():  # 確認檔案存在且為檔案 / Ensure file exists
-            with open(json_file_path) as read_file:     # 開啟檔案 (預設 UTF-8)
-                return json.loads(read_file.read())     # 載入 JSON 並回傳 / Load JSON and return
+            with open(json_file_path) as read_file:  # 開啟檔案 (預設 UTF-8)
+                return json.loads(read_file.read())  # 載入 JSON 並回傳 / Load JSON and return
     except JEditorJsonException:
         # 捕捉自訂例外並重新拋出
         # Catch custom exception and re-raise

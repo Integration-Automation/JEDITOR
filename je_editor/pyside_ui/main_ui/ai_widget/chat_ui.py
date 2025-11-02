@@ -54,7 +54,8 @@ class ChatUI(QWidget):
         self.set_ai_config_button.clicked.connect(self.set_ai_config)  # 開啟 AI 設定視窗 / Open AI config dialog
 
         self.load_ai_config_button = QPushButton(language_wrapper.language_word_dict.get("chat_ui_load_ai_button"))
-        self.load_ai_config_button.clicked.connect(lambda: self.load_ai_config(show_load_complete=True))  # 載入設定 / Load config
+        self.load_ai_config_button.clicked.connect(
+            lambda: self.load_ai_config(show_load_complete=True))  # 載入設定 / Load config
 
         self.call_ai_model_button = QPushButton(language_wrapper.language_word_dict.get("chat_ui_call_ai_model_button"))
         self.call_ai_model_button.clicked.connect(self.call_ai_model)  # 呼叫 AI / Call AI

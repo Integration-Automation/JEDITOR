@@ -9,7 +9,6 @@ from typing import TYPE_CHECKING
 # 匯入內建瀏覽器元件，用於在程式內開啟網頁
 # Import embedded browser widget for opening web pages inside the app
 from je_editor.pyside_ui.browser.main_browser_widget import MainBrowserWidget
-
 # 匯入日誌紀錄器
 # Import logger instance
 from je_editor.utils.logging.loggin_instance import jeditor_logger

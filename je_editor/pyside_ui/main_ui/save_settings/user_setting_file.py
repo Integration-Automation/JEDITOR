@@ -2,14 +2,14 @@ from os import getcwd
 from pathlib import Path
 
 from je_editor.pyside_ui.main_ui.save_settings.setting_utils import write_setting
+from je_editor.utils.json.json_file import read_json
+from je_editor.utils.logging.loggin_instance import jeditor_logger
+
 # 匯入通用的設定寫入工具
 # Import utility function to write settings
-
-from je_editor.utils.json.json_file import read_json
 # 匯入 JSON 讀取工具
 # Import JSON reader utility
 
-from je_editor.utils.logging.loggin_instance import jeditor_logger
 # 匯入日誌工具
 # Import logger
 
@@ -17,16 +17,16 @@ from je_editor.utils.logging.loggin_instance import jeditor_logger
 # 使用者設定字典，包含 UI 與編輯器的偏好
 # User settings dictionary, storing UI and editor preferences
 user_setting_dict = {
-    "ui_font": "Lato",              # UI 字型 / UI font
-    "ui_font_size": 12,             # UI 字體大小 / UI font size
-    "language": "English",          # 語言設定 / Language setting
-    "ui_style": "dark_amber.xml",   # UI 樣式檔 / UI style file
-    "font": "Lato",                 # 編輯器字型 / Editor font
-    "font_size": 12,                # 編輯器字體大小 / Editor font size
-    "encoding": "utf-8",            # 檔案編碼 / File encoding
-    "last_file": None,              # 上次開啟的檔案 / Last opened file
-    "python_compiler": None,        # Python 編譯器路徑 / Python compiler path
-    "max_line_of_output": 200000,   # 最大輸出行數限制 / Max lines of output
+    "ui_font": "Lato",  # UI 字型 / UI font
+    "ui_font_size": 12,  # UI 字體大小 / UI font size
+    "language": "English",  # 語言設定 / Language setting
+    "ui_style": "dark_amber.xml",  # UI 樣式檔 / UI style file
+    "font": "Lato",  # 編輯器字型 / Editor font
+    "font_size": 12,  # 編輯器字體大小 / Editor font size
+    "encoding": "utf-8",  # 檔案編碼 / File encoding
+    "last_file": None,  # 上次開啟的檔案 / Last opened file
+    "python_compiler": None,  # Python 編譯器路徑 / Python compiler path
+    "max_line_of_output": 200000,  # 最大輸出行數限制 / Max lines of output
 }
 
 

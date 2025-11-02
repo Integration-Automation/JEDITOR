@@ -46,7 +46,6 @@ class BrowserView(QWebEngineView):
 
         self.main_widget = main_widget
 
-
     def download_file(self, download_instance: QWebEngineDownloadRequest):
         """
         Handle a new download request.

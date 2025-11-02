@@ -1,4 +1,5 @@
 import tokenize
+
 import pycodestyle
 
 from je_editor.utils.logging.loggin_instance import jeditor_logger
@@ -123,7 +124,7 @@ class PEP8FormatChecker(pycodestyle.Checker):
         # If tokens remain, check the last line
         if self.tokens:
             self.check_physical(self.lines[-1])  # 檢查物理行 / Check physical line
-            self.check_logical()                 # 檢查邏輯行 / Check logical line
+            self.check_logical()  # 檢查邏輯行 / Check logical line
 
         # 回傳檔案檢查結果 / Return file check results
         return self.report.get_file_results()

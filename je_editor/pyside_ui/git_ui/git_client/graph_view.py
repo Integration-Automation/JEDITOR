@@ -15,15 +15,15 @@ from je_editor.git_client.commit_graph import CommitGraph
 from je_editor.utils.multi_language.multi_language_wrapper import language_wrapper
 
 # === 版面配置常數 / Layout constants ===
-NODE_RADIUS = 6       # 節點半徑 / node radius
-ROW_HEIGHT = 28       # 每一列高度 / row height
-LANE_WIDTH = 22       # 每一條 lane 的寬度 / lane width
-LEFT_MARGIN = 220     # 左側 SHA/訊息文字區域保留空間 / left margin for SHA/message text
+NODE_RADIUS = 6  # 節點半徑 / node radius
+ROW_HEIGHT = 28  # 每一列高度 / row height
+LANE_WIDTH = 22  # 每一條 lane 的寬度 / lane width
+LEFT_MARGIN = 220  # 左側 SHA/訊息文字區域保留空間 / left margin for SHA/message text
 
 # === 顏色設定 / Colors ===
-EDGE_COLOR = QColor("#888")     # 邊線顏色 / edge color
-TEXT_COLOR = QColor("#222")     # 文字顏色 / text color
-BG_COLOR = QColor("#ffffff")    # 背景顏色 / background color
+EDGE_COLOR = QColor("#888")  # 邊線顏色 / edge color
+TEXT_COLOR = QColor("#222")  # 文字顏色 / text color
+BG_COLOR = QColor("#ffffff")  # 背景顏色 / background color
 
 # Lane 顏色調色盤 / Lane color palette
 LANE_COLORS = [

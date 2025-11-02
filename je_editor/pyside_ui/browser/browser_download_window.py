@@ -39,9 +39,9 @@ class BrowserDownloadWindow(QWidget):
         self.download_instance = download_instance
 
         # 綁定下載事件到對應的處理函式
-        self.download_instance.isFinishedChanged.connect(self.print_finish)      # 當下載完成時
+        self.download_instance.isFinishedChanged.connect(self.print_finish)  # 當下載完成時
         self.download_instance.interruptReasonChanged.connect(self.print_interrupt)  # 當下載被中斷時
-        self.download_instance.stateChanged.connect(self.print_state)            # 當下載狀態改變時
+        self.download_instance.stateChanged.connect(self.print_state)  # 當下載狀態改變時
 
         # 接受下載請求，開始下載
         self.download_instance.accept()

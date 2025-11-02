@@ -1,12 +1,15 @@
 from __future__ import annotations  # 允許未來版本的型別註解功能 / Enable postponed evaluation of type annotations
 
-from typing import TYPE_CHECKING  # 用於避免循環匯入，僅在型別檢查時載入 / Used to avoid circular imports, only loaded during type checking
+from typing import \
+    TYPE_CHECKING  # 用於避免循環匯入，僅在型別檢查時載入 / Used to avoid circular imports, only loaded during type checking
 
 from PySide6.QtCore import Qt  # Qt 核心模組 / Qt core module
 from PySide6.QtWidgets import QWidget, QLineEdit, QBoxLayout, QPushButton, QHBoxLayout
-# 匯入 PySide6 的 GUI 元件 / Import GUI widgets from PySide6
 
 from je_editor.utils.logging.loggin_instance import jeditor_logger
+
+# 匯入 PySide6 的 GUI 元件 / Import GUI widgets from PySide6
+
 # 專案內的日誌紀錄器 / Project's logger instance
 
 if TYPE_CHECKING:
@@ -14,6 +17,8 @@ if TYPE_CHECKING:
     # 僅在型別檢查時匯入 EditorWidget，避免循環依賴 / Import only for type checking to avoid circular dependency
 
 from je_editor.utils.multi_language.multi_language_wrapper import language_wrapper
+
+
 # 多語系支援工具 / Multi-language wrapper for UI text
 
 

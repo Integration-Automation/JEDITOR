@@ -170,6 +170,7 @@ def add_frontengine_tab(ui_we_want_to_set: EditorMain):
         f"{language_wrapper.language_word_dict.get('tab_menu_frontengine_tab_name')} "
         f"{ui_we_want_to_set.tab_widget.count()}")
 
+
 def add_web_tab(ui_we_want_to_set: EditorMain):
     # 紀錄日誌：新增 Web 分頁
     # Log: add a Web tab

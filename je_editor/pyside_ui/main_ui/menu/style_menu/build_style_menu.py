@@ -9,7 +9,6 @@ from PySide6.QtGui import QAction
 # 匯入使用者設定字典，用來保存 UI 樣式設定
 # Import user settings dictionary for saving UI style preferences
 from je_editor.pyside_ui.main_ui.save_settings.user_setting_file import user_setting_dict
-
 # 匯入日誌紀錄器
 # Import logger instance
 from je_editor.utils.logging.loggin_instance import jeditor_logger

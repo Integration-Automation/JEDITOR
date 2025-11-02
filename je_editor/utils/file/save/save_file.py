@@ -32,8 +32,8 @@ def write_file(file_path: str, content: str) -> None:
                         f"file_path: {file_path} "
                         f"content: {content}")
 
-    lock = Lock()          # 建立一個執行緒鎖 / Create a thread lock
-    content = str(content) # 確保內容為字串 / Ensure content is a string
+    lock = Lock()  # 建立一個執行緒鎖 / Create a thread lock
+    content = str(content)  # 確保內容為字串 / Ensure content is a string
 
     try:
         lock.acquire()  # 嘗試鎖定資源 / Acquire the lock

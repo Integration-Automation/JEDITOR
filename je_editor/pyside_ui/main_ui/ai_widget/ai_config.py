@@ -17,10 +17,10 @@ class AIConfig(object):
         # 結構: { "AI_model": { "ai_base_url": ..., "ai_api_key": ..., "chat_model": ..., "prompt_template": ... } }
         self.choosable_ai: dict[str, dict[str, str]] = {
             "AI_model": {
-                "ai_base_url": "",       # AI 服務的基礎 URL / Base URL of AI service
-                "ai_api_key": "",        # API 金鑰 / API key
-                "chat_model": "",        # 模型名稱 / Model name
-                "prompt_template": "",   # 提示詞模板 / Prompt template
+                "ai_base_url": "",  # AI 服務的基礎 URL / Base URL of AI service
+                "ai_api_key": "",  # API 金鑰 / API key
+                "chat_model": "",  # 模型名稱 / Model name
+                "prompt_template": "",  # 提示詞模板 / Prompt template
             }
         }
 

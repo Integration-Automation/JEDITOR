@@ -10,11 +10,9 @@ from typing import TYPE_CHECKING
 # Import EditorWidget and ProcessInput
 from je_editor.pyside_ui.main_ui.editor.editor_widget import EditorWidget
 from je_editor.pyside_ui.main_ui.editor.process_input import ProcessInput
-
 # 匯入工具函式：顯示「請先關閉目前執行中的程式」訊息框
 # Import utility: show message box if a program is already running
 from je_editor.pyside_ui.main_ui.menu.run_menu.under_run_menu.utils import please_close_current_running_messagebox
-
 # 匯入日誌紀錄器
 # Import logger instance
 from je_editor.utils.logging.loggin_instance import jeditor_logger

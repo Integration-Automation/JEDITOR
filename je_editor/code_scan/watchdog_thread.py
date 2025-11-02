@@ -1,6 +1,6 @@
+import sys
 import threading
 import time
-import sys
 from pathlib import Path
 
 from watchdog.observers import Observer

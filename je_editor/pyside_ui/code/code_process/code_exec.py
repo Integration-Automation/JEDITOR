@@ -1,5 +1,4 @@
 from __future__ import annotations  # 支援延遲型別註解 (Python 3.7+)
-# Support postponed evaluation of type annotations
 
 import queue  # 佇列，用於執行緒間傳遞訊息
 import subprocess  # 建立與管理子程序 (執行外部程式)
@@ -20,6 +19,9 @@ from je_editor.utils.exception.exception_tags import je_editor_init_error
 from je_editor.utils.exception.exceptions import JEditorException
 from je_editor.utils.logging.loggin_instance import jeditor_logger
 from je_editor.utils.venv_check.check_venv import check_and_choose_venv
+
+
+# Support postponed evaluation of type annotations
 
 
 class ExecManager(object):

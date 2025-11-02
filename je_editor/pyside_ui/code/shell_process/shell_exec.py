@@ -43,20 +43,20 @@ class ShellManager(object):
         :param program_buffer: 緩衝區大小 / buffer size
         """
         self.read_program_error_output_from_thread = None  # 錯誤輸出讀取執行緒 / thread for reading stderr
-        self.read_program_output_from_thread = None        # 標準輸出讀取執行緒 / thread for reading stdout
-        self.main_window: EditorWidget = main_window       # 主視窗 / main window
-        self.compiler_path = None                          # Python 編譯器路徑 / Python compiler path
-        self.code_result: Union[QTextEdit, None] = None    # 顯示輸出結果的文字框 / QTextEdit for displaying results
-        self.timer: Union[QTimer, None] = None             # 定時器 / QTimer for periodic updates
-        self.still_run_shell: bool = True                  # 是否仍在執行 / flag for running state
-        self.process = None                                # 子程序物件 / subprocess object
-        self.run_output_queue: queue.Queue = queue.Queue() # 標準輸出佇列 / stdout queue
+        self.read_program_output_from_thread = None  # 標準輸出讀取執行緒 / thread for reading stdout
+        self.main_window: EditorWidget = main_window  # 主視窗 / main window
+        self.compiler_path = None  # Python 編譯器路徑 / Python compiler path
+        self.code_result: Union[QTextEdit, None] = None  # 顯示輸出結果的文字框 / QTextEdit for displaying results
+        self.timer: Union[QTimer, None] = None  # 定時器 / QTimer for periodic updates
+        self.still_run_shell: bool = True  # 是否仍在執行 / flag for running state
+        self.process = None  # 子程序物件 / subprocess object
+        self.run_output_queue: queue.Queue = queue.Queue()  # 標準輸出佇列 / stdout queue
         self.run_error_queue: queue.Queue = queue.Queue()  # 錯誤輸出佇列 / stderr queue
-        self.program_encoding: str = shell_encoding        # 編碼設定 / encoding setting
-        self.program_buffer: int = program_buffer          # 緩衝區大小 / buffer size
-        self.after_done_function = after_done_function     # 完成後的回呼函數 / callback after done
-        self.renew_path()                                  # 更新 Python 執行路徑 / renew Python path
-        run_instance_manager.instance_list.append(self)    # 註冊到執行管理器 / register instance
+        self.program_encoding: str = shell_encoding  # 編碼設定 / encoding setting
+        self.program_buffer: int = program_buffer  # 緩衝區大小 / buffer size
+        self.after_done_function = after_done_function  # 完成後的回呼函數 / callback after done
+        self.renew_path()  # 更新 Python 執行路徑 / renew Python path
+        run_instance_manager.instance_list.append(self)  # 註冊到執行管理器 / register instance
 
     def renew_path(self) -> None:
         # 更新 Python 編譯器路徑
@@ -173,6 +173,7 @@ class ShellManager(object):
         if self.still_run_shell:
             # 持續檢查程序狀態 / keep polling process
             self.process.poll()
+
     def process_run_over(self):
         # 當子程序結束時呼叫，停止計時器並清理資源
         # Called when subprocess finishes, stop timer and clean up resources

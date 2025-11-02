@@ -49,11 +49,11 @@ class CommitTable(QTableView):
         # Iterate over commits and append rows
         for index, commit in enumerate(commits, start=1):
             row = [
-                QStandardItem(str(index)),          # 行號 / row number
-                QStandardItem(commit["sha"][:7]),      # SHA 短碼 / short SHA
-                QStandardItem(commit["message"]),      # 提交訊息 / commit message
-                QStandardItem(commit["author"]),       # 作者 / author
-                QStandardItem(commit["date"]),         # 日期 / date
+                QStandardItem(str(index)),  # 行號 / row number
+                QStandardItem(commit["sha"][:7]),  # SHA 短碼 / short SHA
+                QStandardItem(commit["message"]),  # 提交訊息 / commit message
+                QStandardItem(commit["author"]),  # 作者 / author
+                QStandardItem(commit["date"]),  # 日期 / date
             ]
             # 設定每個欄位不可編輯
             # Make each item non-editable

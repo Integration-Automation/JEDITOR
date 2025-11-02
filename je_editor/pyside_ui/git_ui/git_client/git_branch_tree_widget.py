@@ -51,8 +51,8 @@ class GitTreeViewGUI(QWidget):
 
         # === 分割器 (左：圖形檢視 / 右：提交表格) ===
         splitter = QSplitter(Qt.Orientation.Horizontal)
-        self.graph_view = CommitGraphView()   # 提交圖形檢視器 / commit graph view
-        self.commit_table = CommitTable()     # 提交表格 / commit table
+        self.graph_view = CommitGraphView()  # 提交圖形檢視器 / commit graph view
+        self.commit_table = CommitTable()  # 提交表格 / commit table
         splitter.addWidget(self.graph_view)
         splitter.addWidget(self.commit_table)
         splitter.setSizes([600, 400])  # 左右比例 / left-right ratio
@@ -145,12 +145,12 @@ class GitTreeViewGUI(QWidget):
         if not self.git:
             return
         try:
-            refs = self.git.get_all_refs()                  # 取得所有 refs
-            commits = self.git.get_commits(max_count=500)   # 取得最近 500 筆提交
+            refs = self.git.get_all_refs()  # 取得所有 refs
+            commits = self.git.get_commits(max_count=500)  # 取得最近 500 筆提交
             graph = CommitGraph()
-            graph.build(commits, refs)                      # 建立提交圖
-            self.graph_view.set_graph(graph)                # 更新圖形檢視
-            self.commit_table.set_commits(commits)          # 更新提交表格
+            graph.build(commits, refs)  # 建立提交圖
+            self.graph_view.set_graph(graph)  # 更新圖形檢視
+            self.commit_table.set_commits(commits)  # 更新提交表格
         except Exception as e:
             QMessageBox.critical(self, self.language_wrapper_get("git_graph_title"),
                                  f"{self.language_wrapper_get('git_graph_error_exec_failed')}\n{e}")

@@ -30,7 +30,7 @@ class MainBrowserWidget(QWidget):
         # 預設第一個分頁 (Google)
         # Default first tab (Google)
         self.add_browser_tab(
-            BrowserWidget(start_url=start_url, search_prefix=search_prefix),"Google"
+            BrowserWidget(start_url=start_url, search_prefix=search_prefix), "Google"
         )
 
         # 固定一個「+」分頁

@@ -11,10 +11,11 @@ class VariableModel(QAbstractTableModel):
     變數模型：負責管理與顯示 Python 全域變數
     Variable model: manages and displays Python global variables
     """
+
     def __init__(self, parent=None):
         super().__init__(parent)
         self.variables = []  # 儲存變數資訊 [名稱, 型別, 值字串, 真實值]
-                            # Store variable info [name, type, repr(value), actual value]
+        # Store variable info [name, type, repr(value), actual value]
 
     def update_data(self):
         """
@@ -117,6 +118,7 @@ class VariableProxy(QSortFilterProxyModel):
     過濾代理模型：支援搜尋與編輯轉發
     Proxy model: supports filtering and forwards editing
     """
+
     def setData(self, index, value, role=Qt.ItemDataRole.EditRole):
         # 將編輯操作轉發到原始模型
         # Forward editing to source model
@@ -130,6 +132,7 @@ class VariableInspector(QWidget):
     變數檢視器：提供 GUI 介面顯示與搜尋全域變數
     Variable inspector: GUI interface to display and search global variables
     """
+
     def __init__(self):
         super().__init__()
         self.setWindowTitle(language_wrapper.language_word_dict.get("variable_inspector_title"))

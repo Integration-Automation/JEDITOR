@@ -9,17 +9,14 @@ from PySide6.QtWidgets import QMessageBox
 # 匯入執行中程序管理器，用於統一管理所有程式/除錯器/Shell 執行實例
 # Import run_instance_manager for managing all running processes
 from je_editor.pyside_ui.code.running_process_manager import run_instance_manager
-
 # 匯入編輯器元件
 # Import EditorWidget
 from je_editor.pyside_ui.main_ui.editor.editor_widget import EditorWidget
-
 # 匯入子選單建構函式 (Program / Debug / Shell)
 # Import submenu builders (Program / Debug / Shell)
 from je_editor.pyside_ui.main_ui.menu.run_menu.under_run_menu.build_debug_menu import set_debug_menu
 from je_editor.pyside_ui.main_ui.menu.run_menu.under_run_menu.build_program_menu import set_program_menu
 from je_editor.pyside_ui.main_ui.menu.run_menu.under_run_menu.build_shell_menu import set_shell_menu
-
 # 匯入日誌紀錄器
 # Import logger instance
 from je_editor.utils.logging.loggin_instance import jeditor_logger

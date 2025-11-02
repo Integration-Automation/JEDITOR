@@ -8,10 +8,10 @@ from PySide6.QtGui import QAction
 from PySide6.QtWidgets import QFileDialog
 from frontengine import FrontEngineMainUI  # 外部模組 FrontEngine 的主 UI / External FrontEngine main UI
 
-# 匯入專案內的各種 Dockable widget / Import various dockable widgets from project
-from je_editor.pyside_ui.git_ui.code_diff_compare.code_diff_viewer_widget import DiffViewerWidget
 from je_editor.pyside_ui.browser.main_browser_widget import MainBrowserWidget
 from je_editor.pyside_ui.code.variable_inspector.inspector_gui import VariableInspector
+# 匯入專案內的各種 Dockable widget / Import various dockable widgets from project
+from je_editor.pyside_ui.git_ui.code_diff_compare.code_diff_viewer_widget import DiffViewerWidget
 from je_editor.pyside_ui.git_ui.git_client.git_branch_tree_widget import GitTreeViewGUI
 from je_editor.pyside_ui.git_ui.git_client.git_client_gui import GitGui
 from je_editor.pyside_ui.main_ui.ai_widget.chat_ui import ChatUI
@@ -19,7 +19,6 @@ from je_editor.pyside_ui.main_ui.console_widget.console_gui import ConsoleWidget
 from je_editor.pyside_ui.main_ui.dock.destroy_dock import DestroyDock
 from je_editor.pyside_ui.main_ui.editor.editor_widget_dock import FullEditorWidget
 from je_editor.pyside_ui.main_ui.ipython_widget.rich_jupyter import IpythonWidget
-
 from je_editor.utils.file.open.open_file import read_file  # 檔案讀取工具 / File reading utility
 from je_editor.utils.logging.loggin_instance import jeditor_logger  # 日誌紀錄器 / Logger
 from je_editor.utils.multi_language.multi_language_wrapper import language_wrapper  # 多語系支援 / Multi-language wrapper

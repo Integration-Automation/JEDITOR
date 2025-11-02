@@ -6,18 +6,15 @@ from __future__ import annotations
 # For type checking only (avoids circular imports)
 from typing import TYPE_CHECKING
 
-# 匯入顏色設定，用於輸出訊息時的字體顏色
-# Import color settings for console/text output
-from je_editor.pyside_ui.main_ui.save_settings.user_color_setting_file import actually_color_dict
-
 # 匯入編輯器元件
 # Import EditorWidget
 from je_editor.pyside_ui.main_ui.editor.editor_widget import EditorWidget
-
+# 匯入顏色設定，用於輸出訊息時的字體顏色
+# Import color settings for console/text output
+from je_editor.pyside_ui.main_ui.save_settings.user_color_setting_file import actually_color_dict
 # 匯入使用者設定字典，用來保存 Python 解譯器與環境設定
 # Import user settings dictionary for saving Python interpreter and environment settings
 from je_editor.pyside_ui.main_ui.save_settings.user_setting_file import user_setting_dict
-
 # 匯入日誌紀錄器
 # Import logger instance
 from je_editor.utils.logging.loggin_instance import jeditor_logger
@@ -162,6 +159,7 @@ def detect_venv() -> bool:
         return False
     else:
         return True
+
 
 # pip 安裝或更新套件
 # pip install or update package

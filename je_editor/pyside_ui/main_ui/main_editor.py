@@ -7,13 +7,11 @@ from typing import Dict, Type
 # 匯入 Jedi 設定，用於 Python 自動補全與分析
 # Import Jedi settings for Python auto-completion and analysis
 import jedi.settings
-
 # 匯入 PySide6 (Qt for Python) 的核心模組
 # Import PySide6 core modules
 from PySide6.QtCore import QTimer, QEvent
 from PySide6.QtGui import QFontDatabase, QIcon, Qt, QTextCharFormat
 from PySide6.QtWidgets import QMainWindow, QWidget, QTabWidget
-
 # 匯入 Qt Material 主題工具
 # Import Qt Material style tools
 from qt_material import QtStyleTools

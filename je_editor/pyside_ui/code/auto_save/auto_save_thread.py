@@ -27,9 +27,9 @@ class CodeEditSaveThread(Thread):
         super().__init__()
         self.file: str = file_to_save
         self.editor: Union[None, CodeEditor] = editor
-        self.still_run: bool = True   # 控制執行緒是否繼續運行 / Flag to control thread loop
-        self.daemon = True            # 設定為守護執行緒，主程式結束時自動結束
-                                      # Set as daemon thread, ends with main program
+        self.still_run: bool = True  # 控制執行緒是否繼續運行 / Flag to control thread loop
+        self.daemon = True  # 設定為守護執行緒，主程式結束時自動結束
+        # Set as daemon thread, ends with main program
         self.skip_this_round: bool = False  # 是否跳過本次儲存 / Skip this save cycle
 
     def run(self) -> None:

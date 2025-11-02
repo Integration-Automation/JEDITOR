@@ -13,27 +13,21 @@ from PySide6.QtGui import QAction
 # 匯入程式執行管理器 (ExecManager)
 # Import ExecManager for running code
 from je_editor.pyside_ui.code.code_process.code_exec import ExecManager
-
 # 匯入檔案儲存對話框
 # Import file save dialog
 from je_editor.pyside_ui.dialog.file_dialog.save_file_dialog import choose_file_get_save_file_path
-
 # 匯入編輯器元件
 # Import EditorWidget
 from je_editor.pyside_ui.main_ui.editor.editor_widget import EditorWidget
-
 # 匯入輸入處理 (用於程式輸入)
 # Import ProcessInput for handling program input
 from je_editor.pyside_ui.main_ui.editor.process_input import ProcessInput
-
 # 匯入工具函式：顯示「請先關閉目前執行中的程式」訊息框
 # Import utility: show message box if a program is already running
 from je_editor.pyside_ui.main_ui.menu.run_menu.under_run_menu.utils import please_close_current_running_messagebox
-
 # 匯入日誌紀錄器
 # Import logger instance
 from je_editor.utils.logging.loggin_instance import jeditor_logger
-
 # 匯入多語言包裝器
 # Import multi-language wrapper for UI localization
 from je_editor.utils.multi_language.multi_language_wrapper import language_wrapper

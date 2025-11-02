@@ -391,6 +391,7 @@ class CodeEditor(QPlainTextEdit):
         super().mousePressEvent(event)
         self.highlight_current_line()
 
+
 class LineNumber(QWidget):
     """
     行號區域元件

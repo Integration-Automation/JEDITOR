@@ -135,7 +135,7 @@ traditional_chinese_word_dict = {
     "chat_ui_set_ai_button": "設定 AI 設定",
     "chat_ui_load_ai_button": "載入 AI 設定",
     "chat_ui_call_ai_model_button": "傳送 prompt",
-    "base_url_label":"AI 伺服器 URL",
+    "base_url_label": "AI 伺服器 URL",
     "api_key_label": "AI 伺服器 API Key",
     "ai_model_label": "AI Model",
     "load_ai_messagebox_title": "載入成功",
