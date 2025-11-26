@@ -32,14 +32,14 @@ class JEditorLoggingHandler(RotatingFileHandler):
     # 註解提到要將 stderr 輸出導向 queue，但目前程式碼僅繼承 RotatingFileHandler
 
     def __init__(self, filename: str = "JEditor.log", mode="w",
-                 maxBytes: int = 1073741824, backupCount: int = 0):
+                 max_bytes: int = 1073741824, backup_count: int = 0):
         """
         :param filename: 日誌檔案名稱 / log file name
         :param mode: 檔案開啟模式 (預設 w 覆寫) / file open mode (default "w" overwrite)
-        :param maxBytes: 單一檔案最大大小 (預設 1GB) / max file size (default 1GB)
-        :param backupCount: 保留的備份檔案數量 / number of backup files to keep
+        :param max_bytes: 單一檔案最大大小 (預設 1GB) / max file size (default 1GB)
+        :param backup_count: 保留的備份檔案數量 / number of backup files to keep
         """
-        super().__init__(filename=filename, mode=mode, maxBytes=maxBytes, backupCount=backupCount)
+        super().__init__(filename=filename, mode=mode, maxBytes=max_bytes, backupCount=backup_count)
         self.formatter = formatter  # 設定日誌格式 / set log formatter
         self.setLevel(logging.DEBUG)  # 設定 handler 層級為 DEBUG / set handler level to DEBUG
 
