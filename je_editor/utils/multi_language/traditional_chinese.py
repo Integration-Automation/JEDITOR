@@ -41,6 +41,10 @@ traditional_chinese_word_dict = {
     "dock_frontengine_title": "前景引擎",
     "dock_browser_title": "瀏覽器",
     "dock_ipython_title": "IPython(Jupyter)",
+    "dock_editor_menu": "Editor",
+    "dock_git_menu": "Git",
+    "dock_tools_menu": "Tools",
+    "dock_ai_menu": "AI",
     # File Menu
     "file_menu_label": "檔案",
     "file_menu_new_file_label": "新檔案",

@@ -41,6 +41,10 @@ english_word_dict = {
     "dock_frontengine_title": "FrontEngine",
     "dock_browser_title": "Browser",
     "dock_ipython_title": "IPython",
+    "dock_editor_menu": "Editor",
+    "dock_git_menu": "Git",
+    "dock_tools_menu": "Tools",
+    "dock_ai_menu": "AI",
     # File Menu
     "file_menu_label": "File",
     "file_menu_new_file_label": "New File",
