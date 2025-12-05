@@ -38,13 +38,23 @@ def set_dock_menu(ui_we_want_to_set: EditorMain) -> None:
     ui_we_want_to_set.dock_menu = ui_we_want_to_set.menu.addMenu(
         language_wrapper.language_word_dict.get("dock_menu_label"))
 
+    # === 建立子選單 / Create Sub menu ===
+    ui_we_want_to_set.dock_editor_menu = ui_we_want_to_set.dock_menu.addMenu(
+        language_wrapper.language_word_dict.get("dock_editor_menu"))
+    ui_we_want_to_set.dock_git_menu = ui_we_want_to_set.dock_menu.addMenu(
+        language_wrapper.language_word_dict.get("dock_git_menu"))
+    ui_we_want_to_set.dock_ai_menu = ui_we_want_to_set.dock_menu.addMenu(
+        language_wrapper.language_word_dict.get("dock_ai_menu"))
+    ui_we_want_to_set.dock_tools_menu = ui_we_want_to_set.dock_menu.addMenu(
+        language_wrapper.language_word_dict.get("dock_tools_menu"))
+
     # === Browser Dock ===
     ui_we_want_to_set.dock_menu.new_dock_browser_action = QAction(
         language_wrapper.language_word_dict.get("dock_browser_label"))
     ui_we_want_to_set.dock_menu.new_dock_browser_action.triggered.connect(
         lambda: add_dock_widget(ui_we_want_to_set)
     )
-    ui_we_want_to_set.dock_menu.addAction(ui_we_want_to_set.dock_menu.new_dock_browser_action)
+    ui_we_want_to_set.dock_tools_menu.addAction(ui_we_want_to_set.dock_menu.new_dock_browser_action)
 
     # === Editor Dock ===
     ui_we_want_to_set.dock_menu.new_tab_dock_editor_action = QAction(
@@ -52,7 +62,7 @@ def set_dock_menu(ui_we_want_to_set: EditorMain) -> None:
     ui_we_want_to_set.dock_menu.new_tab_dock_editor_action.triggered.connect(
         lambda: add_dock_widget(ui_we_want_to_set, "editor")
     )
-    ui_we_want_to_set.dock_menu.addAction(ui_we_want_to_set.dock_menu.new_tab_dock_editor_action)
+    ui_we_want_to_set.dock_editor_menu.addAction(ui_we_want_to_set.dock_menu.new_tab_dock_editor_action)
 
     # === FrontEngine Dock ===
     ui_we_want_to_set.dock_menu.new_frontengine = QAction(
@@ -60,7 +70,7 @@ def set_dock_menu(ui_we_want_to_set: EditorMain) -> None:
     ui_we_want_to_set.dock_menu.new_frontengine.triggered.connect(
         lambda: add_dock_widget(ui_we_want_to_set, "frontengine")
     )
-    ui_we_want_to_set.dock_menu.addAction(ui_we_want_to_set.dock_menu.new_frontengine)
+    ui_we_want_to_set.dock_tools_menu.addAction(ui_we_want_to_set.dock_menu.new_frontengine)
 
     # === Ipython Dock ===
     ui_we_want_to_set.dock_menu.new_ipython = QAction(
@@ -68,7 +78,7 @@ def set_dock_menu(ui_we_want_to_set: EditorMain) -> None:
     ui_we_want_to_set.dock_menu.new_ipython.triggered.connect(
         lambda: add_dock_widget(ui_we_want_to_set, "ipython")
     )
-    ui_we_want_to_set.dock_menu.addAction(ui_we_want_to_set.dock_menu.new_ipython)
+    ui_we_want_to_set.dock_editor_menu.addAction(ui_we_want_to_set.dock_menu.new_ipython)
 
     # === ChatUI Dock ===
     ui_we_want_to_set.dock_menu.new_chat_ui = QAction(
@@ -76,7 +86,7 @@ def set_dock_menu(ui_we_want_to_set: EditorMain) -> None:
     ui_we_want_to_set.dock_menu.new_chat_ui.triggered.connect(
         lambda: add_dock_widget(ui_we_want_to_set, "chat_ui")
     )
-    ui_we_want_to_set.dock_menu.addAction(ui_we_want_to_set.dock_menu.new_chat_ui)
+    ui_we_want_to_set.dock_ai_menu.addAction(ui_we_want_to_set.dock_menu.new_chat_ui)
 
     # === Git Client Dock ===
     ui_we_want_to_set.dock_menu.new_git_client = QAction(
@@ -84,7 +94,7 @@ def set_dock_menu(ui_we_want_to_set: EditorMain) -> None:
     ui_we_want_to_set.dock_menu.new_git_client.triggered.connect(
         lambda: add_dock_widget(ui_we_want_to_set, "git_client")
     )
-    ui_we_want_to_set.dock_menu.addAction(ui_we_want_to_set.dock_menu.new_git_client)
+    ui_we_want_to_set.dock_git_menu.addAction(ui_we_want_to_set.dock_menu.new_git_client)
 
     # === Git Branch Tree View Dock ===
     ui_we_want_to_set.dock_menu.new_git_branch_view = QAction(
@@ -92,7 +102,7 @@ def set_dock_menu(ui_we_want_to_set: EditorMain) -> None:
     ui_we_want_to_set.dock_menu.new_git_branch_view.triggered.connect(
         lambda: add_dock_widget(ui_we_want_to_set, "git_branch_tree_view")
     )
-    ui_we_want_to_set.dock_menu.addAction(ui_we_want_to_set.dock_menu.new_git_branch_view)
+    ui_we_want_to_set.dock_git_menu.addAction(ui_we_want_to_set.dock_menu.new_git_branch_view)
 
     # === Variable Inspector Dock ===
     ui_we_want_to_set.dock_menu.new_variable_inspector = QAction(
@@ -100,7 +110,7 @@ def set_dock_menu(ui_we_want_to_set: EditorMain) -> None:
     ui_we_want_to_set.dock_menu.new_variable_inspector.triggered.connect(
         lambda: add_dock_widget(ui_we_want_to_set, "variable_inspector")
     )
-    ui_we_want_to_set.dock_menu.addAction(ui_we_want_to_set.dock_menu.new_variable_inspector)
+    ui_we_want_to_set.dock_editor_menu.addAction(ui_we_want_to_set.dock_menu.new_variable_inspector)
 
     # === Console Dock ===
     ui_we_want_to_set.dock_menu.new_dynamic_console = QAction(
@@ -108,7 +118,7 @@ def set_dock_menu(ui_we_want_to_set: EditorMain) -> None:
     ui_we_want_to_set.dock_menu.new_dynamic_console.triggered.connect(
         lambda: add_dock_widget(ui_we_want_to_set, "console_widget")
     )
-    ui_we_want_to_set.dock_menu.addAction(ui_we_want_to_set.dock_menu.new_dynamic_console)
+    ui_we_want_to_set.dock_tools_menu.addAction(ui_we_want_to_set.dock_menu.new_dynamic_console)
 
     # === Code Diff Viewer Dock ===
     ui_we_want_to_set.dock_menu.new_code_diff_viewer = QAction(
@@ -116,7 +126,7 @@ def set_dock_menu(ui_we_want_to_set: EditorMain) -> None:
     ui_we_want_to_set.dock_menu.new_code_diff_viewer.triggered.connect(
         lambda: add_dock_widget(ui_we_want_to_set, "code_diff_viewer")
     )
-    ui_we_want_to_set.dock_menu.addAction(ui_we_want_to_set.dock_menu.new_code_diff_viewer)
+    ui_we_want_to_set.dock_git_menu.addAction(ui_we_want_to_set.dock_menu.new_code_diff_viewer)
 
 
 def add_dock_widget(ui_we_want_to_set: EditorMain, widget_type: str = None):
