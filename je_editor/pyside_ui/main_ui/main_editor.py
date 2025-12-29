@@ -52,7 +52,7 @@ class EditorMain(QMainWindow, QtStyleTools):
     繼承 QMainWindow 與 QtStyleTools
     """
 
-    def __init__(self, debug_mode: bool = False, show_system_tray_ray: bool = False):
+    def __init__(self, debug_mode: bool = False, show_system_tray_ray: bool = False, extend: bool = False):
         # 初始化時記錄 log
         # Log initialization
         jeditor_logger.info(f"Init EditorMain "
@@ -95,10 +95,11 @@ class EditorMain(QMainWindow, QtStyleTools):
 
         # Windows 系統專用：設定應用程式 ID
         # Windows only: set application ID
-        self.id = language_wrapper.language_word_dict.get("application_name")
-        if sys.platform in ["win32", "cygwin", "msys"]:
-            from ctypes import windll
-            windll.shell32.SetCurrentProcessExplicitAppUserModelID(self.id)
+        if not extend:
+            self.id = language_wrapper.language_word_dict.get("application_name")
+            if sys.platform in ["win32", "cygwin", "msys"]:
+                from ctypes import windll
+                windll.shell32.SetCurrentProcessExplicitAppUserModelID(self.id)
 
         # 設定 Python 輸出不緩衝
         # Set Python output unbuffered
@@ -144,18 +145,19 @@ class EditorMain(QMainWindow, QtStyleTools):
 
         # 設定應用程式圖示
         # Set application icon
-        self.icon_path = Path(os.getcwd() + "/je_driver_icon.ico")
-        self.icon = QIcon(str(self.icon_path))
-        if self.icon.isNull() is False:
-            self.setWindowIcon(self.icon)
-            # 如果系統支援系統匣，則顯示圖示
-            # Show system tray icon if available
-            if ExtendSystemTray.isSystemTrayAvailable() and self.show_system_tray_ray:
-                self.system_tray = ExtendSystemTray(main_window=self)
-                self.system_tray.setIcon(self.icon)
-                self.system_tray.setVisible(True)
-                self.system_tray.show()
-                self.system_tray.setToolTip(language_wrapper.language_word_dict.get("application_name"))
+        if not extend:
+            self.icon_path = Path(os.getcwd() + "/python_editor.ico")
+            self.icon = QIcon(str(self.icon_path))
+            if not self.icon.isNull():
+                self.setWindowIcon(self.icon)
+                # 如果系統支援系統匣，則顯示圖示
+                # Show system tray icon if available
+                if ExtendSystemTray.isSystemTrayAvailable() and self.show_system_tray_ray:
+                    self.system_tray = ExtendSystemTray(main_window=self)
+                    self.system_tray.setIcon(self.icon)
+                    self.system_tray.setVisible(True)
+                    self.system_tray.show()
+                    self.system_tray.setToolTip(language_wrapper.language_word_dict.get("application_name"))
 
         # 設定輸出重導 (stdout/stderr)
         # Setup output redirection (stdout/stderr)
