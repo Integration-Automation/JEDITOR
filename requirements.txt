@@ -1,6 +1,6 @@
 PySide6==6.10.1
 langchain_openai==1.1.0
-langchain==1.1.2
+langchain==1.2.4
 ruff
 sphinx
 twine
