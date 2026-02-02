@@ -1,4 +1,4 @@
-PySide6==6.10.0
+PySide6==6.10.2
 langchain_openai==1.0.2
 langchain==1.0.3
 ruff
