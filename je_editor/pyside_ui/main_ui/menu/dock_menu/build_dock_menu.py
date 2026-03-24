@@ -18,7 +18,7 @@ from je_editor.pyside_ui.main_ui.ai_widget.chat_ui import ChatUI
 from je_editor.pyside_ui.main_ui.console_widget.console_gui import ConsoleWidget
 from je_editor.pyside_ui.main_ui.dock.destroy_dock import DestroyDock
 from je_editor.pyside_ui.main_ui.editor.editor_widget_dock import FullEditorWidget
-from je_editor.pyside_ui.main_ui.ipython_widget.rich_jupyter import IpythonWidget
+from je_editor.pyside_ui.main_ui.ipython_widget.ipython_console import IpythonWidget
 from je_editor.utils.file.open.open_file import read_file  # 檔案讀取工具 / File reading utility
 from je_editor.utils.logging.loggin_instance import jeditor_logger  # 日誌紀錄器 / Logger
 from je_editor.utils.multi_language.multi_language_wrapper import language_wrapper  # 多語系支援 / Multi-language wrapper

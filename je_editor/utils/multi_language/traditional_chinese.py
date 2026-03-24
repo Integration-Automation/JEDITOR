@@ -98,6 +98,8 @@ traditional_chinese_word_dict = {
     "style_menu_label": "UI 風格",
     # Tab Menu
     "tab_menu_label": "分頁",
+    "tab_menu_tools_submenu_label":"工具分頁",
+    "tab_menu_git_submenu_label": "Git 分頁",
     "tab_menu_add_editor_label": "新增編輯器分頁",
     "tab_menu_add_frontengine_label": "新增前景引擎分頁",
     "tab_menu_add_web_label": "新增瀏覽器分頁",
