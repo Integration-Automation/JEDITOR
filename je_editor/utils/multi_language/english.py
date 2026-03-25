@@ -104,6 +104,8 @@ please make sure that the current encoding is consistent with the default encodi
     "style_menu_label": "UI Style",
     # Tab Menu
     "tab_menu_label": "Tab",
+    "tab_menu_tools_submenu_label": "Tools Tab",
+    "tab_menu_git_submenu_label": "Git Tab",
     "tab_menu_add_editor_label": "Add Editor Tab",
     "tab_menu_add_frontengine_label": "Add FrontEngine Tab",
     "tab_menu_add_web_label": "Add Web Browser Tab",
