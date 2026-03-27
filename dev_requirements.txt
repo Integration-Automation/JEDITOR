@@ -13,3 +13,4 @@ pycodestyle
 pydantic
 jedi
 je_editor_dev
+auto-py-to-exe
