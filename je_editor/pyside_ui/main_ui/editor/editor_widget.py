@@ -212,7 +212,10 @@ class EditorWidget(QWidget):
             self.code_save_thread.skip_this_round = True
 
         # 讀取檔案內容 / Read file content
-        file, file_content = read_file(str(path))
+        result = read_file(str(path))
+        if result is None:
+            return False
+        file, file_content = result
         self.code_edit.setPlainText(file_content)
 
         # 更新目前檔案資訊 / Update current file info
@@ -226,7 +229,7 @@ class EditorWidget(QWidget):
         # 啟動或更新自動儲存執行緒 / Start or update auto-save thread
         if self.current_file is not None and self.code_save_thread is None:
             init_new_auto_save_thread(self.current_file, self)
-        else:
+        elif self.code_save_thread is not None:
             self.code_save_thread.file = self.current_file
             self.code_save_thread.skip_this_round = False
 
@@ -240,7 +243,10 @@ class EditorWidget(QWidget):
         Triggered when user clicks an item in the project tree view.
         """
         jeditor_logger.info("EditorWidget treeview_click")
-        clicked_item: QFileSystemModel = self.project_treeview.selectedIndexes()[0]
+        indexes = self.project_treeview.selectedIndexes()
+        if not indexes:
+            return
+        clicked_item: QFileSystemModel = indexes[0]
         file_info: QFileInfo = self.project_treeview.model().fileInfo(clicked_item)
         path = pathlib.Path(file_info.absoluteFilePath())
         if path.is_file():
@@ -281,7 +287,7 @@ class EditorWidget(QWidget):
                 self.checker.error_list.clear()
             else:
                 # 非 Python 檔案，顯示提示訊息 / Show message if not Python file
-                message_box = QMessageBox()
+                message_box = QMessageBox(self)
                 message_box.setText(
                     language_wrapper.language_word_dict.get("python_format_checker_only_support_python_message"))
                 message_box.exec_()

@@ -52,9 +52,9 @@ class SideBySideDiffWidget(QWidget):
         rightBox.addWidget(self.rightEdit)
 
         main = QHBoxLayout(self)
-        leftContainer = QWidget()
+        leftContainer = QWidget(self)
         leftContainer.setLayout(leftBox)
-        rightContainer = QWidget()
+        rightContainer = QWidget(self)
         rightContainer.setLayout(rightBox)
         main.addWidget(leftContainer)
         main.addWidget(rightContainer)

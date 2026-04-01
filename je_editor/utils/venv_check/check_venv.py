@@ -1,6 +1,7 @@
 # 匯入自訂錯誤訊息與例外類別
 # Import custom error messages and exception class
 
+import sys
 import shutil
 from pathlib import Path
 
@@ -9,6 +10,29 @@ from pathlib import Path
 from je_editor.utils.exception.exception_tags import compiler_not_found_error
 from je_editor.utils.exception.exceptions import JEditorExecException
 from je_editor.utils.logging.loggin_instance import jeditor_logger
+
+# 平台常數 / Platform constants
+WINDOWS_PLATFORMS = ("win32", "cygwin", "msys")
+
+
+def is_windows() -> bool:
+    """判斷是否為 Windows 平台 / Check if current platform is Windows"""
+    return sys.platform in WINDOWS_PLATFORMS
+
+
+def get_venv_path(base_path: Path | None = None) -> Path:
+    """
+    取得虛擬環境的 Python 執行路徑
+    Get the Python executable path within a virtual environment
+
+    :param base_path: 專案根目錄，預設為 cwd / Project root, defaults to cwd
+    :return: venv 下的 Scripts 或 bin 路徑 / Scripts or bin path under venv
+    """
+    if base_path is None:
+        base_path = Path.cwd()
+    if is_windows():
+        return base_path / "venv" / "Scripts"
+    return base_path / "venv" / "bin"
 
 
 def check_and_choose_venv(venv_path: Path) -> str:

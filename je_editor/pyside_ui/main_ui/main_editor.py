@@ -39,6 +39,7 @@ from je_editor.utils.file.open.open_file import read_file
 from je_editor.utils.logging.loggin_instance import jeditor_logger
 from je_editor.utils.multi_language.multi_language_wrapper import language_wrapper
 from je_editor.utils.redirect_manager.redirect_manager_class import redirect_manager_instance
+from je_editor.plugins.plugin_loader import load_external_plugins
 
 # 定義一個字典，用來存放可擴充的 Tab (標籤頁)
 # Define a dictionary to store extendable tabs
@@ -71,6 +72,10 @@ class EditorMain(QMainWindow, QtStyleTools):
         self.font_menu = None
         self.working_dir = None
         self.show_system_tray_ray = show_system_tray_ray
+
+        # 確保外部插件已載入（若尚未載入）
+        # Ensure external plugins are loaded (if not already)
+        load_external_plugins()
 
         # 讀取使用者設定
         # Read user settings
@@ -128,11 +133,9 @@ class EditorMain(QMainWindow, QtStyleTools):
         self.tab_widget.setAttribute(Qt.WidgetAttribute.WA_AlwaysShowToolTips, on=False)
         self.tab_widget.tabCloseRequested.connect(self.close_tab)
 
-        # 建立計時器，用來處理訊息重導 (stdout/stderr)
-        # Timer for redirecting messages (stdout/stderr)
-        self.redirect_timer = QTimer(self)
-        self.redirect_timer.setInterval(10)
-        self.redirect_timer.start()
+        # 計時器會在後面初始化並連接 redirect
+        # Timer will be initialized later with redirect connection
+        self.redirect_timer = None
 
         # 設定視窗標題與提示
         # Set window title and tooltip
@@ -146,7 +149,7 @@ class EditorMain(QMainWindow, QtStyleTools):
         # 設定應用程式圖示
         # Set application icon
         if not extend:
-            self.icon_path = Path(os.getcwd() + "/python_editor.ico")
+            self.icon_path = Path(os.getcwd()) / "python_editor.ico"
             self.icon = QIcon(str(self.icon_path))
             if not self.icon.isNull():
                 self.setWindowIcon(self.icon)
@@ -230,7 +233,7 @@ class EditorMain(QMainWindow, QtStyleTools):
                     output_message = redirect_manager_instance.std_out_queue.get_nowait()
                     output_message = str(output_message).strip()
                     if output_message:
-                        text_cursor = self.code_result.textCursor()
+                        text_cursor = widget.code_result.textCursor()
                         text_format = QTextCharFormat()
                         # 設定正常輸出顏色
                         # Set normal output color
@@ -244,7 +247,7 @@ class EditorMain(QMainWindow, QtStyleTools):
                     error_message = redirect_manager_instance.std_err_queue.get_nowait()
                     error_message = str(error_message).strip()
                     if error_message:
-                        text_cursor = self.code_result.textCursor()
+                        text_cursor = widget.code_result.textCursor()
                         text_format = QTextCharFormat()
                         # 設定錯誤輸出顏色
                         # Set error output color
@@ -294,11 +297,13 @@ class EditorMain(QMainWindow, QtStyleTools):
                     last_file_path = pathlib.Path(last_file)
                     if last_file_path.is_file() and last_file_path.exists() and widget.code_save_thread is None:
                         init_new_auto_save_thread(str(last_file_path), widget)
-                        widget.code_edit.setPlainText(read_file(widget.current_file)[1])
-                        widget.code_edit.current_file = widget.current_file
-                        widget.code_edit.reset_highlighter()
-                        file_is_open_manager_dict.update({str(last_file_path): str(last_file_path.name)})
-                        widget.rename_self_tab()
+                        result = read_file(widget.current_file)
+                        if result is not None:
+                            widget.code_edit.setPlainText(result[1])
+                            widget.code_edit.current_file = widget.current_file
+                            widget.code_edit.reset_highlighter()
+                            file_is_open_manager_dict.update({str(last_file_path): str(last_file_path.name)})
+                            widget.rename_self_tab()
 
         # 套用 UI 樣式 (主題)
         # Apply UI stylesheet (theme)
@@ -328,7 +333,8 @@ class EditorMain(QMainWindow, QtStyleTools):
             # 如果檔案已開啟，直接切換到該分頁
             # If file already opened, switch to that tab
             widget: QWidget = self.tab_widget.findChild(EditorWidget, str(file_path))
-            self.tab_widget.setCurrentWidget(widget)
+            if widget is not None:
+                self.tab_widget.setCurrentWidget(widget)
 
     def closeEvent(self, event) -> None:
         """

@@ -29,11 +29,15 @@ def read_json(json_file_path: str) -> Any | None:
     try:
         file_path = Path(json_file_path)
         if file_path.exists() and file_path.is_file():  # 確認檔案存在且為檔案 / Ensure file exists
-            with open(json_file_path) as read_file:  # 開啟檔案 (預設 UTF-8)
-                return json.loads(read_file.read())  # 載入 JSON 並回傳 / Load JSON and return
-    except JEditorJsonException:
-        # 捕捉自訂例外並重新拋出
-        # Catch custom exception and re-raise
+            with open(json_file_path, encoding="utf-8") as read_file:  # 開啟檔案 (UTF-8)
+                content = read_file.read()
+                if not content.strip():
+                    return None
+                return json.loads(content)  # 載入 JSON 並回傳 / Load JSON and return
+    except (json.JSONDecodeError, OSError) as e:
+        # 捕捉 JSON 解析錯誤或檔案 IO 錯誤
+        # Catch JSON decode errors or file IO errors
+        jeditor_logger.error(f"Failed to read JSON file {json_file_path}: {e}")
         raise JEditorJsonException(cant_find_json_error)
     finally:
         _lock.release()  # 確保鎖一定會被釋放 / Ensure the lock is always released
@@ -55,9 +59,10 @@ def write_json(json_save_path: str, data_to_output: Union[list, dict]) -> None:
     try:
         # 以寫入模式開啟檔案，並將資料轉換為 JSON 格式 (縮排 4 格)
         # Open file in write mode and dump data as JSON (indent=4)
-        with open(json_save_path, "w+") as file_to_write:
+        with open(json_save_path, "w+", encoding="utf-8") as file_to_write:
             file_to_write.write(json.dumps(data_to_output, indent=4))
-    except JEditorJsonException:
+    except (OSError, TypeError, ValueError) as e:
+        jeditor_logger.error(f"Failed to write JSON file {json_save_path}: {e}")
         raise JEditorJsonException(cant_save_json_error)
     finally:
         _lock.release()  # 確保鎖一定會被釋放 / Ensure the lock is always released

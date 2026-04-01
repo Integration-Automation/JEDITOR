@@ -138,8 +138,9 @@ class GitGui(QWidget):
         center_layout.setMenuBar(menubar)
 
         # === Timer ===
+        # Check commit status every 60 seconds (fetch is a network call)
         self.update_commit_status_timer = QTimer()
-        self.update_commit_status_timer.setInterval(1000)
+        self.update_commit_status_timer.setInterval(60000)
         self.update_commit_status_timer.timeout.connect(self.update_commit_status)
         self.update_commit_status_timer.start()
 
@@ -420,7 +421,7 @@ class GitGui(QWidget):
         # 區段標題與檔案項目
         add_item("— Untracked —", bold=True, disabled=True)
         for path in untracked_files:
-            self._add_change_item(GitChangeItem(path, "untracked_files"))
+            self._add_change_item(GitChangeItem(path, "untracked"))
 
         add_item("— Unstaged —", bold=True, disabled=True)
         for item in unstaged_changes:
@@ -431,8 +432,12 @@ class GitGui(QWidget):
             self._add_change_item(item)
 
         # === Status summary / 狀態摘要 ===
+        if repository.head.is_detached:
+            branch_name = "(detached)"
+        else:
+            branch_name = repository.active_branch.name
         summary = (
-            f"Branch: {getattr(repository.head, 'reference', None) and repository.active_branch.name if not repository.head.is_detached else '(detached)'}\n"
+            f"Branch: {branch_name}\n"
             f"Untracked: {len(untracked_files)} | Unstaged: {len(unstaged_changes)} | Staged: {len(staged_changes)}"
         )
         self.repo_status_label.setText(f"Status: {summary}")
@@ -523,7 +528,6 @@ class GitGui(QWidget):
         try:
             file_paths = []
             for change_entry in selected_changes:
-                print(change_entry.path)
                 if "->" in change_entry.path and change_entry.status in ("renamed", "staged"):
                     parts = change_entry.path.split("->")
                     source_path = parts[0].strip()
@@ -678,7 +682,7 @@ class GitGui(QWidget):
             msg = "\n".join(str(r) for r in result)
             QMessageBox.information(self, "Push Result", f"Pushed to origin:\n{msg}")
         except Exception as e:
-            QMessageBox.critical(self, "Track Untracked Error", str(e))
+            QMessageBox.critical(self, "Push Error", str(e))
 
     def get_unpushed_commit_count(self, remote_name: str = "origin") -> dict:
         try:

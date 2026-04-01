@@ -36,7 +36,7 @@ class PythonHighlighter(QSyntaxHighlighter):
 
         # 判斷目前檔案副檔名，若無則預設為 .py
         # Determine current file suffix, default to .py
-        if main_window.current_file is not None:
+        if main_window is not None and main_window.current_file is not None:
             current_file_suffix = Path(main_window.current_file).suffix
         else:
             current_file_suffix = ".py"
@@ -68,11 +68,35 @@ class PythonHighlighter(QSyntaxHighlighter):
                     self.highlight_rules.append((pattern, text_char_format))
 
         # -------------------------
-        # 其他語言的擴展高亮
-        # Extended highlight for other languages
+        # 其他語言的擴展高亮（透過插件系統）
+        # Extended highlight for other languages (via plugin system)
         # -------------------------
         else:
-            if syntax_extend_setting_dict.get(current_file_suffix):
+            from je_editor.plugins import get_programming_language_plugin
+            plugin = get_programming_language_plugin(current_file_suffix)
+            if plugin:
+                # 載入插件的額外語法規則（正則表達式）
+                # Load plugin's extra syntax rules (regex patterns)
+                for rule_variable_dict in plugin.get("syntax_rules", {}).values():
+                    color = rule_variable_dict.get("color")
+                    text_char_format = QTextCharFormat()
+                    text_char_format.setForeground(color)
+                    for rule in rule_variable_dict.get("rules"):
+                        pattern = QRegularExpression(rule)
+                        self.highlight_rules.append((pattern, text_char_format))
+
+                # 載入插件的關鍵字高亮
+                # Load plugin's keyword highlighting
+                for rule_variable_dict in plugin.get("syntax_words", {}).values():
+                    color = rule_variable_dict.get("color")
+                    text_char_format = QTextCharFormat()
+                    text_char_format.setForeground(color)
+                    for word in rule_variable_dict.get("words"):
+                        pattern = QRegularExpression(rf"\b{word}\b")
+                        self.highlight_rules.append((pattern, text_char_format))
+            elif syntax_extend_setting_dict.get(current_file_suffix):
+                # 向後相容：使用舊的 syntax_extend_setting_dict
+                # Backward compatible: use old syntax_extend_setting_dict
                 for rule_variable_dict in syntax_extend_setting_dict.get(current_file_suffix).values():
                     color = rule_variable_dict.get("color")
                     text_char_format = QTextCharFormat()
@@ -80,10 +104,6 @@ class PythonHighlighter(QSyntaxHighlighter):
                     for word in rule_variable_dict.get("words"):
                         pattern = QRegularExpression(rf"\b{word}\b")
                         self.highlight_rules.append((pattern, text_char_format))
-            else:
-                # 若無對應規則則略過
-                # Skip if no rules found
-                pass
 
     def highlightBlock(self, text) -> None:
         """

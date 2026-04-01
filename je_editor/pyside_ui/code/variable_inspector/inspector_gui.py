@@ -95,7 +95,7 @@ class VariableModel(QAbstractTableModel):
                 # 嘗試將輸入轉換為 Python 物件
                 # Try to evaluate input as Python object
                 new_value = ast.literal_eval(value)
-            except Exception:
+            except (ValueError, SyntaxError):
                 # 若失敗則當作字串處理
                 # If failed, treat as string
                 new_value = value

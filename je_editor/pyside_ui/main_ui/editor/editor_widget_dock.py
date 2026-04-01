@@ -2,7 +2,7 @@ from pathlib import Path
 
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QWidget, QGridLayout, QScrollArea
-from frontengine.utils.multi_language.language_wrapper import language_wrapper
+from je_editor.utils.multi_language.multi_language_wrapper import language_wrapper
 
 from je_editor.pyside_ui.code.plaintext_code_edit.code_edit_plaintext import CodeEditor
 from je_editor.pyside_ui.main_ui.save_settings.user_setting_file import user_setting_dict

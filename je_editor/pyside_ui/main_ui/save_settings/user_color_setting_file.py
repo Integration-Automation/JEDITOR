@@ -18,44 +18,21 @@ def update_actually_color_dict():
     """
     jeditor_logger.info(f"user_color_setting_file.py update_actually_color_dict")
 
+    def _to_qcolor(key: str, fallback: list) -> QColor:
+        """Safely convert RGB list to QColor with fallback."""
+        rgb = user_setting_color_dict.get(key, fallback)
+        if rgb is None or len(rgb) < 3:
+            rgb = fallback
+        return QColor(rgb[0], rgb[1], rgb[2])
+
     actually_color_dict.update(
         {
-            # 行號顏色 / Line number color
-            "line_number_color": QColor(
-                user_setting_color_dict.get("line_number_color")[0],
-                user_setting_color_dict.get("line_number_color")[1],
-                user_setting_color_dict.get("line_number_color")[2],
-            ),
-            # 行號背景顏色 / Line number background color
-            "line_number_background_color": QColor(
-                user_setting_color_dict.get("line_number_background_color")[0],
-                user_setting_color_dict.get("line_number_background_color")[1],
-                user_setting_color_dict.get("line_number_background_color")[2],
-            ),
-            # 當前行顏色 / Current line highlight color
-            "current_line_color": QColor(
-                user_setting_color_dict.get("current_line_color")[0],
-                user_setting_color_dict.get("current_line_color")[1],
-                user_setting_color_dict.get("current_line_color")[2],
-            ),
-            # 一般輸出顏色 / Normal output color
-            "normal_output_color": QColor(
-                user_setting_color_dict.get("normal_output_color")[0],
-                user_setting_color_dict.get("normal_output_color")[1],
-                user_setting_color_dict.get("normal_output_color")[2],
-            ),
-            # 錯誤輸出顏色 / Error output color
-            "error_output_color": QColor(
-                user_setting_color_dict.get("error_output_color")[0],
-                user_setting_color_dict.get("error_output_color")[1],
-                user_setting_color_dict.get("error_output_color")[2],
-            ),
-            # 警告輸出顏色 / Warning output color
-            "warning_output_color": QColor(
-                user_setting_color_dict.get("warning_output_color")[0],
-                user_setting_color_dict.get("warning_output_color")[1],
-                user_setting_color_dict.get("warning_output_color")[2],
-            )
+            "line_number_color": _to_qcolor("line_number_color", [255, 255, 255]),
+            "line_number_background_color": _to_qcolor("line_number_background_color", [179, 179, 179]),
+            "current_line_color": _to_qcolor("current_line_color", [148, 148, 184]),
+            "normal_output_color": _to_qcolor("normal_output_color", [255, 255, 255]),
+            "error_output_color": _to_qcolor("error_output_color", [255, 0, 0]),
+            "warning_output_color": _to_qcolor("warning_output_color", [204, 204, 0]),
         }
     )
 
@@ -95,9 +72,11 @@ def read_user_color_setting() -> None:
     Read user color settings from JSON file and update user_setting_color_dict
     """
     jeditor_logger.info("user_color_setting_file.py read_user_color_setting")
-    user_color_setting_file = Path(getcwd() + "/.jeditor/user_color_setting.json")
+    user_color_setting_file = Path(getcwd()) / ".jeditor" / "user_color_setting.json"
 
     # 如果檔案存在，就讀取並更新設定
     # If the file exists, read and update the settings
     if user_color_setting_file.exists() and user_color_setting_file.is_file():
-        user_setting_color_dict.update(read_json(str(user_color_setting_file)))
+        data = read_json(str(user_color_setting_file))
+        if data is not None:
+            user_setting_color_dict.update(data)

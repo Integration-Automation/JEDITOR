@@ -6,6 +6,10 @@ from threading import Lock
 from je_editor.utils.exception.exceptions import JEditorOpenFileException
 from je_editor.utils.logging.loggin_instance import jeditor_logger
 
+# 模組層級的鎖，確保多執行緒安全
+# Module-level lock for thread safety
+_file_read_lock = Lock()
+
 
 def read_file(file_path: str) -> list[Path | str] | None:
     """
@@ -31,21 +35,21 @@ def read_file(file_path: str) -> list[Path | str] | None:
     # Log the file path for debugging and tracking
     jeditor_logger.info(f"open_file.py read_file file_path: {file_path}")
 
-    lock = Lock()  # 建立一個執行緒鎖 / Create a thread lock
     try:
-        lock.acquire()  # 嘗試鎖定資源 / Acquire the lock
+        _file_read_lock.acquire()  # 嘗試鎖定資源 / Acquire the lock
         if file_path != "" and file_path is not None:  # 確認路徑不為空 / Ensure path is not empty
             file_path = Path(file_path)  # 轉換為 Path 物件 / Convert to Path object
             if file_path.exists() and file_path.is_file():  # 檢查檔案存在且為檔案 / Check file existence
-                # 以讀寫模式開啟檔案 (UTF-8 編碼)
-                # Open file in read+write mode with UTF-8 encoding
-                with open(file_path, "r+", encoding="utf-8") as open_read_file:
+                # 以唯讀模式開啟檔案 (UTF-8 編碼)
+                # Open file in read-only mode with UTF-8 encoding
+                with open(file_path, "r", encoding="utf-8") as open_read_file:
                     return [file_path, open_read_file.read()]  # 回傳檔案路徑與內容 / Return file path and content
-    except JEditorOpenFileException:
-        # 捕捉自訂例外並重新拋出
-        # Catch custom exception and re-raise
+    except (OSError, UnicodeDecodeError) as e:
+        # 捕捉檔案 IO 與編碼例外
+        # Catch file IO and encoding exceptions
+        jeditor_logger.error(f"Failed to read file {file_path}: {e}")
         raise JEditorOpenFileException
     finally:
         # 確保鎖一定會被釋放
         # Ensure the lock is always released
-        lock.release()
+        _file_read_lock.release()

@@ -54,7 +54,7 @@ class BrowserWidget(QWidget):
         self.url_input = BrowserLineSearch(self)
 
         # --- Action: Ctrl+F to find text / 快捷鍵 Ctrl+F 搜尋文字 ---
-        self.find_action = QAction()
+        self.find_action = QAction(self)
         self.find_action.setShortcut("Ctrl+f")  # 設定快捷鍵 / Set shortcut
         self.find_action.triggered.connect(self.find_text)  # 綁定搜尋文字功能 / Connect to find_text
         self.addAction(self.find_action)

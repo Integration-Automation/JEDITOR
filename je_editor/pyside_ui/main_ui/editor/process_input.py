@@ -75,7 +75,7 @@ class ProcessInput(QWidget):
     # === Debugger 指令傳送 / Send command to debugger ===
     def debugger_send_command(self):
         jeditor_logger.info("EditorWidget debugger_send_command")
-        if self.main_window.exec_python_debugger is not None:
+        if self.main_window.exec_python_debugger is not None and self.main_window.exec_python_debugger.process is not None:
             process_stdin = self.main_window.exec_python_debugger.process.stdin
             if process_stdin is not None:
                 # 將輸入框文字編碼後寫入子程序 stdin / Write encoded input to subprocess stdin
@@ -85,7 +85,7 @@ class ProcessInput(QWidget):
     # === Shell 指令傳送 / Send command to shell ===
     def shell_send_command(self):
         jeditor_logger.info("EditorWidget shell_send_command")
-        if self.main_window.exec_shell is not None:
+        if self.main_window.exec_shell is not None and self.main_window.exec_shell.process is not None:
             process_stdin = self.main_window.exec_shell.process.stdin
             if process_stdin is not None:
                 process_stdin.write(self.command_input.text().encode() + b"\n")
@@ -94,7 +94,7 @@ class ProcessInput(QWidget):
     # === Program 指令傳送 / Send command to program ===
     def program_send_command(self):
         jeditor_logger.info("EditorWidget program_send_command")
-        if self.main_window.exec_program is not None:
+        if self.main_window.exec_program is not None and self.main_window.exec_program.process is not None:
             process_stdin = self.main_window.exec_program.process.stdin
             if process_stdin is not None:
                 process_stdin.write(self.command_input.text().encode() + b"\n")

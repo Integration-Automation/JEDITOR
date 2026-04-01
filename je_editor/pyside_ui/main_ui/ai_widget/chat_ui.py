@@ -93,13 +93,12 @@ class ChatUI(QWidget):
 
     # 載入 AI 設定檔 / Load AI configuration file
     def load_ai_config(self, show_load_complete: bool = False):
-        ai_config_file = Path(str(Path.cwd()) + "/" + ".jeditor/ai_config.json")
+        ai_config_file = Path.cwd() / ".jeditor" / "ai_config.json"
         if ai_config_file.exists():
-            with open(ai_config_file, "r", encoding="utf-8"):
-                json_data: dict = read_json(str(ai_config_file))
+            json_data: dict = read_json(str(ai_config_file))
             if json_data:
-                # 確認 AI_model 設定存在且格式正確 / Ensure AI_model config exists and valid
-                if json_data.get("AI_model") and len(json_data.get("AI_model")) == 4:
+                # 確認 AI_model 設定存在且包含必要欄位 / Ensure AI_model config exists with required fields
+                if json_data.get("AI_model") and isinstance(json_data.get("AI_model"), dict):
                     ai_info: dict = json_data.get("AI_model")
                     if ai_info.get("ai_base_url") and ai_info.get("chat_model"):
                         ai_config.choosable_ai.update(json_data)  # 更新全域設定 / Update global config
@@ -121,18 +120,21 @@ class ChatUI(QWidget):
     def call_ai_model(self):
         if isinstance(self.lang_chain_interface, LangChainInterface):
             # 建立新執行緒處理 AI 請求 / Start a new thread for AI request
-            thread = AskThread(lang_chain_interface=self.lang_chain_interface, prompt=self.prompt_input.text())
-            thread.start()
+            # Store reference to prevent garbage collection before thread completes
+            self._ask_thread = AskThread(lang_chain_interface=self.lang_chain_interface, prompt=self.prompt_input.text())
+            self._ask_thread.start()
         else:
             # 若未正確設定 AI，顯示錯誤訊息 / Show error if AI not configured
-            ai_info = ai_config.choosable_ai.get('AI_model')
+            ai_info = ai_config.choosable_ai.get('AI_model', {})
+            # Mask API key to prevent leaking credentials
+            api_key = ai_info.get('ai_api_key', '')
+            masked_key = f"{api_key[:4]}...{api_key[-4:]}" if api_key and len(api_key) > 8 else "(not set)"
             QMessageBox.warning(self,
                                 language_wrapper.language_word_dict.get("call_ai_model_error_title"),
-                                language_wrapper.language_word_dict.get(
-                                    f"ai_api_key: {ai_info.get('ai_api_key')}, \n"
-                                    f"ai_base_url: {ai_info.get('ai_base_url')}, \n"
-                                    f"chat_model: {ai_info.get('chat_model')}, \n"
-                                    f"prompt_template: {ai_info.get('prompt_template')}"))
+                                f"ai_api_key: {masked_key}, \n"
+                                f"ai_base_url: {ai_info.get('ai_base_url')}, \n"
+                                f"chat_model: {ai_info.get('chat_model')}, \n"
+                                f"prompt_template: {ai_info.get('prompt_template')}")
 
     # 從訊息佇列中取出 AI 回覆並顯示 / Pull AI response from queue
     def pull_message(self):

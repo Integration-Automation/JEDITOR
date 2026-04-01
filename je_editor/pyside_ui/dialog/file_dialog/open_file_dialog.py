@@ -44,24 +44,29 @@ def choose_file_get_open_file_path(parent_qt_instance: EditorMain) -> None:
 
         if file_path is not None and file_path != "":
             # 檢查檔案是否已經開啟 / Check if file already opened
-            if file_is_open_manager_dict.get(str(Path(file_path)), None) is not None:
-                widget.tab_manager.setCurrentWidget(
-                    widget.tab_manager.findChild(EditorWidget, str(Path(file_path).name)))
+            normalized_path = str(Path(file_path))
+            if file_is_open_manager_dict.get(normalized_path, None) is not None:
+                found_widget = widget.tab_manager.findChild(EditorWidget, str(Path(file_path).name))
+                if found_widget is not None:
+                    widget.tab_manager.setCurrentWidget(found_widget)
                 return
             else:
                 # 記錄已開啟檔案 / Register opened file
-                file_is_open_manager_dict.update({file_path: str(Path(file_path).name)})
+                file_is_open_manager_dict.update({normalized_path: str(Path(file_path).name)})
 
             # 設定目前檔案路徑 / Set current file path
             widget.current_file = file_path
             # 讀取檔案內容 / Read file content
-            file_content = read_file(file_path)[1]
+            result = read_file(file_path)
+            if result is None:
+                return
+            file_content = result[1]
             widget.code_edit.setPlainText(file_content)
 
             # 啟動自動儲存執行緒 / Start auto-save thread
             if widget.current_file is not None and widget.code_save_thread is None:
                 init_new_auto_save_thread(widget.current_file, widget)
-            else:
+            elif widget.code_save_thread is not None:
                 widget.code_save_thread.file = widget.current_file
 
             # 更新使用者設定中的最後開啟檔案 / Update last opened file in user settings
@@ -97,9 +102,9 @@ def choose_dir_get_dir_path(parent_qt_instance: EditorMain) -> None:
 
         # 設定虛擬環境路徑 / Set virtual environment path
         if sys.platform in ["win32", "cygwin", "msys"]:
-            venv_path = Path(os.getcwd() + "/venv/Scripts")
+            venv_path = Path(os.getcwd()) / "venv" / "Scripts"
         else:
-            venv_path = Path(os.getcwd() + "/venv/bin")
+            venv_path = Path(os.getcwd()) / "venv" / "bin"
 
         parent_qt_instance.python_compiler = check_and_choose_venv(venv_path)
 
