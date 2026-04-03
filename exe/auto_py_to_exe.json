@@ -7,7 +7,7 @@
   },
   {
    "optionDest": "filenames",
-   "value": "C:/CodeWorkspace/Python/JEDITOR/exe/start_editor.py"
+   "value": "D:/Codes/JEDITOR/exe/start_editor.py"
   },
   {
    "optionDest": "onefile",
@@ -19,7 +19,7 @@
   },
   {
    "optionDest": "icon_file",
-   "value": "C:/CodeWorkspace/Python/JEDITOR/exe/python_editor.ico"
+   "value": "D:/Codes/JEDITOR/exe/editor.ico"
   },
   {
    "optionDest": "name",
@@ -59,23 +59,11 @@
   },
   {
    "optionDest": "pathex",
-   "value": "C:/CodeWorkspace/Python/JEDITOR/.venv"
+   "value": "D:/Codes/JEDITOR/.venv"
   },
   {
-   "optionDest": "datas",
-   "value": "C:\\CodeWorkspace\\Python\\JEDITOR\\.venv\\Lib\\site-packages\\IPython;.IPython/"
-  },
-  {
-   "optionDest": "datas",
-   "value": "C:\\CodeWorkspace\\Python\\JEDITOR\\.venv\\Lib\\site-packages\\ipykernel-7.1.0.dist-info;ipykernel-7.1.0.dist-info/"
-  },
-  {
-   "optionDest": "datas",
-   "value": "C:\\CodeWorkspace\\Python\\JEDITOR\\.venv\\Lib\\site-packages\\ipykernel;ipykernel/"
-  },
-  {
-   "optionDest": "datas",
-   "value": "C:\\CodeWorkspace\\Python\\JEDITOR\\.venv\\Lib\\site-packages\\ipykernel-7.1.0.dist-info;ipykernel-7.1.0.dist-info/"
+   "optionDest": "pathex",
+   "value": ""
   }
  ],
  "nonPyinstallerOptions": {

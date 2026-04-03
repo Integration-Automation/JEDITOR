@@ -150,7 +150,7 @@ class EditorMain(QMainWindow, QtStyleTools):
         # 設定應用程式圖示
         # Set application icon
         if not extend:
-            self.icon_path = Path(os.getcwd()) / "python_editor.ico"
+            self.icon_path = Path(os.getcwd()) / "editor.ico"
             self.icon = QIcon(str(self.icon_path))
             if not self.icon.isNull():
                 self.setWindowIcon(self.icon)
