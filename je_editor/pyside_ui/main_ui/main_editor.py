@@ -72,6 +72,7 @@ class EditorMain(QMainWindow, QtStyleTools):
         self.font_menu = None
         self.working_dir = None
         self.show_system_tray_ray = show_system_tray_ray
+        self.extend = extend  # 是否為擴充模式（如 PyBreeze）/ Whether in extend mode (e.g. PyBreeze)
 
         # 確保外部插件已載入（若尚未載入）
         # Ensure external plugins are loaded (if not already)

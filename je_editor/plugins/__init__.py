@@ -100,3 +100,72 @@ def get_all_natural_languages() -> dict:
     Returns: {"French": {"display_name": "Francais", "word_dict": {...}}, ...}
     """
     return _natural_language_plugins.copy()
+
+
+# -----------------------------
+# Plugin Run Config Registry
+# 插件執行設定註冊表
+# -----------------------------
+# Maps plugin name to run config dict
+# 將插件名稱映射到執行設定字典
+_plugin_run_configs: list[dict] = []
+
+
+def register_plugin_run_config(run_config: dict) -> None:
+    """
+    註冊一個插件的執行設定。
+    Register a plugin's run configuration.
+
+    :param run_config: 執行設定字典 / Run configuration dict
+        格式 / Format: {"name": "C++ (G++)", "suffixes": (".cpp",), "compiler": "g++", ...}
+    """
+    jeditor_logger.info(f"register_plugin_run_config: {run_config.get('name')}")
+    _plugin_run_configs.append(run_config)
+
+
+def get_all_plugin_run_configs() -> list[dict]:
+    """
+    取得所有已註冊的插件執行設定。
+    Get all registered plugin run configurations.
+    """
+    return _plugin_run_configs.copy()
+
+
+def get_plugin_run_config_by_suffix(suffix: str) -> dict | None:
+    """
+    依副檔名取得對應的插件執行設定。
+    Get plugin run configuration by file suffix.
+    """
+    for config in _plugin_run_configs:
+        if suffix in config.get("suffixes", ()):
+            return config
+    return None
+
+
+# -----------------------------
+# Plugin Metadata Registry
+# 插件元資料註冊表
+# -----------------------------
+# Stores plugin metadata (name, author, version, etc.)
+# 儲存插件元資料（名稱、作者、版本等）
+_plugin_metadata_list: list[dict] = []
+
+
+def register_plugin_metadata(metadata: dict) -> None:
+    """
+    註冊一個插件的元資料。
+    Register a plugin's metadata.
+
+    :param metadata: 元資料字典 / Metadata dict
+        格式 / Format: {"name": "...", "author": "...", "version": "...", "run_config": {...} or None}
+    """
+    jeditor_logger.info(f"register_plugin_metadata: {metadata.get('name')}")
+    _plugin_metadata_list.append(metadata)
+
+
+def get_all_plugin_metadata() -> list[dict]:
+    """
+    取得所有已註冊的插件元資料。
+    Get all registered plugin metadata.
+    """
+    return _plugin_metadata_list.copy()

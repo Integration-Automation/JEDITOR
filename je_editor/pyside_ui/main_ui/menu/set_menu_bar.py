@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING
 # Import functions to build different sub-menus
 from je_editor.pyside_ui.main_ui.menu.dock_menu.build_dock_menu import set_dock_menu
 from je_editor.pyside_ui.main_ui.menu.language_menu.build_language_server import set_language_menu
+from je_editor.pyside_ui.main_ui.menu.plugin_menu.build_plugin_menu import set_plugin_menu
 from je_editor.pyside_ui.main_ui.menu.style_menu.build_style_menu import set_style_menu
 from je_editor.pyside_ui.main_ui.menu.tab_menu.build_tab_menu import set_tab_menu
 from je_editor.pyside_ui.main_ui.menu.text_menu.build_text_menu import set_text_menu
@@ -57,6 +58,11 @@ def set_menu_bar(ui_we_want_to_set: EditorMain) -> None:
     set_dock_menu(ui_we_want_to_set)  # Dock 視窗選單 / Dock menu
     set_style_menu(ui_we_want_to_set)  # 介面樣式選單 / Style menu
     set_language_menu(ui_we_want_to_set)  # 語言選單 / Language menu
+
+    # 僅在非擴充模式時建立插件選單（擴充模式如 PyBreeze 會自行建立）
+    # Only build plugin menu in standalone mode (extend mode like PyBreeze builds its own)
+    if not getattr(ui_we_want_to_set, "extend", False):
+        set_plugin_menu(ui_we_want_to_set)
 
     # 將選單列設定到主視窗
     # Attach the menu bar to the main editor window
