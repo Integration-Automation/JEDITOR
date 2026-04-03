@@ -62,13 +62,13 @@ class ShellManager(object):
         # 更新 Python 編譯器路徑
         # Renew Python compiler path
         jeditor_logger.info("ShellManager renew_path")
-        if self.main_window.python_compiler is None:
+        if self.main_window is None or self.main_window.python_compiler is None:
             # 如果主視窗沒有指定 Python，則使用 venv
             # If no compiler specified, use venv
             if sys.platform in ["win32", "cygwin", "msys"]:
-                venv_path = Path(os.getcwd() + "/venv/Scripts")
+                venv_path = Path(os.getcwd()) / "venv" / "Scripts"
             else:
-                venv_path = Path(os.getcwd() + "/venv/bin")
+                venv_path = Path(os.getcwd()) / "venv" / "bin"
             self.compiler_path = check_and_choose_venv(venv_path)
         else:
             self.compiler_path = self.main_window.python_compiler
@@ -93,10 +93,11 @@ class ShellManager(object):
         try:
             self.exit_program()  # 結束舊的程序 / terminate previous process
             self.code_result.setPlainText("")  # 清空輸出視窗 / clear output window
+            # shell=True expects a string on Unix, list on Windows is also fine
             if sys.platform in ["win32", "cygwin", "msys"]:
                 args = shell_command
             else:
-                args = shlex.split(shell_command)  # 非 Windows 系統需分割指令 / split command for Unix-like
+                args = shell_command if isinstance(shell_command, str) else " ".join(shell_command)
             text_cursor = self.code_result.textCursor()
             text_format = QTextCharFormat()
             text_format.setForeground(actually_color_dict.get("normal_output_color"))
@@ -166,19 +167,21 @@ class ShellManager(object):
         except queue.Empty:
             pass
         # 檢查子程序是否結束 / check if process finished
-        if self.process.returncode == 0:
-            self.process_run_over()
-        elif self.process.returncode is not None:
-            self.process_run_over()
-        if self.still_run_shell:
-            # 持續檢查程序狀態 / keep polling process
-            self.process.poll()
+        if self.process is not None:
+            if self.process.returncode == 0:
+                self.process_run_over()
+            elif self.process.returncode is not None:
+                self.process_run_over()
+            if self.still_run_shell:
+                # 持續檢查程序狀態 / keep polling process
+                self.process.poll()
 
     def process_run_over(self):
         # 當子程序結束時呼叫，停止計時器並清理資源
         # Called when subprocess finishes, stop timer and clean up resources
         jeditor_logger.info("ShellManager process_run_over")
-        self.timer.stop()  # 停止定時器 / stop QTimer
+        if self.timer is not None:
+            self.timer.stop()  # 停止定時器 / stop QTimer
         self.exit_program()  # 結束程序並清理 / terminate process and cleanup
         self.main_window.exec_shell = None  # 重置 main_window 的 exec_shell / reset exec_shell reference
         if self.after_done_function is not None:
@@ -189,19 +192,27 @@ class ShellManager(object):
     def exit_program(self) -> None:
         jeditor_logger.info("ShellManager exit_program")
         self.still_run_shell = False  # 停止讀取迴圈 / stop reading loop
+        # 等待讀取執行緒結束 / Wait for reader threads to finish
         if self.read_program_output_from_thread is not None:
-            self.read_program_output_from_thread = None  # 清理 stdout 執行緒 / clear stdout thread
+            self.read_program_output_from_thread.join(timeout=2)
+            self.read_program_output_from_thread = None
         if self.read_program_error_output_from_thread is not None:
-            self.read_program_error_output_from_thread = None  # 清理 stderr 執行緒 / clear stderr thread
+            self.read_program_error_output_from_thread.join(timeout=2)
+            self.read_program_error_output_from_thread = None
         self.print_and_clear_queue()  # 清空輸出佇列 / clear output queues
         if self.process is not None:
             self.process.terminate()  # 終止子程序 / terminate subprocess
-            text_cursor = self.code_result.textCursor()
-            text_format = QTextCharFormat()
-            text_format.setForeground(actually_color_dict.get("normal_output_color"))
-            # 顯示退出代碼 / show exit code
-            text_cursor.insertText(f"Shell command exit with code {self.process.returncode}", text_format)
-            text_cursor.insertBlock()
+            try:
+                self.process.wait(timeout=5)
+            except subprocess.TimeoutExpired:
+                self.process.kill()
+            if self.code_result is not None:
+                text_cursor = self.code_result.textCursor()
+                text_format = QTextCharFormat()
+                text_format.setForeground(actually_color_dict.get("normal_output_color"))
+                # 顯示退出代碼 / show exit code
+                text_cursor.insertText(f"Shell command exit with code {self.process.returncode}", text_format)
+                text_cursor.insertBlock()
             self.process = None  # 清空 process 物件 / reset process object
 
     def print_and_clear_queue(self) -> None:
@@ -215,22 +226,32 @@ class ShellManager(object):
         # 從子程序讀取標準輸出並放入佇列
         # Continuously read stdout from subprocess and put into queue
         jeditor_logger.info("ShellManager read_program_output_from_process")
-        while self.still_run_shell:
-            program_output_data = self.process.stdout.readline(
-                self.program_buffer) \
-                .decode(self.program_encoding, "replace")  # 解碼輸出 / decode output
-            if self.process:
-                self.process.stdout.flush()  # 清空緩衝區 / flush buffer
-            self.run_output_queue.put_nowait(program_output_data)  # 放入輸出佇列 / enqueue stdout
+        try:
+            while self.still_run_shell:
+                program_output_data = self.process.stdout.readline(
+                    self.program_buffer) \
+                    .decode(self.program_encoding, "replace")  # 解碼輸出 / decode output
+                if not program_output_data and self.process.poll() is not None:
+                    break
+                if self.process:
+                    self.process.stdout.flush()  # 清空緩衝區 / flush buffer
+                self.run_output_queue.put_nowait(program_output_data)  # 放入輸出佇列 / enqueue stdout
+        except (OSError, ValueError):
+            pass
 
     def read_program_error_output_from_process(self) -> None:
         # 從子程序讀取錯誤輸出並放入佇列
         # Continuously read stderr from subprocess and put into queue
         jeditor_logger.info("ShellManager read_program_error_output_from_process")
-        while self.still_run_shell:
-            program_error_output_data = self.process.stderr.readline(
-                self.program_buffer) \
-                .decode(self.program_encoding, "replace")  # 解碼錯誤輸出 / decode stderr
-            if self.process:
-                self.process.stderr.flush()  # 清空緩衝區 / flush buffer
-            self.run_error_queue.put_nowait(program_error_output_data)  # 放入錯誤佇列 / enqueue stderr
+        try:
+            while self.still_run_shell:
+                program_error_output_data = self.process.stderr.readline(
+                    self.program_buffer) \
+                    .decode(self.program_encoding, "replace")  # 解碼錯誤輸出 / decode stderr
+                if not program_error_output_data and self.process.poll() is not None:
+                    break
+                if self.process:
+                    self.process.stderr.flush()  # 清空緩衝區 / flush buffer
+                self.run_error_queue.put_nowait(program_error_output_data)  # 放入錯誤佇列 / enqueue stderr
+        except (OSError, ValueError):
+            pass

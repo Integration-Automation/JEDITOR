@@ -42,7 +42,8 @@ def set_language_menu(ui_we_want_to_set: EditorMain) -> None:
     # 建立「切換到英文」動作
     # Add "Switch to English" action
     ui_we_want_to_set.language_menu.change_to_english_language_action = QAction(
-        language_wrapper.language_word_dict.get("language_menu_bar_english")
+        language_wrapper.language_word_dict.get("language_menu_bar_english"),
+        ui_we_want_to_set.language_menu
     )
     ui_we_want_to_set.language_menu.change_to_english_language_action.triggered.connect(
         lambda: set_language("English", ui_we_want_to_set)
@@ -51,7 +52,8 @@ def set_language_menu(ui_we_want_to_set: EditorMain) -> None:
     # 建立「切換到繁體中文」動作
     # Add "Switch to Traditional Chinese" action
     ui_we_want_to_set.language_menu.change_to_traditional_chinese_language_action = QAction(
-        language_wrapper.language_word_dict.get("language_menu_bar_traditional_chinese")
+        language_wrapper.language_word_dict.get("language_menu_bar_traditional_chinese"),
+        ui_we_want_to_set.language_menu
     )
     ui_we_want_to_set.language_menu.change_to_traditional_chinese_language_action.triggered.connect(
         lambda: set_language("Traditional_Chinese", ui_we_want_to_set)
@@ -65,6 +67,17 @@ def set_language_menu(ui_we_want_to_set: EditorMain) -> None:
     ui_we_want_to_set.language_menu.addAction(
         ui_we_want_to_set.language_menu.change_to_traditional_chinese_language_action
     )
+
+    # 動態加入插件註冊的語言
+    # Dynamically add plugin-registered languages
+    from je_editor.plugins import get_all_natural_languages
+    for lang_key, lang_info in get_all_natural_languages().items():
+        display_name = lang_info.get("display_name", lang_key)
+        action = QAction(display_name, ui_we_want_to_set.language_menu)
+        action.triggered.connect(
+            lambda checked=False, lk=lang_key: set_language(lk, ui_we_want_to_set)
+        )
+        ui_we_want_to_set.language_menu.addAction(action)
 
 
 # 設定語言

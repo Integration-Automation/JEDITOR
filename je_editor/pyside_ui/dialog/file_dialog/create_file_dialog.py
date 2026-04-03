@@ -63,6 +63,6 @@ class CreateFileDialog(QWidget):
         else:
             # 建立新檔案 (若存在則覆蓋)
             # Create new file (overwrite if exists)
-            with open(file_name, "w+") as file:
+            with open(file_name, "w+", encoding="utf-8") as file:
                 file.write("")
             self.close()  # 關閉對話框 / close dialog

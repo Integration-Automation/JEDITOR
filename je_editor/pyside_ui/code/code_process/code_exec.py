@@ -18,7 +18,7 @@ from je_editor.pyside_ui.main_ui.save_settings.user_color_setting_file import ac
 from je_editor.utils.exception.exception_tags import je_editor_init_error
 from je_editor.utils.exception.exceptions import JEditorException
 from je_editor.utils.logging.loggin_instance import jeditor_logger
-from je_editor.utils.venv_check.check_venv import check_and_choose_venv
+from je_editor.utils.venv_check.check_venv import check_and_choose_venv, get_venv_path
 
 
 # Support postponed evaluation of type annotations
@@ -72,13 +72,9 @@ class ExecManager(object):
     def renew_path(self) -> None:
         """更新 Python 直譯器路徑 / Renew compiler path"""
         jeditor_logger.info("ExecManager renew_path")
-        if self.main_window.python_compiler is None:
+        if self.main_window is None or self.main_window.python_compiler is None:
             # 如果主視窗沒有指定 Python，則使用虛擬環境
-            if sys.platform in ["win32", "cygwin", "msys"]:
-                venv_path = Path(str(Path.cwd()) + "/venv/Scripts")
-            else:
-                venv_path = Path(str(Path.cwd()) + "/venv/bin")
-            self.compiler_path = check_and_choose_venv(venv_path)
+            self.compiler_path = check_and_choose_venv(get_venv_path())
         else:
             self.compiler_path = self.main_window.python_compiler
 
@@ -117,11 +113,7 @@ class ExecManager(object):
                 else:
                     execute_program_param = [self.compiler_path] + exec_prefix + [exec_file]
 
-            # 非 Windows 平台需轉為字串
-            if sys.platform not in ["win32", "cygwin", "msys"]:
-                execute_program_param = " ".join(execute_program_param)
-
-            # 建立子程序
+            # 建立子程序 (always use list args with shell=False)
             self.process = subprocess.Popen(
                 execute_program_param,
                 stdout=subprocess.PIPE,
@@ -168,10 +160,134 @@ class ExecManager(object):
             if self.process is not None:
                 self.process.terminate()
 
+    def exec_with_plugin_config(self, exec_file_name: str, run_config: dict) -> None:
+        """
+        使用插件的 PLUGIN_RUN_CONFIG 執行程式。
+        Execute a program using plugin's PLUGIN_RUN_CONFIG.
+
+        支援兩種模式 / Supports two modes:
+        1. compile_then_run: 先編譯再執行（如 C/C++/Rust）
+           Compile first, then run the output binary
+        2. 直接執行（如 Go, Java）
+           Direct execution (e.g. go run, java)
+
+        :param exec_file_name: 要執行的檔案名稱 / File to execute
+        :param run_config: 插件執行設定字典 / Plugin run config dict
+        """
+        jeditor_logger.info(f"ExecManager exec_with_plugin_config "
+                            f"exec_file_name: {exec_file_name} "
+                            f"run_config: {run_config}")
+        try:
+            self.exit_program()
+            self.code_result.setPlainText("")
+            file_path = Path(exec_file_name)
+            reformat_os_file_path = str(file_path.absolute())
+
+            compiler = run_config.get("compiler", "")
+            args = list(run_config.get("args", ()))
+            compile_then_run = run_config.get("compile_then_run", False)
+            output_flag = run_config.get("output_flag", "")
+
+            if compile_then_run:
+                # 先編譯再執行 / Compile then run
+                output_path = str(file_path.with_suffix(".exe" if sys.platform == "win32" else ""))
+
+                # 編譯指令 / Compile command
+                compile_cmd = [compiler] + args + [reformat_os_file_path]
+                if output_flag:
+                    compile_cmd += [output_flag, output_path]
+
+                # 顯示編譯指令 / Show compile command
+                text_cursor = self.code_result.textCursor()
+                text_format = QTextCharFormat()
+                text_format.setForeground(actually_color_dict.get("normal_output_color"))
+                text_cursor.insertText("[Compile] " + " ".join(compile_cmd), text_format)
+                text_cursor.insertBlock()
+
+                # 執行編譯 / Run compilation
+                compile_process = subprocess.Popen(
+                    compile_cmd,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    shell=False,
+                )
+                stdout, stderr = compile_process.communicate(timeout=60)
+
+                if stderr:
+                    text_format_err = QTextCharFormat()
+                    text_format_err.setForeground(actually_color_dict.get("error_output_color"))
+                    text_cursor.insertText(stderr.decode(self.program_encoding, "replace"), text_format_err)
+                    text_cursor.insertBlock()
+
+                if compile_process.returncode != 0:
+                    text_cursor.insertText(
+                        f"Compilation failed with code {compile_process.returncode}", text_format
+                    )
+                    text_cursor.insertBlock()
+                    return
+
+                if stdout:
+                    text_cursor.insertText(stdout.decode(self.program_encoding, "replace"), text_format)
+                    text_cursor.insertBlock()
+
+                # 編譯成功，執行輸出檔 / Compilation succeeded, run output
+                execute_program_param = [output_path]
+                display_cmd = output_path
+            else:
+                # 直接執行 / Direct execution
+                execute_program_param = [compiler] + args + [reformat_os_file_path]
+                display_cmd = " ".join(execute_program_param)
+
+            # 建立子程序 / Create subprocess
+            self.process = subprocess.Popen(
+                execute_program_param,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                stdin=subprocess.PIPE,
+                shell=False,
+            )
+            self.still_run_program = True
+
+            # 啟動輸出讀取執行緒 / Start output reader threads
+            self.read_program_output_from_thread = Thread(
+                target=self.read_program_output_from_process,
+                daemon=True,
+            )
+            self.read_program_output_from_thread.start()
+
+            self.read_program_error_output_from_thread = Thread(
+                target=self.read_program_error_output_from_process,
+                daemon=True,
+            )
+            self.read_program_error_output_from_thread.start()
+
+            # 顯示執行指令 / Show run command
+            text_cursor = self.code_result.textCursor()
+            text_format = QTextCharFormat()
+            text_format.setForeground(actually_color_dict.get("normal_output_color"))
+            text_cursor.insertText("[Run] " + display_cmd, text_format)
+            text_cursor.insertBlock()
+
+            # 啟動定時器 / Start timer
+            self.timer = QTimer(self.main_window)
+            self.timer.setInterval(10)
+            self.timer.timeout.connect(self.pull_text)
+            self.timer.start()
+
+        except Exception as error:
+            text_cursor = self.code_result.textCursor()
+            text_format = QTextCharFormat()
+            text_format.setForeground(actually_color_dict.get("normal_output_color"))
+            text_cursor.insertText(str(error), text_format)
+            text_cursor.insertBlock()
+            if self.process is not None:
+                self.process.terminate()
+
     def full_exit_program(self):
         """完全結束程式 / Fully exit program"""
         jeditor_logger.info("ExecManager full_exit_program")
-        self.timer.stop()
+        if self.timer is not None:
+            self.timer.stop()
         self.exit_program()
         self.main_window.exec_program = None
 
@@ -205,36 +321,45 @@ class ExecManager(object):
             pass
 
         # 如果子程序已經結束(returncode 不為 None)，則完全退出
-        if self.process.returncode == 0:
-            self.full_exit_program()
-        elif self.process.returncode is not None:
-            self.full_exit_program()
+        if self.process is not None:
+            if self.process.returncode == 0:
+                self.full_exit_program()
+            elif self.process.returncode is not None:
+                self.full_exit_program()
 
-        # 如果程式仍在執行，持續檢查狀態
-        if self.still_run_program:
-            # poll() 不會阻塞，只是更新 returncode
-            self.process.poll()
+            # 如果程式仍在執行，持續檢查狀態
+            if self.still_run_program:
+                # poll() 不會阻塞，只是更新 returncode
+                self.process.poll()
 
     # 結束程式：將執行旗標設為 False，清理執行緒、佇列與子程序
     # Exit program: change run flag to false and clean read thread, queue, and process
     def exit_program(self) -> None:
         jeditor_logger.info("ExecManager exit_program")
         self.still_run_program = False
-        # 清除讀取執行緒的引用
+        # 等待讀取執行緒結束（設定 timeout 避免永久阻塞）
+        # Wait for reader threads to finish (with timeout to avoid deadlock)
         if self.read_program_output_from_thread is not None:
+            self.read_program_output_from_thread.join(timeout=2)
             self.read_program_output_from_thread = None
         if self.read_program_error_output_from_thread is not None:
+            self.read_program_error_output_from_thread.join(timeout=2)
             self.read_program_error_output_from_thread = None
         # 清空佇列
         self.print_and_clear_queue()
-        # 如果子程序存在，則終止
+        # 如果子程序存在，則終止並等待
         if self.process is not None:
             self.process.terminate()
-            text_cursor = self.code_result.textCursor()
-            text_format = QTextCharFormat()
-            text_format.setForeground(actually_color_dict.get("normal_output_color"))
-            text_cursor.insertText(f"Program exit with code {self.process.returncode}", text_format)
-            text_cursor.insertBlock()
+            try:
+                self.process.wait(timeout=5)
+            except subprocess.TimeoutExpired:
+                self.process.kill()
+            if self.code_result is not None:
+                text_cursor = self.code_result.textCursor()
+                text_format = QTextCharFormat()
+                text_format.setForeground(actually_color_dict.get("normal_output_color"))
+                text_cursor.insertText(f"Program exit with code {self.process.returncode}", text_format)
+                text_cursor.insertBlock()
             self.process = None
 
     # 清空輸出與錯誤佇列
@@ -248,20 +373,30 @@ class ExecManager(object):
     # Continuously read from process stdout and put into output queue
     def read_program_output_from_process(self) -> None:
         jeditor_logger.info("ExecManager read_program_output_from_process")
-        while self.still_run_program:
-            program_output_data: str = self.process.stdout.readline(
-                self.program_buffer).decode(self.program_encoding, "replace")
-            if self.process:
-                self.process.stdout.flush()
-            self.run_output_queue.put_nowait(program_output_data)
+        try:
+            while self.still_run_program:
+                program_output_data: str = self.process.stdout.readline(
+                    self.program_buffer).decode(self.program_encoding, "replace")
+                if not program_output_data and self.process.poll() is not None:
+                    break
+                if self.process:
+                    self.process.stdout.flush()
+                self.run_output_queue.put_nowait(program_output_data)
+        except (OSError, ValueError):
+            pass
 
     # 從子程序 stderr 持續讀取資料並放入錯誤佇列
     # Continuously read from process stderr and put into error queue
     def read_program_error_output_from_process(self) -> None:
         jeditor_logger.info("ExecManager read_program_error_output_from_process")
-        while self.still_run_program:
-            program_error_output_data: str = self.process.stderr.readline(
-                self.program_buffer).decode(self.program_encoding, "replace")
-            if self.process:
-                self.process.stderr.flush()
-            self.run_error_queue.put_nowait(program_error_output_data)
+        try:
+            while self.still_run_program:
+                program_error_output_data: str = self.process.stderr.readline(
+                    self.program_buffer).decode(self.program_encoding, "replace")
+                if not program_error_output_data and self.process.poll() is not None:
+                    break
+                if self.process:
+                    self.process.stderr.flush()
+                self.run_error_queue.put_nowait(program_error_output_data)
+        except (OSError, ValueError):
+            pass

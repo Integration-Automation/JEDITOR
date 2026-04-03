@@ -50,9 +50,11 @@ def read_user_setting() -> None:
 
     # 設定檔路徑：當前工作目錄下的 `.jeditor/user_setting.json`
     # File path: `.jeditor/user_setting.json` under current working directory
-    user_setting_file = Path(getcwd() + "/.jeditor/user_setting.json")
+    user_setting_file = Path(getcwd()) / ".jeditor" / "user_setting.json"
 
     # 如果檔案存在，就讀取並更新設定字典
     # If the file exists, read and update the settings dictionary
     if user_setting_file.exists() and user_setting_file.is_file():
-        user_setting_dict.update(read_json(str(user_setting_file)))
+        data = read_json(str(user_setting_file))
+        if data is not None:
+            user_setting_dict.update(data)

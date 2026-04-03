@@ -5,6 +5,10 @@ from threading import Lock
 from je_editor.utils.exception.exceptions import JEditorSaveFileException
 from je_editor.utils.logging.loggin_instance import jeditor_logger
 
+# 模組層級的鎖，確保多執行緒安全
+# Module-level lock for thread safety
+_file_write_lock = Lock()
+
 
 def write_file(file_path: str, content: str) -> None:
     """
@@ -32,21 +36,21 @@ def write_file(file_path: str, content: str) -> None:
                         f"file_path: {file_path} "
                         f"content: {content}")
 
-    lock = Lock()  # 建立一個執行緒鎖 / Create a thread lock
     content = str(content)  # 確保內容為字串 / Ensure content is a string
 
     try:
-        lock.acquire()  # 嘗試鎖定資源 / Acquire the lock
+        _file_write_lock.acquire()  # 嘗試鎖定資源 / Acquire the lock
         if file_path != "" and file_path is not None:  # 確認路徑有效 / Ensure path is valid
             # 以寫入模式開啟檔案 (UTF-8 編碼)
             # Open file in write+read mode with UTF-8 encoding
             with open(file_path, "w+", encoding="utf-8") as file_to_write:
                 file_to_write.write(content)  # 寫入內容 / Write content
-    except JEditorSaveFileException:
-        # 捕捉自訂例外並重新拋出
-        # Catch custom exception and re-raise
+    except OSError as e:
+        # 捕捉檔案 IO 例外
+        # Catch file IO exceptions
+        jeditor_logger.error(f"Failed to write file {file_path}: {e}")
         raise JEditorSaveFileException
     finally:
         # 確保鎖一定會被釋放
         # Ensure the lock is always released
-        lock.release()
+        _file_write_lock.release()

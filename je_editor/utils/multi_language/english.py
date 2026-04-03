@@ -224,4 +224,27 @@ please make sure that the current encoding is consistent with the default encodi
     "dynamic_console_done": "[done] exit={code}, status={status}",
     "dynamic_console_system_prefix": "[system] ",
     # Code diff viewer
+    # Plugin Menu
+    "plugin_menu_label": "Plugins",
+    "plugin_menu_about": "About",
+    "plugin_menu_run_with": "Run with {name}",
+    # Plugin Browser
+    "plugin_browser_tab_name": "Plugin Browser",
+    "plugin_browser_repo_label": "Repository URL:",
+    "plugin_browser_fetch_btn": "Fetch Plugins",
+    "plugin_browser_col_name": "Plugin",
+    "plugin_browser_col_path": "Path",
+    "plugin_browser_col_size": "Size",
+    "plugin_browser_select_hint": "Select a plugin to view details",
+    "plugin_browser_download_btn": "Download && Install",
+    "plugin_browser_loading_source": "Loading source code...",
+    "plugin_browser_overwrite_title": "Plugin exists",
+    "plugin_browser_overwrite_msg": "{name} already exists. Overwrite?",
+    "plugin_browser_invalid_url": "Invalid repository URL",
+    "plugin_browser_status_ready": "Ready",
+    "plugin_browser_status_fetching": "Fetching plugin list...",
+    "plugin_browser_status_loaded": "Loaded {count} plugins",
+    "plugin_browser_status_downloading": "Downloading {name}...",
+    "plugin_browser_status_installed": "Installed: {path}",
+    "plugin_browser_restart_hint": "Plugin downloaded to:\n{path}\n\nPlease restart the editor to activate.",
 }

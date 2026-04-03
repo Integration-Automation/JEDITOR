@@ -31,7 +31,7 @@ from je_editor.pyside_ui.main_ui.save_settings.user_color_setting_file import ac
 def venv_check():
     """檢查當前工作目錄下是否有 venv 資料夾 / Check if venv exists in current working directory"""
     jeditor_logger.info("code_edit_plaintext.py venv check")
-    venv_path = Path(str(Path.cwd()) + "/venv")
+    venv_path = Path.cwd() / "venv"
     return venv_path
 
 
@@ -182,7 +182,7 @@ class CodeEditor(QPlainTextEdit):
         # 取得補全清單
         jedi_complete_list: List[Completion] = script.complete(
             self.textCursor().blockNumber() + 1,
-            len(self.textCursor().document().findBlockByLineNumber(self.textCursor().blockNumber()).text())
+            self.textCursor().positionInBlock()
         )
 
         if len(jedi_complete_list) > 0:
@@ -214,7 +214,7 @@ class CodeEditor(QPlainTextEdit):
         """
         jeditor_logger.info("CodeEditor find_next_text")
         if self.search_box.isVisible():
-            text = self.search_box.command_input.text()
+            text = self.search_box.search_input.text()
             self.find(text)
 
     def find_back_text(self) -> None:
@@ -224,7 +224,7 @@ class CodeEditor(QPlainTextEdit):
         """
         jeditor_logger.info("CodeEditor find_back_text")
         if self.search_box.isVisible():
-            text = self.search_box.command_input.text()
+            text = self.search_box.search_input.text()
             self.find(text, QTextDocument.FindFlag.FindBackward)
 
     def line_number_paint(self, event) -> None:
@@ -340,7 +340,7 @@ class CodeEditor(QPlainTextEdit):
         jeditor_logger.info(f"CodeEditor keyPressEvent event: {event} key: {key}")
 
         # Ctrl + B → 跳轉到定義
-        if event.modifiers() and Qt.Modifier.CTRL:
+        if event.modifiers() & Qt.KeyboardModifier.ControlModifier:
             if key == Qt.Key.Key_B:
                 if self.env is not None:
                     script = jedi.Script(code=self.toPlainText(), environment=self.env)
@@ -354,7 +354,13 @@ class CodeEditor(QPlainTextEdit):
                         if self.main_window.current_file != str(path):
                             self.main_window.main_window.go_to_new_tab(path)
                     else:
-                        self.textCursor().setPosition(goto_list[0].line - 1)
+                        # Navigate to the target line using block-based cursor movement
+                        target_line = goto_list[0].line - 1
+                        cursor = self.textCursor()
+                        block = self.document().findBlockByNumber(target_line)
+                        if block.isValid():
+                            cursor.setPosition(block.position())
+                            self.setTextCursor(cursor)
                 return
 
         # 如果補全視窗開啟，且按下不該觸發的按鍵 → 關閉補全
@@ -364,7 +370,7 @@ class CodeEditor(QPlainTextEdit):
             return
 
         # Shift+Enter → 忽略 (避免軟換行影響行號)
-        if event.modifiers() and Qt.Modifier.SHIFT:
+        if event.modifiers() & Qt.KeyboardModifier.ShiftModifier:
             if key == Qt.Key.Key_Enter or key == Qt.Key.Key_Return:
                 event.ignore()
                 return

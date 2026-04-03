@@ -43,8 +43,9 @@ class DestroyDock(QDockWidget):
 
         # 關閉 dock 內部的 widget，確保資源釋放
         # Close the internal widget to ensure resource release
-        self.widget().close()
+        if self.widget() is not None:
+            self.widget().close()
 
-        # 呼叫父類別的 close()，完成 Qt 預設的關閉流程
-        # Call parent close() to complete default Qt closing process
-        super().close()
+        # 呼叫父類別的 closeEvent()，完成 Qt 預設的關閉流程
+        # Call parent closeEvent() to complete default Qt closing process
+        super().closeEvent(event)

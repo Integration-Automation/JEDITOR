@@ -119,7 +119,7 @@ class GitTreeViewGUI(QWidget):
         self.watcher.removePaths(self.watcher.directories())
         if not self.repo_path:
             return
-        git_dir = self.repo_path / ".git_client"  # ⚠️ 這裡應該是 ".git"，可能是自訂路徑
+        git_dir = self.repo_path / ".git"
         if git_dir.exists():
             self.watcher.addPath(str(git_dir))
             for f in ["HEAD", "packed-refs"]:

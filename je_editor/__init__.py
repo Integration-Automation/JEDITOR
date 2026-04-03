@@ -22,6 +22,20 @@ from je_editor.utils.multi_language.english import english_word_dict
 from je_editor.utils.multi_language.multi_language_wrapper import language_wrapper
 from je_editor.utils.multi_language.traditional_chinese import traditional_chinese_word_dict
 from je_editor.utils.logging.loggin_instance import jeditor_logger
+from je_editor.plugins import (
+    register_programming_language,
+    get_programming_language_plugin,
+    get_all_programming_language_suffixes,
+    register_natural_language,
+    get_natural_language_plugin,
+    get_all_natural_languages,
+    register_plugin_run_config,
+    get_all_plugin_run_configs,
+    get_plugin_run_config_by_suffix,
+    register_plugin_metadata,
+    get_all_plugin_metadata,
+)
+from je_editor.plugins.plugin_loader import load_external_plugins
 
 __all__ = [
     "start_editor", "EditorMain", "EDITOR_EXTEND_TAB",
@@ -31,5 +45,13 @@ __all__ = [
     "JEditorCantFindLanguageException", "JEditorJsonException", "PythonHighlighter",
     "user_setting_dict", "user_setting_color_dict", "EditorWidget", "MainBrowserWidget",
     "ExecManager", "ShellManager", "traditional_chinese_word_dict", "english_word_dict",
-    "language_wrapper", "jeditor_logger"
+    "language_wrapper", "jeditor_logger",
+    # Plugin API
+    "register_programming_language", "get_programming_language_plugin",
+    "get_all_programming_language_suffixes",
+    "register_natural_language", "get_natural_language_plugin",
+    "get_all_natural_languages", "load_external_plugins",
+    "register_plugin_run_config", "get_all_plugin_run_configs",
+    "get_plugin_run_config_by_suffix",
+    "register_plugin_metadata", "get_all_plugin_metadata",
 ]

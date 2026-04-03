@@ -28,25 +28,22 @@ class LanguageWrapper(object):
 
         # 根據目前語言選擇對應字典
         # Select the dictionary based on current language
-        self.language_word_dict: dict = self.choose_language_dict.get(self.language)
+        self.language_word_dict: dict = self.choose_language_dict.get(self.language, english_word_dict)
 
     def reset_language(self, language) -> None:
         """
         重設語言 (Reset the language)
-        :param language: "English" 或 "Traditional_Chinese"
+        :param language: 任何已註冊的語言鍵 / Any registered language key
         """
         jeditor_logger.info(f"LanguageWrapper reset_language language: {language}")
 
-        # 檢查輸入是否為支援的語言
-        # Check if the input language is supported
-        if language in [
-            "English",
-            "Traditional_Chinese"
-        ]:
+        # 檢查輸入是否為支援的語言（包含插件註冊的語言）
+        # Check if the input language is supported (including plugin-registered languages)
+        if language in self.choose_language_dict:
             # 更新語言與對應字典
             # Update language and corresponding dictionary
             self.language = language
-            self.language_word_dict = self.choose_language_dict.get(self.language)
+            self.language_word_dict = self.choose_language_dict.get(self.language, english_word_dict)
 
 
 # 建立一個全域的 LanguageWrapper 實例

@@ -91,7 +91,7 @@ def create_venv(ui_we_want_to_set: EditorMain) -> None:
     widget = ui_we_want_to_set.tab_widget.currentWidget()
     if isinstance(widget, EditorWidget):
         widget.python_compiler = ui_we_want_to_set.python_compiler
-        venv_path = Path(os.getcwd() + "/venv")
+        venv_path = Path(os.getcwd()) / "venv"
         if not venv_path.exists():
             # 使用 ShellManager 執行 python -m venv venv
             # Use ShellManager to run python -m venv venv
@@ -125,7 +125,7 @@ def shell_pip_install(ui_we_want_to_set: EditorMain, pip_install_command_list: l
     widget = ui_we_want_to_set.tab_widget.currentWidget()
     if isinstance(widget, EditorWidget):
         widget.python_compiler = ui_we_want_to_set.python_compiler
-        venv_path = Path(os.getcwd() + "/venv")
+        venv_path = Path(os.getcwd()) / "venv"
         if not venv_path.exists():
             # 如果 venv 不存在，提醒使用者先建立
             # If venv does not exist, remind user to create it first
@@ -151,7 +151,7 @@ def shell_pip_install(ui_we_want_to_set: EditorMain, pip_install_command_list: l
 # Detect if venv exists
 def detect_venv() -> bool:
     jeditor_logger.info("build_venv_menu.py detect_venv")
-    venv_path = Path(os.getcwd() + "/venv")
+    venv_path = Path(os.getcwd()) / "venv"
     if not venv_path.exists():
         message_box = QMessageBox()
         message_box.setText(language_wrapper.language_word_dict.get("python_env_menu_please_create_venv"))

@@ -123,3 +123,4 @@ dmypy.json
 /.idea
 .idea/misc.xml
 /.idea
+/.claude/

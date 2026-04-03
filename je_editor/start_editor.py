@@ -5,6 +5,7 @@ from PySide6.QtWidgets import QApplication
 from qt_material import apply_stylesheet
 
 from je_editor.pyside_ui.main_ui.main_editor import EditorMain
+from je_editor.plugins.plugin_loader import load_external_plugins
 
 
 def start_editor(debug_mode: bool = False) -> None:
@@ -24,6 +25,10 @@ def start_editor(debug_mode: bool = False) -> None:
     # If no instance exists, create a new QApplication
     if new_editor is None:
         new_editor = QApplication(sys.argv)
+
+    # 載入外部插件（在建立主視窗之前）
+    # Load external plugins (before creating main window)
+    load_external_plugins()
 
     # 建立主視窗，傳入 debug_mode
     # Create the main editor window, passing debug_mode
