@@ -58,7 +58,8 @@ class CodeEditSaveThread(Thread):
     """
 
     def __init__(
-            self, file_to_save: Union[str, None] = None, editor: Union[None, CodeEditor] = None):
+            self, file_to_save: Union[str, None] = None, editor: Union[None, CodeEditor] = None,
+            before_write_callback=None):
         jeditor_logger.info(f"Init CodeEditSaveThread "
                             f"file_to_save: {file_to_save} "
                             f"editor: {editor}")
@@ -68,6 +69,7 @@ class CodeEditSaveThread(Thread):
         self.still_run: bool = True
         self.daemon = True
         self.skip_this_round: bool = False
+        self.before_write_callback = before_write_callback
         # 建立主執行緒上的文字提取器 / Create text fetcher on main thread
         self._text_fetcher: Union[_TextFetcher, None] = None
         if editor is not None:
@@ -102,6 +104,8 @@ class CodeEditSaveThread(Thread):
                 try:
                     text = self._get_editor_text()
                     if text is not None:
+                        if self.before_write_callback is not None:
+                            self.before_write_callback()
                         write_file(self.file, text)
                 except Exception as e:
                     jeditor_logger.error(f"Auto-save failed for {self.file}: {e}")

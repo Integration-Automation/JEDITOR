@@ -12,7 +12,7 @@ import jedi.settings
 # Import PySide6 core modules
 from PySide6.QtCore import QTimer, QEvent
 from PySide6.QtGui import QFontDatabase, QIcon, Qt, QTextCharFormat
-from PySide6.QtWidgets import QMainWindow, QWidget, QTabWidget, QLabel, QMessageBox
+from PySide6.QtWidgets import QApplication, QMainWindow, QWidget, QTabWidget, QLabel, QMessageBox
 # 匯入 Qt Material 主題工具
 # Import Qt Material style tools
 from qt_material import QtStyleTools
@@ -356,7 +356,9 @@ class EditorMain(QMainWindow, QtStyleTools):
 
         # 套用 UI 樣式 (主題)
         # Apply UI stylesheet (theme)
-        self.apply_stylesheet(self, user_setting_dict.get("ui_style", "dark_amber.xml"))
+        app = QApplication.instance()
+        if app is not None:
+            self.apply_stylesheet(app, user_setting_dict.get("ui_style", "dark_amber.xml"))
         # 更新顏色設定
         # Update color settings
         update_actually_color_dict()
@@ -459,12 +461,18 @@ class EditorMain(QMainWindow, QtStyleTools):
 
     def closeEvent(self, event) -> None:
         """
-        視窗關閉事件：儲存使用者設定
-        Window close event: save user settings
+        視窗關閉事件：關閉所有分頁並儲存使用者設定
+        Window close event: close all tabs and save user settings
         """
         jeditor_logger.info("EditorMain closeEvent")
         if hasattr(self, '_settings_save_timer'):
             self._settings_save_timer.stop()
+        # 關閉所有編輯器分頁（停止自動儲存和檔案監控）
+        # Close all editor tabs (stop auto-save and file watchers)
+        for i in range(self.tab_widget.count() - 1, -1, -1):
+            widget = self.tab_widget.widget(i)
+            if widget and isinstance(widget, EditorWidget):
+                widget.close()
         write_user_setting()
         write_user_color_setting()
         super().closeEvent(event)
@@ -511,7 +519,6 @@ class EditorMain(QMainWindow, QtStyleTools):
         除錯模式下自動關閉程式
         Auto-close the program in debug mode
         """
-        from PySide6.QtWidgets import QApplication
         app = QApplication.instance()
         if app is not None:
             app.quit()

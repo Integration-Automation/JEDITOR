@@ -14,11 +14,18 @@ class RedirectStdOut(logging.Handler):
 
     def __init__(self):
         super().__init__()
+        self.encoding = sys.__stdout__.encoding if sys.__stdout__ else "utf-8"
 
     def write(self, content_to_write) -> None:
         # 將輸出內容放入 RedirectManager 的 stdout queue
         # Put output content into RedirectManager's stdout queue
         redirect_manager_instance.std_out_queue.put(content_to_write)
+
+    def flush(self) -> None:
+        pass
+
+    def fileno(self) -> int:
+        return sys.__stdout__.fileno() if sys.__stdout__ else 1
 
     def emit(self, record: logging.LogRecord) -> None:
         # 將 logging 訊息格式化後放入 stdout queue
@@ -35,11 +42,18 @@ class RedirectStdErr(logging.Handler):
 
     def __init__(self):
         super().__init__()
+        self.encoding = sys.__stderr__.encoding if sys.__stderr__ else "utf-8"
 
     def write(self, content_to_write) -> None:
         # 將錯誤輸出內容放入 RedirectManager 的 stderr queue
         # Put error output content into RedirectManager's stderr queue
         redirect_manager_instance.std_err_queue.put(content_to_write)
+
+    def flush(self) -> None:
+        pass
+
+    def fileno(self) -> int:
+        return sys.__stderr__.fileno() if sys.__stderr__ else 2
 
     def emit(self, record: logging.LogRecord) -> None:
         # 將 logging 訊息格式化後放入 stderr queue
