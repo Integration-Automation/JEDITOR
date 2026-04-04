@@ -1,32 +1,417 @@
-# je_editor
+# JEDITOR
 
-JEDITOR is a modern, lightweight, and scalable code editor designed for simplicity and performance. It is a remake of the original JEditor project, rebuilt with a focus on speed, usability, and extensibility. JEDITOR provides essential developer features such as autosave, syntax highlighting, JSON reformatting, Python formatting, and multi-environment support, while remaining cross-platform and efficient
+<p align="center">
+  <img src="docs/source/docs/Eng/image/JEditor.png" alt="JEDITOR Logo" width="200"/>
+</p>
 
+<p align="center">
+  <strong>A modern, lightweight, and extensible code editor built with Python and PySide6.</strong>
+</p>
 
+<p align="center">
+  <a href="https://github.com/JE-Chen/je_editor">
+    <img src="https://img.shields.io/github/stars/JE-Chen/je_editor?style=social" alt="GitHub Stars"/>
+  </a>
+  <a href="https://pypi.org/project/je_editor/">
+    <img src="https://img.shields.io/pypi/v/je_editor" alt="PyPI Version"/>
+  </a>
+  <a href="https://pypi.org/project/je_editor/">
+    <img src="https://img.shields.io/pypi/pyversions/je_editor" alt="Python Versions"/>
+  </a>
+  <a href="https://github.com/JE-Chen/je_editor/blob/main/LICENSE">
+    <img src="https://img.shields.io/github/license/JE-Chen/je_editor" alt="License"/>
+  </a>
+</p>
+
+<p align="center">
+  <a href="README/README_zh-TW.md">繁體中文</a> |
+  <a href="README/README_zh-CN.md">简体中文</a>
+</p>
+
+---
+
+## Table of Contents
+
+- [Introduction](#introduction)
+- [Key Features](#key-features)
+- [Screenshots](#screenshots)
+- [System Requirements](#system-requirements)
+- [Installation](#installation)
+- [Quick Start](#quick-start)
+- [Feature Details](#feature-details)
+  - [Code Editing](#code-editing)
+  - [Code Execution & Debugging](#code-execution--debugging)
+  - [Code Quality & Formatting](#code-quality--formatting)
+  - [File Operations](#file-operations)
+  - [Git Integration](#git-integration)
+  - [AI Assistant](#ai-assistant)
+  - [Console & REPL](#console--repl)
+  - [Embedded Browser](#embedded-browser)
+  - [Plugin System](#plugin-system)
+  - [Theming & Customization](#theming--customization)
+  - [Multi-Language UI](#multi-language-ui)
+- [Keyboard Shortcuts](#keyboard-shortcuts)
+- [Project Architecture](#project-architecture)
+- [Plugin Development](#plugin-development)
+- [Configuration](#configuration)
+- [Documentation](#documentation)
+- [Contributing](#contributing)
+- [License](#license)
+
+---
+
+## Introduction
+
+JEDITOR is a complete rewrite of the original JEditor project, rebuilt from the ground up with a focus on **speed**, **usability**, and **extensibility**. Powered by **PySide6** (Qt for Python), it delivers a modern desktop editing experience with rich features including syntax highlighting, auto-completion, integrated Git client, AI assistant, embedded browser, IPython console, and a powerful plugin system.
+
+JEDITOR achieves up to **1000% faster performance** compared to the original JEditor while providing a significantly richer feature set.
+
+---
 
 ## Key Features
 
-- Cross-platform support: Works on Windows 10–11, macOS (10.5–11 Big Sur), Ubuntu 20.04, and Raspberry Pi 3B+.
-- Performance: Up to 1000% faster than the original JEditor.
-- Modern UI: Dark and light themes, file tree navigation, line numbers, and current line highlighting.
-- Language support: Python syntax highlighting, JSON reformatting, and integration with yapf for Python code formatting.
-- Execution support: Run multiple programs and shell commands directly from the editor.
-- Virtual environment integration: Detect and work with Python virtual environments.
-- AutoSave: Prevent data loss with automatic file saving.
-- Encoding support: Handle multiple file encodings seamlessly.
+| Category | Features |
+|---|---|
+| **Editor** | Multi-tab editing, syntax highlighting, auto-completion (Jedi), line numbers, current line highlighting, search & replace (regex) |
+| **Execution** | Run Python scripts (F5), debug mode (F9), shell commands, virtual environment detection |
+| **Code Quality** | YAPF formatting, PEP8 checking, Ruff linting, JSON reformatting |
+| **Git** | Branch management, commit history, side-by-side diff viewer, staging, audit logging |
+| **AI** | OpenAI GPT integration via LangChain, interactive chat widget, configurable models & prompts |
+| **Console** | Interactive shell, Jupyter/IPython console, command history, multi-shell support |
+| **Browser** | Embedded web browser, URL navigation, in-page search |
+| **Plugins** | Custom syntax highlighting, UI translations, run configurations, auto-discovery |
+| **UI** | Dark/light themes (Qt Material), font customization, dockable panels, system tray, toolbar |
+| **i18n** | English, Traditional Chinese, extensible via plugins |
+| **Files** | Auto-save, multi-encoding support (UTF-8, GBK, Latin-1, etc.), recent files |
+
+---
+
+## Screenshots
+
+<p align="center">
+  <img src="docs/source/docs/Eng/image/JEditor.png" alt="JEDITOR Screenshot"/>
+</p>
+
+---
+
+## System Requirements
+
+| Platform | Version |
+|---|---|
+| **Windows** | Windows 10 / 11 |
+| **macOS** | 10.5 ~ 11 Big Sur |
+| **Linux** | Ubuntu 20.04+ |
+| **Raspberry Pi** | 3B+ |
+| **Python** | 3.10+ (tested on 3.10, 3.11, 3.12) |
+
+---
 
 ## Installation
 
-``` commandline
+### From PyPI (Recommended)
+
+```bash
 pip install je_editor
 ```
 
-## Usage
-After installation, you can launch the editor with:
-```Bash
+### From Source
+
+```bash
+git clone https://github.com/JE-Chen/je_editor.git
+cd je_editor
+pip install .
+```
+
+### Dependencies
+
+Core dependencies are automatically installed:
+
+| Package | Purpose |
+|---|---|
+| PySide6 | GUI framework (Qt for Python) |
+| qt-material | Dark/light material themes |
+| yapf | Python code formatting (Google style) |
+| jedi | Python auto-completion & analysis |
+| ruff | Fast Python linter |
+| gitpython | Git repository operations |
+| langchain + langchain_openai | AI/LLM integration |
+| watchdog | File system monitoring |
+| pycodestyle | PEP8 style checking |
+| qtconsole | Jupyter/IPython console widget |
+
+---
+
+## Quick Start
+
+### Launch the Editor
+
+```bash
 python -m je_editor
 ```
 
-Documentation
+### Use as a Python Library
+
+```python
+from je_editor import start_editor
+
+start_editor()
+```
+
+The editor launches in a maximized window with a dark amber theme by default.
+
+---
+
+## Feature Details
+
+### Code Editing
+
+- **Multi-tab editor** -- Work on multiple files simultaneously with closable tabs.
+- **Syntax highlighting** -- Built-in Python highlighting with extensible plugin support for additional languages.
+- **Auto-completion** -- Context-aware code suggestions powered by Jedi.
+- **Line numbers** -- Displayed alongside the editor with current line highlighting.
+- **Search & Replace** -- Search within the current file, across folders, or project-wide with regex and case-sensitive options. Runs in background threads for large projects.
+- **Variable Inspector** -- Inspect and debug variables during code execution.
+
+### Code Execution & Debugging
+
+- **Run Python scripts** (F5) -- Execute the current file with real-time output streaming.
+- **Debug mode** (F9) -- Launch the Python debugger for step-through debugging.
+- **Shell commands** -- Execute arbitrary shell/terminal commands from within the editor.
+- **Virtual environment detection** -- Automatically detects and activates Python virtual environments.
+- **Process management** -- Stop individual or all running processes.
+- **Error highlighting** -- Errors displayed in red in the output panel.
+
+### Code Quality & Formatting
+
+- **YAPF Python formatting** (Ctrl+Shift+Y) -- Automatically format Python code using Google style.
+- **PEP8 checking** (Ctrl+Alt+P) -- Validate code against PEP8 style guidelines.
+- **Ruff linting** -- Fast, comprehensive Python linting in a background thread.
+- **JSON reformatting** (Ctrl+J) -- Pretty-print and validate JSON content.
+
+### File Operations
+
+- **Create, open, save** files with standard shortcuts (Ctrl+N, Ctrl+O, Ctrl+S).
+- **Open folders** (Ctrl+K) -- Navigate project directory structures.
+- **Auto-save** -- Automatic periodic file saving to prevent data loss.
+- **Multi-encoding** -- Seamlessly handle UTF-8, GBK, Latin-1, and other encodings with automatic detection.
+- **Recent files** -- Quick access to previously opened files.
+
+### Git Integration
+
+JEDITOR includes a full-featured Git client:
+
+- **Branch management** -- List, switch, and checkout branches from the toolbar.
+- **Commit history** -- View commit metadata (author, date, message) in a table view.
+- **Side-by-side diff viewer** -- Color-highlighted code comparison with line numbers.
+- **Multi-file diff** -- Compare changes across multiple files.
+- **Staging** -- Stage and unstage individual file changes.
+- **Audit logging** -- All Git operations are logged for tracking and compliance.
+
+### AI Assistant
+
+Integrated AI assistant powered by OpenAI and LangChain:
+
+- **GPT-3.5 / GPT-4 support** -- Connect to OpenAI's language models.
+- **Interactive chat widget** -- Conversational AI panel within the editor.
+- **Configurable models** -- Set custom API keys, endpoints, model names, and system prompts.
+- **Async messaging** -- Non-blocking AI interaction using a message queue.
+
+### Console & REPL
+
+- **Interactive console** -- Execute shell commands with history navigation (Up/Down arrows).
+- **Jupyter/IPython console** -- In-process IPython kernel with rich output support.
+- **Multi-shell support** -- Works with cmd, PowerShell, bash, and sh.
+- **Working directory control** -- Set the execution directory independently.
+
+### Embedded Browser
+
+- **Built-in web browser** -- Browse the web without leaving the editor.
+- **URL navigation** -- Address bar with integrated search.
+- **In-page search** (Ctrl+F) -- Find text within web pages.
+- **Standard navigation** -- Back, forward, reload, and stop controls.
+
+### Plugin System
+
+JEDITOR supports a modular plugin architecture with four plugin types:
+
+| Type | Purpose |
+|---|---|
+| Programming Language | Add syntax highlighting for new languages |
+| Natural Language | Add UI translations for new locales |
+| Run Configuration | Define custom execution environments |
+| Plugin Metadata | Provide plugin version and author info |
+
+Plugins are automatically discovered from the `jeditor_plugins/` directory. See the [Plugin Development](#plugin-development) section for details.
+
+### Theming & Customization
+
+- **Dark/Light themes** -- Qt Material themes with amber color scheme.
+- **Font customization** -- Change font family and size for the editor and UI.
+- **Dockable panels** -- Rearrange the UI layout by docking/undocking panels.
+- **System tray** -- Minimize the editor to the system tray.
+- **Toolbar** -- JetBrains-style quick action buttons for common operations.
+
+### Multi-Language UI
+
+- **English** -- Full English interface (default).
+- **Traditional Chinese** (繁體中文) -- Complete Traditional Chinese translation.
+- **Extensible** -- Add new languages via the plugin system.
+
+---
+
+## Keyboard Shortcuts
+
+| Shortcut | Action |
+|---|---|
+| `Ctrl+N` | New file |
+| `Ctrl+O` | Open file |
+| `Ctrl+K` | Open folder |
+| `Ctrl+S` | Save file |
+| `Ctrl+J` | Reformat JSON |
+| `Ctrl+Shift+Y` | YAPF Python format |
+| `Ctrl+Alt+P` | PEP8 format checker |
+| `Ctrl+F` | Find text (browser) |
+| `F5` | Run program |
+| `F9` | Debug |
+| `Shift+F5` | Stop program |
+| `Up/Down` | Command history (console) |
+
+---
+
+## Project Architecture
+
+```
+je_editor/
+├── pyside_ui/                    # GUI components (PySide6)
+│   ├── browser/                  # Embedded web browser
+│   ├── code/                     # Core code editing
+│   │   ├── auto_save/            # Automatic file saving
+│   │   ├── code_format/          # YAPF & PEP8 formatting
+│   │   ├── code_process/         # Program execution (ExecManager)
+│   │   ├── shell_process/        # Shell execution (ShellManager)
+│   │   ├── syntax/               # Syntax highlighting engine
+│   │   ├── plaintext_code_edit/  # Plain text editor widget
+│   │   ├── textedit_code_result/ # Output display widget
+│   │   └── variable_inspector/   # Variable debugging
+│   ├── dialog/                   # Dialog windows
+│   │   ├── ai_dialog/            # AI configuration dialog
+│   │   ├── file_dialog/          # File operation dialogs
+│   │   └── search_ui/            # Search & replace dialogs
+│   ├── git_ui/                   # Git interface
+│   │   ├── code_diff_compare/    # Side-by-side diff viewer
+│   │   └── git_client/           # Branch & commit UI
+│   └── main_ui/                  # Main editor window
+│       ├── ai_widget/            # AI chat panel
+│       ├── console_widget/       # Interactive console
+│       ├── dock/                 # Dockable widget management
+│       ├── editor/               # Tab-based editor
+│       ├── ipython_widget/       # Jupyter/IPython console
+│       ├── menu/                 # Menu bar system
+│       ├── plugin_browser/       # Plugin management UI
+│       ├── save_settings/        # Settings persistence
+│       ├── system_tray/          # System tray integration
+│       └── toolbar/              # Toolbar actions
+├── code_scan/                    # Code scanning
+│   ├── ruff_thread.py            # Ruff linter (threaded)
+│   ├── watchdog_implement.py     # File system monitoring
+│   └── watchdog_thread.py        # Watchdog threading
+├── git_client/                   # Git backend
+│   ├── git_action.py             # Git operations with audit logging
+│   ├── git_cli.py                # Git CLI wrapper
+│   └── commit_graph.py           # Commit graph visualization
+├── plugins/                      # Plugin system
+│   └── plugin_loader.py          # Dynamic plugin loading
+├── utils/                        # Utilities
+│   ├── encodings/                # Encoding detection
+│   ├── exception/                # Custom exceptions
+│   ├── file/                     # File I/O (open/save)
+│   ├── json_format/              # JSON formatting
+│   ├── logging/                  # Logging setup
+│   ├── multi_language/           # i18n (English, Traditional Chinese)
+│   ├── redirect_manager/         # Output stream redirection
+│   └── venv_check/               # Virtual environment detection
+├── __init__.py                   # Public API
+├── __main__.py                   # CLI entry point
+└── start_editor.py               # Application launcher
+```
+
+---
+
+## Plugin Development
+
+Create plugins in the `jeditor_plugins/` directory within your working directory. JEDITOR supports three types of plugins:
+
+### 1. Programming Language Plugin
+
+Add syntax highlighting for a new language:
+
+```python
+from je_editor.plugins import register_programming_language
+
+register_programming_language(
+    suffix=".rs",
+    syntax_words={"keywords": ["fn", "let", "mut", "struct", "impl", "enum"]},
+    syntax_rules={"keyword_color": "#FF6600"}
+)
+```
+
+### 2. Natural Language Plugin
+
+Add a new UI translation:
+
+```python
+from je_editor.plugins import register_natural_language
+
+register_natural_language(
+    language_key="ja",
+    display_name="Japanese",
+    word_dict={"file": "ファイル", "edit": "編集", "run": "実行"}
+)
+```
+
+### 3. Run Configuration Plugin
+
+Define custom execution environments:
+
+```python
+from je_editor.plugins import register_plugin_run_config
+
+register_plugin_run_config(
+    name="Node.js",
+    run_config={"command": "node", "suffix": ".js"}
+)
+```
+
+For a comprehensive guide, see `PLUGIN_GUIDE.md`.
+
+---
+
+## Configuration
+
+JEDITOR stores user settings in the `.jeditor/` directory:
+
+| File | Content |
+|---|---|
+| `user_setting.json` | General preferences (font, theme, recent files) |
+| `user_color_setting.json` | Syntax highlighting color scheme |
+
+---
+
+## Documentation
+
 Full documentation is available at:
-https://je-editor.readthedocs.io/en/latest/
+**[https://je-editor.readthedocs.io/en/latest/](https://je-editor.readthedocs.io/en/latest/)**
+
+---
+
+## Contributing
+
+Contributions are welcome! Please feel free to submit issues and pull requests on [GitHub](https://github.com/JE-Chen/je_editor).
+
+---
+
+## License
+
+This project is licensed under the **MIT License**. See [LICENSE](LICENSE) for details.
+
+Copyright (c) 2021 ~ Now JE-Chen
