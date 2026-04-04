@@ -505,10 +505,13 @@ class EditorMain(QMainWindow, QtStyleTools):
             widget.close()
         self.tab_widget.removeTab(index)
 
-    @classmethod
-    def debug_close(cls):
+    @staticmethod
+    def debug_close():
         """
         除錯模式下自動關閉程式
         Auto-close the program in debug mode
         """
-        sys.exit(0)
+        from PySide6.QtWidgets import QApplication
+        app = QApplication.instance()
+        if app is not None:
+            app.quit()
