@@ -46,7 +46,8 @@ def init_new_auto_save_thread(file_path: str, widget: EditorWidget):
         # 建立新的自動儲存執行緒，綁定到編輯器
         # Create a new auto-save thread for this file
         widget.code_save_thread = CodeEditSaveThread(
-            file_to_save=widget.current_file, editor=widget.code_edit
+            file_to_save=widget.current_file, editor=widget.code_edit,
+            before_write_callback=widget.mark_ignore_next_file_change,
         )
 
         # 更新管理字典，記錄該檔案對應的執行緒

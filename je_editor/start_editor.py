@@ -1,3 +1,4 @@
+import os
 import sys
 
 from PySide6.QtCore import QCoreApplication
@@ -44,4 +45,5 @@ def start_editor(debug_mode: bool = False) -> None:
 
     # 啟動事件迴圈，並在結束時退出程式
     # Start the event loop and exit the program when it ends
-    sys.exit(new_editor.exec())
+    ret = new_editor.exec()
+    os._exit(ret)

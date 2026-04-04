@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING
 # 匯入 Qt 動作
 # Import QAction
 from PySide6.QtGui import QAction
+from PySide6.QtWidgets import QApplication
 
 # 匯入使用者設定字典，用來保存 UI 樣式設定
 # Import user settings dictionary for saving UI style preferences
@@ -66,7 +67,9 @@ def set_style(ui_we_want_to_set: EditorMain, action: QAction) -> None:
 
     # 呼叫主視窗的 apply_stylesheet 方法，套用選擇的樣式
     # Call main window's apply_stylesheet method to apply the chosen style
-    ui_we_want_to_set.apply_stylesheet(ui_we_want_to_set, action.text())
+    app = QApplication.instance()
+    if app is not None:
+        ui_we_want_to_set.apply_stylesheet(app, action.text())
 
     # 更新使用者設定，保存目前選擇的樣式
     # Update user settings dictionary to persist the chosen style

@@ -21,6 +21,9 @@
   <a href="https://github.com/JE-Chen/je_editor/blob/main/LICENSE">
     <img src="https://img.shields.io/github/license/JE-Chen/je_editor" alt="License"/>
   </a>
+  <a href="https://je-editor.readthedocs.io/en/latest/">
+    <img src="https://img.shields.io/readthedocs/je-editor" alt="Read the Docs"/>
+  </a>
 </p>
 
 <p align="center">

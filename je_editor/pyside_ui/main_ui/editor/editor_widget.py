@@ -375,6 +375,13 @@ class EditorWidget(QWidget):
                 self.open_an_file(file_path)
         event.acceptProposedAction()
 
+    def mark_ignore_next_file_change(self) -> None:
+        """
+        標記下一次檔案變更事件應被忽略（由自動儲存呼叫）
+        Mark the next file change event to be ignored (called by auto-save before writing)
+        """
+        self._ignore_next_change = True
+
     def _on_file_changed_externally(self, path: str) -> None:
         """
         檔案被外部修改時提示使用者
@@ -420,6 +427,18 @@ class EditorWidget(QWidget):
         Close the editor, release resources, and remove auto-save records.
         """
         jeditor_logger.info("EditorWidget close")
+
+        # 先移除檔案監控，防止關閉後仍觸發變更對話框
+        # Remove file watcher first to prevent change dialogs after close
+        watched = self._file_watcher.files()
+        if watched:
+            self._file_watcher.removePaths(watched)
+
+        # 停止自動儲存執行緒 / Stop auto-save thread
+        if self.code_save_thread is not None:
+            self.code_save_thread.still_run = False
+            self.code_save_thread = None
+
         # 停止所有正在執行的子程序 / Stop all running subprocesses
         for mgr in (self.exec_program, self.exec_shell, self.exec_python_debugger):
             if mgr is not None:
@@ -430,9 +449,6 @@ class EditorWidget(QWidget):
         self.exec_shell = None
         self.exec_python_debugger = None
 
-        if self.code_save_thread is not None:
-            self.code_save_thread.still_run = False
-            self.code_save_thread = None
         if self.current_file:
             file_is_open_manager_dict.pop(str(Path(self.current_file)), None)
             auto_save_manager_dict.pop(self.current_file, None)
