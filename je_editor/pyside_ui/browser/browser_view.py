@@ -56,6 +56,13 @@ class BrowserView(QWebEngineView):
         jeditor_logger.info("Download File "
                             f"download_instance: {download_instance}")
 
+        # 清理已完成的下載 / Clean up finished downloads
+        self.download_list = [
+            d for d in self.download_list
+            if d.state() == QWebEngineDownloadRequest.DownloadState.DownloadInProgress
+        ]
+        self.download_window_list = [w for w in self.download_window_list if w.isVisible()]
+
         # 加入下載請求到清單
         self.download_list.append(download_instance)
 

@@ -1,12 +1,12 @@
-# Rename to build dev version
-# This is dev version
+# Rename to build stable version
+# This is stable version
 [build-system]
-requires = ["setuptools"]
+requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "je_editor_dev"
-version = "1.0.8"
+name = "je_editor"
+version = "1.0.7"
 authors = [
     { name = "JE-Chen", email = "jechenmailman@gmail.com" },
 ]
@@ -23,6 +23,7 @@ classifiers = [
     "Environment :: Win32 (MS Windows)",
     "Environment :: MacOS X",
     "Environment :: X11 Applications",
+    "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent"
 ]
 
@@ -35,6 +36,9 @@ Code = "https://github.com/JE-Chen/je_editor"
 file = "README.md"
 content-type = "text/markdown"
 
-
 [tool.setuptools.packages]
 find = { namespaces = false }
+
+[tool.pytest.ini_options]
+testpaths = ["test"]
+qt_api = "pyside6"

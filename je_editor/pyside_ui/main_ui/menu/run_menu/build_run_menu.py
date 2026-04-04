@@ -105,21 +105,16 @@ def stop_program(ui_we_want_to_set: EditorMain) -> None:
     jeditor_logger.info(f"build_run_menu.py stop_program ui_we_want_to_set: {ui_we_want_to_set}")
     widget = ui_we_want_to_set.tab_widget.currentWidget()
     if isinstance(widget, EditorWidget):
-        # 停止程式
+        # 停止程式 (透過 manager 正確清理 timer 和 thread)
+        # Stop program (properly cleanup timer and threads via manager)
         if widget.exec_program is not None:
-            if widget.exec_program.process is not None:
-                widget.exec_program.process.terminate()
-            widget.exec_program = None
+            widget.exec_program.full_exit_program()
         # 停止 Shell
         if widget.exec_shell is not None:
-            if widget.exec_shell.process is not None:
-                widget.exec_shell.process.terminate()
-            widget.exec_shell = None
+            widget.exec_shell.process_run_over()
         # 停止除錯器
         if widget.exec_python_debugger is not None:
-            if widget.exec_python_debugger.process is not None:
-                widget.exec_python_debugger.process.terminate()
-            widget.exec_python_debugger = None
+            widget.exec_python_debugger.full_exit_program()
 
 
 # 停止所有執行中的程式

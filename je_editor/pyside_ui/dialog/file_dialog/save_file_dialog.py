@@ -111,8 +111,9 @@ def choose_file_get_save_file_path(parent_qt_instance: EditorMain) -> bool:
                 widget.code_save_thread.file = file_path
                 widget.code_save_thread.editor = widget.code_edit
 
-            # 更新分頁標題 / Update tab title
+            # 更新分頁標題並清除未儲存標記 / Update tab title and clear unsaved marker
             widget.rename_self_tab()
+            widget.mark_saved()
             return True
         return False
     return False

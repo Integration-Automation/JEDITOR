@@ -119,7 +119,11 @@ def create_venv(ui_we_want_to_set: EditorMain) -> None:
 # 使用 pip 安裝套件 (通用函式)
 # Run pip install command (general function)
 def shell_pip_install(ui_we_want_to_set: EditorMain, pip_install_command_list: list):
-    jeditor_logger.info("build_venv_menu.py create_venv "
+    """
+    使用 pip 安裝套件 (通用函式)。詢問使用者套件名稱後附加到指令清單中。
+    Run pip install command (general function). Ask user for package name and append to command list.
+    """
+    jeditor_logger.info("build_venv_menu.py shell_pip_install "
                         f"ui_we_want_to_set: {ui_we_want_to_set} "
                         f"pip_install_command_list: {pip_install_command_list}")
     widget = ui_we_want_to_set.tab_widget.currentWidget()
@@ -141,10 +145,10 @@ def shell_pip_install(ui_we_want_to_set: EditorMain, pip_install_command_list: l
                 language_wrapper.language_word_dict.get("python_env_menu_install_package_messagebox_title"),
                 language_wrapper.language_word_dict.get("python_env_menu_install_package_messagebox_label")
             )
-            if press_ok:
+            if press_ok and package_text.strip():
                 pip_install_shell = ShellManager(main_window=widget, shell_encoding=ui_we_want_to_set.encoding)
                 pip_install_shell.later_init()
-                pip_install_shell.exec_shell(pip_install_command_list)
+                pip_install_shell.exec_shell(pip_install_command_list + [package_text.strip()])
 
 
 # 偵測 venv 是否存在

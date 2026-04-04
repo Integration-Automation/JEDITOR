@@ -60,10 +60,6 @@
   {
    "optionDest": "pathex",
    "value": "D:/Codes/JEDITOR/.venv"
-  },
-  {
-   "optionDest": "pathex",
-   "value": ""
   }
  ],
  "nonPyinstallerOptions": {

@@ -1,3 +1,4 @@
+import shutil
 from os import getcwd
 from pathlib import Path
 
@@ -7,11 +8,9 @@ from je_editor.utils.logging.loggin_instance import jeditor_logger
 
 def write_setting(save_dict: dict, file_name: str) -> None:
     """
-    將設定資料寫入 JSON 檔案
-    Write settings dictionary into a JSON file
+    將設定資料寫入 JSON 檔案，寫入前先建立備份
+    Write settings dictionary into a JSON file, creating a backup first
     """
-    # 紀錄日誌，方便除錯與追蹤
-    # Log the action for debugging and tracking
     jeditor_logger.info("setting_utils.py write_setting "
                         f"save_dict: {save_dict} "
                         f"file_name: {file_name}")
@@ -27,6 +26,14 @@ def write_setting(save_dict: dict, file_name: str) -> None:
     # 建立完整的檔案路徑，例如 `.jeditor/settings.json`
     # Create the full file path, e.g., `.jeditor/settings.json`
     save_file = save_dir / file_name
+
+    # 寫入前先備份原檔案 / Backup existing file before writing
+    if save_file.exists():
+        backup_file = save_dir / f"{file_name}.bak"
+        try:
+            shutil.copy2(str(save_file), str(backup_file))
+        except OSError as e:
+            jeditor_logger.warning(f"Failed to create settings backup: {e}")
 
     # 將設定字典寫入 JSON 檔案
     # Write the dictionary into the JSON file

@@ -2,7 +2,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from PySide6.QtGui import QAction
+from PySide6.QtGui import QAction, QTextOption
+from PySide6.QtWidgets import QPlainTextEdit
 
 from je_editor.pyside_ui.main_ui.editor.editor_widget import EditorWidget
 from je_editor.pyside_ui.main_ui.save_settings.user_setting_file import user_setting_dict
@@ -71,6 +72,59 @@ def set_text_menu(ui_we_want_to_set: EditorMain):
         font_action.triggered.connect(
             lambda checked=False, action=font_action: set_font_size(ui_we_want_to_set, action))
         ui_we_want_to_set.text_menu.font_size_menu.addAction(font_action)
+
+    ui_we_want_to_set.text_menu.addSeparator()
+
+    # === 自動換行切換 (Word Wrap Toggle) ===
+    word_wrap_action = QAction(
+        language_wrapper.language_word_dict.get("text_menu_word_wrap"), ui_we_want_to_set)
+    word_wrap_action.setCheckable(True)
+    word_wrap_action.setChecked(False)
+    word_wrap_action.setShortcut("Alt+w")
+    word_wrap_action.triggered.connect(
+        lambda checked: toggle_word_wrap(ui_we_want_to_set, checked))
+    ui_we_want_to_set.text_menu.addAction(word_wrap_action)
+
+    # === 縮排大小選單 (Indent Size Menu) ===
+    indent_menu = ui_we_want_to_set.text_menu.addMenu(
+        language_wrapper.language_word_dict.get("text_menu_indent_size_menu"))
+    for size in (2, 4, 8):
+        indent_action = QAction(f"{size} Spaces", parent=indent_menu)
+        indent_action.triggered.connect(
+            lambda checked=False, s=size: set_indent_size(ui_we_want_to_set, s))
+        indent_menu.addAction(indent_action)
+
+
+def toggle_word_wrap(ui_we_want_to_set: EditorMain, enabled: bool) -> None:
+    """
+    切換自動換行
+    Toggle word wrap for all editor tabs
+    """
+    jeditor_logger.info(f"build_text_menu.py toggle_word_wrap enabled: {enabled}")
+    for i in range(ui_we_want_to_set.tab_widget.count()):
+        widget = ui_we_want_to_set.tab_widget.widget(i)
+        if isinstance(widget, EditorWidget):
+            if enabled:
+                widget.code_edit.setLineWrapMode(QPlainTextEdit.LineWrapMode.WidgetWidth)
+            else:
+                widget.code_edit.setLineWrapMode(QPlainTextEdit.LineWrapMode.NoWrap)
+    user_setting_dict.update({"word_wrap": enabled})
+
+
+def set_indent_size(ui_we_want_to_set: EditorMain, size: int) -> None:
+    """
+    設定縮排大小 (空格數)
+    Set indent size (number of spaces)
+    """
+    jeditor_logger.info(f"build_text_menu.py set_indent_size size: {size}")
+    from PySide6.QtGui import QFontMetricsF
+    for i in range(ui_we_want_to_set.tab_widget.count()):
+        widget = ui_we_want_to_set.tab_widget.widget(i)
+        if isinstance(widget, EditorWidget):
+            widget.code_edit.setTabStopDistance(
+                QFontMetricsF(widget.code_edit.font()).horizontalAdvance(" " * size)
+            )
+    user_setting_dict.update({"indent_size": size})
 
 
 def set_font(ui_we_want_to_set: EditorMain, action: QAction) -> None:

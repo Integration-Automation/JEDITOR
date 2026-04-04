@@ -110,7 +110,6 @@ class PythonHighlighter(QSyntaxHighlighter):
         對每一行文字進行語法高亮
         Apply syntax highlighting to each block of text
         """
-        jeditor_logger.info(f"PythonHighlighter highlightBlock text: {text}")
         for pattern, pattern_format in self.highlight_rules:
             match_iterator = pattern.globalMatch(text)  # 全域比對 / global regex match
             while match_iterator.hasNext():

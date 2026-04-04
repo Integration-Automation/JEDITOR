@@ -72,30 +72,33 @@ class ProcessInput(QWidget):
         # 設定主佈局 / Apply layout
         self.setLayout(self.box_layout)
 
+    def _safe_write_stdin(self, process_stdin):
+        """
+        安全地將輸入文字寫入子程序 stdin，處理管線斷開的情況
+        Safely write input text to subprocess stdin, handling broken pipe
+        """
+        if process_stdin is None:
+            return
+        try:
+            process_stdin.write(self.command_input.text().encode() + b"\n")
+            process_stdin.flush()
+        except (BrokenPipeError, OSError) as e:
+            jeditor_logger.warning(f"ProcessInput stdin write failed: {e}")
+
     # === Debugger 指令傳送 / Send command to debugger ===
     def debugger_send_command(self):
         jeditor_logger.info("EditorWidget debugger_send_command")
         if self.main_window.exec_python_debugger is not None and self.main_window.exec_python_debugger.process is not None:
-            process_stdin = self.main_window.exec_python_debugger.process.stdin
-            if process_stdin is not None:
-                # 將輸入框文字編碼後寫入子程序 stdin / Write encoded input to subprocess stdin
-                process_stdin.write(self.command_input.text().encode() + b"\n")
-                process_stdin.flush()
+            self._safe_write_stdin(self.main_window.exec_python_debugger.process.stdin)
 
     # === Shell 指令傳送 / Send command to shell ===
     def shell_send_command(self):
         jeditor_logger.info("EditorWidget shell_send_command")
         if self.main_window.exec_shell is not None and self.main_window.exec_shell.process is not None:
-            process_stdin = self.main_window.exec_shell.process.stdin
-            if process_stdin is not None:
-                process_stdin.write(self.command_input.text().encode() + b"\n")
-                process_stdin.flush()
+            self._safe_write_stdin(self.main_window.exec_shell.process.stdin)
 
     # === Program 指令傳送 / Send command to program ===
     def program_send_command(self):
         jeditor_logger.info("EditorWidget program_send_command")
         if self.main_window.exec_program is not None and self.main_window.exec_program.process is not None:
-            process_stdin = self.main_window.exec_program.process.stdin
-            if process_stdin is not None:
-                process_stdin.write(self.command_input.text().encode() + b"\n")
-                process_stdin.flush()
+            self._safe_write_stdin(self.main_window.exec_program.process.stdin)

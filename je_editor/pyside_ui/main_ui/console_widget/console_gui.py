@@ -37,7 +37,11 @@ class ConsoleWidget(QWidget):
         # 輸出區域 / Output area
         self.output = QPlainTextEdit(readOnly=True)
         self.output.setMaximumBlockCount(10000)  # 最多保留 10000 行 / Keep up to 10000 lines
-        self.output.setStyleSheet("font-family: Consolas, monospace;")
+        # 只設定 selection-background-color，不設定 selection-color，保留原始前景色
+        # Only set selection-background-color, omit selection-color to preserve original foreground
+        self.output.setStyleSheet(
+            "font-family: Consolas, monospace; selection-background-color: #264f78;"
+        )
 
         # 輸入框 / Input field
         self.input = QLineEdit()
@@ -108,7 +112,7 @@ class ConsoleWidget(QWidget):
         if not self.history: return
         self.history_index = len(self.history) - 1 if self.history_index < 0 else max(0, self.history_index - 1)
         self.input.setText(self.history[self.history_index])
-        self.input.end(False)
+        self.input.setCursorPosition(len(self.input.text()))
 
     # 瀏覽下一個歷史指令 / Navigate to next command in history
     def history_next(self):
@@ -120,7 +124,7 @@ class ConsoleWidget(QWidget):
             self.input.clear()
         else:
             self.input.setText(self.history[self.history_index])
-            self.input.end(False)
+            self.input.setCursorPosition(len(self.input.text()))
 
     # 選擇新的工作目錄 / Pick a new working directory
     def pick_cwd(self):

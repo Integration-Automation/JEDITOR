@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from PySide6.QtCore import Qt, QTimer
+from PySide6.QtCore import Qt, QTimer, QThread, Signal, QObject
 from PySide6.QtGui import QTextOption, QTextCharFormat, QColor, QFont, QSyntaxHighlighter, QAction
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel,
@@ -8,6 +8,24 @@ from PySide6.QtWidgets import (
     QLineEdit, QSizePolicy, QSplitter, QFileDialog, QMessageBox, QInputDialog, QMenuBar
 )
 from git import Repo, InvalidGitRepositoryError, NoSuchPathError, GitCommandError
+
+
+class _GitWorker(QObject):
+    """背景執行 Git 操作的 Worker / Background worker for Git operations"""
+    finished = Signal(object)  # result
+    error = Signal(str)  # error message
+
+    def __init__(self, func, *args):
+        super().__init__()
+        self._func = func
+        self._args = args
+
+    def run(self):
+        try:
+            result = self._func(*self._args)
+            self.finished.emit(result)
+        except Exception as e:
+            self.error.emit(str(e))
 
 
 class GitChangeItem:
@@ -27,6 +45,30 @@ class GitGui(QWidget):
         self.last_opened_repo_path = None
         self._init_ui()  # 初始化 UI
         self._restore_last_opened_repository()  # 嘗試還原上次開啟的 repo
+
+    def _run_git_in_background(self, func, on_done=None, on_error=None):
+        """
+        在背景執行緒中執行 Git 操作，避免阻塞主執行緒
+        Run Git operation in background thread to avoid blocking UI
+        """
+        thread = QThread(self)
+        worker = _GitWorker(func)
+        worker.moveToThread(thread)
+        thread.started.connect(worker.run)
+        if on_done:
+            worker.finished.connect(on_done)
+        if on_error:
+            worker.error.connect(on_error)
+        # 清理執行緒 / Cleanup thread
+        worker.finished.connect(thread.quit)
+        worker.error.connect(thread.quit)
+        thread.finished.connect(thread.deleteLater)
+        thread.start()
+        # 保持引用避免被垃圾回收 / Keep references to prevent GC
+        if not hasattr(self, '_bg_threads'):
+            self._bg_threads = []
+        self._bg_threads = [(t, w) for t, w in self._bg_threads if t.isRunning()]
+        self._bg_threads.append((thread, worker))
 
     def _init_ui(self):
         # === Top controls / 上方控制區 ===
@@ -139,7 +181,7 @@ class GitGui(QWidget):
 
         # === Timer ===
         # Check commit status every 60 seconds (fetch is a network call)
-        self.update_commit_status_timer = QTimer()
+        self.update_commit_status_timer = QTimer(self)
         self.update_commit_status_timer.setInterval(60000)
         self.update_commit_status_timer.timeout.connect(self.update_commit_status)
         self.update_commit_status_timer.start()
@@ -655,8 +697,17 @@ class GitGui(QWidget):
             return
 
         try:
-            # 在目標資料夾下建立 repo
-            repository_path = Path(target_directory) / Path(remote_url).name.replace(".git", "")
+            # 從 URL 中解析 repo 名稱 (支援 HTTPS 與 SSH 格式)
+            # Parse repo name from URL (supports both HTTPS and SSH formats)
+            url_clean = remote_url.strip().rstrip("/")
+            if ":" in url_clean and not url_clean.startswith(("http://", "https://")):
+                # SSH 格式: git@github.com:user/repo.git
+                repo_name = url_clean.rsplit("/", 1)[-1].rsplit(":", 1)[-1]
+            else:
+                # HTTPS 格式: https://github.com/user/repo.git
+                repo_name = url_clean.rsplit("/", 1)[-1]
+            repo_name = repo_name.removesuffix(".git") or "repo"
+            repository_path = Path(target_directory) / repo_name
             if repository_path.exists():
                 QMessageBox.warning(self, "Clone Repo", f"Target folder already exists:\n{repository_path}")
                 return
@@ -676,13 +727,26 @@ class GitGui(QWidget):
         if not self.current_repo:
             QMessageBox.warning(self, "Warning", "No repository opened.")
             return
-        try:
-            origin = self.current_repo.remote(name="origin")
+        repo = self.current_repo
+        self.git_push_button.setEnabled(False)
+        self.git_push_button.setText("Pushing...")
+
+        def do_push():
+            origin = repo.remote(name="origin")
             result = origin.push()
-            msg = "\n".join(str(r) for r in result)
+            return "\n".join(str(r) for r in result)
+
+        def on_done(msg):
+            self.git_push_button.setEnabled(True)
+            self.git_push_button.setText("Push")
             QMessageBox.information(self, "Push Result", f"Pushed to origin:\n{msg}")
-        except Exception as e:
-            QMessageBox.critical(self, "Push Error", str(e))
+
+        def on_error(err):
+            self.git_push_button.setEnabled(True)
+            self.git_push_button.setText("Push")
+            QMessageBox.critical(self, "Push Error", err)
+
+        self._run_git_in_background(do_push, on_done, on_error)
 
     def get_unpushed_commit_count(self, remote_name: str = "origin") -> dict:
         try:
@@ -713,13 +777,25 @@ class GitGui(QWidget):
             return {"ahead": 0, "behind": 0, "error": str(e)}
 
     def update_commit_status(self):
-        result = self.get_unpushed_commit_count()
-        if result["error"]:
-            self.commit_status_label.setText(f"Error: {result['error']}")
-        else:
-            self.commit_status_label.setText(
-                f"Ahead (push): {result['ahead']} | Behind (pull): {result['behind']}"
-            )
+        """在背景執行緒中更新 commit 狀態 / Update commit status in background"""
+        if not self.current_repo:
+            return
+
+        def do_check():
+            return self.get_unpushed_commit_count()
+
+        def on_done(result):
+            if result["error"]:
+                self.commit_status_label.setText(f"Error: {result['error']}")
+            else:
+                self.commit_status_label.setText(
+                    f"Ahead (push): {result['ahead']} | Behind (pull): {result['behind']}"
+                )
+
+        def on_error(err):
+            self.commit_status_label.setText(f"Error: {err}")
+
+        self._run_git_in_background(do_check, on_done, on_error)
 
     # ===== Theme =====
 

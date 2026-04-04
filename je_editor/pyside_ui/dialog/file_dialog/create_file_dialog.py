@@ -1,4 +1,6 @@
-from PySide6.QtWidgets import QWidget, QBoxLayout, QLineEdit, QPushButton, QHBoxLayout, QMessageBox
+from pathlib import Path
+
+from PySide6.QtWidgets import QWidget, QBoxLayout, QLineEdit, QPushButton, QHBoxLayout, QMessageBox, QFileDialog
 
 from je_editor.utils.logging.loggin_instance import jeditor_logger
 from je_editor.utils.multi_language.multi_language_wrapper import language_wrapper
@@ -61,8 +63,15 @@ class CreateFileDialog(QWidget):
             )
             create_file_message_box.show()
         else:
-            # 建立新檔案 (若存在則覆蓋)
-            # Create new file (overwrite if exists)
-            with open(file_name, "w+", encoding="utf-8") as file:
+            # 讓使用者選擇儲存位置 / Let user choose save location
+            save_path, _ = QFileDialog.getSaveFileName(
+                self,
+                language_wrapper.language_word_dict.get("create_file_dialog_pushbutton"),
+                str(Path.cwd() / file_name),
+            )
+            if not save_path:
+                return
+            # 建立新檔案 / Create new file
+            with open(save_path, "w", encoding="utf-8") as file:
                 file.write("")
             self.close()  # 關閉對話框 / close dialog

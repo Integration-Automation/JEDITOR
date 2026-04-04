@@ -1,5 +1,6 @@
 import os
 import pathlib
+import queue
 import sys
 from pathlib import Path
 from typing import Dict, Type
@@ -11,7 +12,7 @@ import jedi.settings
 # Import PySide6 core modules
 from PySide6.QtCore import QTimer, QEvent
 from PySide6.QtGui import QFontDatabase, QIcon, Qt, QTextCharFormat
-from PySide6.QtWidgets import QMainWindow, QWidget, QTabWidget
+from PySide6.QtWidgets import QMainWindow, QWidget, QTabWidget, QLabel, QMessageBox
 # 匯入 Qt Material 主題工具
 # Import Qt Material style tools
 from qt_material import QtStyleTools
@@ -133,6 +134,8 @@ class EditorMain(QMainWindow, QtStyleTools):
         self.tab_widget.setTabsClosable(True)  # 可關閉分頁 / Tabs closable
         self.tab_widget.setAttribute(Qt.WidgetAttribute.WA_AlwaysShowToolTips, on=False)
         self.tab_widget.tabCloseRequested.connect(self.close_tab)
+        self.tab_widget.currentChanged.connect(self._on_tab_changed)
+        self._prev_editor_widget = None  # 追蹤前一個分頁 / Track previous tab for signal disconnect
 
         # 計時器會在後面初始化並連接 redirect
         # Timer will be initialized later with redirect connection
@@ -146,6 +149,20 @@ class EditorMain(QMainWindow, QtStyleTools):
         # 設定選單列
         # Set menu bar
         set_menu_bar(self)
+
+        # 設定工具列
+        # Set toolbar
+        from je_editor.pyside_ui.main_ui.toolbar.toolbar_builder import build_toolbar
+        build_toolbar(self)
+
+        # 設定狀態列 (行/列位置、編碼、行尾)
+        # Setup status bar (line/column, encoding, line ending)
+        self._line_ending_label = QLabel("LF")
+        self._encoding_label = QLabel("UTF-8")
+        self._cursor_pos_label = QLabel("Ln 1, Col 1")
+        self.statusBar().addPermanentWidget(self._line_ending_label)
+        self.statusBar().addPermanentWidget(self._encoding_label)
+        self.statusBar().addPermanentWidget(self._cursor_pos_label)
 
         # 設定應用程式圖示
         # Set application icon
@@ -171,9 +188,16 @@ class EditorMain(QMainWindow, QtStyleTools):
         # 再次設定計時器，定期檢查輸出
         # Setup timer again to check redirected output
         self.redirect_timer = QTimer(self)
-        self.redirect_timer.setInterval(10)
+        self.redirect_timer.setInterval(50)
         self.redirect_timer.timeout.connect(self.redirect)
         self.redirect_timer.start()
+
+        # 定期儲存設定 (每 60 秒)，避免 crash 遺失設定
+        # Periodic settings save (every 60s) to prevent data loss on crash
+        self._settings_save_timer = QTimer(self)
+        self._settings_save_timer.setInterval(60000)
+        self._settings_save_timer.timeout.connect(self._periodic_save_settings)
+        self._settings_save_timer.start()
 
         # 建立主要分頁：編輯器與瀏覽器
         # Create main tabs: editor and browser
@@ -222,40 +246,57 @@ class EditorMain(QMainWindow, QtStyleTools):
         將 stdout/stderr 的訊息導入到編輯器的輸出區域
         Redirect stdout/stderr messages into the editor's output area
         """
-        jeditor_logger.info(f"EditorMain redirect")
-        # 遍歷所有分頁 (Tab)，尋找 EditorWidget
-        # Iterate through all tabs to find EditorWidget
-        for code_editor in range(self.tab_widget.count()):
-            widget = self.tab_widget.widget(code_editor)
-            if isinstance(widget, EditorWidget):
-                # stdout 輸出處理
-                # Handle stdout messages
-                if not redirect_manager_instance.std_out_queue.empty():
-                    output_message = redirect_manager_instance.std_out_queue.get_nowait()
-                    output_message = str(output_message).strip()
-                    if output_message:
-                        text_cursor = widget.code_result.textCursor()
-                        text_format = QTextCharFormat()
-                        # 設定正常輸出顏色
-                        # Set normal output color
-                        text_format.setForeground(actually_color_dict.get("normal_output_color"))
-                        text_cursor.insertText(output_message, text_format)
-                        text_cursor.insertBlock()
+        # 快速退出：佇列為空時不做任何事 / Early return if queues are empty
+        has_stdout = not redirect_manager_instance.std_out_queue.empty()
+        has_stderr = not redirect_manager_instance.std_err_queue.empty()
+        if not has_stdout and not has_stderr:
+            return
 
-                # stderr 錯誤輸出處理
-                # Handle stderr messages
-                if not redirect_manager_instance.std_err_queue.empty():
-                    error_message = redirect_manager_instance.std_err_queue.get_nowait()
-                    error_message = str(error_message).strip()
-                    if error_message:
-                        text_cursor = widget.code_result.textCursor()
-                        text_format = QTextCharFormat()
-                        # 設定錯誤輸出顏色
-                        # Set error output color
-                        text_format.setForeground(actually_color_dict.get("error_output_color"))
-                        text_cursor.insertText(error_message, text_format)
-                        text_cursor.insertBlock()
-                break  # 找到第一個 EditorWidget 就結束迴圈 / Stop after first EditorWidget found
+        # 直接取得當前活躍的 widget / Get current active widget directly
+        widget = self.tab_widget.currentWidget()
+        if not isinstance(widget, EditorWidget):
+            # 如果當前不是 EditorWidget，找第一個 / Fallback to first EditorWidget
+            for i in range(self.tab_widget.count()):
+                w = self.tab_widget.widget(i)
+                if isinstance(w, EditorWidget):
+                    widget = w
+                    break
+            else:
+                return
+
+        text_cursor = widget.code_result.textCursor()
+
+        # 批次處理 stdout / Batch-drain stdout
+        if has_stdout:
+            stdout_parts = []
+            try:
+                while not redirect_manager_instance.std_out_queue.empty():
+                    msg = str(redirect_manager_instance.std_out_queue.get_nowait()).strip()
+                    if msg:
+                        stdout_parts.append(msg)
+            except queue.Empty:
+                pass
+            if stdout_parts:
+                text_format = QTextCharFormat()
+                text_format.setForeground(actually_color_dict.get("normal_output_color"))
+                text_cursor.insertText("\n".join(stdout_parts), text_format)
+                text_cursor.insertBlock()
+
+        # 批次處理 stderr / Batch-drain stderr
+        if has_stderr:
+            stderr_parts = []
+            try:
+                while not redirect_manager_instance.std_err_queue.empty():
+                    msg = str(redirect_manager_instance.std_err_queue.get_nowait()).strip()
+                    if msg:
+                        stderr_parts.append(msg)
+            except queue.Empty:
+                pass
+            if stderr_parts:
+                text_format = QTextCharFormat()
+                text_format.setForeground(actually_color_dict.get("error_output_color"))
+                text_cursor.insertText("\n".join(stderr_parts), text_format)
+                text_cursor.insertBlock()
 
     def startup_setting(self) -> None:
         """
@@ -272,6 +313,7 @@ class EditorMain(QMainWindow, QtStyleTools):
 
         # 套用到每個編輯器分頁
         # Apply settings to each editor tab
+        last_file_loaded = False
         for code_editor_count in range(self.tab_widget.count()):
             widget = self.tab_widget.widget(code_editor_count)
             if isinstance(widget, EditorWidget):
@@ -291,20 +333,22 @@ class EditorMain(QMainWindow, QtStyleTools):
                 # Default Python compiler
                 self.python_compiler = user_setting_dict.get("python_compiler", None)
 
-                # 嘗試開啟上次編輯的檔案
-                # Try to open last edited file
-                last_file = user_setting_dict.get("last_file", None)
-                if last_file is not None:
-                    last_file_path = pathlib.Path(last_file)
-                    if last_file_path.is_file() and last_file_path.exists() and widget.code_save_thread is None:
-                        init_new_auto_save_thread(str(last_file_path), widget)
-                        result = read_file(widget.current_file)
-                        if result is not None:
-                            widget.code_edit.setPlainText(result[1])
-                            widget.code_edit.current_file = widget.current_file
-                            widget.code_edit.reset_highlighter()
-                            file_is_open_manager_dict.update({str(last_file_path): str(last_file_path.name)})
-                            widget.rename_self_tab()
+                # 只在第一個 EditorWidget 開啟上次編輯的檔案
+                # Only open last file in the first EditorWidget
+                if not last_file_loaded:
+                    last_file = user_setting_dict.get("last_file", None)
+                    if last_file is not None:
+                        last_file_path = pathlib.Path(last_file)
+                        if last_file_path.is_file() and last_file_path.exists() and widget.code_save_thread is None:
+                            init_new_auto_save_thread(str(last_file_path), widget)
+                            result = read_file(widget.current_file)
+                            if result is not None:
+                                widget.code_edit.setPlainText(result[1])
+                                widget.code_edit.current_file = widget.current_file
+                                widget.code_edit.reset_highlighter()
+                                file_is_open_manager_dict.update({str(last_file_path): str(last_file_path)})
+                                widget.rename_self_tab()
+                                last_file_loaded = True
 
         # 套用 UI 樣式 (主題)
         # Apply UI stylesheet (theme)
@@ -337,12 +381,86 @@ class EditorMain(QMainWindow, QtStyleTools):
             if widget is not None:
                 self.tab_widget.setCurrentWidget(widget)
 
+    def _on_tab_changed(self, index: int) -> None:
+        """
+        分頁切換時，斷開前一個分頁的信號，連接新分頁的游標位置更新
+        Disconnect previous tab's signal, connect new tab's cursor position updates
+        """
+        # 斷開前一個 EditorWidget 的信號 / Disconnect previous EditorWidget's signal
+        if self._prev_editor_widget is not None:
+            try:
+                self._prev_editor_widget.code_edit.cursorPositionChanged.disconnect(self._update_cursor_pos)
+            except RuntimeError:
+                pass
+            self._prev_editor_widget = None
+
+        widget = self.tab_widget.widget(index)
+        if isinstance(widget, EditorWidget):
+            widget.code_edit.cursorPositionChanged.connect(self._update_cursor_pos)
+            self._prev_editor_widget = widget
+            self._update_cursor_pos()
+            self._update_encoding_label()
+            self._update_line_ending_label(widget)
+
+    def _update_cursor_pos(self) -> None:
+        """
+        更新狀態列的行/列位置
+        Update status bar line/column display
+        """
+        widget = self.tab_widget.currentWidget()
+        if isinstance(widget, EditorWidget):
+            cursor = widget.code_edit.textCursor()
+            line = cursor.blockNumber() + 1
+            col = cursor.positionInBlock() + 1
+            self._cursor_pos_label.setText(f"Ln {line}, Col {col}")
+
+    def _update_encoding_label(self) -> None:
+        """
+        更新狀態列的編碼顯示
+        Update status bar encoding display
+        """
+        encoding = user_setting_dict.get("encoding", "utf-8").upper()
+        self._encoding_label.setText(encoding)
+
+    def _update_line_ending_label(self, widget: EditorWidget) -> None:
+        """
+        偵測並更新行尾格式 (CRLF/LF/CR)
+        Detect and update line ending format
+        """
+        if widget.current_file is not None:
+            try:
+                with open(widget.current_file, "rb") as f:
+                    raw = f.read(8192)
+                if b"\r\n" in raw:
+                    self._line_ending_label.setText("CRLF")
+                elif b"\r" in raw:
+                    self._line_ending_label.setText("CR")
+                else:
+                    self._line_ending_label.setText("LF")
+            except (OSError, TypeError):
+                self._line_ending_label.setText("LF")
+        else:
+            self._line_ending_label.setText("LF")
+
+    def _periodic_save_settings(self) -> None:
+        """
+        定期儲存使用者設定，避免 crash 遺失
+        Periodically save user settings to prevent data loss
+        """
+        try:
+            write_user_setting()
+            write_user_color_setting()
+        except Exception as e:
+            jeditor_logger.warning(f"Periodic settings save failed: {e}")
+
     def closeEvent(self, event) -> None:
         """
         視窗關閉事件：儲存使用者設定
         Window close event: save user settings
         """
         jeditor_logger.info("EditorMain closeEvent")
+        if hasattr(self, '_settings_save_timer'):
+            self._settings_save_timer.stop()
         write_user_setting()
         write_user_color_setting()
         super().closeEvent(event)
@@ -352,7 +470,6 @@ class EditorMain(QMainWindow, QtStyleTools):
         事件處理：忽略 ToolTip 類型事件
         Event handler: ignore ToolTip events
         """
-        jeditor_logger.info(f"EditorMain event: {event}")
         if event.type() == QEvent.Type.ToolTip:
             event.ignore()
             return False
@@ -361,10 +478,25 @@ class EditorMain(QMainWindow, QtStyleTools):
 
     def close_tab(self, index: int):
         """
-        關閉指定索引的分頁
-        Close tab at given index
+        關閉指定索引的分頁，若有未儲存的修改則提示使用者
+        Close tab at given index, prompt if unsaved changes
         """
         widget = self.tab_widget.widget(index)
+        if widget and isinstance(widget, EditorWidget) and widget._is_modified:
+            file_name = widget.current_file or language_wrapper.language_word_dict.get("tab_menu_editor_tab_name")
+            reply = QMessageBox.question(
+                self,
+                language_wrapper.language_word_dict.get("close_tab_unsaved_title"),
+                language_wrapper.language_word_dict.get("close_tab_unsaved_message").format(file=file_name),
+                QMessageBox.StandardButton.Save | QMessageBox.StandardButton.Discard | QMessageBox.StandardButton.Cancel,
+                QMessageBox.StandardButton.Save
+            )
+            if reply == QMessageBox.StandardButton.Cancel:
+                return
+            if reply == QMessageBox.StandardButton.Save:
+                from je_editor.pyside_ui.dialog.file_dialog.save_file_dialog import choose_file_get_save_file_path
+                if not choose_file_get_save_file_path(self):
+                    return  # 使用者取消儲存 / User cancelled save
         if widget:
             widget.close()
         self.tab_widget.removeTab(index)
