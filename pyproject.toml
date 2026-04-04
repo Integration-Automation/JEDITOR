@@ -36,5 +36,10 @@ file = "README.md"
 content-type = "text/markdown"
 
 
+[tool.pytest.ini_options]
+testpaths = ["test"]
+qt_api = "pyside6"
+addopts = "--ignore=test/qt_ui"
+
 [tool.setuptools.packages]
 find = { namespaces = false }

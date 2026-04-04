@@ -12,9 +12,10 @@ import pytest
 from PySide6.QtWidgets import QApplication
 
 # Exclude old integration test scripts from pytest collection
+# Use multiple glob patterns to work across platforms (forward/back slashes)
 collect_ignore_glob = [
-    "qt_ui/unit_test/start_qt_ui.py",
-    "qt_ui/unit_test/extend_test.py",
+    "**/start_qt_ui.py",
+    "**/extend_test.py",
 ]
 
 
