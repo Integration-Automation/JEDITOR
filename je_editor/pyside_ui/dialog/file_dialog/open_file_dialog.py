@@ -46,7 +46,7 @@ def choose_file_get_open_file_path(parent_qt_instance: EditorMain) -> None:
             # 檢查檔案是否已經開啟 / Check if file already opened
             normalized_path = str(Path(file_path))
             if file_is_open_manager_dict.get(normalized_path, None) is not None:
-                found_widget = widget.tab_manager.findChild(EditorWidget, str(Path(file_path).name))
+                found_widget = widget.tab_manager.findChild(EditorWidget, normalized_path)
                 if found_widget is not None:
                     widget.tab_manager.setCurrentWidget(found_widget)
                 return
@@ -71,6 +71,9 @@ def choose_file_get_open_file_path(parent_qt_instance: EditorMain) -> None:
 
             # 更新使用者設定中的最後開啟檔案 / Update last opened file in user settings
             user_setting_dict.update({"last_file": str(widget.current_file)})
+            # 加入最近開啟檔案清單 / Add to recent files list
+            from je_editor.pyside_ui.main_ui.menu.file_menu.build_file_menu import add_to_recent_files
+            add_to_recent_files(str(widget.current_file))
             # 更新分頁標題 / Rename tab title
             widget.rename_self_tab()
 

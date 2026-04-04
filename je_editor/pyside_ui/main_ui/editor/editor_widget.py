@@ -16,12 +16,16 @@ import pathlib
 from pathlib import Path
 from typing import Union
 
-from PySide6.QtCore import Qt, QFileInfo, QDir
+from PySide6.QtCore import Qt, QFileInfo, QDir, QMimeData, QFileSystemWatcher
+from PySide6.QtGui import QDragEnterEvent, QDropEvent
 from PySide6.QtWidgets import QWidget, QGridLayout, QSplitter, QScrollArea, QFileSystemModel, QTreeView, QTabWidget, \
     QMessageBox
 
 from je_editor.pyside_ui.code.auto_save.auto_save_manager import auto_save_manager_dict, init_new_auto_save_thread, \
     file_is_open_manager_dict
+from je_editor.pyside_ui.main_ui.console_widget.console_gui import ConsoleWidget
+from je_editor.pyside_ui.code.variable_inspector.inspector_gui import VariableInspector
+from je_editor.pyside_ui.git_ui.git_client.git_client_gui import GitGui
 from je_editor.pyside_ui.code.auto_save.auto_save_thread import CodeEditSaveThread
 from je_editor.pyside_ui.code.code_format.pep8_format import PEP8FormatChecker
 from je_editor.pyside_ui.code.plaintext_code_edit.code_edit_plaintext import CodeEditor
@@ -49,6 +53,8 @@ class EditorWidget(QWidget):
     def __init__(self, main_window: EditorMain):
         jeditor_logger.info(f"Init EditorWidget main_window: {main_window}")
         super().__init__()
+        # 啟用拖放功能 / Enable drag and drop
+        self.setAcceptDrops(True)
         # ---------------- Init variables 初始化變數 ----------------
         self.checker: Union[PEP8FormatChecker, None] = None
         self.current_file = None
@@ -82,9 +88,20 @@ class EditorWidget(QWidget):
         self.edit_splitter = QSplitter(self.full_splitter)
         self.edit_splitter.setOrientation(Qt.Orientation.Vertical)
 
+        # 未儲存修改標記 / Track unsaved modifications
+        self._is_modified = False
+
+        # 檔案變更偵測 / File change detection
+        self._file_watcher = QFileSystemWatcher(self)
+        self._file_watcher.fileChanged.connect(self._on_file_changed_externally)
+        self._ignore_next_change = False
+
         # 程式碼編輯器與輸出區 / Code editor and result area
         self.code_edit = CodeEditor(self)
         self.code_result = CodeRecord()
+
+        # 監聽文字變更以標記未儲存狀態 / Track text changes for unsaved indicator
+        self.code_edit.textChanged.connect(self._on_text_changed)
         self.code_result_cursor = self.code_result.textCursor()
 
         # 捲動區包裝編輯器與輸出 / Scroll areas for editor and result
@@ -102,7 +119,16 @@ class EditorWidget(QWidget):
         self.format_check_result = CodeRecord()
         self.debugger_result = CodeRecord()
 
-        # 輸出分頁 (執行結果 / 格式檢查 / 除錯) / Output tabs
+        # 終端機 / Terminal console
+        self.console_widget = ConsoleWidget(self)
+
+        # 變數查看器 / Variable inspector
+        self.variable_inspector = VariableInspector()
+
+        # Git 用戶端 / Git client
+        self.git_gui = GitGui()
+
+        # 輸出分頁 (執行結果 / 格式檢查 / 除錯 / 終端機 / 變數查看器 / Git) / Output tabs
         self.code_difference_result = QTabWidget()
         self.code_difference_result.addTab(
             self.code_result_scroll_area, language_wrapper.language_word_dict.get("editor_code_result"))
@@ -110,6 +136,12 @@ class EditorWidget(QWidget):
             self.format_check_result, language_wrapper.language_word_dict.get("editor_format_check"))
         self.code_difference_result.addTab(
             self.debugger_result, language_wrapper.language_word_dict.get("editor_debugger_input_title_label"))
+        self.code_difference_result.addTab(
+            self.console_widget, language_wrapper.language_word_dict.get("editor_terminal"))
+        self.code_difference_result.addTab(
+            self.variable_inspector, language_wrapper.language_word_dict.get("variable_inspector_title"))
+        self.code_difference_result.addTab(
+            self.git_gui, language_wrapper.language_word_dict.get("tab_menu_git_client_tab_name"))
 
         # 加入分割器 / Add widgets to splitters
         self.edit_splitter.addWidget(self.code_edit_scroll_area)
@@ -233,6 +265,12 @@ class EditorWidget(QWidget):
             self.code_save_thread.file = self.current_file
             self.code_save_thread.skip_this_round = False
 
+        # 更新檔案監控 / Update file watcher
+        watched = self._file_watcher.files()
+        if watched:
+            self._file_watcher.removePaths(watched)
+        self._file_watcher.addPath(str(path))
+
         # 更新分頁標籤名稱 / Update tab title
         self.rename_self_tab()
         return True
@@ -252,16 +290,42 @@ class EditorWidget(QWidget):
         if path.is_file():
             self.open_an_file(path)
 
+    def _on_text_changed(self):
+        """
+        文字變更時標記為未儲存，並在 tab 標題加上 *
+        Mark as modified when text changes, add * to tab title
+        """
+        if not self._is_modified:
+            self._is_modified = True
+            idx = self.tab_manager.indexOf(self)
+            if idx >= 0:
+                title = self.tab_manager.tabText(idx)
+                if not title.endswith(" *"):
+                    self.tab_manager.setTabText(idx, title + " *")
+
+    def mark_saved(self):
+        """
+        儲存後清除未儲存標記
+        Clear the unsaved marker after saving
+        """
+        self._is_modified = False
+        idx = self.tab_manager.indexOf(self)
+        if idx >= 0:
+            title = self.tab_manager.tabText(idx)
+            if title.endswith(" *"):
+                self.tab_manager.setTabText(idx, title[:-2])
+
     def rename_self_tab(self):
         """
-        將目前分頁的標籤名稱改為目前檔案名稱。
-        Rename the current tab to the current file name.
+        將分頁的標籤名稱改為目前檔案名稱 (不限當前分頁)。
+        Rename this tab to the current file name (works for any tab, not just current).
         """
         jeditor_logger.info("EditorWidget rename_self_tab")
-        if self.tab_manager.currentWidget() is self:
-            self.tab_manager.setTabText(
-                self.tab_manager.currentIndex(), str(Path(self.current_file)))
+        idx = self.tab_manager.indexOf(self)
+        if idx >= 0 and self.current_file is not None:
+            self.tab_manager.setTabText(idx, str(Path(self.current_file)))
             self.setObjectName(str(Path(self.current_file)))
+            self._is_modified = False
 
     def check_file_format(self):
         """
@@ -292,12 +356,80 @@ class EditorWidget(QWidget):
                     language_wrapper.language_word_dict.get("python_format_checker_only_support_python_message"))
                 message_box.exec_()
 
+    def dragEnterEvent(self, event: QDragEnterEvent) -> None:
+        """
+        接受包含檔案 URL 的拖放事件
+        Accept drag events containing file URLs
+        """
+        if event.mimeData().hasUrls():
+            event.acceptProposedAction()
+
+    def dropEvent(self, event: QDropEvent) -> None:
+        """
+        拖放檔案時開啟檔案
+        Open files when dropped
+        """
+        for url in event.mimeData().urls():
+            file_path = Path(url.toLocalFile())
+            if file_path.is_file():
+                self.open_an_file(file_path)
+        event.acceptProposedAction()
+
+    def _on_file_changed_externally(self, path: str) -> None:
+        """
+        檔案被外部修改時提示使用者
+        Prompt user when file is modified externally
+        """
+        if self._ignore_next_change:
+            self._ignore_next_change = False
+            # 重新加入監控（某些系統會在寫入後移除監控）
+            if path not in self._file_watcher.files():
+                self._file_watcher.addPath(path)
+            return
+
+        file_path = Path(path)
+        if not file_path.exists():
+            return
+
+        reply = QMessageBox.question(
+            self,
+            language_wrapper.language_word_dict.get("file_changed_externally_title"),
+            language_wrapper.language_word_dict.get("file_changed_externally_message").format(file=file_path.name),
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.Yes
+        )
+        if reply == QMessageBox.StandardButton.Yes:
+            result = read_file(str(file_path))
+            if result is not None:
+                self._ignore_next_change = True
+                self.code_edit.setPlainText(result[1])
+                self._is_modified = False
+                idx = self.tab_manager.indexOf(self)
+                if idx >= 0:
+                    title = self.tab_manager.tabText(idx)
+                    if title.endswith(" *"):
+                        self.tab_manager.setTabText(idx, title[:-2])
+
+        # 重新加入監控 / Re-add to watcher
+        if path not in self._file_watcher.files():
+            self._file_watcher.addPath(path)
+
     def close(self) -> bool:
         """
         關閉編輯器，釋放資源並移除自動儲存紀錄。
         Close the editor, release resources, and remove auto-save records.
         """
         jeditor_logger.info("EditorWidget close")
+        # 停止所有正在執行的子程序 / Stop all running subprocesses
+        for mgr in (self.exec_program, self.exec_shell, self.exec_python_debugger):
+            if mgr is not None:
+                if mgr.timer is not None:
+                    mgr.timer.stop()
+                mgr.exit_program()
+        self.exec_program = None
+        self.exec_shell = None
+        self.exec_python_debugger = None
+
         if self.code_save_thread is not None:
             self.code_save_thread.still_run = False
             self.code_save_thread = None

@@ -152,9 +152,11 @@ def add_dock_widget(ui_we_want_to_set: EditorMain, widget_type: str = None):
         if file_path is not None and file_path != "":
             # 建立一個完整的編輯器 Dock，並載入檔案內容
             # Create a full editor dock and load file content
+            result = read_file(file_path)  # 讀取檔案內容 / Read file content
+            if result is None:
+                return
             widget = FullEditorWidget(current_file=file_path)
-            file_content = read_file(file_path)[1]  # 讀取檔案內容 / Read file content
-            widget.code_edit.setPlainText(file_content)
+            widget.code_edit.setPlainText(result[1])
             dock_widget.setWindowTitle(language_wrapper.language_word_dict.get("dock_editor_title"))
             dock_widget.setWidget(widget)
 

@@ -26,7 +26,10 @@ if TYPE_CHECKING:
 
 # 匯入 Qt 動作與字型資料庫
 # Import QAction and QFontDatabase from PySide6
+from pathlib import Path
+
 from PySide6.QtGui import QAction, QFontDatabase
+from PySide6.QtWidgets import QMenu
 
 # 匯入檔案對話框 (新建、開啟、儲存)
 # Import file dialogs (create, open, save)
@@ -86,11 +89,67 @@ def set_file_menu(ui_we_want_to_set: EditorMain) -> None:
     )
     ui_we_want_to_set.file_menu.addAction(ui_we_want_to_set.file_menu.save_file_action)
 
+    # 最近開啟的檔案選單 / Recent Files menu
+    add_recent_files_menu(ui_we_want_to_set)
+
+    ui_we_want_to_set.file_menu.addSeparator()
+
     # 加入字型與編碼選單
     # Add font and encoding menus
     add_font_menu(ui_we_want_to_set)
     add_font_size_menu(ui_we_want_to_set)
     add_encoding_menu(ui_we_want_to_set)
+
+
+# 最近開啟的檔案選單 / Recent Files menu
+def add_recent_files_menu(ui_we_want_to_set: EditorMain) -> None:
+    jeditor_logger.info("build_file_menu.py add_recent_files_menu")
+    ui_we_want_to_set.file_menu.recent_files_menu = ui_we_want_to_set.file_menu.addMenu(
+        language_wrapper.language_word_dict.get("file_menu_recent_files_label"))
+    refresh_recent_files_menu(ui_we_want_to_set)
+
+
+def refresh_recent_files_menu(ui_we_want_to_set: EditorMain) -> None:
+    """更新最近開啟檔案選單 / Refresh recent files menu"""
+    menu: QMenu = ui_we_want_to_set.file_menu.recent_files_menu
+    menu.clear()
+    recent: list = user_setting_dict.get("recent_files", [])
+    if not recent:
+        empty_action = QAction(
+            language_wrapper.language_word_dict.get("file_menu_no_recent_files"), parent=menu)
+        empty_action.setEnabled(False)
+        menu.addAction(empty_action)
+        return
+    for file_path in recent:
+        action = QAction(file_path, parent=menu)
+        action.triggered.connect(
+            lambda checked=False, fp=file_path: _open_recent_file(ui_we_want_to_set, fp))
+        menu.addAction(action)
+
+
+def _open_recent_file(ui_we_want_to_set: EditorMain, file_path: str) -> None:
+    """開啟最近的檔案 / Open a recent file"""
+    p = Path(file_path)
+    if p.is_file():
+        ui_we_want_to_set.go_to_new_tab(p)
+    else:
+        # 檔案不存在，從清單移除 / File doesn't exist, remove from list
+        recent: list = user_setting_dict.get("recent_files", [])
+        if file_path in recent:
+            recent.remove(file_path)
+        refresh_recent_files_menu(ui_we_want_to_set)
+
+
+def add_to_recent_files(file_path: str) -> None:
+    """
+    將檔案加入最近開啟清單 (最多 10 個)
+    Add file to recent files list (max 10)
+    """
+    recent: list = user_setting_dict.get("recent_files", [])
+    if file_path in recent:
+        recent.remove(file_path)
+    recent.insert(0, file_path)
+    user_setting_dict["recent_files"] = recent[:10]
 
 
 # 建立編碼選單

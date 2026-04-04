@@ -7,7 +7,7 @@ from je_editor.utils.logging.loggin_instance import jeditor_logger
 if TYPE_CHECKING:
     # 僅在型別檢查時匯入，避免循環匯入問題
     # Import only for type checking, prevents circular imports
-    from je_editor.pyside_ui.main_ui.main_editor import EditorWidget
+    from je_editor.pyside_ui.main_ui.editor.editor_widget import EditorWidget
 
 from je_editor.pyside_ui.code.auto_save.auto_save_thread import CodeEditSaveThread
 

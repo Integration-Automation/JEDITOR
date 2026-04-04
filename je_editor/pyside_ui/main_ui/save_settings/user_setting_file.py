@@ -27,6 +27,8 @@ user_setting_dict = {
     "last_file": None,  # 上次開啟的檔案 / Last opened file
     "python_compiler": None,  # Python 編譯器路徑 / Python compiler path
     "max_line_of_output": 200000,  # 最大輸出行數限制 / Max lines of output
+    "recent_files": [],  # 最近開啟的檔案清單 / Recent files list
+    "indent_size": 4,  # 縮排空格數 / Indent size (spaces)
 }
 
 

@@ -6,6 +6,11 @@ from je_editor.pyside_ui.main_ui.save_settings.user_setting_file import user_set
 from je_editor.utils.logging.loggin_instance import jeditor_logger
 
 
+# 選取時只設定背景色，不設定前景色，讓 Qt 保留原始 QTextCharFormat 的前景色
+# Only set selection background; omit selection-color so Qt preserves original foreground
+_SELECTION_CSS = "selection-background-color: #264f78;"
+
+
 class CodeRecord(QTextEdit):
     # 繼承自 QTextEdit，作為程式碼輸出紀錄區
     # Extend QTextEdit, used as a code output record area
@@ -14,6 +19,7 @@ class CodeRecord(QTextEdit):
         super().__init__()
         self.setLineWrapMode(self.LineWrapMode.NoWrap)  # 禁止自動換行 / disable line wrapping
         self.setReadOnly(True)  # 設為唯讀 / set as read-only
+        super().setStyleSheet(_SELECTION_CSS)
 
         # 建立搜尋錯誤的快捷動作
         # Create search error action with shortcut
@@ -24,12 +30,20 @@ class CodeRecord(QTextEdit):
         )
         self.addAction(self.search_result_action)
 
+    def setStyleSheet(self, style: str) -> None:
+        """
+        覆寫 setStyleSheet，確保 selection-background-color 始終存在，
+        不設定 selection-color 以保留原始前景色。
+        Override setStyleSheet to always keep selection-background-color,
+        omitting selection-color to preserve original foreground colors.
+        """
+        super().setStyleSheet(f"{style} {_SELECTION_CSS}")
+
     def append(self, text: str) -> None:
         """
         新增文字到輸出區，若超過最大行數則清空
         Append text to output area, clear if exceeding max lines
         """
-        jeditor_logger.info("CodeRecord append")
         max_line: int = user_setting_dict.get("max_line_of_output", 200000)
         if self.document().lineCount() >= max_line > 0:
             # 若行數超過設定，清空內容

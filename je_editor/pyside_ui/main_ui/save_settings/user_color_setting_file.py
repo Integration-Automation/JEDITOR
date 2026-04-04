@@ -9,6 +9,18 @@ from je_editor.utils.json.json_file import read_json
 from je_editor.utils.logging.loggin_instance import jeditor_logger
 
 
+def _to_qcolor(key: str, fallback: list) -> QColor:
+    """安全地將 RGB list 轉換為 QColor / Safely convert RGB list to QColor with fallback."""
+    rgb = user_setting_color_dict.get(key, fallback)
+    if rgb is None or not isinstance(rgb, list) or len(rgb) < 3:
+        rgb = fallback
+    return QColor(
+        max(0, min(255, rgb[0])),
+        max(0, min(255, rgb[1])),
+        max(0, min(255, rgb[2]))
+    )
+
+
 def update_actually_color_dict():
     """
     更新實際使用的顏色字典 (actually_color_dict)，
@@ -16,15 +28,6 @@ def update_actually_color_dict():
     Update the actual color dictionary (actually_color_dict),
     converting RGB values from user_setting_color_dict into QColor objects.
     """
-    jeditor_logger.info(f"user_color_setting_file.py update_actually_color_dict")
-
-    def _to_qcolor(key: str, fallback: list) -> QColor:
-        """Safely convert RGB list to QColor with fallback."""
-        rgb = user_setting_color_dict.get(key, fallback)
-        if rgb is None or len(rgb) < 3:
-            rgb = fallback
-        return QColor(rgb[0], rgb[1], rgb[2])
-
     actually_color_dict.update(
         {
             "line_number_color": _to_qcolor("line_number_color", [255, 255, 255]),

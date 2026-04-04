@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "je_editor"
-version = "1.0.6"
+version = "1.0.8"
 authors = [
     { name = "JE-Chen", email = "jechenmailman@gmail.com" },
 ]
@@ -38,3 +38,7 @@ content-type = "text/markdown"
 
 [tool.setuptools.packages]
 find = { namespaces = false }
+
+[tool.pytest.ini_options]
+testpaths = ["test"]
+qt_api = "pyside6"

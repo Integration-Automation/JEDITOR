@@ -15,16 +15,41 @@ from typing import Union, List
 
 import jedi  # Python 自動補全與靜態分析工具
 from PySide6 import QtGui
-from PySide6.QtCore import Qt, QRect
+from PySide6.QtCore import Qt, QRect, QTimer, QThread, Signal, QObject
 from PySide6.QtGui import (
     QPainter, QTextCharFormat, QTextFormat, QKeyEvent, QAction,
-    QTextDocument, QTextCursor, QTextOption
+    QTextDocument, QTextCursor, QTextOption, QColor, QWheelEvent
 )
-from PySide6.QtWidgets import QPlainTextEdit, QWidget, QTextEdit, QCompleter
+from PySide6.QtWidgets import QPlainTextEdit, QWidget, QTextEdit, QCompleter, QInputDialog
 from jedi.api.classes import Completion
+
+
+class _JediCompleteWorker(QObject):
+    """背景執行 Jedi 自動補全 / Run Jedi autocomplete in background thread"""
+    finished = Signal(list)  # list of completion names
+
+    def __init__(self, code: str, line: int, column: int, env=None):
+        super().__init__()
+        self._code = code
+        self._line = line
+        self._column = column
+        self._env = env
+
+    def run(self):
+        try:
+            if self._env is not None:
+                script = jedi.Script(code=self._code, environment=self._env)
+            else:
+                script = jedi.Script(code=self._code)
+            completions = script.complete(self._line, self._column)
+            names = [c.name for c in completions]
+            self.finished.emit(names)
+        except Exception:
+            self.finished.emit([])
 
 from je_editor.pyside_ui.code.syntax.python_syntax import PythonHighlighter
 from je_editor.pyside_ui.dialog.search_ui.search_text_box import SearchBox
+from je_editor.pyside_ui.dialog.search_ui.search_replace_widget import SearchReplaceDialog
 from je_editor.pyside_ui.main_ui.save_settings.user_color_setting_file import actually_color_dict
 
 
@@ -106,9 +131,36 @@ class CodeEditor(QPlainTextEdit):
         self.search_action.triggered.connect(self.start_search_dialog)
         self.addAction(self.search_action)
 
+        # 搜尋與取代 (Ctrl+Shift+F) / Search & Replace shortcut
+        self.search_replace_action = QAction("Search & Replace")
+        self.search_replace_action.setShortcut("Ctrl+Shift+f")
+        self.search_replace_action.triggered.connect(self.open_search_replace_dialog)
+        self.addAction(self.search_replace_action)
+
+        # 跳到指定行 (Ctrl+G) / Go to Line shortcut
+        self.goto_line_action = QAction("Go to Line")
+        self.goto_line_action.setShortcut("Ctrl+g")
+        self.goto_line_action.triggered.connect(self.go_to_line)
+        self.addAction(self.goto_line_action)
+
         # 自動補全初始化
         self.completer: Union[None, QCompleter] = None
         self.set_complete([])
+
+        # 自動補全 debounce 計時器 (300ms) / Autocomplete debounce timer
+        self._complete_timer = QTimer(self)
+        self._complete_timer.setSingleShot(True)
+        self._complete_timer.setInterval(300)
+        self._complete_timer.timeout.connect(self.complete)
+
+        # 背景補全執行緒與 worker / Background completion thread and worker
+        self._complete_thread: Union[QThread, None] = None
+        self._complete_worker: Union[_JediCompleteWorker, None] = None
+
+        # 匹配括號高亮 / Matching bracket highlight
+        self._bracket_pairs_chars = {'(': ')', ')': '(', '[': ']', ']': '[', '{': '}', '}': '{'}
+        self._bracket_open = set('([{')
+        self.cursorPositionChanged.connect(self._highlight_matching_bracket)
 
     def reset_highlighter(self):
         """重設語法高亮 / Reset syntax highlighter"""
@@ -155,47 +207,82 @@ class CodeEditor(QPlainTextEdit):
     @property
     def text_under_cursor(self):
         """取得游標下的文字 / Get text under cursor"""
-        jeditor_logger.info("CodeEditor text_under_cursor")
         text_cursor = self.textCursor()
         text_cursor.select(QTextCursor.SelectionType.WordUnderCursor)
         return text_cursor.selectedText()
 
     def focusInEvent(self, e) -> None:
         """當編輯器獲得焦點時，確保 completer 綁定正確"""
-        jeditor_logger.info(f"CodeEditor focusInEvent event: {e}")
         if self.completer:
             self.completer.setWidget(self)
         QPlainTextEdit.focusInEvent(self, e)
 
     def complete(self) -> None:
         """
-        使用 Jedi 進行自動補全
-        Keyword autocomplete with Jedi
+        使用 Jedi 在背景執行緒進行自動補全，避免阻塞 UI
+        Run Jedi autocomplete in background thread to avoid blocking UI
         """
-        jeditor_logger.info("CodeEditor complete")
+        # 如果上一次補全還在執行，跳過 / Skip if previous completion is still running
+        if self._complete_thread is not None and self._complete_thread.isRunning():
+            return
+
+        code = self.toPlainText()
+        line = self.textCursor().blockNumber() + 1
+        column = self.textCursor().positionInBlock()
+
+        self._complete_thread = QThread(self)
+        self._complete_worker = _JediCompleteWorker(code, line, column, self.env)
+        self._complete_worker.moveToThread(self._complete_thread)
+        self._complete_thread.started.connect(self._complete_worker.run)
+        self._complete_worker.finished.connect(self._on_complete_results)
+        self._complete_worker.finished.connect(self._complete_thread.quit)
+        self._complete_thread.finished.connect(self._complete_thread.deleteLater)
+        self._complete_thread.start()
+
+    def _on_complete_results(self, names: list) -> None:
+        """
+        接收背景執行緒的補全結果並顯示
+        Receive completion results from background thread and display
+        """
+        if names:
+            self.set_complete(names)
+
         prefix = self.text_under_cursor
-        if self.env is not None:
-            script = jedi.Script(code=self.toPlainText(), environment=self.env)
-        else:
-            script = jedi.Script(code=self.toPlainText())
-
-        # 取得補全清單
-        jedi_complete_list: List[Completion] = script.complete(
-            self.textCursor().blockNumber() + 1,
-            self.textCursor().positionInBlock()
-        )
-
-        if len(jedi_complete_list) > 0:
-            new_complete_list = [complete_text.name for complete_text in jedi_complete_list]
-            self.set_complete(new_complete_list)
-
-        # 顯示補全視窗
         self.completer.setCompletionPrefix(prefix)
         popup = self.completer.popup()
         cursor_rect = self.cursorRect()
         popup.setCurrentIndex(self.completer.completionModel().index(0, 0))
         cursor_rect.setWidth(self.completer.popup().rect().size().width())
         self.completer.complete(cursor_rect)
+
+    def go_to_line(self) -> None:
+        """跳到指定行數 / Go to a specific line number"""
+        max_line = self.blockCount()
+        line, ok = QInputDialog.getInt(
+            self, "Go to Line", f"Line number (1-{max_line}):",
+            value=self.textCursor().blockNumber() + 1,
+            min=1, max=max_line
+        )
+        if ok:
+            block = self.document().findBlockByNumber(line - 1)
+            if block.isValid():
+                cursor = self.textCursor()
+                cursor.setPosition(block.position())
+                self.setTextCursor(cursor)
+                self.centerCursor()
+                self.highlight_current_line()
+
+    def open_search_replace_dialog(self) -> None:
+        """開啟搜尋與取代對話框 / Open Search & Replace dialog"""
+        jeditor_logger.info("CodeEditor open_search_replace_dialog")
+        editor_widget = self.main_window
+        dialog = SearchReplaceDialog(editor_widget, parent=self)
+        # 如果有選取文字，自動帶入搜尋欄 / Pre-fill with selected text
+        cursor = self.textCursor()
+        if cursor.hasSelection():
+            dialog.search_input.setText(cursor.selectedText())
+        dialog.search_input.setFocus()
+        dialog.show()
 
     def start_search_dialog(self) -> None:
         """顯示搜尋框 / Show search box"""
@@ -232,7 +319,6 @@ class CodeEditor(QPlainTextEdit):
         繪製行號區域
         Paint line number area
         """
-        jeditor_logger.info(f"CodeEditor line_number_paint event: {event}")
         painter = QPainter(self.line_number)
         # 填滿背景色
         painter.fillRect(event.rect(), actually_color_dict.get("line_number_background_color"))
@@ -266,7 +352,6 @@ class CodeEditor(QPlainTextEdit):
         計算行號區域寬度
         Calculate line number area width
         """
-        jeditor_logger.info("CodeEditor line_number_width")
         digits = len(str(self.blockCount()))  # 根據總行數決定位數
         space = 12 * digits
         return space
@@ -276,7 +361,6 @@ class CodeEditor(QPlainTextEdit):
         更新行號區域寬度
         Update line number area width
         """
-        jeditor_logger.info(f"CodeEditor update_line_number_area_width value: {value}")
         self.setViewportMargins(self.line_number_width(), 0, 0, 0)
 
     def resizeEvent(self, event) -> None:
@@ -284,7 +368,6 @@ class CodeEditor(QPlainTextEdit):
         視窗大小改變時，調整行號區域
         Resize line number paint area
         """
-        jeditor_logger.info(f"CodeEditor resizeEvent event:{event}")
         QPlainTextEdit.resizeEvent(self, event)
         cr = self.contentsRect()
         self.line_number.setGeometry(
@@ -296,7 +379,6 @@ class CodeEditor(QPlainTextEdit):
         更新行號顯示
         Update line number area
         """
-        jeditor_logger.info(f"CodeEditor update_line_number_area rect: {rect}, dy: {dy}")
         if dy:
             self.line_number.scroll(0, dy)
         else:
@@ -314,7 +396,6 @@ class CodeEditor(QPlainTextEdit):
         高亮目前所在行
         Highlight current line
         """
-        jeditor_logger.info("CodeEditor highlight_current_line")
         selections = []
         if not self.isReadOnly():
             formats = QTextCharFormat()
@@ -328,16 +409,302 @@ class CodeEditor(QPlainTextEdit):
             selection.format.setProperty(QTextFormat.FullWidthSelection, True)
         self.setExtraSelections(selections)
 
+    def _highlight_matching_bracket(self) -> None:
+        """
+        高亮匹配的括號
+        Highlight matching bracket when cursor is on a bracket character
+        """
+        selections = []
+        # 保留當前行高亮 / Keep current line highlight
+        if not self.isReadOnly():
+            fmt = QTextCharFormat()
+            sel = QTextEdit.ExtraSelection()
+            sel.format = fmt
+            sel.format.setBackground(actually_color_dict.get("current_line_color"))
+            sel.format.setProperty(QTextFormat.FullWidthSelection, True)
+            sel.cursor = self.textCursor()
+            sel.cursor.clearSelection()
+            selections.append(sel)
+
+        cursor = self.textCursor()
+        doc = self.document()
+        pos = cursor.position()
+        text = doc.toPlainText()
+
+        if pos < len(text) and text[pos] in self._bracket_pairs_chars:
+            char = text[pos]
+            match_pos = self._find_matching_bracket(text, pos, char)
+            if match_pos is not None:
+                bracket_fmt = QTextCharFormat()
+                bracket_fmt.setBackground(QColor("#5a5a7a"))
+                bracket_fmt.setForeground(QColor("#ffffff"))
+                for p in (pos, match_pos):
+                    sel = QTextEdit.ExtraSelection()
+                    c = QTextCursor(doc)
+                    c.setPosition(p)
+                    c.movePosition(QTextCursor.MoveOperation.Right, QTextCursor.MoveMode.KeepAnchor)
+                    sel.cursor = c
+                    sel.format = bracket_fmt
+                    selections.append(sel)
+
+        self.setExtraSelections(selections)
+
+    def _find_matching_bracket(self, text: str, pos: int, char: str) -> Union[int, None]:
+        """
+        找到匹配的括號位置
+        Find position of matching bracket
+        """
+        match = self._bracket_pairs_chars[char]
+        is_open = char in self._bracket_open
+        direction = 1 if is_open else -1
+        depth = 0
+        i = pos
+        while 0 <= i < len(text):
+            if text[i] == char:
+                depth += 1
+            elif text[i] == match:
+                depth -= 1
+                if depth == 0:
+                    return i
+            i += direction
+        return None
+
+    def jump_to_matching_bracket(self) -> None:
+        """
+        跳到匹配的括號位置 (Ctrl+Shift+\\)
+        Jump to matching bracket
+        """
+        cursor = self.textCursor()
+        text = self.document().toPlainText()
+        pos = cursor.position()
+        if pos < len(text) and text[pos] in self._bracket_pairs_chars:
+            match_pos = self._find_matching_bracket(text, pos, text[pos])
+            if match_pos is not None:
+                cursor.setPosition(match_pos)
+                self.setTextCursor(cursor)
+                self.centerCursor()
+
+    def duplicate_line(self) -> None:
+        """
+        複製當前行 (Ctrl+D)
+        Duplicate current line
+        """
+        cursor = self.textCursor()
+        cursor.movePosition(QTextCursor.MoveOperation.StartOfBlock)
+        cursor.movePosition(QTextCursor.MoveOperation.EndOfBlock, QTextCursor.MoveMode.KeepAnchor)
+        line_text = cursor.selectedText()
+        cursor.movePosition(QTextCursor.MoveOperation.EndOfBlock)
+        cursor.insertText("\n" + line_text)
+        self.setTextCursor(cursor)
+
+    def toggle_comment(self) -> None:
+        """
+        切換註解 (Ctrl+/)
+        Toggle comment for current line or selected lines
+        """
+        cursor = self.textCursor()
+        cursor.beginEditBlock()
+
+        if cursor.hasSelection():
+            start = cursor.selectionStart()
+            end = cursor.selectionEnd()
+            cursor.setPosition(start)
+            start_block = cursor.blockNumber()
+            cursor.setPosition(end)
+            end_block = cursor.blockNumber()
+        else:
+            start_block = end_block = cursor.blockNumber()
+
+        # 判斷是要加註解還是取消註解 / Decide: add or remove comment
+        all_commented = True
+        cursor.setPosition(self.document().findBlockByNumber(start_block).position())
+        for _ in range(end_block - start_block + 1):
+            if not cursor.block().text().lstrip().startswith("#"):
+                all_commented = False
+                break
+            cursor.movePosition(QTextCursor.MoveOperation.NextBlock)
+
+        cursor.setPosition(self.document().findBlockByNumber(start_block).position())
+        for _ in range(end_block - start_block + 1):
+            cursor.movePosition(QTextCursor.MoveOperation.StartOfBlock)
+            if all_commented:
+                # 取消註解 / Remove comment
+                line = cursor.block().text()
+                idx = line.index("#") if "#" in line else -1
+                if idx >= 0:
+                    cursor.movePosition(QTextCursor.MoveOperation.StartOfBlock)
+                    for _ in range(idx):
+                        cursor.movePosition(QTextCursor.MoveOperation.Right)
+                    cursor.deleteChar()  # 刪除 #
+                    if cursor.block().text() and len(cursor.block().text()) > idx and cursor.block().text()[idx] == " ":
+                        cursor.deleteChar()  # 刪除 # 後的空格
+            else:
+                # 加上註解 / Add comment
+                cursor.insertText("# ")
+            cursor.movePosition(QTextCursor.MoveOperation.NextBlock)
+        cursor.endEditBlock()
+
+    def move_line(self, direction: int) -> None:
+        """
+        移動當前行 (Alt+Up/Down)
+        Move current line up or down
+        :param direction: -1 上移, 1 下移 / -1 up, 1 down
+        """
+        cursor = self.textCursor()
+        block_num = cursor.blockNumber()
+        target = block_num + direction
+
+        if target < 0 or target >= self.document().blockCount():
+            return
+
+        cursor.beginEditBlock()
+        # 選取當前行
+        cursor.movePosition(QTextCursor.MoveOperation.StartOfBlock)
+        cursor.movePosition(QTextCursor.MoveOperation.EndOfBlock, QTextCursor.MoveMode.KeepAnchor)
+        line_text = cursor.selectedText()
+        cursor.removeSelectedText()
+
+        if direction < 0:
+            # 上移：刪除前面的換行，在上一行前插入
+            cursor.deletePreviousChar()  # 刪除前面的 \n
+            cursor.movePosition(QTextCursor.MoveOperation.StartOfBlock)
+            cursor.insertText(line_text + "\n")
+            cursor.movePosition(QTextCursor.MoveOperation.Up)
+        else:
+            # 下移：刪除後面的換行，在下一行後插入
+            cursor.deleteChar()  # 刪除後面的 \n
+            cursor.movePosition(QTextCursor.MoveOperation.EndOfBlock)
+            cursor.insertText("\n" + line_text)
+
+        cursor.endEditBlock()
+        self.setTextCursor(cursor)
+        self.highlight_current_line()
+
+    def wheelEvent(self, event: QWheelEvent) -> None:
+        """
+        滑鼠滾輪事件：Ctrl+滾輪縮放字型
+        Mouse wheel: Ctrl+wheel to zoom font size
+        """
+        if event.modifiers() & Qt.KeyboardModifier.ControlModifier:
+            delta = event.angleDelta().y()
+            if delta > 0:
+                self._zoom_in()
+            elif delta < 0:
+                self._zoom_out()
+            event.accept()
+            return
+        super().wheelEvent(event)
+
+    def _zoom_in(self) -> None:
+        """放大字型 / Zoom in"""
+        font = self.font()
+        size = font.pointSize()
+        if size < 72:
+            font.setPointSize(size + 1)
+            self.setFont(font)
+            self.setTabStopDistance(
+                QtGui.QFontMetricsF(font).horizontalAdvance("        ")
+            )
+
+    def _zoom_out(self) -> None:
+        """縮小字型 / Zoom out"""
+        font = self.font()
+        size = font.pointSize()
+        if size > 6:
+            font.setPointSize(size - 1)
+            self.setFont(font)
+            self.setTabStopDistance(
+                QtGui.QFontMetricsF(font).horizontalAdvance("        ")
+            )
+
+    # 自動關閉括號配對 / Auto-close bracket pairs
+    _BRACKET_PAIRS = {
+        Qt.Key.Key_ParenLeft: ("(", ")"),
+        Qt.Key.Key_BracketLeft: ("[", "]"),
+        Qt.Key.Key_BraceLeft: ("{", "}"),
+        Qt.Key.Key_QuoteDbl: ('"', '"'),
+        Qt.Key.Key_Apostrophe: ("'", "'"),
+    }
+
+    def _indent_selection(self, indent: bool = True) -> None:
+        """
+        對選取的多行進行縮排或取消縮排
+        Indent or unindent selected lines
+        """
+        cursor = self.textCursor()
+        cursor.beginEditBlock()
+        start = cursor.selectionStart()
+        end = cursor.selectionEnd()
+
+        cursor.setPosition(start)
+        start_block = cursor.blockNumber()
+        cursor.setPosition(end)
+        end_block = cursor.blockNumber()
+
+        cursor.setPosition(start)
+        for _ in range(end_block - start_block + 1):
+            cursor.movePosition(QTextCursor.MoveOperation.StartOfBlock)
+            if indent:
+                cursor.insertText("    ")
+            else:
+                # 取消縮排：移除開頭最多 4 個空白
+                # Unindent: remove up to 4 leading spaces
+                line_text = cursor.block().text()
+                spaces = 0
+                for ch in line_text:
+                    if ch == " " and spaces < 4:
+                        spaces += 1
+                    else:
+                        break
+                if spaces > 0:
+                    cursor.movePosition(QTextCursor.MoveOperation.StartOfBlock)
+                    for _ in range(spaces):
+                        cursor.deleteChar()
+            cursor.movePosition(QTextCursor.MoveOperation.NextBlock)
+        cursor.endEditBlock()
+
     def keyPressEvent(self, event: QKeyEvent) -> None:
         """
         鍵盤事件處理
         Handle key press events
         - Ctrl+B: 使用 Jedi 跳轉定義
+        - Tab/Shift+Tab: 區塊縮排/取消縮排
         - Shift+Enter: 忽略軟換行
+        - 自動關閉括號
         - 其他情況觸發自動補全
         """
         key = event.key()
-        jeditor_logger.info(f"CodeEditor keyPressEvent event: {event} key: {key}")
+
+        # Ctrl 組合鍵 / Ctrl shortcuts
+        if event.modifiers() & Qt.KeyboardModifier.ControlModifier:
+            # Ctrl+D → 複製行 / Duplicate line
+            if key == Qt.Key.Key_D:
+                self.duplicate_line()
+                return
+            # Ctrl+/ → 切換註解 / Toggle comment
+            if key == Qt.Key.Key_Slash:
+                self.toggle_comment()
+                return
+            # Ctrl+Shift+\ → 跳到匹配括號 / Jump to matching bracket
+            if key == Qt.Key.Key_Backslash and event.modifiers() & Qt.KeyboardModifier.ShiftModifier:
+                self.jump_to_matching_bracket()
+                return
+            # Ctrl+Plus/Minus → 縮放 / Zoom
+            if key == Qt.Key.Key_Plus or key == Qt.Key.Key_Equal:
+                self._zoom_in()
+                return
+            if key == Qt.Key.Key_Minus:
+                self._zoom_out()
+                return
+
+        # Alt+Up/Down → 移動行 / Move line up/down
+        if event.modifiers() & Qt.KeyboardModifier.AltModifier:
+            if key == Qt.Key.Key_Up:
+                self.move_line(-1)
+                return
+            if key == Qt.Key.Key_Down:
+                self.move_line(1)
+                return
 
         # Ctrl + B → 跳轉到定義
         if event.modifiers() & Qt.KeyboardModifier.ControlModifier:
@@ -363,6 +730,15 @@ class CodeEditor(QPlainTextEdit):
                             self.setTextCursor(cursor)
                 return
 
+        # Tab / Shift+Tab 區塊縮排 / Block indent/unindent
+        if key == Qt.Key.Key_Tab and self.textCursor().hasSelection():
+            self._indent_selection(indent=True)
+            return
+        if key == Qt.Key.Key_Backtab:
+            if self.textCursor().hasSelection():
+                self._indent_selection(indent=False)
+            return
+
         # 如果補全視窗開啟，且按下不該觸發的按鍵 → 關閉補全
         if self.completer.popup().isVisible() and key in self.skip_popup_behavior_list:
             self.completer.popup().close()
@@ -375,25 +751,71 @@ class CodeEditor(QPlainTextEdit):
                 event.ignore()
                 return
 
+        # Enter → 自動縮排 / Auto-indent on Enter
+        if key in (Qt.Key.Key_Enter, Qt.Key.Key_Return) and not event.modifiers():
+            cursor = self.textCursor()
+            line = cursor.block().text()
+            # 取得當前行的前導空白 / Get leading whitespace
+            indent = ""
+            for ch in line:
+                if ch in (" ", "\t"):
+                    indent += ch
+                else:
+                    break
+            # 如果行尾是冒號，增加一層縮排 (Python) / Add indent after colon
+            stripped = line.rstrip()
+            if stripped.endswith(":"):
+                indent += "    "
+            super().keyPressEvent(event)
+            if indent:
+                self.textCursor().insertText(indent)
+            self.highlight_current_line()
+            return
+
+        # 自動關閉括號 / Auto-close brackets
+        if key in self._BRACKET_PAIRS and not event.modifiers() & Qt.KeyboardModifier.ControlModifier:
+            open_char, close_char = self._BRACKET_PAIRS[key]
+            cursor = self.textCursor()
+            # 引號特殊處理：如果游標前已有相同引號，不自動配對
+            # For quotes: don't auto-pair if preceding char is same quote
+            if open_char == close_char:
+                pos = cursor.positionInBlock()
+                line = cursor.block().text()
+                if pos > 0 and line[pos - 1] == open_char:
+                    super().keyPressEvent(event)
+                    self.highlight_current_line()
+                    return
+            # 有選取文字時，用括號包住選取文字 / Wrap selection with brackets
+            if cursor.hasSelection():
+                selected = cursor.selectedText()
+                cursor.insertText(open_char + selected + close_char)
+                self.setTextCursor(cursor)
+            else:
+                super().keyPressEvent(event)
+                cursor = self.textCursor()
+                cursor.insertText(close_char)
+                cursor.movePosition(QTextCursor.MoveOperation.Left)
+                self.setTextCursor(cursor)
+            self.highlight_current_line()
+            return
+
         # 呼叫父類別處理其他按鍵
         super().keyPressEvent(event)
 
         # 更新目前行高亮
         self.highlight_current_line()
 
-        # 如果輸入英文字母，觸發自動補全
+        # 如果輸入英文字母，觸發自動補全 (debounce 300ms)
         if key in self.need_complete_list and self.completer is not None:
             if self.completer.popup().isVisible():
                 self.completer.popup().close()
-            self.complete()
+            self._complete_timer.start()
 
     def mousePressEvent(self, event) -> None:
         """
         滑鼠點擊事件
         Mouse press event
-        - 點擊後高亮所在行
         """
-        jeditor_logger.info(f"CodeEditor mousePressEvent event: {event}")
         super().mousePressEvent(event)
         self.highlight_current_line()
 
@@ -414,5 +836,4 @@ class LineNumber(QWidget):
         呼叫編輯器的 line_number_paint 來繪製行號
         Delegate painting to CodeEditor.line_number_paint
         """
-        jeditor_logger.info(f"LineNumber paintEvent event: {event}")
         self.editor.line_number_paint(event)

@@ -25,22 +25,36 @@ class RunInstanceManager(object):
         jeditor_logger.info("Init RunInstanceManager")
         self.instance_list: List[Union[ExecManager, ShellManager]] = list()
 
+    def remove_instance(self, instance) -> None:
+        """
+        從清單中移除已結束的實例
+        Remove a finished instance from the list
+        """
+        try:
+            self.instance_list.remove(instance)
+        except ValueError:
+            pass
+
     def close_all_instance(self):
         """
-        關閉所有執行中的實例，並清理 main_window 的執行狀態
-        Close all running instances and reset main_window execution states
+        關閉所有執行中的實例，透過各自的 exit_program 正確清理 timer、thread 與 process
+        Close all running instances via their own exit_program for proper cleanup
         """
         jeditor_logger.info("RunInstanceManager close_all_instance")
-        for manager in self.instance_list:
-            # 若子程序仍存在，則終止
-            # Terminate process if still running
-            if manager.process is not None:
-                manager.process.terminate()
+        for manager in list(self.instance_list):
+            # 停止 timer / Stop timer
+            if manager.timer is not None:
+                manager.timer.stop()
+            # 透過 manager 自身清理 (停止 thread、清空 queue、終止 process)
+            # Use manager's own cleanup (stop threads, clear queues, terminate process)
+            manager.exit_program()
             # 清理 main_window 的執行狀態
             # Reset execution states in main_window
-            manager.main_window.exec_program = None
-            manager.main_window.exec_shell = None
-            manager.main_window.exec_python_debugger = None
+            if manager.main_window is not None:
+                manager.main_window.exec_program = None
+                manager.main_window.exec_shell = None
+                manager.main_window.exec_python_debugger = None
+        self.instance_list.clear()
 
 
 # 建立全域唯一的 RunInstanceManager 實例

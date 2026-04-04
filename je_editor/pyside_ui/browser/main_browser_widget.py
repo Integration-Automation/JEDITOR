@@ -50,7 +50,8 @@ class MainBrowserWidget(QWidget):
         # 更新分頁標題 (當網頁標題改變時)
         # Update tab title when browser title changes
         browser_widget.browser.titleChanged.connect(
-            lambda t, i=index: self.browser_tab.setTabText(i, t)
+            lambda t, bw=browser_widget: self.browser_tab.setTabText(
+                self.browser_tab.indexOf(bw), t)
         )
 
     def add_plus_tab(self):

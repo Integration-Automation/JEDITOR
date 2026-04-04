@@ -12,10 +12,8 @@ if TYPE_CHECKING:
     # 僅在型別檢查時匯入 EditorMain，避免循環依賴
     # Import EditorMain only for type checking
 
-import sys
-
 from PySide6.QtGui import QAction
-from PySide6.QtWidgets import QSystemTrayIcon, QMenu
+from PySide6.QtWidgets import QApplication, QSystemTrayIcon, QMenu
 from je_editor.utils.multi_language.multi_language_wrapper import language_wrapper
 
 
@@ -76,7 +74,7 @@ class ExtendSystemTray(QSystemTrayIcon):
         jeditor_logger.info("ExtendSystemTray close_all")
         self.setVisible(False)
         self.main_window.close()
-        sys.exit(0)
+        QApplication.quit()
 
     def clicked(self, reason):
         """

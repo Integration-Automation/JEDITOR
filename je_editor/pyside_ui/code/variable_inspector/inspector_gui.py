@@ -8,19 +8,29 @@ from je_editor.utils.multi_language.multi_language_wrapper import language_wrapp
 
 class VariableModel(QAbstractTableModel):
     """
-    變數模型：負責管理與顯示 Python 全域變數
-    Variable model: manages and displays Python global variables
+    變數模型：負責管理與顯示指定命名空間中的變數
+    Variable model: manages and displays variables from a given namespace
     """
 
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, namespace: dict | None = None):
         super().__init__(parent)
         self.variables = []  # 儲存變數資訊 [名稱, 型別, 值字串, 真實值]
         # Store variable info [name, type, repr(value), actual value]
+        self._namespace = namespace if namespace is not None else {}
+
+    @property
+    def namespace(self) -> dict:
+        return self._namespace
+
+    @namespace.setter
+    def namespace(self, ns: dict):
+        self._namespace = ns
+        self.update_data()
 
     def update_data(self):
         """
-        更新變數清單，從全域變數中擷取
-        Update variable list from globals()
+        更新變數清單，從指定命名空間中擷取
+        Update variable list from the provided namespace
         """
         parent_widget = self.parent()
         # 避免在 table 正在互動時更新，造成衝突
@@ -29,7 +39,7 @@ class VariableModel(QAbstractTableModel):
             if parent_widget.table.state() != QTableView.State.NoState:
                 return
 
-        vars_dict = globals()
+        vars_dict = self._namespace
         self.beginResetModel()
         self.variables = [
             [name, type(value).__name__, repr(value), value]
@@ -103,9 +113,9 @@ class VariableModel(QAbstractTableModel):
             if new_value == self.variables[index.row()][3]:
                 return False
 
-            # 更新全域變數與模型資料
-            # Update globals and model data
-            globals()[var_name] = new_value
+            # 更新命名空間與模型資料
+            # Update namespace and model data
+            self._namespace[var_name] = new_value
             self.variables[index.row()][2] = repr(new_value)
             self.variables[index.row()][3] = new_value
             self.dataChanged.emit(index, index, [Qt.ItemDataRole.DisplayRole])

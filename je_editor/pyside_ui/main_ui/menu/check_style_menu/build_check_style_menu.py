@@ -89,8 +89,13 @@ def reformat_json_text(ui_we_want_to_set: EditorMain) -> None:
     widget = ui_we_want_to_set.tab_widget.currentWidget()
     if isinstance(widget, EditorWidget):
         code_text = widget.code_edit.toPlainText()
+        try:
+            formatted = reformat_json(code_text)  # 先格式化 / Format first
+        except Exception as e:
+            widget.code_result.setPlainText(str(e))
+            return
         widget.code_result.setPlainText("")
-        widget.code_edit.setPlainText(reformat_json(code_text))  # 呼叫 JSON 格式化工具 / Call JSON reformatter
+        widget.code_edit.setPlainText(formatted)  # 成功後才寫回 / Only set text on success
 
 
 def check_python_format(ui_we_want_to_set: EditorMain) -> None:
