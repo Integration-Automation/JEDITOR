@@ -34,7 +34,11 @@ jobs:
         run: python -m pytest test/ -v --tb=short --ignore=test/qt_ui
       - name: Test Start Editor
         timeout-minutes: 2
+        env:
+          QT_QPA_PLATFORM: offscreen
         run: python ./test/qt_ui/unit_test/start_qt_ui.py
       - name: Test Extend Editor
         timeout-minutes: 2
+        env:
+          QT_QPA_PLATFORM: offscreen
         run: python ./test/qt_ui/unit_test/extend_test.py
