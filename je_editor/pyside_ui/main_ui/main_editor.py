@@ -201,14 +201,18 @@ class EditorMain(QMainWindow, QtStyleTools):
 
         # 建立主要分頁：編輯器與瀏覽器
         # Create main tabs: editor and browser
-        main_browser_widget = MainBrowserWidget()
         self.tab_widget.addTab(EditorWidget(self), language_wrapper.language_word_dict.get("tab_name_editor"))
-        self.tab_widget.addTab(main_browser_widget, language_wrapper.language_word_dict.get("tab_name_web_browser"))
 
-        # 預設新增一個 StackOverflow 瀏覽分頁
-        # Add a default StackOverflow browser tab
-        main_browser_widget.add_browser_tab(
-            BrowserWidget(start_url="https://stackoverflow.com/", search_prefix="https://stackoverflow.com/search?q="))
+        # 在非 debug 模式下建立瀏覽器分頁 (QWebEngine 在 CI 無頭環境下可能無法初始化)
+        # Only create browser tabs in non-debug mode (QWebEngine may fail in headless CI)
+        if not self.debug_mode:
+            main_browser_widget = MainBrowserWidget()
+            self.tab_widget.addTab(main_browser_widget, language_wrapper.language_word_dict.get("tab_name_web_browser"))
+
+            # 預設新增一個 StackOverflow 瀏覽分頁
+            # Add a default StackOverflow browser tab
+            main_browser_widget.add_browser_tab(
+                BrowserWidget(start_url="https://stackoverflow.com/", search_prefix="https://stackoverflow.com/search?q="))
 
         # 加入擴充的自訂分頁
         # Add extended custom tabs
