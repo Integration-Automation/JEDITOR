@@ -10,7 +10,7 @@ class SideBySideDiffWidget(QWidget):
     左右對照的差異檢視元件。
     """
 
-    def __init__(self, parent=None):
+    def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
 
         # === 顏色設定 / Color configuration ===
@@ -65,7 +65,7 @@ class SideBySideDiffWidget(QWidget):
         # 預設深色模式 / Default to dark theme
         self.set_dark_theme()
 
-    def _sync_scrollbars(self):
+    def _sync_scrollbars(self) -> None:
         """
         Synchronize scrollbars between left and right editors.
         同步左右編輯器的捲軸。
@@ -83,7 +83,7 @@ class SideBySideDiffWidget(QWidget):
             self.leftEdit.horizontalScrollBar().setValue
         )
 
-    def set_diff_text(self, diff_text: str):
+    def set_diff_text(self, diff_text: str) -> None:
         """
         Parse unified diff text and display it in side-by-side editors.
         解析 unified diff 文字並顯示在左右編輯器。
@@ -101,7 +101,7 @@ class SideBySideDiffWidget(QWidget):
         self.leftEdit.moveCursor(QTextCursor.MoveOperation.Start)
         self.rightEdit.moveCursor(QTextCursor.MoveOperation.Start)
 
-    def _set_text_with_highlights(self, edit: QPlainTextEdit, lines, marks):
+    def _set_text_with_highlights(self, edit: QPlainTextEdit, lines: list[str], marks: list[str]) -> None:
         """
         Set text and apply syntax highlighting based on diff marks.
         設定文字並依 diff 標記加上背景色。
@@ -140,7 +140,7 @@ class SideBySideDiffWidget(QWidget):
 
         edit.setExtraSelections(merged)
 
-    def _line_selection(self, edit: QPlainTextEdit, line_index: int, fmt: QTextCharFormat):
+    def _line_selection(self, edit: QPlainTextEdit, line_index: int, fmt: QTextCharFormat) -> QTextEdit.ExtraSelection:
         """
         Create a selection for a specific line with given format.
         建立某一行的選取區並套用格式。
@@ -155,7 +155,7 @@ class SideBySideDiffWidget(QWidget):
         sel.cursor = cursor
         return sel
 
-    def _parse_unified_diff(self, diff_text: str):
+    def _parse_unified_diff(self, diff_text: str) -> tuple:
         """
         Parse unified diff into left/right lines and marks.
         將 unified diff 解析成左右行與標記。
@@ -163,15 +163,15 @@ class SideBySideDiffWidget(QWidget):
         left_lines, right_lines, left_marks, right_marks = [], [], [], []
         left_name, right_name = None, None
 
-        def add_left(line, mark=None):
+        def add_left(line: str, mark: str | None = None) -> None:
             left_lines.append(line)
             left_marks.append(mark or "CTX")
 
-        def add_right(line, mark=None):
+        def add_right(line: str, mark: str | None = None) -> None:
             right_lines.append(line)
             right_marks.append(mark or "CTX")
 
-        def align():
+        def align() -> None:
             # 對齊左右行數 / Align left and right line counts
             if len(left_lines) < len(right_lines):
                 for _ in range(len(right_lines) - len(left_lines)):
@@ -182,39 +182,39 @@ class SideBySideDiffWidget(QWidget):
 
         for raw in diff_text.splitlines():
             if raw.startswith("diff "):
-                add_left(raw, "HDR");
-                add_right(raw, "HDR");
+                add_left(raw, "HDR")
+                add_right(raw, "HDR")
                 align()
             elif raw.startswith("--- "):
                 left_name = raw[4:].strip()
-                add_left(raw, "HDR");
-                add_right("", "HDR");
+                add_left(raw, "HDR")
+                add_right("", "HDR")
                 align()
             elif raw.startswith("+++ "):
                 right_name = raw[4:].strip()
-                add_left("", "HDR");
-                add_right(raw, "HDR");
+                add_left("", "HDR")
+                add_right(raw, "HDR")
                 align()
             elif raw.startswith("@@"):
-                add_left(raw, "HUNK");
-                add_right(raw, "HUNK");
+                add_left(raw, "HUNK")
+                add_right(raw, "HUNK")
                 align()
             elif raw.startswith("-"):
-                add_left(raw, "DEL");
-                add_right("", None);
+                add_left(raw, "DEL")
+                add_right("", None)
                 align()
             elif raw.startswith("+"):
-                add_left("", None);
-                add_right(raw, "ADD");
+                add_left("", None)
+                add_right(raw, "ADD")
                 align()
             else:
-                add_left(raw, None);
-                add_right(raw, None);
+                add_left(raw, None)
+                add_right(raw, None)
                 align()
 
         return left_lines, right_lines, left_marks, right_marks, left_name, right_name
 
-    def _reapply_highlights_for_theme(self):
+    def _reapply_highlights_for_theme(self) -> None:
         """
         Reapply highlights when theme changes.
         主題切換時重新套用高亮。
@@ -253,7 +253,7 @@ class SideBySideDiffWidget(QWidget):
                     merged = updated
                 edit.setExtraSelections(merged)
 
-    def set_dark_theme(self):
+    def set_dark_theme(self) -> None:
         """
         Apply dark theme colors.
         套用深色主題配色。
@@ -268,7 +268,7 @@ class SideBySideDiffWidget(QWidget):
         self.leftEdit.apply_theme_to_editor(dark=self.is_dark)
         self.rightEdit.apply_theme_to_editor(dark=self.is_dark)
 
-    def set_light_theme(self):
+    def set_light_theme(self) -> None:
         """
         Apply light  theme colors.
         套用淺色主題配色。

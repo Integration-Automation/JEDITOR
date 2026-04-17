@@ -12,6 +12,7 @@ from je_editor.utils.logging.loggin_instance import jeditor_logger
 from je_editor.utils.multi_language.multi_language_wrapper import language_wrapper
 
 if TYPE_CHECKING:
+    from je_editor.pyside_ui.main_ui.editor.editor_widget import EditorWidget
     from je_editor.pyside_ui.main_ui.main_editor import EditorMain
 
 
@@ -119,7 +120,7 @@ def build_toolbar(main_window: EditorMain) -> None:
 
 # ── Callbacks ─────────────────────────────────────────────────
 
-def _get_editor_widget(main_window: EditorMain):
+def _get_editor_widget(main_window: EditorMain) -> EditorWidget | None:
     """取得當前的 EditorWidget / Get current EditorWidget"""
     from je_editor.pyside_ui.main_ui.editor.editor_widget import EditorWidget
     widget = main_window.tab_widget.currentWidget()
@@ -128,7 +129,7 @@ def _get_editor_widget(main_window: EditorMain):
     return None
 
 
-def _new_file(main_window: EditorMain):
+def _new_file(main_window: EditorMain) -> None:
     """新增檔案 / New file"""
     from je_editor.pyside_ui.main_ui.editor.editor_widget import EditorWidget
     editor_widget = EditorWidget(main_window)
@@ -140,37 +141,37 @@ def _new_file(main_window: EditorMain):
     main_window.tab_widget.setCurrentWidget(editor_widget)
 
 
-def _open_file(main_window: EditorMain):
+def _open_file(main_window: EditorMain) -> None:
     """開啟檔案 / Open file"""
     from je_editor.pyside_ui.dialog.file_dialog.open_file_dialog import choose_file_get_open_file_path
     choose_file_get_open_file_path(main_window)
 
 
-def _save_file(main_window: EditorMain):
+def _save_file(main_window: EditorMain) -> None:
     """儲存檔案 / Save file"""
     from je_editor.pyside_ui.dialog.file_dialog.save_file_dialog import choose_file_get_save_file_path
     choose_file_get_save_file_path(main_window)
 
 
-def _run_program(main_window: EditorMain):
+def _run_program(main_window: EditorMain) -> None:
     """執行程式 / Run program"""
     from je_editor.pyside_ui.main_ui.menu.run_menu.under_run_menu.build_program_menu import run_program
     run_program(main_window)
 
 
-def _run_debugger(main_window: EditorMain):
+def _run_debugger(main_window: EditorMain) -> None:
     """執行除錯器 / Run debugger"""
     from je_editor.pyside_ui.main_ui.menu.run_menu.under_run_menu.build_debug_menu import run_debugger
     run_debugger(main_window)
 
 
-def _stop_program(main_window: EditorMain):
+def _stop_program(main_window: EditorMain) -> None:
     """停止程式 / Stop program"""
     from je_editor.pyside_ui.main_ui.menu.run_menu.build_run_menu import stop_program
     stop_program(main_window)
 
 
-def _open_search(main_window: EditorMain):
+def _open_search(main_window: EditorMain) -> None:
     """開啟搜尋與取代 / Open search & replace"""
     widget = _get_editor_widget(main_window)
     if widget:
@@ -182,7 +183,7 @@ class _GitBranchWorker(QObject):
     finished = Signal(list, str)  # (branch_names, current_branch_or_sha)
     error = Signal(str)
 
-    def run(self):
+    def run(self) -> None:
         try:
             from git import Repo
             import os
@@ -205,11 +206,11 @@ class _GitCheckoutWorker(QObject):
     finished = Signal()
     error = Signal(str)
 
-    def __init__(self, target: str):
+    def __init__(self, target: str) -> None:
         super().__init__()
         self._target = target
 
-    def run(self):
+    def run(self) -> None:
         try:
             from git import Repo
             import os
@@ -224,7 +225,7 @@ class _GitCheckoutWorker(QObject):
 _bg_threads = []
 
 
-def _run_in_background(worker, thread_parent):
+def _run_in_background(worker: QObject, thread_parent: QObject) -> QThread:
     """通用的背景執行緒啟動器 / Generic background thread runner"""
     global _bg_threads
     thread = QThread(thread_parent)
@@ -240,13 +241,13 @@ def _run_in_background(worker, thread_parent):
     return thread
 
 
-def _git_refresh_branches(main_window: EditorMain):
+def _git_refresh_branches(main_window: EditorMain) -> None:
     """重新載入 Git 分支清單 (背景執行) / Refresh git branch list in background"""
     combo: QComboBox = main_window.toolbar_branch_combo
 
     worker = _GitBranchWorker()
 
-    def on_done(heads, current):
+    def on_done(heads: list[str], current: str) -> None:
         combo.clear()
         if heads:
             combo.addItems(heads)
@@ -261,7 +262,7 @@ def _git_refresh_branches(main_window: EditorMain):
     _run_in_background(worker, main_window)
 
 
-def _git_checkout(main_window: EditorMain):
+def _git_checkout(main_window: EditorMain) -> None:
     """切換 Git 分支 (背景執行) / Checkout git branch in background"""
     combo: QComboBox = main_window.toolbar_branch_combo
     target = combo.currentText().strip()
@@ -270,7 +271,7 @@ def _git_checkout(main_window: EditorMain):
 
     worker = _GitCheckoutWorker(target)
 
-    def on_done():
+    def on_done() -> None:
         _git_refresh_branches(main_window)
         # 同步更新底部面板的 GitGui (如果有的話)
         # Sync bottom panel GitGui if available
@@ -279,7 +280,7 @@ def _git_checkout(main_window: EditorMain):
             widget.git_gui._refresh_branch_list()
             widget.git_gui._refresh_change_list()
 
-    def on_error(err):
+    def on_error(err: str) -> None:
         QMessageBox.critical(main_window, "Checkout Error", err)
 
     worker.finished.connect(on_done)

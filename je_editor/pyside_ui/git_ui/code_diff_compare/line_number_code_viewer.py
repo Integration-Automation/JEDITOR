@@ -1,5 +1,5 @@
 from PySide6.QtCore import QRect, QSize, Qt
-from PySide6.QtGui import QPainter, QColor
+from PySide6.QtGui import QPainter, QColor, QPaintEvent, QResizeEvent
 from PySide6.QtWidgets import QPlainTextEdit, QWidget, QTextEdit
 
 
@@ -9,18 +9,18 @@ class LineNumberArea(QWidget):
     用來顯示行號的側邊元件。
     """
 
-    def __init__(self, editor):
+    def __init__(self, editor: QPlainTextEdit) -> None:
         super().__init__(editor)
         self.code_editor = editor  # 綁定主要的編輯器 / Bind to main editor
 
-    def sizeHint(self):
+    def sizeHint(self) -> QSize:
         """
         Suggest width for line number area.
         建議行號區域的寬度。
         """
         return QSize(self.code_editor.line_number_area_width(), 0)
 
-    def paintEvent(self, event):
+    def paintEvent(self, event: QPaintEvent) -> None:
         """
         Delegate paint event to the main editor.
         將繪製事件交給主要編輯器處理。
@@ -34,7 +34,7 @@ class LineNumberedCodeViewer(QPlainTextEdit):
     帶有行號顯示的文字編輯器。
     """
 
-    def __init__(self, parent=None):
+    def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self.lineNumberArea = LineNumberArea(self)
 
@@ -47,7 +47,7 @@ class LineNumberedCodeViewer(QPlainTextEdit):
         self.update_line_number_area_width(0)
         self.highlight_current_line()
 
-    def line_number_area_width(self):
+    def line_number_area_width(self) -> int:
         """
         Calculate width of line number area based on digit count.
         根據行數位數計算行號區寬度。
@@ -56,14 +56,14 @@ class LineNumberedCodeViewer(QPlainTextEdit):
         space = 3 + self.fontMetrics().horizontalAdvance('9') * digits
         return space
 
-    def update_line_number_area_width(self, _):
+    def update_line_number_area_width(self, _: int) -> None:
         """
         Adjust viewport margins to fit line number area.
         調整視口邊界以容納行號區。
         """
         self.setViewportMargins(self.line_number_area_width(), 0, 0, 0)
 
-    def update_line_number_area(self, rect, dy):
+    def update_line_number_area(self, rect: QRect, dy: int) -> None:
         """
         Update/redraw line number area when scrolling or editing.
         當滾動或編輯時更新行號區。
@@ -75,7 +75,7 @@ class LineNumberedCodeViewer(QPlainTextEdit):
         if rect.contains(self.viewport().rect()):
             self.update_line_number_area_width(0)
 
-    def resizeEvent(self, event):
+    def resizeEvent(self, event: QResizeEvent) -> None:
         """
         Resize line number area when editor resizes.
         編輯器大小改變時調整行號區。
@@ -84,7 +84,7 @@ class LineNumberedCodeViewer(QPlainTextEdit):
         cr = self.contentsRect()
         self.lineNumberArea.setGeometry(QRect(cr.left(), cr.top(), self.line_number_area_width(), cr.height()))
 
-    def line_number_area_paint_event(self, event):
+    def line_number_area_paint_event(self, event: QPaintEvent) -> None:
         """
         Paint line numbers.
         繪製行號。
@@ -112,7 +112,7 @@ class LineNumberedCodeViewer(QPlainTextEdit):
             bottom = top + int(self.blockBoundingRect(block).height())
             blockNumber += 1
 
-    def highlight_current_line(self):
+    def highlight_current_line(self) -> None:
         """
         Highlight the current line where the cursor is.
         高亮顯示游標所在的行。
@@ -134,7 +134,7 @@ class LineNumberedCodeViewer(QPlainTextEdit):
 
         self.setExtraSelections(merged)
 
-    def apply_theme_to_editor(self, dark: bool):
+    def apply_theme_to_editor(self, dark: bool) -> None:
         self.setStyleSheet("QPlainTextEdit { background-color: #1e1e1e; color: #d4d4d4; }" if dark
                            else "QPlainTextEdit { background-color: white; color: black; }")
         # Re-trigger current line highlight with the new color

@@ -16,7 +16,7 @@ import pathlib
 from pathlib import Path
 from typing import Union
 
-from PySide6.QtCore import Qt, QFileInfo, QDir, QMimeData, QFileSystemWatcher
+from PySide6.QtCore import Qt, QFileInfo, QDir, QFileSystemWatcher
 from PySide6.QtGui import QDragEnterEvent, QDropEvent
 from PySide6.QtWidgets import QWidget, QGridLayout, QSplitter, QScrollArea, QFileSystemModel, QTreeView, QTabWidget, \
     QMessageBox
@@ -50,7 +50,7 @@ class EditorWidget(QWidget):
     - Auto-save and file management
     """
 
-    def __init__(self, main_window: EditorMain):
+    def __init__(self, main_window: EditorMain) -> None:
         jeditor_logger.info(f"Init EditorWidget main_window: {main_window}")
         super().__init__()
         # 啟用拖放功能 / Enable drag and drop
@@ -201,7 +201,7 @@ class EditorWidget(QWidget):
         # 點擊檔案時觸發 / Connect click event
         self.project_treeview.clicked.connect(self.treeview_click)
 
-    def check_is_open(self, path: Path):
+    def check_is_open(self, path: Path) -> bool:
         """
         檢查檔案是否已經開啟，如果已開啟則切換到該分頁。
         Check if the file is already open, if yes then switch to that tab.
@@ -290,7 +290,7 @@ class EditorWidget(QWidget):
         if path.is_file():
             self.open_an_file(path)
 
-    def _on_text_changed(self):
+    def _on_text_changed(self) -> None:
         """
         文字變更時標記為未儲存，並在 tab 標題加上 *
         Mark as modified when text changes, add * to tab title
@@ -303,7 +303,7 @@ class EditorWidget(QWidget):
                 if not title.endswith(" *"):
                     self.tab_manager.setTabText(idx, title + " *")
 
-    def mark_saved(self):
+    def mark_saved(self) -> None:
         """
         儲存後清除未儲存標記
         Clear the unsaved marker after saving
@@ -315,7 +315,7 @@ class EditorWidget(QWidget):
             if title.endswith(" *"):
                 self.tab_manager.setTabText(idx, title[:-2])
 
-    def rename_self_tab(self):
+    def rename_self_tab(self) -> None:
         """
         將分頁的標籤名稱改為目前檔案名稱 (不限當前分頁)。
         Rename this tab to the current file name (works for any tab, not just current).
@@ -327,7 +327,7 @@ class EditorWidget(QWidget):
             self.setObjectName(str(Path(self.current_file)))
             self._is_modified = False
 
-    def check_file_format(self):
+    def check_file_format(self) -> None:
         """
         檢查目前檔案的程式碼格式 (僅支援 Python)。
         Check the code format of the current file (only supports Python).

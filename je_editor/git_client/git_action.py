@@ -1,12 +1,13 @@
 import os
 from datetime import datetime
+from typing import Any, Callable
 
 from PySide6.QtCore import QThread, Signal
 from git import Repo, GitCommandError, InvalidGitRepositoryError, NoSuchPathError
 
 
 # Simple audit logger
-def audit_log(repo_path: str, action: str, detail: str, ok: bool, err: str = ""):
+def audit_log(repo_path: str, action: str, detail: str, ok: bool, err: str = "") -> None:
     """
     Append an audit log entry to 'audit.log' in the repo directory.
     This is useful for compliance and traceability.
@@ -27,11 +28,11 @@ class GitService:
     Keeps UI logic separate from Git logic.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.repo: Repo | None = None
         self.repo_path: str | None = None
 
-    def open_repo(self, path: str):
+    def open_repo(self, path: str) -> None:
         try:
             self.repo = Repo(path)
             self.repo_path = path
@@ -40,20 +41,20 @@ class GitService:
             audit_log(path, "open_repo", path, False, str(e))
             raise
 
-    def list_branches(self):
+    def list_branches(self) -> list[str]:
         self._ensure_repo()
         branches = [head.name for head in self.repo.heads]
         audit_log(self.repo_path, "list_branches", ",".join(branches), True)
         return branches
 
-    def current_branch(self):
+    def current_branch(self) -> str:
         self._ensure_repo()
         try:
             return self.repo.active_branch.name
         except TypeError:
             return "(detached HEAD)"
 
-    def checkout(self, branch: str):
+    def checkout(self, branch: str) -> None:
         self._ensure_repo()
         try:
             self.repo.git.checkout(branch)
@@ -62,7 +63,7 @@ class GitService:
             audit_log(self.repo_path, "checkout", branch, False, str(e))
             raise
 
-    def list_commits(self, branch: str, max_count: int = 100):
+    def list_commits(self, branch: str, max_count: int = 100) -> list[dict]:
         self._ensure_repo()
         commits = list(self.repo.iter_commits(branch, max_count=max_count))
         data = [
@@ -96,7 +97,7 @@ class GitService:
         audit_log(self.repo_path, "show_diff", commit_sha, True)
         return out
 
-    def stage_all(self):
+    def stage_all(self) -> None:
         self._ensure_repo()
         try:
             self.repo.git.add(all=True)
@@ -105,7 +106,7 @@ class GitService:
             audit_log(self.repo_path, "stage_all", "git_client add -A", False, str(e))
             raise
 
-    def commit(self, message: str):
+    def commit(self, message: str) -> None:
         self._ensure_repo()
         if not message.strip():
             raise ValueError("Commit message is empty.")
@@ -116,7 +117,7 @@ class GitService:
             audit_log(self.repo_path, "commit", message, False, str(e))
             raise
 
-    def pull(self, remote: str = "origin", branch: str | None = None):
+    def pull(self, remote: str = "origin", branch: str | None = None) -> str:
         self._ensure_repo()
         if branch is None:
             branch = self.current_branch()
@@ -128,7 +129,7 @@ class GitService:
             audit_log(self.repo_path, "pull", f"{remote}/{branch}", False, str(e))
             raise
 
-    def push(self, remote: str = "origin", branch: str | None = None):
+    def push(self, remote: str = "origin", branch: str | None = None) -> str:
         self._ensure_repo()
         if branch is None:
             branch = self.current_branch()
@@ -140,11 +141,11 @@ class GitService:
             audit_log(self.repo_path, "push", f"{remote}/{branch}", False, str(e))
             raise
 
-    def remotes(self):
+    def remotes(self) -> list[str]:
         self._ensure_repo()
         return [r.name for r in self.repo.remotes]
 
-    def _ensure_repo(self):
+    def _ensure_repo(self) -> None:
         if self.repo is None:
             raise RuntimeError("Repository not opened.")
 
@@ -161,13 +162,13 @@ class GitWorker(QThread):
     """
     done = Signal(object, object)
 
-    def __init__(self, fn, *args, **kwargs):
+    def __init__(self, fn: Callable, *args: Any, **kwargs: Any) -> None:
         super().__init__()
         self.fn = fn
         self.args = args
         self.kwargs = kwargs
 
-    def run(self):
+    def run(self) -> None:
         try:
             res = self.fn(*self.args, **self.kwargs)
             self.done.emit(res, None)

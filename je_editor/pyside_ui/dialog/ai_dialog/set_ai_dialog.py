@@ -11,7 +11,7 @@ class SetAIDialog(QWidget):
     Dialog for configuring AI model settings
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         jeditor_logger.info("Init SetAIDialog")
         super().__init__()
 
@@ -46,7 +46,7 @@ class SetAIDialog(QWidget):
         self.setWindowTitle(language_wrapper.language_word_dict.get("add_ai_model_title"))
         self.setLayout(self.grid_layout)
 
-    def update_ai_config(self):
+    def update_ai_config(self) -> None:
         """
         更新 AI 設定，將使用者輸入的 base_url、api_key、chat_model
         儲存到 ai_config.choosable_ai 中

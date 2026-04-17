@@ -6,7 +6,6 @@ import sys
 from pathlib import Path
 from typing import Union, Callable
 
-from PySide6.QtCore import QTimer
 from PySide6.QtGui import QTextCharFormat
 from PySide6.QtWidgets import QTextEdit
 
@@ -27,7 +26,7 @@ class ShellManager(BaseProcessManager):
             shell_encoding: str = "utf-8",
             program_buffer: int = 1024,
             after_done_function: Union[None, Callable] = None
-    ):
+    ) -> None:
         jeditor_logger.info(f"Init ShellManager "
                             f"main_window: {main_window} "
                             f"shell_encoding: {shell_encoding} "
@@ -47,7 +46,7 @@ class ShellManager(BaseProcessManager):
         return self.still_running
 
     @still_run_shell.setter
-    def still_run_shell(self, value: bool):
+    def still_run_shell(self, value: bool) -> None:
         self.still_running = value
 
     def renew_path(self) -> None:
@@ -109,7 +108,7 @@ class ShellManager(BaseProcessManager):
             if self.process is not None:
                 self.process.terminate()
 
-    def process_run_over(self):
+    def process_run_over(self) -> None:
         """當子程序結束時呼叫 / Called when subprocess finishes"""
         jeditor_logger.info("ShellManager process_run_over")
         if self.timer is not None:

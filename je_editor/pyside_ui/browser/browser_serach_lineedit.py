@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from PySide6.QtCore import Qt
+from PySide6.QtGui import QKeyEvent
 from PySide6.QtWidgets import QLineEdit
 
 from je_editor.utils.logging.loggin_instance import jeditor_logger
@@ -19,7 +20,7 @@ class BrowserLineSearch(QLineEdit):
     自訂的 QLineEdit，用於瀏覽器搜尋輸入。
     """
 
-    def __init__(self, browser_widget: BrowserWidget):
+    def __init__(self, browser_widget: BrowserWidget) -> None:
         """
         Initialize the search line with a reference to the browser widget.
         初始化搜尋輸入框，並保存瀏覽器元件的參考。
@@ -35,7 +36,7 @@ class BrowserLineSearch(QLineEdit):
         # 保存瀏覽器元件的參考，用於觸發搜尋
         self.browser = browser_widget
 
-    def keyPressEvent(self, event) -> None:
+    def keyPressEvent(self, event: QKeyEvent) -> None:
         """
         Handle key press events.
         當使用者按下按鍵時觸發：

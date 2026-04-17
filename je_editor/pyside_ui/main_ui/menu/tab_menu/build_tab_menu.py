@@ -66,7 +66,7 @@ def set_tab_menu(ui_we_want_to_set: EditorMain) -> None:
 # === 以下為各分頁新增函式 ===
 # === Functions to add each tab ===
 
-def add_editor_tab(ui_we_want_to_set: EditorMain):
+def add_editor_tab(ui_we_want_to_set: EditorMain) -> EditorWidget:
     # 新增 Editor 分頁
     # Add Editor tab
     jeditor_logger.info(f"build_tab_menu.py add editor tab ui_we_want_to_set: {ui_we_want_to_set}")
@@ -78,7 +78,7 @@ def add_editor_tab(ui_we_want_to_set: EditorMain):
     return widget
 
 
-def add_web_tab(ui_we_want_to_set: EditorMain):
+def add_web_tab(ui_we_want_to_set: EditorMain) -> None:
     # 紀錄日誌：新增 Web 分頁
     # Log: add a Web tab
     jeditor_logger.info(f"build_tab_menu.py add web tab ui_we_want_to_set: {ui_we_want_to_set}")
@@ -91,7 +91,7 @@ def add_web_tab(ui_we_want_to_set: EditorMain):
     )
 
 
-def add_console_widget_tab(ui_we_want_to_set: EditorMain):
+def add_console_widget_tab(ui_we_want_to_set: EditorMain) -> None:
     # 紀錄日誌：新增 Console 分頁
     # Log: add a Console tab
     jeditor_logger.info(f"build_tab_menu.py add console widget tab ui_we_want_to_set: {ui_we_want_to_set}")

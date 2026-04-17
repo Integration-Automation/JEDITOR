@@ -178,7 +178,7 @@ def set_encoding(ui_we_want_to_set: EditorMain, action: QAction) -> None:
 
 # 顯示新建檔案對話框
 # Show Create File dialog
-def show_create_file_dialog(ui_we_want_to_set: EditorMain):
+def show_create_file_dialog(ui_we_want_to_set: EditorMain) -> None:
     jeditor_logger.info("build_file_menu.py show_create_file_dialog "
                         f"ui_we_want_to_set: {ui_we_want_to_set}")
     ui_we_want_to_set.create_file_dialog = CreateFileDialog()

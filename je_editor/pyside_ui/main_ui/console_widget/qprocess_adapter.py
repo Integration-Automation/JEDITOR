@@ -16,7 +16,7 @@ class ConsoleProcessAdapter(QObject):
     stderr = Signal(str)  # 錯誤輸出訊號 / Standard error signal
     system = Signal(str)  # 系統訊息訊號 / System message signal
 
-    def __init__(self, parent=None):
+    def __init__(self, parent: QObject | None = None) -> None:
         super().__init__(parent)
         # 建立 QProcess 物件 / Create QProcess object
         self.proc = QProcess(self)
@@ -30,11 +30,11 @@ class ConsoleProcessAdapter(QObject):
         self.proc.finished.connect(self.finished)
 
     # 設定工作目錄 / Set working directory
-    def set_cwd(self, path: str):
+    def set_cwd(self, path: str) -> None:
         self.proc.setWorkingDirectory(path)
 
     # 啟動 shell / Start shell
-    def start_shell(self, shell: str = "auto"):
+    def start_shell(self, shell: str = "auto") -> None:
         if self.is_running():
             self.system.emit("Shell already running")  # 如果已經在執行，發送提示 / Emit message if already running
             return
@@ -46,14 +46,14 @@ class ConsoleProcessAdapter(QObject):
             QTimer.singleShot(500, lambda: self.send_command("chcp 65001"))
 
     # 傳送指令到 shell / Send command to shell
-    def send_command(self, cmd: str):
+    def send_command(self, cmd: str) -> None:
         if not self.is_running():
             self.system.emit("Shell not running")  # 如果 shell 未啟動，發送提示 / Emit message if not running
             return
         self.proc.write((cmd + "\n").encode("utf-8"))  # 傳送指令並換行 / Send command with newline
 
     # 停止 shell / Stop shell
-    def stop(self):
+    def stop(self) -> None:
         if not self.is_running():
             return
         self.proc.terminate()  # 嘗試正常結束 / Try graceful termination
@@ -61,19 +61,19 @@ class ConsoleProcessAdapter(QObject):
         QTimer.singleShot(1000, lambda: self.is_running() and self.proc.kill())
 
     # 判斷是否正在執行 / Check if process is running
-    def is_running(self):
+    def is_running(self) -> bool:
         return self.proc.state() != QProcess.ProcessState.NotRunning
 
     # 處理標準輸出 / Handle standard output
-    def _on_stdout(self):
+    def _on_stdout(self) -> None:
         self.stdout.emit(bytes(self.proc.readAllStandardOutput()).decode("utf-8", errors="replace"))
 
     # 處理錯誤輸出 / Handle standard error
-    def _on_stderr(self):
+    def _on_stderr(self) -> None:
         self.stderr.emit(bytes(self.proc.readAllStandardError()).decode("utf-8", errors="replace"))
 
     # 建立 shell 指令 / Build shell command
-    def _build_shell_command(self, shell: str):
+    def _build_shell_command(self, shell: str) -> tuple[str, list[str]]:
         if shell == "auto":
             shell = "cmd" if os.name == "nt" else "bash"  # Windows 預設 cmd，Linux/macOS 預設 bash
         if os.name == "nt":

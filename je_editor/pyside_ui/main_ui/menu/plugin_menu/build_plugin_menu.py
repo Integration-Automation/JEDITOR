@@ -4,7 +4,7 @@ from __future__ import annotations
 
 # 僅用於型別檢查，避免循環匯入
 # For type checking only (avoids circular imports)
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Callable
 
 # 匯入 Qt 動作與訊息框
 # Import QAction and QMessageBox from PySide6
@@ -142,12 +142,12 @@ def _open_plugin_browser(ui_we_want_to_set: EditorMain) -> None:
     )
 
 
-def _make_about_callback(name: str, version: str, author: str):
+def _make_about_callback(name: str, version: str, author: str) -> Callable[[], None]:
     """
     建立顯示插件資訊的回呼函式。
     Create a callback to show plugin info dialog.
     """
-    def callback():
+    def callback() -> None:
         message_box = QMessageBox()
         message_box.setWindowTitle(name)
         message_box.setText(
@@ -159,12 +159,12 @@ def _make_about_callback(name: str, version: str, author: str):
     return callback
 
 
-def _make_run_callback(ui_we_want_to_set: EditorMain, run_config: dict, suffix: str):
+def _make_run_callback(ui_we_want_to_set: EditorMain, run_config: dict, suffix: str) -> Callable[[], None]:
     """
     建立使用插件執行設定來執行程式的回呼函式。
     Create a callback to run a program using plugin run config.
     """
-    def callback():
+    def callback() -> None:
         from je_editor.pyside_ui.main_ui.editor.editor_widget import EditorWidget
         from je_editor.pyside_ui.code.code_process.code_exec import ExecManager
         from je_editor.pyside_ui.dialog.file_dialog.save_file_dialog import choose_file_get_save_file_path

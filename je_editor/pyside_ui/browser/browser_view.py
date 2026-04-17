@@ -7,6 +7,8 @@ from PySide6.QtCore import Signal
 if TYPE_CHECKING:
     from je_editor.pyside_ui.browser.browser_widget import BrowserWidget
 
+from PySide6.QtCore import QObject
+from PySide6.QtGui import QCloseEvent
 from PySide6.QtWebEngineCore import QWebEngineDownloadRequest
 from PySide6.QtWebEngineWidgets import QWebEngineView
 
@@ -22,7 +24,7 @@ class BrowserView(QWebEngineView):
     """
 
     def __init__(self, start_url: str = "https://www.google.com/",
-                 main_widget: BrowserWidget = None, parent=None):
+                 main_widget: BrowserWidget = None, parent: QObject | None = None) -> None:
         """
         Initialize the browser view with a start URL.
         使用指定的起始網址初始化瀏覽器視圖。
@@ -46,7 +48,7 @@ class BrowserView(QWebEngineView):
 
         self.main_widget = main_widget
 
-    def download_file(self, download_instance: QWebEngineDownloadRequest):
+    def download_file(self, download_instance: QWebEngineDownloadRequest) -> None:
         """
         Handle a new download request.
         當有新的下載請求時觸發：
@@ -73,7 +75,7 @@ class BrowserView(QWebEngineView):
         self.download_window_list.append(download_detail_window)
         download_detail_window.show()
 
-    def closeEvent(self, event) -> None:
+    def closeEvent(self, event: QCloseEvent) -> None:
         """
         Handle the close event of the browser view.
         當瀏覽器視窗關閉時：

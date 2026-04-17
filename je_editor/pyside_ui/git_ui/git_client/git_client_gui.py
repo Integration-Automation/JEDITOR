@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import Any, Callable
 
 from PySide6.QtCore import Qt, QTimer, QThread, Signal, QObject
 from PySide6.QtGui import QTextOption, QTextCharFormat, QColor, QFont, QSyntaxHighlighter, QAction
@@ -15,12 +16,12 @@ class _GitWorker(QObject):
     finished = Signal(object)  # result
     error = Signal(str)  # error message
 
-    def __init__(self, func, *args):
+    def __init__(self, func: Callable, *args: Any) -> None:
         super().__init__()
         self._func = func
         self._args = args
 
-    def run(self):
+    def run(self) -> None:
         try:
             result = self._func(*self._args)
             self.finished.emit(result)
@@ -33,20 +34,20 @@ class GitChangeItem:
     簡單的資料結構，用來存放檔案變更資訊。
     """
 
-    def __init__(self, path: str, status: str):
+    def __init__(self, path: str, status: str) -> None:
         self.path = path  # repo 相對路徑 / repo-relative path
         self.status = status  # 狀態，例如 'untracked', 'modified', 'deleted', 'renamed', 'staged'
 
 
 class GitGui(QWidget):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
         self.current_repo: Repo | None = None
         self.last_opened_repo_path = None
         self._init_ui()  # 初始化 UI
         self._restore_last_opened_repository()  # 嘗試還原上次開啟的 repo
 
-    def _run_git_in_background(self, func, on_done=None, on_error=None):
+    def _run_git_in_background(self, func: Callable, on_done: Callable | None = None, on_error: Callable | None = None) -> None:
         """
         在背景執行緒中執行 Git 操作，避免阻塞主執行緒
         Run Git operation in background thread to avoid blocking UI
@@ -70,7 +71,7 @@ class GitGui(QWidget):
         self._bg_threads = [(t, w) for t, w in self._bg_threads if t.isRunning()]
         self._bg_threads.append((thread, worker))
 
-    def _init_ui(self):
+    def _init_ui(self) -> None:
         # === Top controls / 上方控制區 ===
         self.repo_path_label = QLabel("Repository: (none)")
         self.open_repo_button = QPushButton("Open Repo")
@@ -189,7 +190,7 @@ class GitGui(QWidget):
     # ---------- Repo operations ----------
     # ---------- 儲存庫操作 ----------
 
-    def _restore_last_opened_repository(self):
+    def _restore_last_opened_repository(self) -> None:
         """
         Restore the last opened repository if available.
         如果有記錄上次開啟的儲存庫，則嘗試重新載入。
@@ -197,7 +198,7 @@ class GitGui(QWidget):
         if self.last_opened_repo_path:
             self._load_repository_from_path(Path(self.last_opened_repo_path))
 
-    def on_open_repository_requested(self):
+    def on_open_repository_requested(self) -> None:
         """
         Open a Git repository via file dialog.
         透過檔案選擇對話框開啟 Git 儲存庫。
@@ -208,7 +209,7 @@ class GitGui(QWidget):
         self._load_repository_from_path(Path(repo_directory))
         self.last_opened_repo_path = str(repo_directory)
 
-    def _load_repository_from_path(self, selected_directory_path: Path):
+    def _load_repository_from_path(self, selected_directory_path: Path) -> None:
         """
         Load a Git repository from a given folder.
         從指定資料夾載入 Git 儲存庫。
@@ -236,7 +237,7 @@ class GitGui(QWidget):
         self._refresh_change_list()
         self._update_ui_controls(True)
 
-    def _refresh_branch_list(self):
+    def _refresh_branch_list(self) -> None:
         """
         Refresh branch list in the combo box.
         更新分支清單。
@@ -260,14 +261,14 @@ class GitGui(QWidget):
             self.branch_selector.setEditable(True)
             self.branch_selector.setEditText(self.current_repo.head.commit.hexsha[:8])
 
-    def on_branch_selection_changed(self):
+    def on_branch_selection_changed(self) -> None:
         """
         Triggered when branch selection changes.
         分支選擇改變時觸發，目前不做動作，需按下 Checkout 才會生效。
         """
         pass
 
-    def on_checkout_branch_requested(self):
+    def on_checkout_branch_requested(self) -> None:
         """
         Checkout the selected branch.
         切換到選取的分支。
@@ -297,13 +298,13 @@ class GitGui(QWidget):
         except Exception:
             return False
 
-    def _safe_set_diff_text(self, text: str):
+    def _safe_set_diff_text(self, text: str) -> None:
         # 套用高亮顏色
         self.diff_viewer.setPlainText(text if text else "(no content)")
         if hasattr(self, "highlighter"):
             self.highlighter.rehighlight()
 
-    def _show_diff_for_change(self, change: GitChangeItem):
+    def _show_diff_for_change(self, change: GitChangeItem) -> None:
         current_repo = self.current_repo
         if not current_repo:
             self._safe_set_diff_text("Error: repository not loaded.")
@@ -406,7 +407,7 @@ class GitGui(QWidget):
         except Exception as e:
             self._safe_set_diff_text(f"Unexpected error while generating diff:\n{e}")
 
-    def _refresh_change_list(self):
+    def _refresh_change_list(self) -> None:
         """
         Collect changes from working tree and index, then render list.
         收集工作目錄與索引的變更，並更新清單。
@@ -446,7 +447,7 @@ class GitGui(QWidget):
         # === Render list / 渲染清單 ===
         self.changes_list_widget.clear()
 
-        def add_item(txt: str, bold=False, disabled=False):
+        def add_item(txt: str, bold: bool = False, disabled: bool = False) -> None:
             """
             Add a section header item to the list.
             新增一個區段標題項目到清單。
@@ -485,7 +486,7 @@ class GitGui(QWidget):
         self.repo_status_label.setText(f"Status: {summary}")
         self.diff_viewer.setPlainText("Select files to stage/unstage.")
 
-    def _add_change_item(self, change: GitChangeItem):
+    def _add_change_item(self, change: GitChangeItem) -> None:
         """
         Add a file change entry to the list.
         將檔案變更項目加入清單。
@@ -496,7 +497,7 @@ class GitGui(QWidget):
         list_item.setCheckState(Qt.CheckState.Unchecked)  # 預設未勾選
         self.changes_list_widget.addItem(list_item)
 
-    def _get_selected_changes(self):
+    def _get_selected_changes(self) -> list[GitChangeItem]:
         """
         Collect all checked selected_items from the list.
         收集所有被勾選的檔案項目。
@@ -510,7 +511,7 @@ class GitGui(QWidget):
                     selected_items.append(change)
         return selected_items
 
-    def on_change_selection_changed(self):
+    def on_change_selection_changed(self) -> None:
         """
         Show diff for the selected file.
         顯示選取檔案的差異。
@@ -528,7 +529,7 @@ class GitGui(QWidget):
         if isinstance(change, GitChangeItem):
             self._show_diff_for_change(change)
 
-    def on_stage_selected_changes(self):
+    def on_stage_selected_changes(self) -> None:
         """
         Stage selected_changes files.
         將選取的檔案加入暫存區。
@@ -556,7 +557,7 @@ class GitGui(QWidget):
         except GitCommandError as e:
             QMessageBox.critical(self, "Stage Error", str(e))
 
-    def on_unstage_selected_changes(self):
+    def on_unstage_selected_changes(self) -> None:
         """
         Unstage selected_changes files.
         將選取的檔案從暫存區移除。
@@ -592,7 +593,7 @@ class GitGui(QWidget):
         except GitCommandError as e:
             QMessageBox.critical(self, "Unstage Error", str(e))
 
-    def on_stage_all_changes(self):
+    def on_stage_all_changes(self) -> None:
         """
         Stage all changes (equivalent to git add -A).
         將所有變更加入暫存區（等同於 git add -A）。
@@ -605,7 +606,7 @@ class GitGui(QWidget):
         except GitCommandError as e:
             QMessageBox.critical(self, "Stage All Error", str(e))
 
-    def on_commit_staged_changes(self):
+    def on_commit_staged_changes(self) -> None:
         """
         Commit staged changes with a message.
         提交已暫存的變更。
@@ -630,7 +631,7 @@ class GitGui(QWidget):
         except GitCommandError as e:
             QMessageBox.critical(self, "Commit Error", str(e))
 
-    def _update_ui_controls(self, enabled: bool):
+    def _update_ui_controls(self, enabled: bool) -> None:
         """
         Enable or disable UI controls depending on repo state.
         根據是否有開啟 repo 來啟用或停用 UI 控制項。
@@ -643,7 +644,7 @@ class GitGui(QWidget):
         ):
             widget.setEnabled(enabled)
 
-    def on_unstage_all_changes(self):
+    def on_unstage_all_changes(self) -> None:
         """
         Unstage all changes.
         將所有檔案從暫存區移除。
@@ -662,7 +663,7 @@ class GitGui(QWidget):
         except Exception as e:
             QMessageBox.critical(self, "Unstage All Error", str(e))
 
-    def on_track_all_untracked_files(self):
+    def on_track_all_untracked_files(self) -> None:
         """
         Track all untracked files.
         將所有未追蹤檔案加入暫存區。
@@ -681,7 +682,7 @@ class GitGui(QWidget):
         except Exception as e:
             QMessageBox.critical(self, "Track Untracked Error", str(e))
 
-    def on_clone_repository_requested(self):
+    def on_clone_repository_requested(self) -> None:
         """
         Clone a remote repository into a local folder.
         複製遠端 Git 儲存庫到本地資料夾。
@@ -723,7 +724,7 @@ class GitGui(QWidget):
 
     # ===== GitHub =====
 
-    def on_push_to_github(self):
+    def on_push_to_github(self) -> None:
         if not self.current_repo:
             QMessageBox.warning(self, "Warning", "No repository opened.")
             return
@@ -731,17 +732,17 @@ class GitGui(QWidget):
         self.git_push_button.setEnabled(False)
         self.git_push_button.setText("Pushing...")
 
-        def do_push():
+        def do_push() -> str:
             origin = repo.remote(name="origin")
             result = origin.push()
             return "\n".join(str(r) for r in result)
 
-        def on_done(msg):
+        def on_done(msg: str) -> None:
             self.git_push_button.setEnabled(True)
             self.git_push_button.setText("Push")
             QMessageBox.information(self, "Push Result", f"Pushed to origin:\n{msg}")
 
-        def on_error(err):
+        def on_error(err: str) -> None:
             self.git_push_button.setEnabled(True)
             self.git_push_button.setText("Push")
             QMessageBox.critical(self, "Push Error", err)
@@ -776,15 +777,15 @@ class GitGui(QWidget):
         except Exception as e:
             return {"ahead": 0, "behind": 0, "error": str(e)}
 
-    def update_commit_status(self):
+    def update_commit_status(self) -> None:
         """在背景執行緒中更新 commit 狀態 / Update commit status in background"""
         if not self.current_repo:
             return
 
-        def do_check():
+        def do_check() -> dict:
             return self.get_unpushed_commit_count()
 
-        def on_done(result):
+        def on_done(result: dict) -> None:
             if result["error"]:
                 self.commit_status_label.setText(f"Error: {result['error']}")
             else:
@@ -792,14 +793,14 @@ class GitGui(QWidget):
                     f"Ahead (push): {result['ahead']} | Behind (pull): {result['behind']}"
                 )
 
-        def on_error(err):
+        def on_error(err: str) -> None:
             self.commit_status_label.setText(f"Error: {err}")
 
         self._run_git_in_background(do_check, on_done, on_error)
 
     # ===== Theme =====
 
-    def apply_light_theme(self):
+    def apply_light_theme(self) -> None:
         """
         Switch to light theme highlighting.
         切換到淺色主題的高亮顯示。
@@ -807,7 +808,7 @@ class GitGui(QWidget):
         self.highlighter.configure_theme_colors(use_light_mode=True)
         self.highlighter.rehighlight()
 
-    def apply_dark_theme(self):
+    def apply_dark_theme(self) -> None:
         """
         Switch to dark theme highlighting.
         切換到深色主題的高亮顯示。
@@ -822,11 +823,11 @@ class GitDiffHighlighter(QSyntaxHighlighter):
     Git diff 文字的語法高亮器。
     """
 
-    def __init__(self, parent):
+    def __init__(self, parent: QPlainTextEdit) -> None:
         super().__init__(parent)
         self.configure_theme_colors()
 
-    def configure_theme_colors(self, use_light_mode: bool = False):
+    def configure_theme_colors(self, use_light_mode: bool = False) -> None:
         """
         Update colors depending on theme.
         根據主題更新顏色。
@@ -858,7 +859,7 @@ class GitDiffHighlighter(QSyntaxHighlighter):
         self.meta_format = QTextCharFormat()
         self.meta_format.setForeground(self.color_meta)
 
-    def highlightBlock(self, line_text: str):
+    def highlightBlock(self, line_text: str) -> None:
         """
         Apply highlighting rules to each line of diff text.
         對 diff 文字的每一行套用高亮規則。

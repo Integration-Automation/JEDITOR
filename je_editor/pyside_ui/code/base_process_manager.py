@@ -7,7 +7,7 @@ from typing import Union
 
 from PySide6.QtCore import QTimer
 from PySide6.QtGui import QTextCharFormat
-from PySide6.QtWidgets import QTextEdit
+from PySide6.QtWidgets import QTextEdit, QWidget
 
 from je_editor.pyside_ui.code.running_process_manager import run_instance_manager
 from je_editor.pyside_ui.main_ui.save_settings.user_color_setting_file import actually_color_dict
@@ -22,10 +22,10 @@ class BaseProcessManager:
 
     def __init__(
             self,
-            main_window=None,
+            main_window: Union[QWidget, None] = None,
             encoding: str = "utf-8",
             buffer_size: int = 1024,
-    ):
+    ) -> None:
         self.read_program_error_output_from_thread: Union[Thread, None] = None
         self.read_program_output_from_thread: Union[Thread, None] = None
         self.main_window = main_window
@@ -44,7 +44,7 @@ class BaseProcessManager:
         return self._still_running
 
     @still_running.setter
-    def still_running(self, value: bool):
+    def still_running(self, value: bool) -> None:
         self._still_running = value
 
     def _start_reader_threads(self) -> None:
@@ -154,7 +154,7 @@ class BaseProcessManager:
             cleanup_thread.start()
 
     @staticmethod
-    def _cleanup_in_background(threads: list, process) -> None:
+    def _cleanup_in_background(threads: list, process: subprocess.Popen | None) -> None:
         """在背景執行清理工作 / Perform cleanup work in background"""
         for t in threads:
             try:

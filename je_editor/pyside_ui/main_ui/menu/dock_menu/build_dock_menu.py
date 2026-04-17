@@ -129,7 +129,7 @@ def set_dock_menu(ui_we_want_to_set: EditorMain) -> None:
     ui_we_want_to_set.dock_git_menu.addAction(ui_we_want_to_set.dock_menu.new_code_diff_viewer)
 
 
-def add_dock_widget(ui_we_want_to_set: EditorMain, widget_type: str = None):
+def add_dock_widget(ui_we_want_to_set: EditorMain, widget_type: str = None) -> None:
     """
     根據 widget_type 新增對應的 Dock 視窗，並加到主視窗右側。
     Add a dock widget based on widget_type and attach it to the right side of the main window.

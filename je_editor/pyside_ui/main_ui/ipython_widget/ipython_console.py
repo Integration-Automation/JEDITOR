@@ -24,7 +24,7 @@ class IpythonWidget(QWidget):
     - Provides an interactive Python environment within the application
     """
 
-    def __init__(self, main_window: EditorMain):
+    def __init__(self, main_window: EditorMain) -> None:
         # 初始化時記錄日誌 / Log initialization
         jeditor_logger.info(f"Init IpythonWidget main_window: {main_window}")
         super().__init__()
@@ -58,7 +58,7 @@ class IpythonWidget(QWidget):
         # 設定主佈局 / Apply layout
         self.setLayout(self.grid_layout)
 
-    def close(self):
+    def close(self) -> None:
         """
         覆寫 close 方法，確保關閉時正確釋放資源
         Override close method to properly release resources

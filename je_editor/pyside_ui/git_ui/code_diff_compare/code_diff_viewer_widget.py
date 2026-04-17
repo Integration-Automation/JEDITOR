@@ -13,7 +13,7 @@ class DiffViewerWidget(QWidget):
     Git 差異檢視器應用程式
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
         self.setWindowTitle("Git Diff Viewer")
 
@@ -58,7 +58,7 @@ class DiffViewerWidget(QWidget):
         layout.setMenuBar(self.menubar)  # 把選單列放在上方 / put menu bar at the top
         layout.addWidget(self.viewer)  # 把差異檢視器放在主要區域 / add diff viewer in main area
 
-    def open_repo(self):
+    def open_repo(self) -> None:
         """
         Open a Git repository and display its diff.
         開啟一個 Git 專案並顯示差異。
@@ -79,7 +79,7 @@ class DiffViewerWidget(QWidget):
             # 如果開啟失敗，顯示錯誤訊息 / show error if failed
             QMessageBox.critical(self, "Error", f"Failed to open repo:\n{e}")
 
-    def set_theme(self, mode: str):
+    def set_theme(self, mode: str) -> None:
         """
         Switch between dark and light themes.
         切換深色與淺色主題。

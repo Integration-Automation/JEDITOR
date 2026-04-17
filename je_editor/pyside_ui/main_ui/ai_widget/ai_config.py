@@ -7,7 +7,7 @@ class AIConfig(object):
     AIConfig class: manages AI model configuration and message queue
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         # 當前 AI 模型的系統提示詞 (system prompt)
         # Current AI model system prompt
         self.current_ai_model_system_prompt: str = ""

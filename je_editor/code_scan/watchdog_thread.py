@@ -14,7 +14,7 @@ class WatchdogThread(threading.Thread):
     使用 watchdog 監控檔案變化的執行緒。
     """
 
-    def __init__(self, check_path: str):
+    def __init__(self, check_path: str) -> None:
         """
         :param check_path: Path to monitor (directory or file)
                            要監控的路徑（資料夾或檔案）
@@ -25,7 +25,7 @@ class WatchdogThread(threading.Thread):
         self.running = True
         self.observer = Observer()
 
-    def run(self):
+    def run(self) -> None:
         """Start the watchdog observer loop."""
         if not self.check_path.exists():
             print(f"[Error] Path does not exist: {self.check_path}", file=sys.stderr)
@@ -48,11 +48,11 @@ class WatchdogThread(threading.Thread):
             self.observer.join()
             print("[Watchdog] Monitoring stopped")
 
-    def stop(self):
+    def stop(self) -> None:
         """Stop the watchdog thread safely."""
         self.running = False
 
-    def _process_ruff_output(self):
+    def _process_ruff_output(self) -> None:
         """Process stdout/stderr queues from Ruff threads."""
         while not self.ruff_handler.stdout_queue.empty():
             line = self.ruff_handler.stdout_queue.get()

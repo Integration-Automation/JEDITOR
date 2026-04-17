@@ -31,7 +31,7 @@ class ExecManager(BaseProcessManager):
             program_language: str = "python",
             program_encoding: str = "utf-8",
             program_buffer: int = 1024,
-    ):
+    ) -> None:
         jeditor_logger.info(f"Init ExecManager "
                             f"main_window: {main_window} "
                             f"program_language: {program_language} "
@@ -52,7 +52,7 @@ class ExecManager(BaseProcessManager):
         return self.still_running
 
     @still_run_program.setter
-    def still_run_program(self, value: bool):
+    def still_run_program(self, value: bool) -> None:
         self.still_running = value
 
     def renew_path(self) -> None:
@@ -72,7 +72,7 @@ class ExecManager(BaseProcessManager):
         else:
             raise JEditorException(je_editor_init_error)
 
-    def exec_code(self, exec_file_name, exec_prefix: Union[str, list] = None) -> None:
+    def exec_code(self, exec_file_name: str, exec_prefix: Union[str, list] = None) -> None:
         """
         執行指定檔案
         Execute given file
@@ -214,7 +214,7 @@ class ExecManager(BaseProcessManager):
             if self.process is not None:
                 self.process.terminate()
 
-    def full_exit_program(self):
+    def full_exit_program(self) -> None:
         """完全結束程式 / Fully exit program"""
         jeditor_logger.info("ExecManager full_exit_program")
         if self.timer is not None:

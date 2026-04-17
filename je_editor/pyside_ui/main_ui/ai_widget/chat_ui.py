@@ -21,7 +21,7 @@ if TYPE_CHECKING:
 
 class ChatUI(QWidget):
 
-    def __init__(self, main_window: EditorMain):
+    def __init__(self, main_window: EditorMain) -> None:
         super().__init__()
         self.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)  # 關閉視窗時自動釋放資源 / Auto delete on close
         self.main_window = main_window
@@ -87,12 +87,12 @@ class ChatUI(QWidget):
         self.load_ai_config()
 
     # 更新聊天面板字體大小 / Update chat panel font size
-    def update_panel_text_size(self):
+    def update_panel_text_size(self) -> None:
         self.chat_panel.setFont(
             QFontDatabase.font(self.font().family(), "", int(self.font_size_combobox.currentText())))
 
     # 載入 AI 設定檔 / Load AI configuration file
-    def load_ai_config(self, show_load_complete: bool = False):
+    def load_ai_config(self, show_load_complete: bool = False) -> None:
         ai_config_file = Path.cwd() / ".jeditor" / "ai_config.json"
         if ai_config_file.exists():
             json_data: dict = read_json(str(ai_config_file))
@@ -117,7 +117,7 @@ class ChatUI(QWidget):
                 load_complete.exec()
 
     # 呼叫 AI 模型 / Call AI model
-    def call_ai_model(self):
+    def call_ai_model(self) -> None:
         if isinstance(self.lang_chain_interface, LangChainInterface):
             # 建立新執行緒處理 AI 請求 / Start a new thread for AI request
             # Store reference to prevent garbage collection before thread completes
@@ -137,13 +137,13 @@ class ChatUI(QWidget):
                                 f"prompt_template: {ai_info.get('prompt_template')}")
 
     # 從訊息佇列中取出 AI 回覆並顯示 / Pull AI response from queue
-    def pull_message(self):
+    def pull_message(self) -> None:
         if not ai_config.message_queue.empty():
             ai_response = ai_config.message_queue.get_nowait()
             self.chat_panel.appendPlainText(ai_response)  # 顯示回覆 / Display response
             self.chat_panel.appendPlainText("\n")
 
     # 開啟 AI 設定對話框 / Open AI config dialog
-    def set_ai_config(self):
+    def set_ai_config(self) -> None:
         self.set_ai_config_dialog = SetAIDialog()
         self.set_ai_config_dialog.show()

@@ -1,9 +1,9 @@
 import time
 from pathlib import Path
 from threading import Thread, Event
-from typing import Union
+from typing import Callable, Union
 
-from PySide6.QtCore import QObject, Signal, Slot, QTimer
+from PySide6.QtCore import QObject, Qt, Signal, Slot
 
 from je_editor.pyside_ui.code.plaintext_code_edit.code_edit_plaintext import CodeEditor
 from je_editor.utils.file.save.save_file import write_file
@@ -18,7 +18,7 @@ class _TextFetcher(QObject):
     text_fetched = Signal(str)
     fetch_requested = Signal()
 
-    def __init__(self, editor: CodeEditor, parent=None):
+    def __init__(self, editor: CodeEditor, parent: QObject | None = None) -> None:
         super().__init__(parent)
         self._editor = editor
         self._pending_text: Union[str, None] = None
@@ -47,10 +47,6 @@ class _TextFetcher(QObject):
         return self._pending_text
 
 
-# Need Qt import for ConnectionType
-from PySide6.QtCore import Qt
-
-
 class CodeEditSaveThread(Thread):
     """
     This thread is used to auto save current file.
@@ -59,7 +55,7 @@ class CodeEditSaveThread(Thread):
 
     def __init__(
             self, file_to_save: Union[str, None] = None, editor: Union[None, CodeEditor] = None,
-            before_write_callback=None):
+            before_write_callback: Callable | None = None) -> None:
         jeditor_logger.info(f"Init CodeEditSaveThread "
                             f"file_to_save: {file_to_save} "
                             f"editor: {editor}")

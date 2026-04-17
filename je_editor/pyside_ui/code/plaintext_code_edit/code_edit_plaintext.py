@@ -1,17 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import TYPE_CHECKING
-
-from je_editor.utils.logging.loggin_instance import jeditor_logger
-
-# 僅在型別檢查時匯入，避免循環引用
-# Only imported for type checking, avoids circular imports
-if TYPE_CHECKING:
-    from je_editor.pyside_ui.main_ui.editor.editor_widget import EditorWidget
-    from je_editor.pyside_ui.main_ui.editor.editor_widget_dock import FullEditorWidget
-
-from typing import Union, List
+from typing import TYPE_CHECKING, Union, List
 
 import jedi  # Python 自動補全與靜態分析工具
 from PySide6 import QtGui
@@ -21,21 +11,32 @@ from PySide6.QtGui import (
     QTextDocument, QTextCursor, QTextOption, QColor, QWheelEvent
 )
 from PySide6.QtWidgets import QPlainTextEdit, QWidget, QTextEdit, QCompleter, QInputDialog
-from jedi.api.classes import Completion
+
+from je_editor.pyside_ui.code.syntax.python_syntax import PythonHighlighter
+from je_editor.pyside_ui.dialog.search_ui.search_text_box import SearchBox
+from je_editor.pyside_ui.dialog.search_ui.search_replace_widget import SearchReplaceDialog
+from je_editor.pyside_ui.main_ui.save_settings.user_color_setting_file import actually_color_dict
+from je_editor.utils.logging.loggin_instance import jeditor_logger
+
+# 僅在型別檢查時匯入，避免循環引用
+# Only imported for type checking, avoids circular imports
+if TYPE_CHECKING:
+    from je_editor.pyside_ui.main_ui.editor.editor_widget import EditorWidget
+    from je_editor.pyside_ui.main_ui.editor.editor_widget_dock import FullEditorWidget
 
 
 class _JediCompleteWorker(QObject):
     """背景執行 Jedi 自動補全 / Run Jedi autocomplete in background thread"""
     finished = Signal(list)  # list of completion names
 
-    def __init__(self, code: str, line: int, column: int, env=None):
+    def __init__(self, code: str, line: int, column: int, env: jedi.api.environment.Environment | None = None) -> None:
         super().__init__()
         self._code = code
         self._line = line
         self._column = column
         self._env = env
 
-    def run(self):
+    def run(self) -> None:
         try:
             if self._env is not None:
                 script = jedi.Script(code=self._code, environment=self._env)
@@ -47,13 +48,8 @@ class _JediCompleteWorker(QObject):
         except Exception:
             self.finished.emit([])
 
-from je_editor.pyside_ui.code.syntax.python_syntax import PythonHighlighter
-from je_editor.pyside_ui.dialog.search_ui.search_text_box import SearchBox
-from je_editor.pyside_ui.dialog.search_ui.search_replace_widget import SearchReplaceDialog
-from je_editor.pyside_ui.main_ui.save_settings.user_color_setting_file import actually_color_dict
 
-
-def venv_check():
+def venv_check() -> Path:
     """檢查當前工作目錄下是否有 venv 資料夾 / Check if venv exists in current working directory"""
     jeditor_logger.info("code_edit_plaintext.py venv check")
     venv_path = Path.cwd() / "venv"
@@ -73,7 +69,7 @@ class CodeEditor(QPlainTextEdit):
     - 自動補全 (Autocomplete with Jedi)
     """
 
-    def __init__(self, main_window: Union[EditorWidget, FullEditorWidget]):
+    def __init__(self, main_window: Union[EditorWidget, FullEditorWidget]) -> None:
         jeditor_logger.info(f"Init CodeEditor main_window: {main_window}")
         super().__init__()
 
@@ -162,13 +158,13 @@ class CodeEditor(QPlainTextEdit):
         self._bracket_open = set('([{')
         self.cursorPositionChanged.connect(self._highlight_matching_bracket)
 
-    def reset_highlighter(self):
+    def reset_highlighter(self) -> None:
         """重設語法高亮 / Reset syntax highlighter"""
         jeditor_logger.info("CodeEditor reset_highlighter")
         self.highlighter = PythonHighlighter(self.document(), main_window=self)
         self.highlight_current_line()
 
-    def check_env(self):
+    def check_env(self) -> None:
         """檢查虛擬環境並建立 Jedi 環境 / Check venv and create Jedi environment"""
         jeditor_logger.info("CodeEditor check_env")
         path = venv_check()
@@ -189,7 +185,7 @@ class CodeEditor(QPlainTextEdit):
         completer.setCaseSensitivity(Qt.CaseSensitivity.CaseInsensitive)
         self.completer = completer
 
-    def insert_completion(self, completion) -> None:
+    def insert_completion(self, completion: str) -> None:
         """
         插入補全文字
         Insert completion text into editor
@@ -205,13 +201,13 @@ class CodeEditor(QPlainTextEdit):
         self.setTextCursor(text_cursor)
 
     @property
-    def text_under_cursor(self):
+    def text_under_cursor(self) -> str:
         """取得游標下的文字 / Get text under cursor"""
         text_cursor = self.textCursor()
         text_cursor.select(QTextCursor.SelectionType.WordUnderCursor)
         return text_cursor.selectedText()
 
-    def focusInEvent(self, e) -> None:
+    def focusInEvent(self, e: QtGui.QFocusEvent) -> None:
         """當編輯器獲得焦點時，確保 completer 綁定正確"""
         if self.completer:
             self.completer.setWidget(self)
@@ -314,7 +310,7 @@ class CodeEditor(QPlainTextEdit):
             text = self.search_box.search_input.text()
             self.find(text, QTextDocument.FindFlag.FindBackward)
 
-    def line_number_paint(self, event) -> None:
+    def line_number_paint(self, event: QtGui.QPaintEvent) -> None:
         """
         繪製行號區域
         Paint line number area
@@ -356,14 +352,14 @@ class CodeEditor(QPlainTextEdit):
         space = 12 * digits
         return space
 
-    def update_line_number_area_width(self, value) -> None:
+    def update_line_number_area_width(self, value: int) -> None:
         """
         更新行號區域寬度
         Update line number area width
         """
         self.setViewportMargins(self.line_number_width(), 0, 0, 0)
 
-    def resizeEvent(self, event) -> None:
+    def resizeEvent(self, event: QtGui.QResizeEvent) -> None:
         """
         視窗大小改變時，調整行號區域
         Resize line number paint area
@@ -374,7 +370,7 @@ class CodeEditor(QPlainTextEdit):
             QRect(cr.left(), cr.top(), self.line_number_width(), cr.height()),
         )
 
-    def update_line_number_area(self, rect, dy) -> None:
+    def update_line_number_area(self, rect: QRect, dy: int) -> None:
         """
         更新行號顯示
         Update line number area
@@ -811,7 +807,7 @@ class CodeEditor(QPlainTextEdit):
                 self.completer.popup().close()
             self._complete_timer.start()
 
-    def mousePressEvent(self, event) -> None:
+    def mousePressEvent(self, event: QtGui.QMouseEvent) -> None:
         """
         滑鼠點擊事件
         Mouse press event
@@ -826,12 +822,12 @@ class LineNumber(QWidget):
     Widget used to paint line numbers
     """
 
-    def __init__(self, editor):
+    def __init__(self, editor: CodeEditor) -> None:
         jeditor_logger.info("Init LineNumber")
         QWidget.__init__(self, parent=editor)
         self.editor = editor
 
-    def paintEvent(self, event) -> None:
+    def paintEvent(self, event: QtGui.QPaintEvent) -> None:
         """
         呼叫編輯器的 line_number_paint 來繪製行號
         Delegate painting to CodeEditor.line_number_paint

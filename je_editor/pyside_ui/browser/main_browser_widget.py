@@ -11,7 +11,7 @@ class MainBrowserWidget(QWidget):
     """
 
     def __init__(self, start_url: str = "https://www.google.com/",
-                 search_prefix: str = "https://www.google.com.tw/search?q="):
+                 search_prefix: str = "https://www.google.com.tw/search?q=") -> None:
         super().__init__()
         # 初始化時記錄訊息 (方便除錯)
         # Log initialization info (for debugging)
@@ -40,7 +40,7 @@ class MainBrowserWidget(QWidget):
         grid_layout.addWidget(self.browser_tab)  # 把分頁加入佈局 / Add tab widget to layout
         self.setLayout(grid_layout)  # 設定主視窗佈局 / Set main layout
 
-    def add_browser_tab(self, browser_widget: BrowserWidget, title: str = "New Tab"):
+    def add_browser_tab(self, browser_widget: BrowserWidget, title: str = "New Tab") -> None:
         # 在「+」分頁前插入新分頁
         # Insert new tab before the "+" tab
         plus_index = self.browser_tab.count() - 1
@@ -54,7 +54,7 @@ class MainBrowserWidget(QWidget):
                 self.browser_tab.indexOf(bw), t)
         )
 
-    def add_plus_tab(self):
+    def add_plus_tab(self) -> None:
         """新增一個固定的「+」分頁 / Add a fixed "+" tab"""
         add_new_page_widget = QWidget()
         self.browser_tab.addTab(add_new_page_widget, "+")
@@ -64,7 +64,7 @@ class MainBrowserWidget(QWidget):
         # 點擊分頁時觸發事件 / Connect tab click event
         self.browser_tab.tabBar().tabBarClicked.connect(self.handle_tab_changed)
 
-    def handle_tab_changed(self, index: int):
+    def handle_tab_changed(self, index: int) -> None:
         """如果點到「+」分頁，就開新分頁
         If "+" tab is clicked, open a new tab
         """
@@ -77,7 +77,7 @@ class MainBrowserWidget(QWidget):
                 "Google"
             )
 
-    def close_tab(self, index: int):
+    def close_tab(self, index: int) -> None:
         """關閉指定分頁，但保留「+」
         Close the specified tab, but keep the "+"
         """

@@ -21,7 +21,7 @@ if TYPE_CHECKING:
 
 # 顯示「請先關閉目前執行中的程式」訊息框
 # Show a message box: "Please stop the currently running program first"
-def please_close_current_running_messagebox(ui_we_want_to_set: EditorMain):
+def please_close_current_running_messagebox(ui_we_want_to_set: EditorMain) -> None:
     # 紀錄日誌，方便除錯
     # Log info for debugging
     jeditor_logger.info(f"utils.py please_close_current_running_messagebox ui_we_want_to_set: {ui_we_want_to_set}")

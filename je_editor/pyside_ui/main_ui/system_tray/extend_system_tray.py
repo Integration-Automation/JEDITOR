@@ -23,7 +23,7 @@ class ExtendSystemTray(QSystemTrayIcon):
     Extend system tray functionality with hide, maximize, restore, and close actions
     """
 
-    def __init__(self, main_window: EditorMain):
+    def __init__(self, main_window: EditorMain) -> None:
         # 初始化並記錄日誌
         # Initialize and log
         jeditor_logger.info(f"Init ExtendSystemTray main_window: {main_window}")
@@ -66,7 +66,7 @@ class ExtendSystemTray(QSystemTrayIcon):
         # Connect click events (e.g., double-click)
         self.activated.connect(self.clicked)
 
-    def close_all(self):
+    def close_all(self) -> None:
         """
         關閉應用程式：隱藏圖示、關閉主視窗並結束程式
         Close the application: hide tray icon, close main window, and exit program
@@ -76,7 +76,7 @@ class ExtendSystemTray(QSystemTrayIcon):
         self.main_window.close()
         QApplication.quit()
 
-    def clicked(self, reason):
+    def clicked(self, reason: QSystemTrayIcon.ActivationReason) -> None:
         """
         處理系統匣點擊事件
         Handle system tray click events

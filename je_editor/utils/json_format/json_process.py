@@ -2,6 +2,7 @@ import json.decoder
 import sys
 from json import dumps
 from json import loads
+from typing import Any
 
 # 匯入自訂錯誤訊息與例外類別
 # Import custom error messages and exception class
@@ -11,7 +12,7 @@ from je_editor.utils.exception.exceptions import JEditorJsonException
 from je_editor.utils.logging.loggin_instance import jeditor_logger
 
 
-def __process_json(json_string: str, **kwargs) -> str:
+def __process_json(json_string: str, **kwargs: Any) -> str:
     """
     功能說明 (Function Description):
     嘗試將輸入的 JSON 字串重新格式化 (pretty print)。
@@ -41,7 +42,7 @@ def __process_json(json_string: str, **kwargs) -> str:
             raise JEditorJsonException(wrong_json_data_error)
 
 
-def reformat_json(json_string: str, **kwargs) -> str:
+def reformat_json(json_string: str, **kwargs: Any) -> str:
     """
     功能說明 (Function Description):
     對外提供的 JSON 格式化函式，會呼叫內部的 __process_json。

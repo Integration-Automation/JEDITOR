@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from PySide6.QtGui import QAction, QTextOption
+from PySide6.QtGui import QAction
 from PySide6.QtWidgets import QPlainTextEdit
 
 from je_editor.pyside_ui.main_ui.editor.editor_widget import EditorWidget
@@ -35,7 +35,7 @@ from je_editor.utils.multi_language.multi_language_wrapper import language_wrapp
 # Import language wrapper for multilingual UI
 
 
-def set_text_menu(ui_we_want_to_set: EditorMain):
+def set_text_menu(ui_we_want_to_set: EditorMain) -> None:
     """
     建立文字選單，包含字型與字體大小的子選單
     Create the text menu, including font and font size submenus

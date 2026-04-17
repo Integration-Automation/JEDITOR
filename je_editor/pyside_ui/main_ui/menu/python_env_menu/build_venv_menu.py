@@ -118,7 +118,7 @@ def create_venv(ui_we_want_to_set: EditorMain) -> None:
 
 # 使用 pip 安裝套件 (通用函式)
 # Run pip install command (general function)
-def shell_pip_install(ui_we_want_to_set: EditorMain, pip_install_command_list: list):
+def shell_pip_install(ui_we_want_to_set: EditorMain, pip_install_command_list: list) -> None:
     """
     使用 pip 安裝套件 (通用函式)。詢問使用者套件名稱後附加到指令清單中。
     Run pip install command (general function). Ask user for package name and append to command list.
@@ -227,7 +227,7 @@ def pip_install_package(ui_we_want_to_set: EditorMain) -> None:
 
 # 選擇 Python 解譯器
 # Choose Python interpreter
-def chose_python_interpreter(ui_we_want_to_set: EditorMain):
+def chose_python_interpreter(ui_we_want_to_set: EditorMain) -> None:
     jeditor_logger.info(f"build_venv_menu.py chose_python_interpreter ui_we_want_to_set: {ui_we_want_to_set}")
     file_path = QFileDialog().getOpenFileName(
         parent=ui_we_want_to_set,

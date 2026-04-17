@@ -19,7 +19,7 @@ from je_editor.pyside_ui.browser.browser_view import BrowserView
 class BrowserWidget(QWidget):
     def __init__(self, start_url: str = "https://www.google.com/",
                  search_prefix: str = "https://www.google.com.tw/search?q=",
-                 main_widget: MainBrowserWidget = None, browser_view: BrowserView = None):
+                 main_widget: MainBrowserWidget = None, browser_view: BrowserView = None) -> None:
         # --- Browser setting / 瀏覽器設定 ---
         super().__init__()
         self.main_widget = main_widget
@@ -71,7 +71,7 @@ class BrowserWidget(QWidget):
         self.grid_layout.addWidget(self.browser, 1, 0, -1, -1)
         self.setLayout(self.grid_layout)
 
-    def search(self):
+    def search(self) -> None:
         """
         Perform a search using the text in the input line.
         使用輸入框的文字進行搜尋，將字串附加到 search_prefix 後送出。
@@ -81,7 +81,7 @@ class BrowserWidget(QWidget):
         # Append input text to search prefix and set as browser URL
         self.browser.setUrl(f"{self.search_prefix}{self.url_input.text()}")
 
-    def find_text(self):
+    def find_text(self) -> None:
         """
         Open a dialog to find text in the current page.
         開啟輸入對話框，在當前頁面中搜尋文字。

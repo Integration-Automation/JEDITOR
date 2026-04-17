@@ -12,7 +12,7 @@ class BrowserDownloadWindow(QWidget):
     瀏覽器下載視窗，用來顯示下載的詳細資訊。
     """
 
-    def __init__(self, download_instance: QWebEngineDownloadRequest):
+    def __init__(self, download_instance: QWebEngineDownloadRequest) -> None:
         """
         Initialize the download window with a given QWebEngineDownloadRequest.
         使用指定的 QWebEngineDownloadRequest 初始化下載視窗。
@@ -50,7 +50,7 @@ class BrowserDownloadWindow(QWidget):
         self.box_layout.addWidget(self.show_download_detail_plaintext)
         self.setLayout(self.box_layout)
 
-    def print_finish(self):
+    def print_finish(self) -> None:
         """
         Slot function triggered when download finishes.
         當下載完成時觸發，將完成狀態輸出到 logger 與文字框。
@@ -58,7 +58,7 @@ class BrowserDownloadWindow(QWidget):
         jeditor_logger.info("BrowserDownloadWindow Print Download is Finished")
         self.show_download_detail_plaintext.appendPlainText(str(self.download_instance.isFinished()))
 
-    def print_interrupt(self):
+    def print_interrupt(self) -> None:
         """
         Slot function triggered when download is interrupted.
         當下載被中斷時觸發，將中斷原因輸出到 logger 與文字框。
@@ -66,7 +66,7 @@ class BrowserDownloadWindow(QWidget):
         jeditor_logger.info("BrowserDownloadWindow Print interruptReason")
         self.show_download_detail_plaintext.appendPlainText(str(self.download_instance.interruptReason()))
 
-    def print_state(self):
+    def print_state(self) -> None:
         """
         Slot function triggered when download state changes.
         當下載狀態改變時觸發，將狀態輸出到 logger 與文字框。
