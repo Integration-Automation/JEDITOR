@@ -1,5 +1,4 @@
 import json.decoder
-import sys
 from json import dumps
 from json import loads
 from typing import Any
@@ -27,9 +26,9 @@ def __process_json(json_string: str, **kwargs: Any) -> str:
         # Try to parse string into JSON, then dump with indentation
         return dumps(loads(json_string), indent=4, sort_keys=True, **kwargs)
     except json.JSONDecodeError as error:
-        # 如果 JSON 格式錯誤，輸出錯誤訊息到 stderr 並拋出例外
-        # If JSON format is invalid, print error to stderr and raise exception
-        print(wrong_json_data_error, file=sys.stderr)
+        # 如果 JSON 格式錯誤，記錄錯誤訊息並拋出例外
+        # If JSON format is invalid, log error and raise exception
+        jeditor_logger.error(wrong_json_data_error)
         raise error
     except TypeError:
         # 如果輸入不是合法 JSON 字串，嘗試直接將物件轉為 JSON

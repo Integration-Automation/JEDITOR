@@ -5,6 +5,8 @@ from typing import Any, Callable
 from PySide6.QtCore import QThread, Signal
 from git import Repo, GitCommandError, InvalidGitRepositoryError, NoSuchPathError
 
+from je_editor.utils.logging.loggin_instance import jeditor_logger
+
 
 # Simple audit logger
 def audit_log(repo_path: str, action: str, detail: str, ok: bool, err: str = "") -> None:
@@ -17,8 +19,9 @@ def audit_log(repo_path: str, action: str, detail: str, ok: bool, err: str = "")
         with open(path, "a", encoding="utf-8") as f:
             ts = datetime.now().isoformat(timespec="seconds")
             f.write(f"{ts}\taction={action}\tok={ok}\tdetail={detail}\terr={err}\n")
-    except Exception:
-        pass  # Never let audit logging failure break the UI
+    except OSError as audit_err:
+        # Never let audit logging failure break the UI; record at debug level
+        jeditor_logger.debug(f"audit_log write failed: {audit_err}")
 
 
 # Git service layer
@@ -91,8 +94,8 @@ class GitService:
         for d in diffs:
             try:
                 text.append(d.diff.decode("utf-8", errors="replace"))
-            except Exception:
-                pass
+            except (UnicodeDecodeError, AttributeError) as decode_err:
+                jeditor_logger.debug(f"diff decode skipped: {decode_err}")
         out = "".join(text) if text else "(No patch content)"
         audit_log(self.repo_path, "show_diff", commit_sha, True)
         return out

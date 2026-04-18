@@ -159,8 +159,8 @@ class BaseProcessManager:
         for t in threads:
             try:
                 t.join(timeout=2)
-            except Exception:
-                pass
+            except RuntimeError as join_err:
+                jeditor_logger.debug(f"thread join failed during cleanup: {join_err}")
         if process is not None:
             try:
                 process.terminate()
@@ -169,10 +169,10 @@ class BaseProcessManager:
                 try:
                     process.kill()
                     process.wait(timeout=2)
-                except Exception:
-                    pass
-            except OSError:
-                pass
+                except (OSError, subprocess.TimeoutExpired) as kill_err:
+                    jeditor_logger.debug(f"process kill failed during cleanup: {kill_err}")
+            except OSError as term_err:
+                jeditor_logger.debug(f"process terminate failed during cleanup: {term_err}")
 
     def _exit_message_prefix(self) -> str:
         """退出訊息前綴 (子類別覆寫) / Exit message prefix (override in subclass)"""

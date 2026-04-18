@@ -87,7 +87,10 @@ class ShellManager(BaseProcessManager):
             text_format.setForeground(actually_color_dict.get("normal_output_color"))
             text_cursor.insertText(str(args), text_format)
             text_cursor.insertBlock()
-            self.process = subprocess.Popen(
+            # shell=True is required: this is the user-facing shell execution feature
+            # of the editor, invoked only with commands the user explicitly types.
+            # Not a user-input-driven pipeline from untrusted data.
+            self.process = subprocess.Popen(  # noqa: S602  # nosec B602
                 args=args,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,

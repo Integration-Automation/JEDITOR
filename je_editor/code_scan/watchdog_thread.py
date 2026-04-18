@@ -1,4 +1,3 @@
-import sys
 import threading
 import time
 from pathlib import Path
@@ -6,6 +5,7 @@ from pathlib import Path
 from watchdog.observers import Observer
 
 from je_editor.code_scan.watchdog_implement import RuffPythonFileChangeHandler
+from je_editor.utils.logging.loggin_instance import jeditor_logger
 
 
 class WatchdogThread(threading.Thread):
@@ -28,13 +28,13 @@ class WatchdogThread(threading.Thread):
     def run(self) -> None:
         """Start the watchdog observer loop."""
         if not self.check_path.exists():
-            print(f"[Error] Path does not exist: {self.check_path}", file=sys.stderr)
+            jeditor_logger.error(f"[Watchdog] Path does not exist: {self.check_path}")
             return
 
         # 設定監控
         self.observer.schedule(self.ruff_handler, str(self.check_path), recursive=True)
         self.observer.start()
-        print(f"[Watchdog] Monitoring started on {self.check_path}")
+        jeditor_logger.info(f"[Watchdog] Monitoring started on {self.check_path}")
 
         try:
             while self.running:
@@ -42,11 +42,11 @@ class WatchdogThread(threading.Thread):
                 # 這裡可以加上 queue 輸出處理
                 self._process_ruff_output()
         except KeyboardInterrupt:
-            print("[Watchdog] Interrupted by user")
+            jeditor_logger.info("[Watchdog] Interrupted by user")
         finally:
             self.observer.stop()
             self.observer.join()
-            print("[Watchdog] Monitoring stopped")
+            jeditor_logger.info("[Watchdog] Monitoring stopped")
 
     def stop(self) -> None:
         """Stop the watchdog thread safely."""
@@ -56,11 +56,11 @@ class WatchdogThread(threading.Thread):
         """Process stdout/stderr queues from Ruff threads."""
         while not self.ruff_handler.stdout_queue.empty():
             line = self.ruff_handler.stdout_queue.get()
-            print(f"[Ruff STDOUT] {line}")
+            jeditor_logger.info(f"[Ruff STDOUT] {line}")
 
         while not self.ruff_handler.stderr_queue.empty():
             line = self.ruff_handler.stderr_queue.get()
-            print(f"[Ruff STDERR] {line}", file=sys.stderr)
+            jeditor_logger.error(f"[Ruff STDERR] {line}")
 
 
 if __name__ == '__main__':
@@ -73,6 +73,6 @@ if __name__ == '__main__':
         while True:
             time.sleep(1)
     except KeyboardInterrupt:
-        print("[Main] Stopping watchdog...")
+        jeditor_logger.info("[Main] Stopping watchdog...")
         watchdog_thread.stop()
         watchdog_thread.join()

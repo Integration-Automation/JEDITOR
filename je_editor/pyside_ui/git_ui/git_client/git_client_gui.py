@@ -10,6 +10,8 @@ from PySide6.QtWidgets import (
 )
 from git import Repo, InvalidGitRepositoryError, NoSuchPathError, GitCommandError
 
+from je_editor.utils.logging.loggin_instance import jeditor_logger
+
 
 class _GitWorker(QObject):
     """背景執行 Git 操作的 Worker / Background worker for Git operations"""
@@ -587,8 +589,8 @@ class GitGui(QWidget):
                 for file_path in file_paths:
                     try:
                         self.current_repo.index.remove([file_path], working_tree=True)
-                    except Exception:
-                        pass
+                    except (GitCommandError, OSError) as remove_err:
+                        jeditor_logger.debug(f"index.remove skipped for {file_path}: {remove_err}")
             self._refresh_change_list()
         except GitCommandError as e:
             QMessageBox.critical(self, "Unstage Error", str(e))
