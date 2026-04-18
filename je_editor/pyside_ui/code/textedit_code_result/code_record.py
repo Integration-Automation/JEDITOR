@@ -14,7 +14,7 @@ _SELECTION_CSS = "selection-background-color: #264f78;"
 class CodeRecord(QTextEdit):
     # 繼承自 QTextEdit，作為程式碼輸出紀錄區
     # Extend QTextEdit, used as a code output record area
-    def __init__(self):
+    def __init__(self) -> None:
         jeditor_logger.info("Init CodeRecord")
         super().__init__()
         self.setLineWrapMode(self.LineWrapMode.NoWrap)  # 禁止自動換行 / disable line wrapping

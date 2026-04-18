@@ -1,6 +1,7 @@
 from pathlib import Path
 
 from PySide6.QtCore import Qt
+from PySide6.QtGui import QCloseEvent
 from PySide6.QtWidgets import QWidget, QGridLayout, QScrollArea
 from je_editor.utils.multi_language.multi_language_wrapper import language_wrapper
 
@@ -19,7 +20,7 @@ class FullEditorWidget(QWidget):
     including code editing area, scroll support, and auto-save on close.
     """
 
-    def __init__(self, current_file: str):
+    def __init__(self, current_file: str) -> None:
         # 初始化時記錄日誌 / Log initialization
         jeditor_logger.info(f"Init FullEditorWidget current_file: {current_file}")
         super().__init__()
@@ -55,7 +56,7 @@ class FullEditorWidget(QWidget):
             f"font-family: {user_setting_dict.get('font', 'Lato')};"
         )
 
-    def closeEvent(self, event) -> None:
+    def closeEvent(self, event: QCloseEvent) -> None:
         """
         覆寫 closeEvent，在關閉視窗時自動儲存檔案內容。
         Override closeEvent to auto-save file content when closing window.

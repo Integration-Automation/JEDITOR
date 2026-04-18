@@ -10,7 +10,7 @@ class SearchResultBox(QWidget):
     Search result dialog box
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         jeditor_logger.info("Init SearchResultBox")
         super().__init__()
 

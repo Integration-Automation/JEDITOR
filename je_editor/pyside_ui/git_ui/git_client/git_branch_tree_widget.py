@@ -1,7 +1,7 @@
 import logging
 from pathlib import Path
 
-from PySide6.QtCore import QTimer, QFileSystemWatcher, Qt
+from PySide6.QtCore import QItemSelection, QTimer, QFileSystemWatcher, Qt
 from PySide6.QtGui import QAction
 from PySide6.QtWidgets import (
     QFileDialog, QToolBar, QMessageBox, QStatusBar,
@@ -24,7 +24,7 @@ class GitTreeViewGUI(QWidget):
     GitTreeViewGUI: A graphical viewer for Git commit history
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
         self.language_wrapper_get = language_wrapper.language_word_dict.get
         self.setWindowTitle(self.language_wrapper_get("git_graph_title"))
@@ -79,7 +79,7 @@ class GitTreeViewGUI(QWidget):
         # === 表格選擇事件 / Table selection event ===
         self.commit_table.selectionModel().selectionChanged.connect(self._on_table_selection)
 
-    def _on_table_selection(self, selected, _):
+    def _on_table_selection(self, selected: QItemSelection, _: QItemSelection) -> None:
         """
         當使用者在提交表格中選擇某一列時，讓圖形檢視器聚焦到該行
         When user selects a row in commit table, focus graph view on that row
@@ -89,7 +89,7 @@ class GitTreeViewGUI(QWidget):
         row = selected.indexes()[0].row()
         self.graph_view.focus_row(row)
 
-    def open_repo(self):
+    def open_repo(self) -> None:
         """
         開啟 Git 專案並初始化圖形檢視
         Open a Git repository and set up the graph view
@@ -110,7 +110,7 @@ class GitTreeViewGUI(QWidget):
         self._setup_watcher()
         self.refresh_graph()
 
-    def _setup_watcher(self):
+    def _setup_watcher(self) -> None:
         """
         設定檔案監控，監控 .git 目錄與相關檔案
         Setup file watcher to monitor .git directory and related files
@@ -130,14 +130,14 @@ class GitTreeViewGUI(QWidget):
             if refs_dir.exists():
                 self.watcher.addPath(str(refs_dir))
 
-    def _on_git_changed(self):
+    def _on_git_changed(self) -> None:
         """
         當 Git 目錄變更時，啟動延遲刷新
         When Git directory changes, start delayed refresh
         """
         self.refresh_timer.start(500)
 
-    def refresh_graph(self):
+    def refresh_graph(self) -> None:
         """
         刷新 Git 提交圖與提交表格
         Refresh Git commit graph and commit table

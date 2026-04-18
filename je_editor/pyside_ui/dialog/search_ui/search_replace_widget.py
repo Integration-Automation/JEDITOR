@@ -5,15 +5,15 @@ import re
 from pathlib import Path
 from typing import TYPE_CHECKING, Optional
 
-from PySide6.QtCore import Qt, QThread, Signal
+from PySide6.QtCore import Qt, QThread, QRegularExpression, Signal
 from PySide6.QtGui import QTextCursor, QTextDocument
+from PySide6.QtGui import QCloseEvent
 from PySide6.QtWidgets import (
     QDialog, QVBoxLayout, QHBoxLayout, QLineEdit, QPushButton,
     QComboBox, QCheckBox, QLabel, QTreeWidget, QTreeWidgetItem,
-    QFileDialog, QPlainTextEdit, QMessageBox
+    QFileDialog, QPlainTextEdit, QMessageBox, QWidget
 )
 
-from je_editor.utils.logging.loggin_instance import jeditor_logger
 from je_editor.utils.multi_language.multi_language_wrapper import language_wrapper
 
 if TYPE_CHECKING:
@@ -42,7 +42,7 @@ class _SearchWorker(QThread):
     match_found = Signal(str, int, str)  # (file_path, line_number, line_text)
     finished_signal = Signal(int)  # total_matches
 
-    def __init__(self, root: str, pattern: str, case_sensitive: bool, use_regex: bool):
+    def __init__(self, root: str, pattern: str, case_sensitive: bool, use_regex: bool) -> None:
         super().__init__()
         self.root = root
         self.pattern = pattern
@@ -50,10 +50,10 @@ class _SearchWorker(QThread):
         self.use_regex = use_regex
         self._stop = False
 
-    def stop(self):
+    def stop(self) -> None:
         self._stop = True
 
-    def run(self):
+    def run(self) -> None:
         total = 0
         flags = 0 if self.case_sensitive else re.IGNORECASE
         try:
@@ -92,7 +92,7 @@ class SearchReplaceDialog(QDialog):
     Search & Replace dialog supporting three scopes: Current File, Folder, Project
     """
 
-    def __init__(self, editor_widget: EditorWidget, parent=None):
+    def __init__(self, editor_widget: EditorWidget, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self.editor_widget = editor_widget
         self._worker: Optional[_SearchWorker] = None
@@ -107,7 +107,7 @@ class SearchReplaceDialog(QDialog):
 
         self._init_ui()
 
-    def _init_ui(self):
+    def _init_ui(self) -> None:
         layout = QVBoxLayout(self)
         layout.setContentsMargins(8, 8, 8, 8)
         layout.setSpacing(6)
@@ -200,14 +200,14 @@ class SearchReplaceDialog(QDialog):
 
     # ---------- Scope UI ----------
 
-    def _on_scope_changed(self, index: int):
+    def _on_scope_changed(self, index: int) -> None:
         """根據範圍切換顯示/隱藏資料夾選擇 / Toggle folder picker visibility"""
         scope = self.scope_combo.currentData()
         is_folder = scope == "folder"
         self.folder_input.setVisible(is_folder)
         self.btn_pick_folder.setVisible(is_folder)
 
-    def _pick_folder(self):
+    def _pick_folder(self) -> None:
         """選擇搜尋資料夾 / Pick search folder"""
         d = QFileDialog.getExistingDirectory(self, self._lang("search_replace_pick_folder"), os.getcwd())
         if d:
@@ -215,7 +215,7 @@ class SearchReplaceDialog(QDialog):
 
     # ---------- Search ----------
 
-    def do_search(self):
+    def do_search(self) -> None:
         """根據範圍執行搜尋 / Execute search based on scope"""
         pattern = self.search_input.text()
         if not pattern:
@@ -234,7 +234,7 @@ class SearchReplaceDialog(QDialog):
             project_root = self._get_project_root()
             self._search_in_directory(pattern, project_root)
 
-    def _search_in_current_file(self, pattern: str):
+    def _search_in_current_file(self, pattern: str) -> None:
         """在目前檔案中搜尋 / Search in current file"""
         self.result_tree.clear()
         editor = self.editor_widget.code_edit
@@ -264,7 +264,7 @@ class SearchReplaceDialog(QDialog):
         # 同時高亮第一個匹配 / Also highlight first match
         self.find_next()
 
-    def _search_in_directory(self, pattern: str, root: str):
+    def _search_in_directory(self, pattern: str, root: str) -> None:
         """在資料夾中搜尋 / Search in directory"""
         self.result_tree.clear()
         self.status_label.setText(self._lang("search_replace_searching"))
@@ -282,7 +282,7 @@ class SearchReplaceDialog(QDialog):
         self._worker.finished_signal.connect(self._on_search_finished)
         self._worker.start()
 
-    def _on_match_found(self, file_path: str, line_no: int, line_text: str):
+    def _on_match_found(self, file_path: str, line_no: int, line_text: str) -> None:
         """收到搜尋結果 / Receive search result"""
         if file_path not in self._file_groups:
             parent = QTreeWidgetItem([file_path, "", ""])
@@ -295,12 +295,12 @@ class SearchReplaceDialog(QDialog):
         child.setData(0, Qt.ItemDataRole.UserRole, {"file": file_path, "line": line_no})
         parent.addChild(child)
 
-    def _on_search_finished(self, total: int):
+    def _on_search_finished(self, total: int) -> None:
         """搜尋完成 / Search finished"""
         self.status_label.setText(
             self._lang("search_replace_found_count").format(count=total))
 
-    def _on_result_double_click(self, item: QTreeWidgetItem, column: int):
+    def _on_result_double_click(self, item: QTreeWidgetItem, column: int) -> None:
         """雙擊結果項目：跳轉到對應位置 / Double-click result: navigate to location"""
         data = item.data(0, Qt.ItemDataRole.UserRole)
         if not data:
@@ -321,7 +321,7 @@ class SearchReplaceDialog(QDialog):
             # 目前檔案 / Current file
             self._goto_line(self.editor_widget.code_edit, line_no)
 
-    def _goto_line(self, editor: QPlainTextEdit, line_no: int):
+    def _goto_line(self, editor: QPlainTextEdit, line_no: int) -> None:
         """跳轉到指定行 / Navigate to specific line"""
         block = editor.document().findBlockByNumber(line_no - 1)
         if block.isValid():
@@ -333,15 +333,15 @@ class SearchReplaceDialog(QDialog):
 
     # ---------- Find prev/next in current file ----------
 
-    def find_next(self):
+    def find_next(self) -> None:
         """在目前檔案中尋找下一個 / Find next in current file"""
         self._find_in_editor(forward=True)
 
-    def find_prev(self):
+    def find_prev(self) -> None:
         """在目前檔案中尋找上一個 / Find previous in current file"""
         self._find_in_editor(forward=False)
 
-    def _find_in_editor(self, forward: bool):
+    def _find_in_editor(self, forward: bool) -> None:
         """在編輯器中搜尋 / Search in editor"""
         pattern = self.search_input.text()
         if not pattern:
@@ -377,9 +377,8 @@ class SearchReplaceDialog(QDialog):
             else:
                 editor.find(pattern, flags)
 
-    def _build_qregex(self, pattern: str):
+    def _build_qregex(self, pattern: str) -> Optional[QRegularExpression]:
         """建立 QRegularExpression / Build QRegularExpression"""
-        from PySide6.QtCore import QRegularExpression
         options = QRegularExpression.PatternOption.NoPatternOption
         if not self.chk_case.isChecked():
             options |= QRegularExpression.PatternOption.CaseInsensitiveOption
@@ -390,7 +389,7 @@ class SearchReplaceDialog(QDialog):
 
     # ---------- Replace ----------
 
-    def do_replace(self):
+    def do_replace(self) -> None:
         """取代目前選取的匹配項 / Replace current selected match"""
         scope = self.scope_combo.currentData()
         if scope == "file":
@@ -398,7 +397,7 @@ class SearchReplaceDialog(QDialog):
         else:
             self._replace_selected_result()
 
-    def do_replace_all(self):
+    def do_replace_all(self) -> None:
         """全部取代 / Replace all"""
         pattern = self.search_input.text()
         replacement = self.replace_input.text()
@@ -418,7 +417,7 @@ class SearchReplaceDialog(QDialog):
             project_root = self._get_project_root()
             self._replace_all_in_directory(pattern, replacement, project_root)
 
-    def _replace_in_current_editor(self):
+    def _replace_in_current_editor(self) -> None:
         """在編輯器中取代目前選取的匹配 / Replace currently selected match in editor"""
         editor = self.editor_widget.code_edit
         replacement = self.replace_input.text()
@@ -429,7 +428,7 @@ class SearchReplaceDialog(QDialog):
         # 跳到下一個匹配 / Move to next match
         self.find_next()
 
-    def _replace_all_in_current_file(self, pattern: str, replacement: str):
+    def _replace_all_in_current_file(self, pattern: str, replacement: str) -> None:
         """在目前檔案中全部取代 / Replace all in current file"""
         editor = self.editor_widget.code_edit
         text = editor.toPlainText()
@@ -455,7 +454,7 @@ class SearchReplaceDialog(QDialog):
             self._lang("search_replace_replaced_count").format(count=count))
         self.do_search()
 
-    def _replace_selected_result(self):
+    def _replace_selected_result(self) -> None:
         """取代結果列表中目前選取的項目 / Replace selected result item"""
         items = self.result_tree.selectedItems()
         if not items:
@@ -502,7 +501,7 @@ class SearchReplaceDialog(QDialog):
         except Exception as e:
             self.status_label.setText(f"Error: {e}")
 
-    def _replace_all_in_directory(self, pattern: str, replacement: str, root: str):
+    def _replace_all_in_directory(self, pattern: str, replacement: str, root: str) -> None:
         """在整個目錄中全部取代 / Replace all in directory"""
         case = self.chk_case.isChecked()
         use_regex = self.chk_regex.isChecked()
@@ -568,7 +567,7 @@ class SearchReplaceDialog(QDialog):
                 return root
         return os.getcwd()
 
-    def closeEvent(self, event):
+    def closeEvent(self, event: QCloseEvent) -> None:
         """關閉對話框時停止搜尋執行緒 / Stop search worker on close"""
         if self._worker and self._worker.isRunning():
             self._worker.stop()

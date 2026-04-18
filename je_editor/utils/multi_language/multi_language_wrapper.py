@@ -10,7 +10,7 @@ class LanguageWrapper(object):
     - A language wrapper to manage the current language and its corresponding dictionary.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         # 初始化時記錄日誌
         # Log initialization
         jeditor_logger.info("Init LanguageWrapper")
@@ -30,7 +30,7 @@ class LanguageWrapper(object):
         # Select the dictionary based on current language
         self.language_word_dict: dict = self.choose_language_dict.get(self.language, english_word_dict)
 
-    def reset_language(self, language) -> None:
+    def reset_language(self, language: str) -> None:
         """
         重設語言 (Reset the language)
         :param language: 任何已註冊的語言鍵 / Any registered language key

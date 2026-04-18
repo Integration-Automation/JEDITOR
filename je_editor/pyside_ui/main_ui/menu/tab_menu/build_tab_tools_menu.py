@@ -58,7 +58,7 @@ def set_tab_tools_menu(ui_we_want_to_set: EditorMain) -> None:
     ui_we_want_to_set.tab_menu.tools_menu.addAction(ui_we_want_to_set.tab_menu.tools_menu.add_chat_ui_action)
 
 
-def add_ipython_tab(ui_we_want_to_set: EditorMain):
+def add_ipython_tab(ui_we_want_to_set: EditorMain) -> None:
     # 紀錄日誌：新增 IPython 分頁
     # Log: add an IPython tab
     jeditor_logger.info(f"build_tab_menu.py add ipython tab ui_we_want_to_set: {ui_we_want_to_set}")
@@ -71,7 +71,7 @@ def add_ipython_tab(ui_we_want_to_set: EditorMain):
     )
 
 
-def add_variable_inspector_tab(ui_we_want_to_set: EditorMain):
+def add_variable_inspector_tab(ui_we_want_to_set: EditorMain) -> None:
     # 紀錄日誌：新增 Variable Inspector 分頁
     # Log: add a Variable Inspector tab
     jeditor_logger.info(f"build_tab_menu.py add variable inspector tab ui_we_want_to_set: {ui_we_want_to_set}")
@@ -84,7 +84,7 @@ def add_variable_inspector_tab(ui_we_want_to_set: EditorMain):
     )
 
 
-def add_frontengine_tab(ui_we_want_to_set: EditorMain):
+def add_frontengine_tab(ui_we_want_to_set: EditorMain) -> None:
     # 新增 FrontEngine 分頁
     # Add FrontEngine tab
     jeditor_logger.info(f"build_tab_menu.py add frontengine tab ui_we_want_to_set: {ui_we_want_to_set}")
@@ -94,7 +94,7 @@ def add_frontengine_tab(ui_we_want_to_set: EditorMain):
         f"{ui_we_want_to_set.tab_widget.count()}")
 
 
-def add_chat_ui_tab(ui_we_want_to_set: EditorMain):
+def add_chat_ui_tab(ui_we_want_to_set: EditorMain) -> None:
     # 紀錄日誌：新增 Chat UI 分頁
     # Log: add a Chat UI tab
     jeditor_logger.info(f"build_tab_menu.py add chat_ui tab ui_we_want_to_set: {ui_we_want_to_set}")

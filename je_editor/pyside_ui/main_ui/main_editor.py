@@ -11,7 +11,7 @@ import jedi.settings
 # 匯入 PySide6 (Qt for Python) 的核心模組
 # Import PySide6 core modules
 from PySide6.QtCore import QTimer, QEvent
-from PySide6.QtGui import QFontDatabase, QIcon, Qt, QTextCharFormat
+from PySide6.QtGui import QCloseEvent, QFontDatabase, QIcon, Qt, QTextCharFormat
 from PySide6.QtWidgets import QApplication, QMainWindow, QWidget, QTabWidget, QLabel, QMessageBox
 # 匯入 Qt Material 主題工具
 # Import Qt Material style tools
@@ -54,7 +54,7 @@ class EditorMain(QMainWindow, QtStyleTools):
     繼承 QMainWindow 與 QtStyleTools
     """
 
-    def __init__(self, debug_mode: bool = False, show_system_tray_ray: bool = False, extend: bool = False):
+    def __init__(self, debug_mode: bool = False, show_system_tray_ray: bool = False, extend: bool = False) -> None:
         # 初始化時記錄 log
         # Log initialization
         jeditor_logger.info(f"Init EditorMain "
@@ -235,12 +235,12 @@ class EditorMain(QMainWindow, QtStyleTools):
             close_timer.timeout.connect(self.debug_close)
             close_timer.start()
 
-    def clear_code_result(self):
+    def clear_code_result(self) -> None:
         """
         清除目前編輯器的輸出結果
         Clear the current editor's output result
         """
-        jeditor_logger.info(f"EditorMain clear_code_result")
+        jeditor_logger.info("EditorMain clear_code_result")
         widget = self.tab_widget.currentWidget()
         if isinstance(widget, EditorWidget):
             widget.code_result.clear()
@@ -307,7 +307,7 @@ class EditorMain(QMainWindow, QtStyleTools):
         啟動時套用使用者設定 (字型、樣式、上次開啟的檔案)
         Apply user settings on startup (fonts, styles, last opened file)
         """
-        jeditor_logger.info(f"EditorMain startup_setting")
+        jeditor_logger.info("EditorMain startup_setting")
         # 設定 UI 字型與大小
         # Set UI font and size
         self.setStyleSheet(
@@ -363,7 +363,7 @@ class EditorMain(QMainWindow, QtStyleTools):
         # Update color settings
         update_actually_color_dict()
 
-    def go_to_new_tab(self, file_path: Path):
+    def go_to_new_tab(self, file_path: Path) -> None:
         """
         開啟新分頁並載入檔案
         Open a new tab and load a file
@@ -459,7 +459,7 @@ class EditorMain(QMainWindow, QtStyleTools):
         except Exception as e:
             jeditor_logger.warning(f"Periodic settings save failed: {e}")
 
-    def closeEvent(self, event) -> None:
+    def closeEvent(self, event: QCloseEvent) -> None:
         """
         視窗關閉事件：關閉所有分頁並儲存使用者設定
         Window close event: close all tabs and save user settings
@@ -488,7 +488,7 @@ class EditorMain(QMainWindow, QtStyleTools):
         else:
             return super().event(event)
 
-    def close_tab(self, index: int):
+    def close_tab(self, index: int) -> None:
         """
         關閉指定索引的分頁，若有未儲存的修改則提示使用者
         Close tab at given index, prompt if unsaved changes
@@ -514,7 +514,7 @@ class EditorMain(QMainWindow, QtStyleTools):
         self.tab_widget.removeTab(index)
 
     @staticmethod
-    def debug_close():
+    def debug_close() -> None:
         """
         除錯模式下自動關閉程式
         Auto-close the program in debug mode

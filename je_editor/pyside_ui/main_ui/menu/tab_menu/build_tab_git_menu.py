@@ -48,7 +48,7 @@ def set_tab_git_menu(ui_we_want_to_set: EditorMain) -> None:
     )
     ui_we_want_to_set.tab_menu.git_menu.addAction(ui_we_want_to_set.tab_menu.git_menu.add_code_diff_viewer_ui_action)
 
-def add_git_client_tab(ui_we_want_to_set: EditorMain):
+def add_git_client_tab(ui_we_want_to_set: EditorMain) -> None:
     # 紀錄日誌：新增 Git Client 分頁
     # Log: add a Git Client tab
     jeditor_logger.info(f"build_tab_menu.py add git client tab ui_we_want_to_set: {ui_we_want_to_set}")
@@ -61,7 +61,7 @@ def add_git_client_tab(ui_we_want_to_set: EditorMain):
     )
 
 
-def add_git_tree_view_tab(ui_we_want_to_set: EditorMain):
+def add_git_tree_view_tab(ui_we_want_to_set: EditorMain) -> None:
     # 紀錄日誌：新增 Git Branch Tree 分頁
     # Log: add a Git Branch Tree tab
     jeditor_logger.info(f"build_tab_menu.py add git tree view tab ui_we_want_to_set: {ui_we_want_to_set}")
@@ -73,7 +73,7 @@ def add_git_tree_view_tab(ui_we_want_to_set: EditorMain):
         f"{ui_we_want_to_set.tab_widget.count()}"
     )
 
-def add_code_diff_compare_tab(ui_we_want_to_set: EditorMain):
+def add_code_diff_compare_tab(ui_we_want_to_set: EditorMain) -> None:
     # 紀錄日誌：新增 Code Diff Compare 分頁
     # Log: add a Code Diff Compare tab
     jeditor_logger.info(f"build_tab_menu.py add code diff compare tab ui_we_want_to_set: {ui_we_want_to_set}")

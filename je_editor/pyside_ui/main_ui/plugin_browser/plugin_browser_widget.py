@@ -41,7 +41,7 @@ class PluginBrowserWidget(QWidget):
     Plugin browser main widget.
     """
 
-    def __init__(self, parent=None):
+    def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         jeditor_logger.info("Init PluginBrowserWidget")
 
@@ -56,7 +56,7 @@ class PluginBrowserWidget(QWidget):
 
         self._init_ui()
 
-    def _init_ui(self):
+    def _init_ui(self) -> None:
         main_layout = QVBoxLayout(self)
 
         # === 頂部：Repo URL 輸入 ===
@@ -146,7 +146,7 @@ class PluginBrowserWidget(QWidget):
 
     # ----- Actions / 動作 -----
 
-    def _on_fetch_clicked(self):
+    def _on_fetch_clicked(self) -> None:
         """使用者按下 Fetch 按鈕 / User clicks Fetch button."""
         repo_url = self._repo_input.text().strip().rstrip("/")
         # 解析 owner/repo / Parse owner/repo
@@ -172,7 +172,7 @@ class PluginBrowserWidget(QWidget):
 
         Thread(target=self._fetch_worker, args=(owner, repo), daemon=True).start()
 
-    def _fetch_worker(self, owner: str, repo: str):
+    def _fetch_worker(self, owner: str, repo: str) -> None:
         """背景取得插件列表 / Background fetch plugin list."""
         try:
             plugins = fetch_repo_tree(owner, repo)
@@ -186,7 +186,7 @@ class PluginBrowserWidget(QWidget):
         except Exception as e:
             self._signals.error.emit(str(e))
 
-    def _on_plugins_loaded(self, plugins: list[dict]):
+    def _on_plugins_loaded(self, plugins: list[dict]) -> None:
         """插件列表載入完成 / Plugin list loaded."""
         self._set_loading(False)
         self._plugins = plugins
@@ -224,7 +224,7 @@ class PluginBrowserWidget(QWidget):
             language_wrapper.language_word_dict.get(
                 "plugin_browser_status_loaded", "Loaded {count} plugins").format(count=count))
 
-    def _on_item_selected(self, current: QTreeWidgetItem, _previous):
+    def _on_item_selected(self, current: QTreeWidgetItem, _previous: QTreeWidgetItem | None) -> None:
         """使用者選取插件 / User selects a plugin."""
         if current is None:
             return
@@ -265,7 +265,7 @@ class PluginBrowserWidget(QWidget):
             daemon=True,
         ).start()
 
-    def _fetch_source_worker(self, url: str):
+    def _fetch_source_worker(self, url: str) -> None:
         """背景下載原始碼預覽 / Background fetch source preview."""
         try:
             from je_editor.pyside_ui.main_ui.plugin_browser.github_api import _download_text
@@ -274,12 +274,12 @@ class PluginBrowserWidget(QWidget):
         except Exception as e:
             self._signals.metadata.emit({"_source": f"Error: {e}"})
 
-    def _on_metadata_loaded(self, data: dict):
+    def _on_metadata_loaded(self, data: dict) -> None:
         """原始碼預覽載入完成 / Source preview loaded."""
         source = data.get("_source", "")
         self._detail_text.setPlainText(source)
 
-    def _on_download_clicked(self):
+    def _on_download_clicked(self) -> None:
         """使用者按下下載按鈕 / User clicks download button."""
         if self._current_plugin is None:
             return
@@ -323,7 +323,7 @@ class PluginBrowserWidget(QWidget):
             daemon=True,
         ).start()
 
-    def _download_worker(self, url: str, dest_dir: str, file_name: str):
+    def _download_worker(self, url: str, dest_dir: str, file_name: str) -> None:
         """背景下載插件 / Background download plugin."""
         try:
             saved = download_plugin_file(url, dest_dir, file_name)
@@ -331,7 +331,7 @@ class PluginBrowserWidget(QWidget):
         except Exception as e:
             self._signals.error.emit(str(e))
 
-    def _on_download_done(self, saved_path: str):
+    def _on_download_done(self, saved_path: str) -> None:
         """下載完成 / Download complete."""
         self._set_loading(False)
         self._download_btn.setEnabled(True)
@@ -349,7 +349,7 @@ class PluginBrowserWidget(QWidget):
             ).format(path=saved_path))
         msg.exec()
 
-    def _on_error(self, error_msg: str):
+    def _on_error(self, error_msg: str) -> None:
         """顯示錯誤 / Show error."""
         jeditor_logger.error(f"PluginBrowserWidget error: {error_msg}")
         self._set_loading(False)
@@ -357,7 +357,7 @@ class PluginBrowserWidget(QWidget):
 
     # ----- Helpers -----
 
-    def _set_loading(self, loading: bool):
+    def _set_loading(self, loading: bool) -> None:
         """切換載入狀態 / Toggle loading state."""
         self._progress.setVisible(loading)
         self._fetch_btn.setEnabled(not loading)

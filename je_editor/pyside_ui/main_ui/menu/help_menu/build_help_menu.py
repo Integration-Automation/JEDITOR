@@ -75,7 +75,7 @@ def set_help_menu(ui_we_want_to_set: EditorMain) -> None:
 
 # 開啟內建瀏覽器分頁
 # Open a new tab in the embedded browser
-def open_web_browser(ui_we_want_to_set: EditorMain, url: str, tab_name: str):
+def open_web_browser(ui_we_want_to_set: EditorMain, url: str, tab_name: str) -> None:
     jeditor_logger.info("build_help_menu.py open_web_browser "
                         f"ui_we_want_to_set: {ui_we_want_to_set} "
                         f"url: {url} "
@@ -88,7 +88,7 @@ def open_web_browser(ui_we_want_to_set: EditorMain, url: str, tab_name: str):
 
 # 顯示「關於」訊息框
 # Show "About" message box
-def show_about():
+def show_about() -> None:
     jeditor_logger.info("build_help_menu.py show_about")
     message_box = QMessageBox()
     message_box.setText(

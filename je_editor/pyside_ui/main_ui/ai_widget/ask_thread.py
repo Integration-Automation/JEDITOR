@@ -10,7 +10,7 @@ class AskThread(Thread):
     AskThread class: runs AI model calls in a background thread to avoid blocking the main thread
     """
 
-    def __init__(self, lang_chain_interface: LangChainInterface, prompt):
+    def __init__(self, lang_chain_interface: LangChainInterface, prompt: str) -> None:
         """
         初始化 AskThread
         Initialize AskThread
@@ -23,7 +23,7 @@ class AskThread(Thread):
         self.lang_chain_interface = lang_chain_interface
         self.prompt = prompt
 
-    def run(self):
+    def run(self) -> None:
         """
         執行緒的主要邏輯：
         1. 呼叫 AI 模型並取得回應

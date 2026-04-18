@@ -12,11 +12,11 @@ class RedirectStdOut(logging.Handler):
     - Redirect standard output (stdout) to a queue
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
         self.encoding = sys.__stdout__.encoding if sys.__stdout__ else "utf-8"
 
-    def write(self, content_to_write) -> None:
+    def write(self, content_to_write: str) -> None:
         # 將輸出內容放入 RedirectManager 的 stdout queue
         # Put output content into RedirectManager's stdout queue
         redirect_manager_instance.std_out_queue.put(content_to_write)
@@ -40,11 +40,11 @@ class RedirectStdErr(logging.Handler):
     - Redirect standard error (stderr) to a queue
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
         self.encoding = sys.__stderr__.encoding if sys.__stderr__ else "utf-8"
 
-    def write(self, content_to_write) -> None:
+    def write(self, content_to_write: str) -> None:
         # 將錯誤輸出內容放入 RedirectManager 的 stderr queue
         # Put error output content into RedirectManager's stderr queue
         redirect_manager_instance.std_err_queue.put(content_to_write)
@@ -70,7 +70,7 @@ class RedirectManager(object):
     - Provides set_redirect and restore_std methods
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         jeditor_logger.info("Init RedirectManager")
         # 建立 stdout 與 stderr 的 queue
         # Create queues for stdout and stderr

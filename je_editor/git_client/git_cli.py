@@ -7,7 +7,7 @@ log = logging.getLogger(__name__)
 
 
 class GitCLI:
-    def __init__(self, repo_path: Path):
+    def __init__(self, repo_path: Path) -> None:
         self.repo_path = Path(repo_path)
 
     def is_git_repo(self) -> bool:

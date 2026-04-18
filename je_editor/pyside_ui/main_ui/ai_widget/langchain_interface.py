@@ -22,7 +22,7 @@ class LangChainInterface(object):
     """
 
     def __init__(self, main_window: ChatUI, prompt_template: str, base_url: str,
-                 api_key: Union[SecretStr, str], chat_model: str):
+                 api_key: Union[SecretStr, str], chat_model: str) -> None:
         """
         初始化 LangChainInterface
         Initialize LangChainInterface

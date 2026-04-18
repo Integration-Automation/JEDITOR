@@ -1,6 +1,6 @@
 import os
 
-from PySide6.QtCore import Qt, QEvent
+from PySide6.QtCore import QObject, Qt, QEvent
 from PySide6.QtGui import QTextCursor, QColor, QKeyEvent
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QPlainTextEdit, QLineEdit,
@@ -17,7 +17,7 @@ class ConsoleWidget(QWidget):
     ConsoleWidget provides an interactive console interface for running commands and viewing output.
     """
 
-    def __init__(self, parent=None):
+    def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self.language_word_dict_get = language_wrapper.language_word_dict.get
 
@@ -97,7 +97,7 @@ class ConsoleWidget(QWidget):
 
     # 事件過濾器：支援上下鍵瀏覽歷史指令
     # Event filter: Support navigating command history with Up/Down keys
-    def eventFilter(self, obj, event):
+    def eventFilter(self, obj: QObject, event: QEvent) -> bool:
         if obj is self.input and isinstance(event, QKeyEvent) and event.type() == QEvent.Type.KeyPress:
             if event.key() == Qt.Key.Key_Up:
                 self.history_prev()
@@ -108,16 +108,19 @@ class ConsoleWidget(QWidget):
         return super().eventFilter(obj, event)
 
     # 瀏覽上一個歷史指令 / Navigate to previous command in history
-    def history_prev(self):
-        if not self.history: return
+    def history_prev(self) -> None:
+        if not self.history:
+            return
         self.history_index = len(self.history) - 1 if self.history_index < 0 else max(0, self.history_index - 1)
         self.input.setText(self.history[self.history_index])
         self.input.setCursorPosition(len(self.input.text()))
 
     # 瀏覽下一個歷史指令 / Navigate to next command in history
-    def history_next(self):
-        if not self.history: return
-        if self.history_index < 0: return
+    def history_next(self) -> None:
+        if not self.history:
+            return
+        if self.history_index < 0:
+            return
         self.history_index += 1
         if self.history_index >= len(self.history):
             self.history_index = -1
@@ -127,7 +130,7 @@ class ConsoleWidget(QWidget):
             self.input.setCursorPosition(len(self.input.text()))
 
     # 選擇新的工作目錄 / Pick a new working directory
-    def pick_cwd(self):
+    def pick_cwd(self) -> None:
         d = QFileDialog.getExistingDirectory(self, "Select working directory", os.getcwd())
         if d:
             self.proc.set_cwd(d)
@@ -135,7 +138,7 @@ class ConsoleWidget(QWidget):
             self.proc.system.emit(f'cd "{d}"')
 
     # 在輸出區域新增文字 (支援顏色) / Append text to output area (with optional color)
-    def append_text(self, text, color=None):
+    def append_text(self, text: str, color: str | None = None) -> None:
         cursor = self.output.textCursor()
         cursor.movePosition(QTextCursor.MoveOperation.End)
         fmt = self.output.currentCharFormat()
@@ -147,9 +150,10 @@ class ConsoleWidget(QWidget):
         self.output.ensureCursorVisible()
 
     # 執行輸入的指令 / Run the entered command
-    def run_command(self):
+    def run_command(self) -> None:
         cmd = self.input.text().strip()
-        if not cmd: return
+        if not cmd:
+            return
         if not self.history or self.history[-1] != cmd:
             self.history.append(cmd)
         self.history_index = -1
@@ -158,7 +162,7 @@ class ConsoleWidget(QWidget):
         self.input.clear()
 
     # 子程序結束時的處理 / Handle process finished event
-    def on_finished(self, code, status):
+    def on_finished(self, code: int, status: int) -> None:
         self.append_text(
             f"\n{self.language_word_dict_get('dynamic_console_done').format(code=code, status=status)}\n",
             "#888"

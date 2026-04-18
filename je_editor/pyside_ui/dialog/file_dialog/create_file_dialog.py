@@ -12,7 +12,7 @@ class CreateFileDialog(QWidget):
     Dialog for creating a new file
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         jeditor_logger.info("Init CreateFileDialog")
         super().__init__()
 
@@ -40,7 +40,7 @@ class CreateFileDialog(QWidget):
         self.setWindowTitle(language_wrapper.language_word_dict.get("create_file_dialog_pushbutton"))
         self.setLayout(self.box_layout)
 
-    def create_file(self):
+    def create_file(self) -> None:
         """
         建立檔案的邏輯：
         1. 檢查輸入是否為空

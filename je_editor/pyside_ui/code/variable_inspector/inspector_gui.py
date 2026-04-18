@@ -1,6 +1,8 @@
 import ast
 
-from PySide6.QtCore import QAbstractTableModel, Qt, QTimer, QSortFilterProxyModel
+from typing import Any
+
+from PySide6.QtCore import QAbstractTableModel, QModelIndex, QObject, Qt, QTimer, QSortFilterProxyModel
 from PySide6.QtWidgets import QTableView, QVBoxLayout, QWidget, QLineEdit, QLabel
 
 from je_editor.utils.multi_language.multi_language_wrapper import language_wrapper
@@ -12,7 +14,7 @@ class VariableModel(QAbstractTableModel):
     Variable model: manages and displays variables from a given namespace
     """
 
-    def __init__(self, parent=None, namespace: dict | None = None):
+    def __init__(self, parent: QObject | None = None, namespace: dict | None = None) -> None:
         super().__init__(parent)
         self.variables = []  # 儲存變數資訊 [名稱, 型別, 值字串, 真實值]
         # Store variable info [name, type, repr(value), actual value]
@@ -23,11 +25,11 @@ class VariableModel(QAbstractTableModel):
         return self._namespace
 
     @namespace.setter
-    def namespace(self, ns: dict):
+    def namespace(self, ns: dict) -> None:
         self._namespace = ns
         self.update_data()
 
-    def update_data(self):
+    def update_data(self) -> None:
         """
         更新變數清單，從指定命名空間中擷取
         Update variable list from the provided namespace
@@ -48,15 +50,15 @@ class VariableModel(QAbstractTableModel):
         ]
         self.endResetModel()
 
-    def rowCount(self, parent=None):
+    def rowCount(self, parent: QModelIndex | None = None) -> int:
         # 回傳變數數量 / return number of variables
         return len(self.variables)
 
-    def columnCount(self, parent=None):
+    def columnCount(self, parent: QModelIndex | None = None) -> int:
         # 固定三欄：名稱、型別、值 / fixed 3 columns: name, type, value
         return 3
 
-    def data(self, index, role=Qt.ItemDataRole.DisplayRole):
+    def data(self, index: QModelIndex, role: int = Qt.ItemDataRole.DisplayRole) -> Any:
         # 提供表格顯示的資料
         # Provide data for table display
         if not index.isValid() or not (0 <= index.row() < len(self.variables)):
@@ -65,7 +67,7 @@ class VariableModel(QAbstractTableModel):
             return self.variables[index.row()][index.column()]
         return None
 
-    def headerData(self, section, orientation, role=Qt.ItemDataRole.DisplayRole):
+    def headerData(self, section: int, orientation: Qt.Orientation, role: int = Qt.ItemDataRole.DisplayRole) -> Any:
         # 設定表頭文字 (支援多語系)
         # Set header labels (multi-language support)
         if role == Qt.ItemDataRole.DisplayRole and orientation == Qt.Orientation.Horizontal:
@@ -76,7 +78,7 @@ class VariableModel(QAbstractTableModel):
             ][section]
         return None
 
-    def flags(self, index):
+    def flags(self, index: QModelIndex) -> Qt.ItemFlag:
         # 設定欄位屬性，僅允許「值」欄可編輯
         # Set column flags, only "value" column is editable
         if not index.isValid() or not (0 <= index.row() < len(self.variables)):
@@ -86,7 +88,7 @@ class VariableModel(QAbstractTableModel):
             base |= Qt.ItemFlag.ItemIsEditable
         return base
 
-    def setData(self, index, value, role=Qt.ItemDataRole.EditRole):
+    def setData(self, index: QModelIndex, value: Any, role: int = Qt.ItemDataRole.EditRole) -> bool:
         """
         更新變數值，並同步到全域變數
         Update variable value and sync to globals()
@@ -129,7 +131,7 @@ class VariableProxy(QSortFilterProxyModel):
     Proxy model: supports filtering and forwards editing
     """
 
-    def setData(self, index, value, role=Qt.ItemDataRole.EditRole):
+    def setData(self, index: QModelIndex, value: Any, role: int = Qt.ItemDataRole.EditRole) -> bool:
         # 將編輯操作轉發到原始模型
         # Forward editing to source model
         return self.sourceModel().setData(
@@ -143,7 +145,7 @@ class VariableInspector(QWidget):
     Variable inspector: GUI interface to display and search global variables
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
         self.setWindowTitle(language_wrapper.language_word_dict.get("variable_inspector_title"))
         layout = QVBoxLayout(self)

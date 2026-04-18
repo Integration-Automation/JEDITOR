@@ -10,7 +10,7 @@ class SearchBox(QWidget):
     Search box widget
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         jeditor_logger.info("Init SearchBox")
         super().__init__()
 

@@ -2,7 +2,7 @@ import time
 from queue import Queue
 from typing import Dict
 
-from watchdog.events import FileSystemEventHandler
+from watchdog.events import FileSystemEvent, FileSystemEventHandler
 
 from je_editor.code_scan.ruff_thread import RuffThread
 
@@ -13,7 +13,7 @@ class RuffPythonFileChangeHandler(FileSystemEventHandler):
     當 Python 檔案被修改時，自動觸發 Ruff 檢查。
     """
 
-    def __init__(self, ruff_commands: list = None, debounce_interval: float = 1.0):
+    def __init__(self, ruff_commands: list = None, debounce_interval: float = 1.0) -> None:
         """
         :param ruff_commands: Ruff command list, e.g. ["ruff", "check"]
         :param debounce_interval: Minimum interval (seconds) between re-runs for the same file
@@ -27,14 +27,14 @@ class RuffPythonFileChangeHandler(FileSystemEventHandler):
         self.last_run_time: Dict[str, float] = {}
         self.debounce_interval = debounce_interval
 
-    def _start_new_thread(self, file_path: str):
+    def _start_new_thread(self, file_path: str) -> None:
         """Helper to start a new Ruff thread for a given file."""
         ruff_thread = RuffThread(self.ruff_commands, self.stdout_queue, self.stderr_queue)
         self.ruff_threads_dict[file_path] = ruff_thread
         self.last_run_time[file_path] = time.time()
         ruff_thread.start()
 
-    def on_modified(self, event):
+    def on_modified(self, event: FileSystemEvent) -> None:
         """Triggered when a file is modified."""
         if event.is_directory:
             return

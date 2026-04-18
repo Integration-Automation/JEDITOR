@@ -1,4 +1,5 @@
 from PySide6.QtCore import Qt
+from PySide6.QtGui import QCloseEvent
 from PySide6.QtWidgets import QDockWidget
 
 from je_editor.utils.logging.loggin_instance import jeditor_logger
@@ -13,7 +14,7 @@ class DestroyDock(QDockWidget):
     and automatically release resources and log events when closed.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         # 初始化時記錄日誌 / Log initialization
         jeditor_logger.info("Init DestroyDock")
         super().__init__()
@@ -26,7 +27,7 @@ class DestroyDock(QDockWidget):
         # Set attribute: delete object on close to free memory
         self.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
 
-    def closeEvent(self, event) -> None:
+    def closeEvent(self, event: QCloseEvent) -> None:
         """
         覆寫 closeEvent，在關閉時額外處理：
         - 記錄關閉事件

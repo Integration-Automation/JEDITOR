@@ -9,7 +9,7 @@ class MultiFileDiffViewer(QWidget):
     多檔案差異檢視器，使用分頁 (tab) 來顯示每個檔案的差異。
     """
 
-    def __init__(self, parent=None):
+    def __init__(self, parent: QWidget | None = None) -> None:
         """
         Initialize the multi-file diff viewer.
         初始化多檔案差異檢視器。
@@ -24,7 +24,7 @@ class MultiFileDiffViewer(QWidget):
         layout = QVBoxLayout(self)
         layout.addWidget(self.tabs)
 
-    def set_diff_text(self, diff_text: str):
+    def set_diff_text(self, diff_text: str) -> None:
         """
         Set the diff text and split it into per-file tabs.
         設定差異文字，並依檔案拆分成多個分頁。
@@ -36,7 +36,7 @@ class MultiFileDiffViewer(QWidget):
             viewer.set_diff_text(ftext)
             self.tabs.addTab(viewer, file_name)  # 新增分頁，標題為檔名
 
-    def _split_by_file(self, diff_text: str):
+    def _split_by_file(self, diff_text: str) -> list[tuple[str, str]]:
         """
         Split a unified diff text into chunks per file.
         將 unified diff 文字依檔案切分。
@@ -67,7 +67,7 @@ class MultiFileDiffViewer(QWidget):
 
         return chunks
 
-    def set_dark_theme(self):
+    def set_dark_theme(self) -> None:
         """
         Apply dark theme to all tabs.
         對所有分頁套用深色主題。
@@ -77,7 +77,7 @@ class MultiFileDiffViewer(QWidget):
             if isinstance(w, SideBySideDiffWidget):
                 w.set_dark_theme()
 
-    def set_light_theme(self):
+    def set_light_theme(self) -> None:
         """
         Apply light theme to all tabs.
         對所有分頁套用淺色主題。

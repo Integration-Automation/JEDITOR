@@ -1,5 +1,5 @@
 from PySide6.QtGui import QStandardItemModel, QStandardItem
-from PySide6.QtWidgets import QTableView
+from PySide6.QtWidgets import QTableView, QWidget
 
 
 class CommitTable(QTableView):
@@ -8,7 +8,7 @@ class CommitTable(QTableView):
     CommitTable class: A table view to display Git commit history
     """
 
-    def __init__(self, parent=None):
+    def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
 
         # 建立一個 QStandardItemModel，初始為 0 行 5 欄
@@ -35,7 +35,7 @@ class CommitTable(QTableView):
         # Stretch the last column to fill available space
         self.horizontalHeader().setStretchLastSection(True)
 
-    def set_commits(self, commits):
+    def set_commits(self, commits: list[dict]) -> None:
         """
         將 commit 資料填入表格
         Populate the table with commit data

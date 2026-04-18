@@ -1,4 +1,5 @@
 import tokenize
+from typing import Any
 
 import pycodestyle
 
@@ -6,7 +7,7 @@ from je_editor.utils.logging.loggin_instance import jeditor_logger
 
 
 class PEP8FormatChecker(pycodestyle.Checker):
-    def __init__(self, filename: str, **kwargs):
+    def __init__(self, filename: str, **kwargs: Any) -> None:
         """
         自訂的 PEP8 格式檢查器，繼承自 pycodestyle.Checker。
         Custom PEP8 format checker, inherits from pycodestyle.Checker.
@@ -41,7 +42,7 @@ class PEP8FormatChecker(pycodestyle.Checker):
         # 儲存錯誤訊息的清單 / List to store error messages
         self.error_list: list = list()
 
-    def replace_report_error(self, line_number, offset, text, check):
+    def replace_report_error(self, line_number: int, offset: int, text: str, check: Any) -> None:
         """
         自訂錯誤回報方法，過濾掉特定錯誤 (例如 W191)。
         Custom error reporting method, filters out specific errors (e.g., W191).
@@ -55,7 +56,7 @@ class PEP8FormatChecker(pycodestyle.Checker):
         if not text.startswith("W191"):
             self.error_list.append(f"{text} on line: {line_number}, offset: {offset}")
 
-    def check_all_format(self, expected=None, line_offset=0) -> int:
+    def check_all_format(self, expected: Any = None, line_offset: int = 0) -> int:
         """
         執行所有格式檢查。
         Run all checks on the input file.

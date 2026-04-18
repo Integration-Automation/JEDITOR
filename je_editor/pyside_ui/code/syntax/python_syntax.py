@@ -10,7 +10,7 @@ if TYPE_CHECKING:
 
 from PySide6.QtCore import QRegularExpression
 from PySide6.QtGui import QSyntaxHighlighter
-from PySide6.QtGui import QTextCharFormat
+from PySide6.QtGui import QTextCharFormat, QTextDocument
 
 # 匯入語法設定，包括關鍵字、規則、擴展設定
 # Import syntax settings: keywords, rules, and extended settings
@@ -28,7 +28,7 @@ class PythonHighlighter(QSyntaxHighlighter):
     Python syntax highlighter class, inherits from QSyntaxHighlighter
     """
 
-    def __init__(self, parent=None, main_window: CodeEditor = None):
+    def __init__(self, parent: QTextDocument | None = None, main_window: CodeEditor = None) -> None:
         jeditor_logger.info(f"Init PythonHighlighter parent: {parent}")
         super().__init__(parent)
 
@@ -105,7 +105,7 @@ class PythonHighlighter(QSyntaxHighlighter):
                         pattern = QRegularExpression(rf"\b{word}\b")
                         self.highlight_rules.append((pattern, text_char_format))
 
-    def highlightBlock(self, text) -> None:
+    def highlightBlock(self, text: str) -> None:
         """
         對每一行文字進行語法高亮
         Apply syntax highlighting to each block of text

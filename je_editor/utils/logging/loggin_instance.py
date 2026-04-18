@@ -31,8 +31,8 @@ class JEditorLoggingHandler(RotatingFileHandler):
     # redirect logging stderr output to queue (註解說明，但目前未實作)
     # 註解提到要將 stderr 輸出導向 queue，但目前程式碼僅繼承 RotatingFileHandler
 
-    def __init__(self, filename: str = "JEditor.log", mode="w",
-                 max_bytes: int = 1073741824, backup_count: int = 0):
+    def __init__(self, filename: str = "JEditor.log", mode: str = "w",
+                 max_bytes: int = 1073741824, backup_count: int = 0) -> None:
         """
         :param filename: 日誌檔案名稱 / log file name
         :param mode: 檔案開啟模式 (預設 w 覆寫) / file open mode (default "w" overwrite)

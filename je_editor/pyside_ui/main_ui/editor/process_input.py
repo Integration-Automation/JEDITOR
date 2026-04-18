@@ -1,7 +1,7 @@
 from __future__ import annotations  # 允許未來版本的型別註解功能 / Enable postponed evaluation of type annotations
 
 from typing import \
-    TYPE_CHECKING  # 用於避免循環匯入，僅在型別檢查時載入 / Used to avoid circular imports, only loaded during type checking
+    IO, TYPE_CHECKING  # 用於避免循環匯入，僅在型別檢查時載入 / Used to avoid circular imports, only loaded during type checking
 
 from PySide6.QtCore import Qt  # Qt 核心模組 / Qt core module
 from PySide6.QtWidgets import QWidget, QLineEdit, QBoxLayout, QPushButton, QHBoxLayout
@@ -28,7 +28,7 @@ class ProcessInput(QWidget):
     ProcessInput is an input widget that allows users to send commands to different subprocesses.
     """
 
-    def __init__(self, main_window: EditorWidget, process_type: str = "debugger"):
+    def __init__(self, main_window: EditorWidget, process_type: str = "debugger") -> None:
         # 初始化時記錄日誌 / Log initialization
         jeditor_logger.info("Init ProcessInput "
                             f"main_window: {main_window} "
@@ -72,7 +72,7 @@ class ProcessInput(QWidget):
         # 設定主佈局 / Apply layout
         self.setLayout(self.box_layout)
 
-    def _safe_write_stdin(self, process_stdin):
+    def _safe_write_stdin(self, process_stdin: IO[bytes] | None) -> None:
         """
         安全地將輸入文字寫入子程序 stdin，處理管線斷開的情況
         Safely write input text to subprocess stdin, handling broken pipe
@@ -86,19 +86,19 @@ class ProcessInput(QWidget):
             jeditor_logger.warning(f"ProcessInput stdin write failed: {e}")
 
     # === Debugger 指令傳送 / Send command to debugger ===
-    def debugger_send_command(self):
+    def debugger_send_command(self) -> None:
         jeditor_logger.info("EditorWidget debugger_send_command")
         if self.main_window.exec_python_debugger is not None and self.main_window.exec_python_debugger.process is not None:
             self._safe_write_stdin(self.main_window.exec_python_debugger.process.stdin)
 
     # === Shell 指令傳送 / Send command to shell ===
-    def shell_send_command(self):
+    def shell_send_command(self) -> None:
         jeditor_logger.info("EditorWidget shell_send_command")
         if self.main_window.exec_shell is not None and self.main_window.exec_shell.process is not None:
             self._safe_write_stdin(self.main_window.exec_shell.process.stdin)
 
     # === Program 指令傳送 / Send command to program ===
-    def program_send_command(self):
+    def program_send_command(self) -> None:
         jeditor_logger.info("EditorWidget program_send_command")
         if self.main_window.exec_program is not None and self.main_window.exec_program.process is not None:
             self._safe_write_stdin(self.main_window.exec_program.process.stdin)

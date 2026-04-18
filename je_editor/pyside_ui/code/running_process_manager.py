@@ -19,13 +19,13 @@ class RunInstanceManager(object):
     Manager for ExecManager and ShellManager instances
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         # 初始化，建立一個空的實例清單
         # Initialize with an empty instance list
         jeditor_logger.info("Init RunInstanceManager")
         self.instance_list: List[Union[ExecManager, ShellManager]] = list()
 
-    def remove_instance(self, instance) -> None:
+    def remove_instance(self, instance: Union[ExecManager, ShellManager]) -> None:
         """
         從清單中移除已結束的實例
         Remove a finished instance from the list
@@ -35,7 +35,7 @@ class RunInstanceManager(object):
         except ValueError:
             pass
 
-    def close_all_instance(self):
+    def close_all_instance(self) -> None:
         """
         關閉所有執行中的實例，透過各自的 exit_program 正確清理 timer、thread 與 process
         Close all running instances via their own exit_program for proper cleanup

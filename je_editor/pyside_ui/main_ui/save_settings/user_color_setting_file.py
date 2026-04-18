@@ -21,7 +21,7 @@ def _to_qcolor(key: str, fallback: list) -> QColor:
     )
 
 
-def update_actually_color_dict():
+def update_actually_color_dict() -> None:
     """
     更新實際使用的顏色字典 (actually_color_dict)，
     將 user_setting_color_dict 中的 RGB 值轉換成 QColor 物件。

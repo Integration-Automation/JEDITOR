@@ -3,12 +3,13 @@ from __future__ import annotations
 from typing import Optional
 
 from PySide6.QtCore import Qt, QRectF, QPointF
-from PySide6.QtGui import QPainter, QPainterPath, QPen, QColor, QBrush, QTransform
+from PySide6.QtGui import QPainter, QPainterPath, QPen, QColor, QBrush, QResizeEvent, QTransform, QWheelEvent
 from PySide6.QtWidgets import (
     QGraphicsView,
     QGraphicsScene,
     QGraphicsEllipseItem,
     QGraphicsPathItem, QGraphicsSimpleTextItem,
+    QWidget,
 )
 
 from je_editor.git_client.commit_graph import CommitGraph
@@ -56,7 +57,7 @@ class CommitGraphView(QGraphicsView):
     Git commit graph visualization view
     """
 
-    def __init__(self, parent=None):
+    def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self.language_wrapper_get = language_wrapper.language_word_dict.get
 
@@ -80,7 +81,7 @@ class CommitGraphView(QGraphicsView):
         self._padding = 40
         self._zoom = 1.0
 
-    def set_graph(self, graph: CommitGraph):
+    def set_graph(self, graph: CommitGraph) -> None:
         """
         設定 commit graph 並重新繪製
         Set commit graph and redraw
@@ -96,7 +97,7 @@ class CommitGraphView(QGraphicsView):
         # 計算 row 的 Y 座標 / calculate Y position for row
         return row * ROW_HEIGHT + NODE_RADIUS * 2
 
-    def _redraw(self):
+    def _redraw(self) -> None:
         """
         重新繪製整個 commit graph
         Redraw the entire commit graph
@@ -161,7 +162,7 @@ class CommitGraphView(QGraphicsView):
                    self._row_y(len(self.graph.nodes)) + self._padding)
         )
 
-    def _apply_initial_view(self):
+    def _apply_initial_view(self) -> None:
         """
         初始縮放設定
         Apply initial zoom setting
@@ -170,7 +171,7 @@ class CommitGraphView(QGraphicsView):
         self._apply_zoom_transform()
 
     # === 滑鼠滾輪縮放 / Mouse wheel zoom ===
-    def wheelEvent(self, event):
+    def wheelEvent(self, event: QWheelEvent) -> None:
         if not self._scene.items():
             return
 
@@ -185,7 +186,7 @@ class CommitGraphView(QGraphicsView):
         else:
             super().wheelEvent(event)
 
-    def _apply_zoom_transform(self):
+    def _apply_zoom_transform(self) -> None:
         """
         套用縮放轉換
         Apply zoom transform
@@ -194,7 +195,7 @@ class CommitGraphView(QGraphicsView):
         t.scale(self._zoom, self._zoom)
         self.setTransform(t)
 
-    def resizeEvent(self, event):
+    def resizeEvent(self, event: QResizeEvent) -> None:
         """
         視窗大小改變時的事件
         Handle resize event (keep scene rect, no auto-fit)
@@ -204,7 +205,7 @@ class CommitGraphView(QGraphicsView):
         # Keep scene rect; do not auto-fit
 
     # === 外部控制輔助方法 / Helper for external controllers ===
-    def focus_row(self, row: int):
+    def focus_row(self, row: int) -> None:
         """
         將檢視器聚焦到指定的 row
         Center the view around a specific row

@@ -10,7 +10,7 @@ class RuffThread(threading.Thread):
     使用子執行緒執行 Ruff (Python 程式碼檢查/格式化工具)。
     """
 
-    def __init__(self, ruff_commands: list, std_queue: Queue, stderr_queue: Queue):
+    def __init__(self, ruff_commands: list, std_queue: Queue, stderr_queue: Queue) -> None:
         """
         Initialize the RuffThread.
         初始化 RuffThread。
@@ -32,7 +32,7 @@ class RuffThread(threading.Thread):
         self.std_queue = std_queue
         self.stderr_queue = stderr_queue
 
-    def run(self):
+    def run(self) -> None:
         """
         Run the Ruff process in a separate thread.
         在子執行緒中執行 Ruff 程式。
