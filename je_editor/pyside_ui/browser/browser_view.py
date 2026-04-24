@@ -38,10 +38,10 @@ class BrowserView(QWebEngineView):
         self.setUrl(start_url)
 
         # 儲存下載請求的清單
-        self.download_list: List[QWebEngineDownloadRequest] = list()
+        self.download_list: List[QWebEngineDownloadRequest] = []
 
         # 儲存下載視窗的清單
-        self.download_window_list: List[BrowserDownloadWindow] = list()
+        self.download_window_list: List[BrowserDownloadWindow] = []
 
         # 綁定下載事件：當有下載請求時觸發 download_file
         self.page().profile().downloadRequested.connect(self.download_file)

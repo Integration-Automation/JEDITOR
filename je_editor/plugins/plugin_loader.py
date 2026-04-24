@@ -21,6 +21,7 @@ import importlib.util
 import sys
 import traceback
 from pathlib import Path
+from typing import Any
 
 from je_editor.utils.logging.loggin_instance import jeditor_logger
 
@@ -84,25 +85,64 @@ def _collect_plugin_entries(directory: Path, entries: list[tuple[str, Path]]) ->
                 _collect_plugin_entries(item, entries)
 
 
+def _dedup_plugin_entries(dirs_to_scan: list[Path]) -> list[tuple[str, Path]]:
+    """掃描所有插件目錄並回傳去重後的 (name, path) / Scan and dedupe plugin entries."""
+    plugin_entries: list[tuple[str, Path]] = []
+    seen_names: set[str] = set()
+    for scan_dir in dirs_to_scan:
+        jeditor_logger.info(f"Loading external plugins from: {scan_dir}")
+        entries: list[tuple[str, Path]] = []
+        _collect_plugin_entries(scan_dir, entries)
+        for name, path in entries:
+            if name not in seen_names:
+                plugin_entries.append((name, path))
+                seen_names.add(name)
+    return plugin_entries
+
+
+def _register_plugin_module(plugin_name: str, module: Any) -> bool:
+    """收集 metadata 並呼叫 register()，回傳是否成功 / Register metadata and call register()."""
+    from je_editor.plugins import register_plugin_metadata, register_plugin_run_config
+    metadata = {
+        "name": getattr(module, "PLUGIN_NAME", plugin_name),
+        "author": getattr(module, "PLUGIN_AUTHOR", ""),
+        "version": getattr(module, "PLUGIN_VERSION", ""),
+        "run_config": getattr(module, "PLUGIN_RUN_CONFIG", None),
+    }
+    register_plugin_metadata(metadata)
+    if hasattr(module, "PLUGIN_RUN_CONFIG"):
+        register_plugin_run_config(module.PLUGIN_RUN_CONFIG)
+    if hasattr(module, "register"):
+        module.register()
+        jeditor_logger.info(f"Plugin loaded successfully: {plugin_name}")
+        return True
+    jeditor_logger.warning(f"Plugin '{plugin_name}' has no register() function, skipped")
+    return False
+
+
+def _load_single_plugin(plugin_name: str, plugin_path: Path) -> bool:
+    """載入單一插件並回傳是否成功 / Load a single plugin and return success."""
+    jeditor_logger.info(f"Loading plugin: {plugin_name} from {plugin_path}")
+    spec = importlib.util.spec_from_file_location(
+        f"jeditor_plugin_{plugin_name}", str(plugin_path)
+    )
+    if spec is None or spec.loader is None:
+        jeditor_logger.warning(
+            f"Plugin '{plugin_name}' cannot be loaded from {plugin_path}, skipped")
+        return False
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = module
+    spec.loader.exec_module(module)
+    return _register_plugin_module(plugin_name, module)
+
+
 def load_external_plugins(plugins_dir: Path | str | None = None) -> list[str]:
-    """
-    從 jeditor_plugins/ 目錄載入所有外部插件。
-    Load all external plugins from jeditor_plugins/ directory.
-
-    每個插件（.py 檔案或含 __init__.py 的資料夾）都需提供 register() 函式。
-    Each plugin (.py file or folder with __init__.py) must provide a register() function.
-
-    :param plugins_dir: 插件目錄路徑（預設為專案根目錄下的 jeditor_plugins/）
-                        Plugin directory path (defaults to jeditor_plugins/ under project root)
-    :return: 成功載入的插件名稱列表 / List of successfully loaded plugin names
-    """
+    """從 jeditor_plugins/ 目錄載入所有外部插件 / Load all external plugins."""
     global _plugins_loaded
     if _plugins_loaded and plugins_dir is None:
         return []
 
-    loaded = []
-
-    # 決定要掃描的目錄 / Determine directories to scan
+    loaded: list[str] = []
     if plugins_dir is not None:
         dirs_to_scan = [Path(plugins_dir)]
     else:
@@ -113,63 +153,11 @@ def load_external_plugins(plugins_dir: Path | str | None = None) -> list[str]:
         jeditor_logger.info("No plugin directories found, skipping external plugins")
         return loaded
 
-    # 從所有目錄收集插件入口（遞迴掃描子目錄）
-    # Collect plugin entries from all directories (recursively scan subdirectories)
-    plugin_entries = []
-    seen_names: set[str] = set()
-    for scan_dir in dirs_to_scan:
-        jeditor_logger.info(f"Loading external plugins from: {scan_dir}")
-        entries: list[tuple[str, Path]] = []
-        _collect_plugin_entries(scan_dir, entries)
-        for name, path in entries:
-            # 同名插件只載入第一個（工作目錄優先）
-            # Skip duplicate plugin names (working directory takes priority)
-            if name not in seen_names:
-                plugin_entries.append((name, path))
-                seen_names.add(name)
-
-    # 載入並註冊 / Load and register
-    for plugin_name, plugin_path in plugin_entries:
+    for plugin_name, plugin_path in _dedup_plugin_entries(dirs_to_scan):
         try:
-            jeditor_logger.info(f"Loading plugin: {plugin_name} from {plugin_path}")
-
-            spec = importlib.util.spec_from_file_location(
-                f"jeditor_plugin_{plugin_name}", str(plugin_path)
-            )
-            if spec is None or spec.loader is None:
-                jeditor_logger.warning(
-                    f"Plugin '{plugin_name}' cannot be loaded from {plugin_path}, skipped"
-                )
-                continue
-            module = importlib.util.module_from_spec(spec)
-            sys.modules[spec.name] = module
-            spec.loader.exec_module(module)
-
-            # 收集插件元資料 / Collect plugin metadata
-            from je_editor.plugins import register_plugin_metadata, register_plugin_run_config
-            metadata = {
-                "name": getattr(module, "PLUGIN_NAME", plugin_name),
-                "author": getattr(module, "PLUGIN_AUTHOR", ""),
-                "version": getattr(module, "PLUGIN_VERSION", ""),
-                "run_config": getattr(module, "PLUGIN_RUN_CONFIG", None),
-            }
-            register_plugin_metadata(metadata)
-
-            # 註冊執行設定 / Register run config
-            if hasattr(module, "PLUGIN_RUN_CONFIG"):
-                register_plugin_run_config(module.PLUGIN_RUN_CONFIG)
-
-            # 呼叫 register() 函式 / Call register() function
-            if hasattr(module, "register"):
-                module.register()
+            if _load_single_plugin(plugin_name, plugin_path):
                 loaded.append(plugin_name)
-                jeditor_logger.info(f"Plugin loaded successfully: {plugin_name}")
-            else:
-                jeditor_logger.warning(
-                    f"Plugin '{plugin_name}' has no register() function, skipped"
-                )
-
-        except Exception as e:
+        except (ImportError, SyntaxError, OSError, AttributeError) as e:
             jeditor_logger.error(f"Failed to load plugin '{plugin_name}': {e}")
             jeditor_logger.error(traceback.format_exc())
 

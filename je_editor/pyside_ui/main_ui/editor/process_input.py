@@ -82,7 +82,7 @@ class ProcessInput(QWidget):
         try:
             process_stdin.write(self.command_input.text().encode() + b"\n")
             process_stdin.flush()
-        except (BrokenPipeError, OSError) as e:
+        except OSError as e:
             jeditor_logger.warning(f"ProcessInput stdin write failed: {e}")
 
     # === Debugger 指令傳送 / Send command to debugger ===

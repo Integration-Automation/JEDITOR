@@ -15,11 +15,11 @@ from je_editor.pyside_ui.code.auto_save.auto_save_thread import CodeEditSaveThre
 
 # 管理每個檔案對應的自動儲存執行緒
 # Manage auto-save threads for each file
-auto_save_manager_dict: dict = dict()
+auto_save_manager_dict: dict = {}
 
 # 管理檔案是否已經開啟
 # Track whether a file is currently open
-file_is_open_manager_dict: dict = dict()
+file_is_open_manager_dict: dict = {}
 
 
 def init_new_auto_save_thread(file_path: str, widget: EditorWidget) -> None:

@@ -3,7 +3,7 @@ import pathlib
 import queue
 import sys
 from pathlib import Path
-from typing import Dict, Type
+from typing import Any, Dict, Type
 
 # 匯入 Jedi 設定，用於 Python 自動補全與分析
 # Import Jedi settings for Python auto-completion and analysis
@@ -245,122 +245,110 @@ class EditorMain(QMainWindow, QtStyleTools):
         if isinstance(widget, EditorWidget):
             widget.code_result.clear()
 
+    def _first_editor_widget(self) -> EditorWidget | None:
+        """取得第一個 EditorWidget 分頁 / Return the first EditorWidget tab (if any)."""
+        for i in range(self.tab_widget.count()):
+            w = self.tab_widget.widget(i)
+            if isinstance(w, EditorWidget):
+                return w
+        return None
+
+    @staticmethod
+    def _drain_queue(q: "queue.Queue") -> list[str]:
+        """將佇列中的非空字串全部取出 / Drain non-empty strings from a queue."""
+        parts: list[str] = []
+        try:
+            while not q.empty():
+                msg = str(q.get_nowait()).strip()
+                if msg:
+                    parts.append(msg)
+        except queue.Empty:
+            pass
+        return parts
+
+    @staticmethod
+    def _append_coloured_output(text_cursor: Any, parts: list[str], color_key: str) -> None:
+        """將訊息加上顏色後寫入文字游標 / Write messages with the configured colour."""
+        if not parts:
+            return
+        text_format = QTextCharFormat()
+        text_format.setForeground(actually_color_dict.get(color_key))
+        text_cursor.insertText("\n".join(parts), text_format)
+        text_cursor.insertBlock()
+
     def redirect(self) -> None:
-        """
-        將 stdout/stderr 的訊息導入到編輯器的輸出區域
-        Redirect stdout/stderr messages into the editor's output area
-        """
-        # 快速退出：佇列為空時不做任何事 / Early return if queues are empty
+        """將 stdout/stderr 的訊息導入到編輯器的輸出區域 / Redirect stdout/stderr to the output area."""
         has_stdout = not redirect_manager_instance.std_out_queue.empty()
         has_stderr = not redirect_manager_instance.std_err_queue.empty()
         if not has_stdout and not has_stderr:
             return
 
-        # 直接取得當前活躍的 widget / Get current active widget directly
         widget = self.tab_widget.currentWidget()
         if not isinstance(widget, EditorWidget):
-            # 如果當前不是 EditorWidget，找第一個 / Fallback to first EditorWidget
-            for i in range(self.tab_widget.count()):
-                w = self.tab_widget.widget(i)
-                if isinstance(w, EditorWidget):
-                    widget = w
-                    break
-            else:
+            widget = self._first_editor_widget()
+            if widget is None:
                 return
 
         text_cursor = widget.code_result.textCursor()
-
-        # 批次處理 stdout / Batch-drain stdout
         if has_stdout:
-            stdout_parts = []
-            try:
-                while not redirect_manager_instance.std_out_queue.empty():
-                    msg = str(redirect_manager_instance.std_out_queue.get_nowait()).strip()
-                    if msg:
-                        stdout_parts.append(msg)
-            except queue.Empty:
-                pass
-            if stdout_parts:
-                text_format = QTextCharFormat()
-                text_format.setForeground(actually_color_dict.get("normal_output_color"))
-                text_cursor.insertText("\n".join(stdout_parts), text_format)
-                text_cursor.insertBlock()
-
-        # 批次處理 stderr / Batch-drain stderr
+            self._append_coloured_output(
+                text_cursor, self._drain_queue(redirect_manager_instance.std_out_queue),
+                "normal_output_color")
         if has_stderr:
-            stderr_parts = []
-            try:
-                while not redirect_manager_instance.std_err_queue.empty():
-                    msg = str(redirect_manager_instance.std_err_queue.get_nowait()).strip()
-                    if msg:
-                        stderr_parts.append(msg)
-            except queue.Empty:
-                pass
-            if stderr_parts:
-                text_format = QTextCharFormat()
-                text_format.setForeground(actually_color_dict.get("error_output_color"))
-                text_cursor.insertText("\n".join(stderr_parts), text_format)
-                text_cursor.insertBlock()
+            self._append_coloured_output(
+                text_cursor, self._drain_queue(redirect_manager_instance.std_err_queue),
+                "error_output_color")
+
+    @staticmethod
+    def _apply_editor_fonts(widget: EditorWidget) -> None:
+        """對單一 EditorWidget 套用程式/輸出區字型 / Apply font styles on an editor widget."""
+        style = (
+            f"font-size: {user_setting_dict.get('font_size', 12)}pt;"
+            f"font-family: {user_setting_dict.get('font', 'Lato')};"
+        )
+        widget.code_edit.setStyleSheet(style)
+        widget.code_result.setStyleSheet(style)
+
+    def _try_restore_last_file(self, widget: EditorWidget) -> bool:
+        """嘗試載入上次開啟的檔案；若成功則回傳 True / Restore last opened file into the widget."""
+        last_file = user_setting_dict.get("last_file", None)
+        if last_file is None:
+            return False
+        last_file_path = pathlib.Path(last_file)
+        if not (last_file_path.is_file() and last_file_path.exists() and widget.code_save_thread is None):
+            return False
+        init_new_auto_save_thread(str(last_file_path), widget)
+        result = read_file(widget.current_file)
+        if result is None:
+            return False
+        widget.code_edit.setPlainText(result[1])
+        widget.code_edit.current_file = widget.current_file
+        widget.code_edit.reset_highlighter()
+        file_is_open_manager_dict.update({str(last_file_path): str(last_file_path)})
+        widget.rename_self_tab()
+        return True
 
     def startup_setting(self) -> None:
-        """
-        啟動時套用使用者設定 (字型、樣式、上次開啟的檔案)
-        Apply user settings on startup (fonts, styles, last opened file)
-        """
+        """啟動時套用使用者設定 / Apply user settings on startup."""
         jeditor_logger.info("EditorMain startup_setting")
-        # 設定 UI 字型與大小
-        # Set UI font and size
         self.setStyleSheet(
             f"font-size: {user_setting_dict.get('ui_font_size', 12)}pt;"
             f"font-family: {user_setting_dict.get('ui_font', 'Lato')};"
         )
 
-        # 套用到每個編輯器分頁
-        # Apply settings to each editor tab
         last_file_loaded = False
         for code_editor_count in range(self.tab_widget.count()):
             widget = self.tab_widget.widget(code_editor_count)
-            if isinstance(widget, EditorWidget):
-                # 編輯區字型
-                # Font for code editor
-                widget.code_edit.setStyleSheet(
-                    f"font-size: {user_setting_dict.get('font_size', 12)}pt;"
-                    f"font-family: {user_setting_dict.get('font', 'Lato')};"
-                )
-                # 輸出區字型
-                # Font for output area
-                widget.code_result.setStyleSheet(
-                    f"font-size: {user_setting_dict.get('font_size', 12)}pt;"
-                    f"font-family: {user_setting_dict.get('font', 'Lato')};"
-                )
-                # 預設 Python 編譯器
-                # Default Python compiler
-                self.python_compiler = user_setting_dict.get("python_compiler", None)
+            if not isinstance(widget, EditorWidget):
+                continue
+            self._apply_editor_fonts(widget)
+            self.python_compiler = user_setting_dict.get("python_compiler", None)
+            if not last_file_loaded:
+                last_file_loaded = self._try_restore_last_file(widget)
 
-                # 只在第一個 EditorWidget 開啟上次編輯的檔案
-                # Only open last file in the first EditorWidget
-                if not last_file_loaded:
-                    last_file = user_setting_dict.get("last_file", None)
-                    if last_file is not None:
-                        last_file_path = pathlib.Path(last_file)
-                        if last_file_path.is_file() and last_file_path.exists() and widget.code_save_thread is None:
-                            init_new_auto_save_thread(str(last_file_path), widget)
-                            result = read_file(widget.current_file)
-                            if result is not None:
-                                widget.code_edit.setPlainText(result[1])
-                                widget.code_edit.current_file = widget.current_file
-                                widget.code_edit.reset_highlighter()
-                                file_is_open_manager_dict.update({str(last_file_path): str(last_file_path)})
-                                widget.rename_self_tab()
-                                last_file_loaded = True
-
-        # 套用 UI 樣式 (主題)
-        # Apply UI stylesheet (theme)
         app = QApplication.instance()
         if app is not None:
             self.apply_stylesheet(app, user_setting_dict.get("ui_style", "dark_amber.xml"))
-        # 更新顏色設定
-        # Update color settings
         update_actually_color_dict()
 
     def go_to_new_tab(self, file_path: Path) -> None:

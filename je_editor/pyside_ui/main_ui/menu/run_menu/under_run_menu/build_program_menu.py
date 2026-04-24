@@ -68,41 +68,34 @@ def set_program_menu(ui_we_want_to_set: EditorMain) -> None:
 
 # 執行程式
 # Run program
+def _execute_program(widget: EditorWidget, ui_we_want_to_set: EditorMain) -> None:
+    """實際執行使用者程式 (解析 plugin 設定並委派 ExecManager) / Resolve plugin config and run."""
+    from pathlib import Path
+    from je_editor.plugins import get_plugin_run_config_by_suffix
+    file_suffix = Path(widget.current_file).suffix if widget.current_file else ""
+    plugin_config = get_plugin_run_config_by_suffix(file_suffix)
+
+    code_exec = ExecManager(widget, program_encoding=ui_we_want_to_set.encoding)
+    code_exec.later_init()
+    if plugin_config is not None:
+        code_exec.exec_with_plugin_config(widget.current_file, plugin_config)
+    else:
+        code_exec.exec_code(widget.current_file)
+    widget.exec_program = code_exec
+
+
 def run_program(ui_we_want_to_set: EditorMain) -> None:
     jeditor_logger.info(f"build_program_menu.py run_program ui_we_want_to_set: {ui_we_want_to_set}")
     widget = ui_we_want_to_set.tab_widget.currentWidget()
-    if isinstance(widget, EditorWidget):
-        # 確保沒有正在執行的程式
-        # Ensure no program is already running
-        if widget.exec_program is None:
-            widget.python_compiler = ui_we_want_to_set.python_compiler
-            # 要求使用者選擇儲存檔案路徑
-            # Ask user to choose save file path
-            if choose_file_get_save_file_path(ui_we_want_to_set):
-                # 檢查是否有對應的插件執行設定
-                # Check if there's a matching plugin run config for the file suffix
-                from pathlib import Path
-                from je_editor.plugins import get_plugin_run_config_by_suffix
-                file_suffix = Path(widget.current_file).suffix if widget.current_file else ""
-                plugin_config = get_plugin_run_config_by_suffix(file_suffix)
-
-                # 建立程式執行管理器並執行程式
-                # Create ExecManager and run program
-                code_exec = ExecManager(widget, program_encoding=ui_we_want_to_set.encoding)
-                code_exec.later_init()
-
-                if plugin_config is not None:
-                    # 使用插件執行設定 / Use plugin run config
-                    code_exec.exec_with_plugin_config(widget.current_file, plugin_config)
-                else:
-                    # 預設 Python 執行 / Default Python execution
-                    code_exec.exec_code(widget.current_file)
-
-                widget.exec_program = code_exec
-        else:
-            # 如果已有程式在執行，顯示提示訊息
-            # If a program is already running, show message
-            please_close_current_running_messagebox(ui_we_want_to_set)
+    if not isinstance(widget, EditorWidget):
+        return
+    if widget.exec_program is not None:
+        please_close_current_running_messagebox(ui_we_want_to_set)
+        return
+    widget.python_compiler = ui_we_want_to_set.python_compiler
+    if not choose_file_get_save_file_path(ui_we_want_to_set):
+        return
+    _execute_program(widget, ui_we_want_to_set)
 
 
 # 顯示程式輸入介面

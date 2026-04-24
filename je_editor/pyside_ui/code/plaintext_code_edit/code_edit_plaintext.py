@@ -493,49 +493,54 @@ class CodeEditor(QPlainTextEdit):
         cursor.insertText("\n" + line_text)
         self.setTextCursor(cursor)
 
-    def toggle_comment(self) -> None:
-        """
-        切換註解 (Ctrl+/)
-        Toggle comment for current line or selected lines
-        """
-        cursor = self.textCursor()
-        cursor.beginEditBlock()
-
+    def _toggle_comment_block_range(self, cursor: QTextCursor) -> tuple[int, int]:
+        """取得要切換註解的 block 區間 / Get block range to toggle comment."""
         if cursor.hasSelection():
-            start = cursor.selectionStart()
-            end = cursor.selectionEnd()
+            start, end = cursor.selectionStart(), cursor.selectionEnd()
             cursor.setPosition(start)
             start_block = cursor.blockNumber()
             cursor.setPosition(end)
             end_block = cursor.blockNumber()
         else:
             start_block = end_block = cursor.blockNumber()
+        return start_block, end_block
 
-        # 判斷是要加註解還是取消註解 / Decide: add or remove comment
-        all_commented = True
+    def _all_blocks_commented(self, cursor: QTextCursor, start_block: int, end_block: int) -> bool:
+        """判斷範圍內所有行是否都以 # 開頭 / Check if every block starts with '#'."""
         cursor.setPosition(self.document().findBlockByNumber(start_block).position())
         for _ in range(end_block - start_block + 1):
             if not cursor.block().text().lstrip().startswith("#"):
-                all_commented = False
-                break
+                return False
             cursor.movePosition(QTextCursor.MoveOperation.NextBlock)
+        return True
+
+    def _uncomment_current_block(self, cursor: QTextCursor) -> None:
+        """移除當前行的 # 與後續一個空格 / Remove '#' and following single space."""
+        line = cursor.block().text()
+        idx = line.index("#") if "#" in line else -1
+        if idx < 0:
+            return
+        cursor.movePosition(QTextCursor.MoveOperation.StartOfBlock)
+        for _ in range(idx):
+            cursor.movePosition(QTextCursor.MoveOperation.Right)
+        cursor.deleteChar()
+        new_line = cursor.block().text()
+        if len(new_line) > idx and new_line[idx] == " ":
+            cursor.deleteChar()
+
+    def toggle_comment(self) -> None:
+        """切換註解 (Ctrl+/) / Toggle comment for current line or selected lines."""
+        cursor = self.textCursor()
+        cursor.beginEditBlock()
+        start_block, end_block = self._toggle_comment_block_range(cursor)
+        all_commented = self._all_blocks_commented(cursor, start_block, end_block)
 
         cursor.setPosition(self.document().findBlockByNumber(start_block).position())
         for _ in range(end_block - start_block + 1):
             cursor.movePosition(QTextCursor.MoveOperation.StartOfBlock)
             if all_commented:
-                # 取消註解 / Remove comment
-                line = cursor.block().text()
-                idx = line.index("#") if "#" in line else -1
-                if idx >= 0:
-                    cursor.movePosition(QTextCursor.MoveOperation.StartOfBlock)
-                    for _ in range(idx):
-                        cursor.movePosition(QTextCursor.MoveOperation.Right)
-                    cursor.deleteChar()  # 刪除 #
-                    if cursor.block().text() and len(cursor.block().text()) > idx and cursor.block().text()[idx] == " ":
-                        cursor.deleteChar()  # 刪除 # 後的空格
+                self._uncomment_current_block(cursor)
             else:
-                # 加上註解 / Add comment
                 cursor.insertText("# ")
             cursor.movePosition(QTextCursor.MoveOperation.NextBlock)
         cursor.endEditBlock()
@@ -622,15 +627,31 @@ class CodeEditor(QPlainTextEdit):
         Qt.Key.Key_Apostrophe: ("'", "'"),
     }
 
+    @staticmethod
+    def _leading_space_count(text: str, limit: int = 4) -> int:
+        """回傳開頭最多 limit 個的空白字元數 / Count leading spaces up to `limit`."""
+        spaces = 0
+        for ch in text:
+            if ch == " " and spaces < limit:
+                spaces += 1
+            else:
+                break
+        return spaces
+
+    def _unindent_current_block(self, cursor: QTextCursor) -> None:
+        """移除當前行開頭最多 4 個空白 / Remove up to 4 leading spaces on the current line."""
+        spaces = self._leading_space_count(cursor.block().text(), limit=4)
+        if spaces == 0:
+            return
+        cursor.movePosition(QTextCursor.MoveOperation.StartOfBlock)
+        for _ in range(spaces):
+            cursor.deleteChar()
+
     def _indent_selection(self, indent: bool = True) -> None:
-        """
-        對選取的多行進行縮排或取消縮排
-        Indent or unindent selected lines
-        """
+        """對選取的多行進行縮排或取消縮排 / Indent or unindent selected lines."""
         cursor = self.textCursor()
         cursor.beginEditBlock()
-        start = cursor.selectionStart()
-        end = cursor.selectionEnd()
+        start, end = cursor.selectionStart(), cursor.selectionEnd()
 
         cursor.setPosition(start)
         start_block = cursor.blockNumber()
@@ -643,165 +664,156 @@ class CodeEditor(QPlainTextEdit):
             if indent:
                 cursor.insertText("    ")
             else:
-                # 取消縮排：移除開頭最多 4 個空白
-                # Unindent: remove up to 4 leading spaces
-                line_text = cursor.block().text()
-                spaces = 0
-                for ch in line_text:
-                    if ch == " " and spaces < 4:
-                        spaces += 1
-                    else:
-                        break
-                if spaces > 0:
-                    cursor.movePosition(QTextCursor.MoveOperation.StartOfBlock)
-                    for _ in range(spaces):
-                        cursor.deleteChar()
+                self._unindent_current_block(cursor)
             cursor.movePosition(QTextCursor.MoveOperation.NextBlock)
         cursor.endEditBlock()
 
-    def keyPressEvent(self, event: QKeyEvent) -> None:
-        """
-        鍵盤事件處理
-        Handle key press events
-        - Ctrl+B: 使用 Jedi 跳轉定義
-        - Tab/Shift+Tab: 區塊縮排/取消縮排
-        - Shift+Enter: 忽略軟換行
-        - 自動關閉括號
-        - 其他情況觸發自動補全
-        """
+    def _handle_ctrl_shortcuts(self, event: QKeyEvent) -> bool:
+        """處理 Ctrl 組合鍵 / Handle Ctrl shortcuts; return True if consumed."""
         key = event.key()
+        modifiers = event.modifiers()
+        if key == Qt.Key.Key_D:
+            self.duplicate_line()
+            return True
+        if key == Qt.Key.Key_Slash:
+            self.toggle_comment()
+            return True
+        if key == Qt.Key.Key_Backslash and modifiers & Qt.KeyboardModifier.ShiftModifier:
+            self.jump_to_matching_bracket()
+            return True
+        if key in (Qt.Key.Key_Plus, Qt.Key.Key_Equal):
+            self._zoom_in()
+            return True
+        if key == Qt.Key.Key_Minus:
+            self._zoom_out()
+            return True
+        if key == Qt.Key.Key_B:
+            self._jump_to_definition()
+            return True
+        return False
 
-        # Ctrl 組合鍵 / Ctrl shortcuts
-        if event.modifiers() & Qt.KeyboardModifier.ControlModifier:
-            # Ctrl+D → 複製行 / Duplicate line
-            if key == Qt.Key.Key_D:
-                self.duplicate_line()
-                return
-            # Ctrl+/ → 切換註解 / Toggle comment
-            if key == Qt.Key.Key_Slash:
-                self.toggle_comment()
-                return
-            # Ctrl+Shift+\ → 跳到匹配括號 / Jump to matching bracket
-            if key == Qt.Key.Key_Backslash and event.modifiers() & Qt.KeyboardModifier.ShiftModifier:
-                self.jump_to_matching_bracket()
-                return
-            # Ctrl+Plus/Minus → 縮放 / Zoom
-            if key == Qt.Key.Key_Plus or key == Qt.Key.Key_Equal:
-                self._zoom_in()
-                return
-            if key == Qt.Key.Key_Minus:
-                self._zoom_out()
-                return
+    def _handle_alt_shortcuts(self, event: QKeyEvent) -> bool:
+        """處理 Alt 組合鍵 / Handle Alt shortcuts; return True if consumed."""
+        key = event.key()
+        if key == Qt.Key.Key_Up:
+            self.move_line(-1)
+            return True
+        if key == Qt.Key.Key_Down:
+            self.move_line(1)
+            return True
+        return False
 
-        # Alt+Up/Down → 移動行 / Move line up/down
-        if event.modifiers() & Qt.KeyboardModifier.AltModifier:
-            if key == Qt.Key.Key_Up:
-                self.move_line(-1)
-                return
-            if key == Qt.Key.Key_Down:
-                self.move_line(1)
-                return
+    def _jump_to_definition(self) -> None:
+        """使用 Jedi 跳轉到符號定義 / Use Jedi to jump to symbol definition."""
+        if self.env is not None:
+            script = jedi.Script(code=self.toPlainText(), environment=self.env)
+        else:
+            script = jedi.Script(code=self.toPlainText())
+        goto_list: List[jedi.api.classes.Name] = script.goto(
+            self.textCursor().blockNumber() + 1, self.textCursor().positionInBlock())
+        if not goto_list:
+            return
+        path = goto_list[0].module_path
+        if path is not None and path.exists():
+            if self.main_window.current_file != str(path):
+                self.main_window.main_window.go_to_new_tab(path)
+            return
+        target_line = goto_list[0].line - 1
+        cursor = self.textCursor()
+        block = self.document().findBlockByNumber(target_line)
+        if block.isValid():
+            cursor.setPosition(block.position())
+            self.setTextCursor(cursor)
 
-        # Ctrl + B → 跳轉到定義
-        if event.modifiers() & Qt.KeyboardModifier.ControlModifier:
-            if key == Qt.Key.Key_B:
-                if self.env is not None:
-                    script = jedi.Script(code=self.toPlainText(), environment=self.env)
-                else:
-                    script = jedi.Script(code=self.toPlainText())
-                goto_list: List[jedi.api.classes.Name] = script.goto(
-                    self.textCursor().blockNumber() + 1, self.textCursor().positionInBlock())
-                if len(goto_list) > 0:
-                    path = goto_list[0].module_path
-                    if path is not None and path.exists():
-                        if self.main_window.current_file != str(path):
-                            self.main_window.main_window.go_to_new_tab(path)
-                    else:
-                        # Navigate to the target line using block-based cursor movement
-                        target_line = goto_list[0].line - 1
-                        cursor = self.textCursor()
-                        block = self.document().findBlockByNumber(target_line)
-                        if block.isValid():
-                            cursor.setPosition(block.position())
-                            self.setTextCursor(cursor)
-                return
-
-        # Tab / Shift+Tab 區塊縮排 / Block indent/unindent
+    def _handle_tab_indent(self, event: QKeyEvent) -> bool:
+        """處理 Tab/Shift+Tab 區塊縮排 / Handle block indent; return True if consumed."""
+        key = event.key()
         if key == Qt.Key.Key_Tab and self.textCursor().hasSelection():
             self._indent_selection(indent=True)
-            return
+            return True
         if key == Qt.Key.Key_Backtab:
             if self.textCursor().hasSelection():
                 self._indent_selection(indent=False)
+            return True
+        return False
+
+    def _handle_enter_autoindent(self, event: QKeyEvent) -> None:
+        """Enter 自動縮排 / Auto-indent on Enter."""
+        cursor = self.textCursor()
+        line = cursor.block().text()
+        indent = ""
+        for ch in line:
+            if ch in (" ", "\t"):
+                indent += ch
+            else:
+                break
+        if line.rstrip().endswith(":"):
+            indent += "    "
+        super().keyPressEvent(event)
+        if indent:
+            self.textCursor().insertText(indent)
+        self.highlight_current_line()
+
+    def _handle_bracket_autoclose(self, event: QKeyEvent) -> None:
+        """自動關閉括號 / Auto-close brackets."""
+        key = event.key()
+        open_char, close_char = self._BRACKET_PAIRS[key]
+        cursor = self.textCursor()
+        if open_char == close_char:
+            pos = cursor.positionInBlock()
+            line = cursor.block().text()
+            if pos > 0 and line[pos - 1] == open_char:
+                super().keyPressEvent(event)
+                self.highlight_current_line()
+                return
+        if cursor.hasSelection():
+            selected = cursor.selectedText()
+            cursor.insertText(open_char + selected + close_char)
+            self.setTextCursor(cursor)
+        else:
+            super().keyPressEvent(event)
+            cursor = self.textCursor()
+            cursor.insertText(close_char)
+            cursor.movePosition(QTextCursor.MoveOperation.Left)
+            self.setTextCursor(cursor)
+        self.highlight_current_line()
+
+    def keyPressEvent(self, event: QKeyEvent) -> None:
+        """鍵盤事件處理 / Handle key press events (dispatches to helpers)."""
+        key = event.key()
+        modifiers = event.modifiers()
+
+        if modifiers & Qt.KeyboardModifier.ControlModifier and self._handle_ctrl_shortcuts(event):
             return
 
-        # 如果補全視窗開啟，且按下不該觸發的按鍵 → 關閉補全
+        if modifiers & Qt.KeyboardModifier.AltModifier and self._handle_alt_shortcuts(event):
+            return
+
+        if self._handle_tab_indent(event):
+            return
+
+        # 補全視窗開啟時，攔截不該觸發的按鍵 / Intercept keys that should close completion popup
         if self.completer.popup().isVisible() and key in self.skip_popup_behavior_list:
             self.completer.popup().close()
             event.ignore()
             return
 
         # Shift+Enter → 忽略 (避免軟換行影響行號)
-        if event.modifiers() & Qt.KeyboardModifier.ShiftModifier:
-            if key == Qt.Key.Key_Enter or key == Qt.Key.Key_Return:
-                event.ignore()
-                return
-
-        # Enter → 自動縮排 / Auto-indent on Enter
-        if key in (Qt.Key.Key_Enter, Qt.Key.Key_Return) and not event.modifiers():
-            cursor = self.textCursor()
-            line = cursor.block().text()
-            # 取得當前行的前導空白 / Get leading whitespace
-            indent = ""
-            for ch in line:
-                if ch in (" ", "\t"):
-                    indent += ch
-                else:
-                    break
-            # 如果行尾是冒號，增加一層縮排 (Python) / Add indent after colon
-            stripped = line.rstrip()
-            if stripped.endswith(":"):
-                indent += "    "
-            super().keyPressEvent(event)
-            if indent:
-                self.textCursor().insertText(indent)
-            self.highlight_current_line()
+        if modifiers & Qt.KeyboardModifier.ShiftModifier and key in (Qt.Key.Key_Enter, Qt.Key.Key_Return):
+            event.ignore()
             return
 
-        # 自動關閉括號 / Auto-close brackets
-        if key in self._BRACKET_PAIRS and not event.modifiers() & Qt.KeyboardModifier.ControlModifier:
-            open_char, close_char = self._BRACKET_PAIRS[key]
-            cursor = self.textCursor()
-            # 引號特殊處理：如果游標前已有相同引號，不自動配對
-            # For quotes: don't auto-pair if preceding char is same quote
-            if open_char == close_char:
-                pos = cursor.positionInBlock()
-                line = cursor.block().text()
-                if pos > 0 and line[pos - 1] == open_char:
-                    super().keyPressEvent(event)
-                    self.highlight_current_line()
-                    return
-            # 有選取文字時，用括號包住選取文字 / Wrap selection with brackets
-            if cursor.hasSelection():
-                selected = cursor.selectedText()
-                cursor.insertText(open_char + selected + close_char)
-                self.setTextCursor(cursor)
-            else:
-                super().keyPressEvent(event)
-                cursor = self.textCursor()
-                cursor.insertText(close_char)
-                cursor.movePosition(QTextCursor.MoveOperation.Left)
-                self.setTextCursor(cursor)
-            self.highlight_current_line()
+        if key in (Qt.Key.Key_Enter, Qt.Key.Key_Return) and not modifiers:
+            self._handle_enter_autoindent(event)
             return
 
-        # 呼叫父類別處理其他按鍵
+        if key in self._BRACKET_PAIRS and not modifiers & Qt.KeyboardModifier.ControlModifier:
+            self._handle_bracket_autoclose(event)
+            return
+
         super().keyPressEvent(event)
-
-        # 更新目前行高亮
         self.highlight_current_line()
 
-        # 如果輸入英文字母，觸發自動補全 (debounce 300ms)
         if key in self.need_complete_list and self.completer is not None:
             if self.completer.popup().isVisible():
                 self.completer.popup().close()

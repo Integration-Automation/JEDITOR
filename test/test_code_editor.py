@@ -4,7 +4,6 @@ from __future__ import annotations
 from unittest.mock import MagicMock, patch
 
 import pytest
-from PySide6.QtCore import Qt
 from PySide6.QtGui import QTextCursor
 from PySide6.QtWidgets import QApplication
 

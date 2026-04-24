@@ -12,6 +12,10 @@ from git import Repo, InvalidGitRepositoryError, NoSuchPathError, GitCommandErro
 
 from je_editor.utils.logging.loggin_instance import jeditor_logger
 
+# UI 常數 / UI constants
+_CLONE_REPO_LABEL = "Clone Repo"
+_REPO_STATUS_DEFAULT = "Status: -"
+
 
 class _GitWorker(QObject):
     """背景執行 Git 操作的 Worker / Background worker for Git operations"""
@@ -79,8 +83,8 @@ class GitGui(QWidget):
         self.open_repo_button = QPushButton("Open Repo")
         self.branch_selector = QComboBox()
         self.checkout_button = QPushButton("Checkout")
-        self.clone_repo_button = QPushButton("Clone Repo")
-        self.repo_status_label = QLabel("Status: -")
+        self.clone_repo_button = QPushButton(_CLONE_REPO_LABEL)
+        self.repo_status_label = QLabel(_REPO_STATUS_DEFAULT)
         self.commit_status_label = QLabel("Unpushed commits: ...")
 
         top = QHBoxLayout()
@@ -230,7 +234,7 @@ class GitGui(QWidget):
             self.branch_selector.clear()
             self.changes_list_widget.clear()
             self.diff_viewer.setPlainText("")
-            self.repo_status_label.setText("Status: -")
+            self.repo_status_label.setText(_REPO_STATUS_DEFAULT)
             return
 
         # 成功載入 repo，更新 UI
@@ -306,186 +310,181 @@ class GitGui(QWidget):
         if hasattr(self, "highlighter"):
             self.highlighter.rehighlight()
 
+    @staticmethod
+    def _parse_rename_paths(change: GitChangeItem) -> tuple[str | None, str | None]:
+        """從 'a -> b' 型式的 rename 路徑擷取來源與目的 / Parse source/destination from rename path."""
+        if "->" not in change.path or change.status not in ("renamed", "staged"):
+            return None, None
+        parts = [p.strip() for p in change.path.split("->")]
+        if len(parts) == 2:
+            return parts[0], parts[1]
+        return None, None
+
+    def _render_untracked_diff(self, rel: str, abs_path: Path) -> None:
+        if not abs_path.exists():
+            self._safe_set_diff_text(f"(untracked file missing: {rel})")
+            return
+        if self._is_binary_path(abs_path):
+            self._safe_set_diff_text(f"(binary file, no textual diff: {rel})")
+            return
+        with open(abs_path, "r", encoding="utf-8", errors="ignore") as f:
+            content = f.read()
+        header = f"--- /dev/null\n+++ b/{rel}\n"
+        body = "\n".join(f"+{line}" for line in content.splitlines())
+        self._safe_set_diff_text(header + body)
+
+    def _render_deleted_diff(self, rel: str) -> None:
+        current_repo = self.current_repo
+        if rel and not current_repo.index.diff(None, paths=[rel]):
+            diff_text = current_repo.git.diff("--cached", rel)
+        else:
+            diff_text = current_repo.git.diff(rel)
+        if not diff_text.strip():
+            self._safe_set_diff_text(f"(deleted file; no textual diff or already committed: {rel})")
+        else:
+            self._safe_set_diff_text(diff_text)
+
+    def _render_renamed_diff(self, rel: str, src: str | None, dst: str | None) -> None:
+        current_repo = self.current_repo
+        diff_text = ""
+        try:
+            if dst:
+                diff_text = current_repo.git.diff("--cached", dst)
+        except GitCommandError:
+            pass
+        if not diff_text.strip():
+            try:
+                diff_text = current_repo.git.diff(dst or rel)
+            except GitCommandError:
+                diff_text = ""
+        if not diff_text.strip():
+            self._safe_set_diff_text(
+                f"diff --git a/{src} b/{dst}\nrename from {src}\nrename to {dst}\n(no line changes)")
+        else:
+            self._safe_set_diff_text(diff_text)
+
+    def _render_staged_diff(self, rel: str) -> None:
+        diff_text = self.current_repo.git.diff("--cached", rel)
+        if not diff_text.strip():
+            self._safe_set_diff_text("(no staged changes vs HEAD)")
+        else:
+            self._safe_set_diff_text(diff_text)
+
+    def _render_modified_diff(self, rel: str) -> None:
+        current_repo = self.current_repo
+        diff_text = current_repo.git.diff(rel)
+        if not diff_text.strip():
+            try:
+                diff_text = current_repo.git.diff("--cached", rel)
+            except GitCommandError:
+                diff_text = ""
+        if not diff_text.strip():
+            self._safe_set_diff_text("(no unstaged changes; file may be already staged)")
+        else:
+            self._safe_set_diff_text(diff_text)
+
     def _show_diff_for_change(self, change: GitChangeItem) -> None:
         current_repo = self.current_repo
         if not current_repo:
             self._safe_set_diff_text("Error: repository not loaded.")
             return
 
-        # Normalize paths (for rename "a -> b" 取目的與來源)
-        src, dst = None, None
-        if "->" in change.path and change.status in ("renamed", "staged"):
-            parts = [p.strip() for p in change.path.split("->")]
-            if len(parts) == 2:
-                src, dst = parts
+        src, dst = self._parse_rename_paths(change)
         rel = dst or change.path
         abs_path = Path(current_repo.working_tree_dir) / Path(rel)
 
         try:
-            # Untracked: 顯示新增檔案的內容（模擬 unified diff）
             if change.status == "untracked":
-                if not abs_path.exists():
-                    self._safe_set_diff_text(f"(untracked file missing: {rel})")
-                    return
-                if self._is_binary_path(abs_path):
-                    self._safe_set_diff_text(f"(binary file, no textual diff: {rel})")
-                    return
-                with open(abs_path, "r", encoding="utf-8", errors="ignore") as f:
-                    content = f.read()
-                header = f"--- /dev/null\n+++ b/{rel}\n"
-                body = "\n".join(f"+{line}" for line in content.splitlines())
-                self._safe_set_diff_text(header + body)
-                return
-
-            # Deleted: 顯示與 HEAD/Index 的差異（若工作樹檔案不存在也能呈現）
-            if change.status == "deleted":
-                # working tree vs index（未暫存刪除）
-                if rel and not current_repo.index.diff(None, paths=[rel]):
-                    # 若 diff(None) 空，試試 index vs HEAD
-                    diff_text = current_repo.git.diff("--cached", rel)
-                else:
-                    diff_text = current_repo.git.diff(rel)
-                if not diff_text.strip():
-                    self._safe_set_diff_text(f"(deleted file; no textual diff or already committed: {rel})")
-                else:
-                    self._safe_set_diff_text(diff_text)
-                return
-
-            # Renamed: 顯示 rename 變更；若僅 rename 無內容改動，diff 可能為空
-            if change.status == "renamed":
-                # 優先顯示 staged rename
-                diff_text = ""
-                try:
-                    if dst:
-                        diff_text = current_repo.git.diff("--cached", dst)
-                except GitCommandError:
-                    pass
-                if not diff_text.strip():
-                    # fallback: working tree
-                    try:
-                        diff_text = current_repo.git.diff(dst or rel)
-                    except GitCommandError:
-                        diff_text = ""
-                if not diff_text.strip():
-                    # 顯示 rename meta
-                    self._safe_set_diff_text(
-                        f"diff --git a/{src} b/{dst}\nrename from {src}\nrename to {dst}\n(no line changes)")
-                else:
-                    self._safe_set_diff_text(diff_text)
-                return
-
-            # Staged vs HEAD
-            if change.status == "staged":
-                diff_text = current_repo.git.diff("--cached", rel)
-                if not diff_text.strip():
-                    self._safe_set_diff_text("(no staged changes vs HEAD)")
-                else:
-                    self._safe_set_diff_text(diff_text)
-                return
-
-            # Modified / general unstaged
-            if change.status in ("modified",):
-                # working tree vs index
-                diff_text = current_repo.git.diff(rel)
-                if not diff_text.strip():
-                    # 若空，嘗試 index vs HEAD（可能已被暫存）
-                    try:
-                        diff_text = current_repo.git.diff("--cached", rel)
-                    except GitCommandError:
-                        diff_text = ""
-                if not diff_text.strip():
-                    self._safe_set_diff_text("(no unstaged changes; file may be already staged)")
-                else:
-                    self._safe_set_diff_text(diff_text)
-                return
-
-            # Fallback
-            self._safe_set_diff_text(f"(no diff handler for status: {change.status})")
-
+                self._render_untracked_diff(rel, abs_path)
+            elif change.status == "deleted":
+                self._render_deleted_diff(rel)
+            elif change.status == "renamed":
+                self._render_renamed_diff(rel, src, dst)
+            elif change.status == "staged":
+                self._render_staged_diff(rel)
+            elif change.status == "modified":
+                self._render_modified_diff(rel)
+            else:
+                self._safe_set_diff_text(f"(no diff handler for status: {change.status})")
         except GitCommandError as e:
             self._safe_set_diff_text(f"Git error while generating diff:\n{e}")
         except FileNotFoundError:
             self._safe_set_diff_text(f"(file missing in working tree: {rel})")
-        except Exception as e:
+        except OSError as e:
             self._safe_set_diff_text(f"Unexpected error while generating diff:\n{e}")
 
-    def _refresh_change_list(self) -> None:
-        """
-        Collect changes from working tree and index, then render list.
-        收集工作目錄與索引的變更，並更新清單。
-        """
-        if not self.current_repo:
-            self.changes_list_widget.clear()
-            self.diff_viewer.setPlainText("")
-            self.repo_status_label.setText("Status: -")
-            return
-
-        repository = self.current_repo
-
-        # === Untracked files / 未追蹤檔案 ===
-        untracked_files = list(repository.untracked_files)
-
-        # === Unstaged changes (working tree vs index) / 未暫存變更 ===
-        working_tree_vs_index_diff = repository.index.diff(None)  # None 表示與工作目錄比較
-        unstaged_changes = []
-        for d in working_tree_vs_index_diff:
+    @staticmethod
+    def _build_unstaged_changes(repository: "Repo") -> list[GitChangeItem]:
+        """收集未暫存變更 / Collect unstaged working-tree changes."""
+        changes: list[GitChangeItem] = []
+        for d in repository.index.diff(None):
             path = d.a_path if d.a_path else d.b_path
-            status = "modified"
             if d.change_type == "D":
                 status = "deleted"
             elif d.change_type == "R":
                 status = "renamed"
                 path = f"{d.a_path} -> {d.b_path}"
-            unstaged_changes.append(GitChangeItem(path, status))
+            else:
+                status = "modified"
+            changes.append(GitChangeItem(path, status))
+        return changes
 
-        # === Staged changes (index vs HEAD) / 已暫存變更 ===
-        index_vs_head_diff = repository.index.diff("HEAD")
-        staged_changes = []
-        for d in index_vs_head_diff:
+    @staticmethod
+    def _build_staged_changes(repository: "Repo") -> list[GitChangeItem]:
+        """收集已暫存變更 / Collect staged index-vs-HEAD changes."""
+        changes: list[GitChangeItem] = []
+        for d in repository.index.diff("HEAD"):
             path = d.a_path if d.a_path else d.b_path
-            status = "staged"
-            staged_changes.append(GitChangeItem(path, status))
+            changes.append(GitChangeItem(path, "staged"))
+        return changes
 
-        # === Render list / 渲染清單 ===
-        self.changes_list_widget.clear()
+    def _add_section_header(self, text: str) -> None:
+        """新增清單區段標題 / Add a section header row to the list widget."""
+        list_item = QListWidgetItem(text)
+        font = list_item.font()
+        font.setBold(True)
+        list_item.setFont(font)
+        list_item.setFlags(list_item.flags() & ~Qt.ItemFlag.ItemIsSelectable & ~Qt.ItemFlag.ItemIsEnabled)
+        self.changes_list_widget.addItem(list_item)
 
-        def add_item(txt: str, bold: bool = False, disabled: bool = False) -> None:
-            """
-            Add a section header item to the list.
-            新增一個區段標題項目到清單。
-            """
-            list_item = QListWidgetItem(txt)
-            if bold:
-                font = list_item.font()
-                font.setBold(True)
-                list_item.setFont(font)
-            if disabled:
-                list_item.setFlags(list_item.flags() & ~Qt.ItemFlag.ItemIsSelectable & ~Qt.ItemFlag.ItemIsEnabled)
-            self.changes_list_widget.addItem(list_item)
-
-        # 區段標題與檔案項目
-        add_item("— Untracked —", bold=True, disabled=True)
-        for path in untracked_files:
-            self._add_change_item(GitChangeItem(path, "untracked"))
-
-        add_item("— Unstaged —", bold=True, disabled=True)
-        for item in unstaged_changes:
-            self._add_change_item(item)
-
-        add_item("— Staged —", bold=True, disabled=True)
-        for item in staged_changes:
-            self._add_change_item(item)
-
-        # === Status summary / 狀態摘要 ===
+    def _update_repo_status_summary(self, repository: "Repo",
+                                    untracked: list, unstaged: list, staged: list) -> None:
+        """更新 repo 狀態文字 / Update repo status summary label."""
         if repository.head.is_detached:
             branch_name = "(detached)"
         else:
             branch_name = repository.active_branch.name
         summary = (
             f"Branch: {branch_name}\n"
-            f"Untracked: {len(untracked_files)} | Unstaged: {len(unstaged_changes)} | Staged: {len(staged_changes)}"
+            f"Untracked: {len(untracked)} | Unstaged: {len(unstaged)} | Staged: {len(staged)}"
         )
         self.repo_status_label.setText(f"Status: {summary}")
+
+    def _refresh_change_list(self) -> None:
+        """收集工作目錄與索引的變更並更新清單 / Refresh the change list UI."""
+        if not self.current_repo:
+            self.changes_list_widget.clear()
+            self.diff_viewer.setPlainText("")
+            self.repo_status_label.setText(_REPO_STATUS_DEFAULT)
+            return
+
+        repository = self.current_repo
+        untracked_files = list(repository.untracked_files)
+        unstaged_changes = self._build_unstaged_changes(repository)
+        staged_changes = self._build_staged_changes(repository)
+
+        self.changes_list_widget.clear()
+        self._add_section_header("— Untracked —")
+        for path in untracked_files:
+            self._add_change_item(GitChangeItem(path, "untracked"))
+        self._add_section_header("— Unstaged —")
+        for item in unstaged_changes:
+            self._add_change_item(item)
+        self._add_section_header("— Staged —")
+        for item in staged_changes:
+            self._add_change_item(item)
+
+        self._update_repo_status_summary(repository, untracked_files, unstaged_changes, staged_changes)
         self.diff_viewer.setPlainText("Select files to stage/unstage.")
 
     def _add_change_item(self, change: GitChangeItem) -> None:
@@ -703,20 +702,21 @@ class GitGui(QWidget):
             # 從 URL 中解析 repo 名稱 (支援 HTTPS 與 SSH 格式)
             # Parse repo name from URL (supports both HTTPS and SSH formats)
             url_clean = remote_url.strip().rstrip("/")
-            if ":" in url_clean and not url_clean.startswith(("http://", "https://")):
-                # SSH 格式: git@github.com:user/repo.git
+            # 若 URL 不含 "://"，視為 SSH 格式 (git@github.com:user/repo.git)
+            # If URL has no "://" it is SSH format (git@github.com:user/repo.git)
+            if "://" not in url_clean and ":" in url_clean:
                 repo_name = url_clean.rsplit("/", 1)[-1].rsplit(":", 1)[-1]
             else:
-                # HTTPS 格式: https://github.com/user/repo.git
+                # HTTPS 格式 / HTTPS format
                 repo_name = url_clean.rsplit("/", 1)[-1]
             repo_name = repo_name.removesuffix(".git") or "repo"
             repository_path = Path(target_directory) / repo_name
             if repository_path.exists():
-                QMessageBox.warning(self, "Clone Repo", f"Target folder already exists:\n{repository_path}")
+                QMessageBox.warning(self, _CLONE_REPO_LABEL, f"Target folder already exists:\n{repository_path}")
                 return
 
             Repo.clone_from(remote_url, repository_path)
-            QMessageBox.information(self, "Clone Repo", f"Repository cloned to:\n{repository_path}")
+            QMessageBox.information(self, _CLONE_REPO_LABEL, f"Repository cloned to:\n{repository_path}")
 
             # 自動載入新 repo
             self._load_repository_from_path(repository_path)

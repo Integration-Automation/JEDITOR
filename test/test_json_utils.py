@@ -1,7 +1,6 @@
 """Tests for JSON read/write utilities."""
 from __future__ import annotations
 
-import json
 import pytest
 
 from je_editor.utils.json.json_file import read_json, write_json

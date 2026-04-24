@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-import subprocess
+import subprocess  # nosec B404 - 以引數清單呼叫編譯器/直譯器，shell=False
 import sys
 from pathlib import Path
 from typing import Union
@@ -95,7 +95,9 @@ class ExecManager(BaseProcessManager):
                 else:
                     execute_program_param = [self.compiler_path] + exec_prefix + [exec_file]
 
-            self.process = subprocess.Popen(
+            # 以引數清單呼叫使用者選定的編譯器/直譯器，shell=False
+            # Invoke user-selected compiler/interpreter via argv list; no shell
+            self.process = subprocess.Popen(  # nosemgrep  # noqa: S603  # nosec B603
                 execute_program_param,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
@@ -155,7 +157,9 @@ class ExecManager(BaseProcessManager):
                 text_cursor.insertText("[Compile] " + " ".join(compile_cmd), text_format)
                 text_cursor.insertBlock()
 
-                compile_process = subprocess.Popen(
+                # 以引數清單呼叫外部編譯器，shell=False
+                # Invoke external compiler via argv list; no shell
+                compile_process = subprocess.Popen(  # nosemgrep  # noqa: S603  # nosec B603
                     compile_cmd,
                     stdout=subprocess.PIPE,
                     stderr=subprocess.PIPE,
@@ -186,7 +190,9 @@ class ExecManager(BaseProcessManager):
                 execute_program_param = [compiler] + args + [reformat_os_file_path]
                 display_cmd = " ".join(execute_program_param)
 
-            self.process = subprocess.Popen(
+            # 以引數清單呼叫使用者選定的編譯器/直譯器，shell=False
+            # Invoke user-selected compiler/interpreter via argv list; no shell
+            self.process = subprocess.Popen(  # nosemgrep  # noqa: S603  # nosec B603
                 execute_program_param,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,

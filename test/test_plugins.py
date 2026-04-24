@@ -7,7 +7,6 @@ from je_editor.plugins import (
     get_all_programming_language_suffixes,
     register_natural_language,
     get_natural_language_plugin,
-    get_all_natural_languages,
     register_plugin_run_config,
     get_all_plugin_run_configs,
     get_plugin_run_config_by_suffix,

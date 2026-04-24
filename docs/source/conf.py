@@ -14,7 +14,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 # -- Project information -----------------------------------------------------
 
 project = "JEditor"
-copyright = "2021 ~ Present, JE-Chen"
+project_copyright = "2021 ~ Present, JE-Chen"
 author = "JE-Chen"
 release = "1.0.10"
 

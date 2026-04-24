@@ -2,8 +2,6 @@
 from __future__ import annotations
 
 import json
-import os
-from pathlib import Path
 
 from je_editor.pyside_ui.main_ui.save_settings.setting_utils import write_setting
 from je_editor.pyside_ui.main_ui.save_settings.user_setting_file import user_setting_dict
