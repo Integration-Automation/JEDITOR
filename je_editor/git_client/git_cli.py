@@ -1,5 +1,5 @@
 import logging
-import subprocess
+import subprocess  # nosec B404 - 呼叫 git 子命令皆以引數清單送入，未使用 shell
 from pathlib import Path
 from typing import List, Dict
 
@@ -15,13 +15,16 @@ class GitCLI:
 
     def _run(self, args: List[str]) -> str:
         log.debug("git %s", " ".join(args))
-        res = subprocess.run(
+        # 以固定可執行檔 "git" 與引數清單呼叫，沒有使用 shell
+        # Invoked with fixed "git" binary and argument list; no shell involved
+        res = subprocess.run(  # noqa: S603  # nosec B603
             ["git"] + args,
             cwd=self.repo_path,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             text=True,
             encoding="utf-8",
+            check=False,
         )
         if res.returncode != 0:
             log.error("Git failed: %s", res.stderr.strip())

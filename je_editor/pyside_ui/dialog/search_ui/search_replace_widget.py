@@ -53,19 +53,40 @@ class _SearchWorker(QThread):
     def stop(self) -> None:
         self._stop = True
 
-    def run(self) -> None:
-        total = 0
+    def _compile_pattern(self) -> Optional[re.Pattern]:
+        """編譯搜尋樣式；失敗時回傳 None / Compile the search pattern; return None on failure."""
         flags = 0 if self.case_sensitive else re.IGNORECASE
         try:
-            compiled = re.compile(self.pattern if self.use_regex else re.escape(self.pattern), flags)
+            return re.compile(self.pattern if self.use_regex else re.escape(self.pattern), flags)
         except re.error:
+            return None
+
+    def _scan_file(self, fpath: Path, compiled: re.Pattern) -> int:
+        """在單一檔案中搜尋所有匹配，發送訊號並回傳匹配數 / Scan a file and emit matches."""
+        hits = 0
+        try:
+            with open(fpath, "r", encoding="utf-8", errors="ignore") as f:
+                for line_no, line in enumerate(f, 1):
+                    if self._stop:
+                        break
+                    if compiled.search(line):
+                        self.match_found.emit(str(fpath), line_no, line.rstrip("\n\r"))
+                        hits += 1
+        except (OSError, UnicodeDecodeError):
+            # 無法讀取的檔案直接略過 (權限/二進位/鎖定)
+            # Skip files that cannot be read (permissions/binary/locked)
+            return 0
+        return hits
+
+    def run(self) -> None:
+        compiled = self._compile_pattern()
+        if compiled is None:
             self.finished_signal.emit(0)
             return
-
+        total = 0
         for dirpath, dirnames, filenames in os.walk(self.root):
             if self._stop:
                 break
-            # 略過不需搜尋的資料夾 / Skip unwanted directories
             dirnames[:] = [d for d in dirnames if d not in _SKIP_DIRS]
             for fname in filenames:
                 if self._stop:
@@ -73,16 +94,7 @@ class _SearchWorker(QThread):
                 fpath = Path(dirpath) / fname
                 if _is_binary(fpath):
                     continue
-                try:
-                    with open(fpath, "r", encoding="utf-8", errors="ignore") as f:
-                        for line_no, line in enumerate(f, 1):
-                            if self._stop:
-                                break
-                            if compiled.search(line):
-                                self.match_found.emit(str(fpath), line_no, line.rstrip("\n\r"))
-                                total += 1
-                except Exception:
-                    continue
+                total += self._scan_file(fpath, compiled)
         self.finished_signal.emit(total)
 
 
@@ -341,8 +353,15 @@ class SearchReplaceDialog(QDialog):
         """在目前檔案中尋找上一個 / Find previous in current file"""
         self._find_in_editor(forward=False)
 
+    def _editor_find(self, editor: QPlainTextEdit, pattern: str, flags: "QTextDocument.FindFlag") -> bool:
+        """呼叫底層 find，自動處理 regex / Call underlying find with optional regex."""
+        if self.chk_regex.isChecked():
+            regex = self._build_qregex(pattern)
+            return bool(editor.find(regex, flags)) if regex else False
+        return bool(editor.find(pattern, flags))
+
     def _find_in_editor(self, forward: bool) -> None:
-        """在編輯器中搜尋 / Search in editor"""
+        """在編輯器中搜尋，找不到時繞回頭尾 / Search in editor; wrap around when not found."""
         pattern = self.search_input.text()
         if not pattern:
             return
@@ -353,29 +372,14 @@ class SearchReplaceDialog(QDialog):
         if self.chk_case.isChecked():
             flags |= QTextDocument.FindFlag.FindCaseSensitively
 
-        if self.chk_regex.isChecked():
-            regex = self._build_qregex(pattern)
-            if regex:
-                found = editor.find(regex, flags)
-            else:
-                found = False
-        else:
-            found = editor.find(pattern, flags)
+        if self._editor_find(editor, pattern, flags):
+            return
 
-        if not found:
-            # 繞回開頭/結尾 / Wrap around
-            cursor = editor.textCursor()
-            if forward:
-                cursor.movePosition(QTextCursor.MoveOperation.Start)
-            else:
-                cursor.movePosition(QTextCursor.MoveOperation.End)
-            editor.setTextCursor(cursor)
-            if self.chk_regex.isChecked():
-                regex = self._build_qregex(pattern)
-                if regex:
-                    editor.find(regex, flags)
-            else:
-                editor.find(pattern, flags)
+        cursor = editor.textCursor()
+        cursor.movePosition(
+            QTextCursor.MoveOperation.Start if forward else QTextCursor.MoveOperation.End)
+        editor.setTextCursor(cursor)
+        self._editor_find(editor, pattern, flags)
 
     def _build_qregex(self, pattern: str) -> Optional[QRegularExpression]:
         """建立 QRegularExpression / Build QRegularExpression"""
@@ -481,7 +485,14 @@ class SearchReplaceDialog(QDialog):
             return
 
         try:
-            p = Path(file_path)
+            # 將路徑限制在專案根目錄內，避免路徑穿越
+            # Confine path to project root to prevent path traversal
+            project_root = Path(self._get_project_root()).resolve()
+            resolved = Path(file_path).resolve()
+            if not resolved.is_file() or (project_root not in resolved.parents and resolved != project_root):
+                self.status_label.setText(f"Error: invalid file path {file_path}")
+                return
+            p = resolved
             raw = p.read_bytes()
             enc = "utf-8"
             for _enc in ("utf-8-sig", "utf-8", "cp1252", "latin-1"):
@@ -498,11 +509,35 @@ class SearchReplaceDialog(QDialog):
                 item.setText(2, lines[line_no - 1].strip())
                 self.status_label.setText(
                     self._lang("search_replace_replaced_in_file").format(file=p.name, line=line_no))
-        except Exception as e:
+        except OSError as e:
             self.status_label.setText(f"Error: {e}")
 
+    @staticmethod
+    def _decode_bytes(raw: bytes) -> tuple[str, str] | None:
+        """嘗試以多種編碼解碼；失敗回傳 None / Decode bytes trying common encodings."""
+        for enc in ("utf-8-sig", "utf-8", "cp1252", "latin-1"):
+            try:
+                return raw.decode(enc), enc
+            except (UnicodeDecodeError, LookupError):
+                continue
+        return None
+
+    def _replace_all_in_single_file(self, fpath: Path, compiled: re.Pattern, replacement: str) -> int:
+        """對單一檔案做替換，回傳替換次數 / Replace in one file; return replace count."""
+        try:
+            decoded = self._decode_bytes(fpath.read_bytes())
+            if decoded is None:
+                return 0
+            content, enc = decoded
+            new_content, count = compiled.subn(replacement, content)
+            if count > 0:
+                fpath.write_text(new_content, encoding=enc)
+            return count
+        except OSError:
+            return 0
+
     def _replace_all_in_directory(self, pattern: str, replacement: str, root: str) -> None:
-        """在整個目錄中全部取代 / Replace all in directory"""
+        """在整個目錄中全部取代 / Replace all matches inside every file under the directory."""
         case = self.chk_case.isChecked()
         use_regex = self.chk_regex.isChecked()
         flags = 0 if case else re.IGNORECASE
@@ -531,24 +566,10 @@ class SearchReplaceDialog(QDialog):
                 fpath = Path(dirpath) / fname
                 if _is_binary(fpath):
                     continue
-                try:
-                    raw = fpath.read_bytes()
-                    # 偵測編碼 / Detect encoding
-                    for enc in ("utf-8-sig", "utf-8", "cp1252", "latin-1"):
-                        try:
-                            content = raw.decode(enc)
-                            break
-                        except (UnicodeDecodeError, LookupError):
-                            continue
-                    else:
-                        continue
-                    new_content, count = compiled.subn(replacement, content)
-                    if count > 0:
-                        fpath.write_text(new_content, encoding=enc)
-                        total_files += 1
-                        total_replacements += count
-                except Exception:
-                    continue
+                count = self._replace_all_in_single_file(fpath, compiled, replacement)
+                if count > 0:
+                    total_files += 1
+                    total_replacements += count
 
         self.status_label.setText(
             self._lang("search_replace_replaced_summary").format(

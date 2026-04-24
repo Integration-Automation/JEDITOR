@@ -28,82 +28,57 @@ class PythonHighlighter(QSyntaxHighlighter):
     Python syntax highlighter class, inherits from QSyntaxHighlighter
     """
 
+    @staticmethod
+    def _make_format(color: object) -> QTextCharFormat:
+        """建立含前景色的 QTextCharFormat / Build a QTextCharFormat with the given foreground."""
+        fmt = QTextCharFormat()
+        fmt.setForeground(color)
+        return fmt
+
+    def _add_regex_rules(self, rule_setting: dict) -> None:
+        """加入一組「正則規則」設定 / Append a group of regex highlight rules."""
+        for rule_variable_dict in rule_setting.values():
+            fmt = self._make_format(rule_variable_dict.get("color"))
+            for rule in rule_variable_dict.get("rules", ()):  # 正則規則 / regex rules
+                self.highlight_rules.append((QRegularExpression(rule), fmt))
+
+    def _add_word_rules(self, word_setting: dict) -> None:
+        """加入一組「關鍵字」規則 (使用 \\b 包住) / Append whole-word keyword rules."""
+        for rule_variable_dict in word_setting.values():
+            fmt = self._make_format(rule_variable_dict.get("color"))
+            for word in rule_variable_dict.get("words", ()):  # 關鍵字清單 / keyword list
+                self.highlight_rules.append((QRegularExpression(rf"\b{word}\b"), fmt))
+
+    def _add_plugin_rules(self, current_file_suffix: str) -> None:
+        """依副檔名載入插件或相容設定的語法規則 / Load plugin/legacy syntax rules for the suffix."""
+        from je_editor.plugins import get_programming_language_plugin
+        plugin = get_programming_language_plugin(current_file_suffix)
+        if plugin:
+            self._add_regex_rules(plugin.get("syntax_rules", {}))
+            self._add_word_rules(plugin.get("syntax_words", {}))
+            return
+        legacy = syntax_extend_setting_dict.get(current_file_suffix)
+        if legacy:
+            # 向後相容：使用舊的 syntax_extend_setting_dict
+            # Backward compatible: use old syntax_extend_setting_dict
+            self._add_word_rules(legacy)
+
     def __init__(self, parent: QTextDocument | None = None, main_window: CodeEditor = None) -> None:
         jeditor_logger.info(f"Init PythonHighlighter parent: {parent}")
         super().__init__(parent)
 
         self.highlight_rules = []  # 儲存所有高亮規則 / store all highlight rules
 
-        # 判斷目前檔案副檔名，若無則預設為 .py
-        # Determine current file suffix, default to .py
         if main_window is not None and main_window.current_file is not None:
             current_file_suffix = Path(main_window.current_file).suffix
         else:
             current_file_suffix = ".py"
 
-        # -------------------------
-        # 基本語法規則 (通用)
-        # Basic highlight rules (common)
-        # -------------------------
-        for rule_variable_dict in syntax_rule_setting_dict.values():
-            color = rule_variable_dict.get("color")  # 規則顏色 / rule color
-            text_char_format = QTextCharFormat()
-            text_char_format.setForeground(color)
-            for rule in rule_variable_dict.get("rules"):  # 正則規則 / regex rules
-                pattern = QRegularExpression(rule)
-                self.highlight_rules.append((pattern, text_char_format))
-
-        # -------------------------
-        # Python 語法高亮
-        # Python-specific highlight
-        # -------------------------
+        self._add_regex_rules(syntax_rule_setting_dict)
         if current_file_suffix == ".py":
-            for rule_variable_dict in syntax_word_setting_dict.values():
-                color = rule_variable_dict.get("color")
-                text_char_format = QTextCharFormat()
-                text_char_format.setForeground(color)
-                for word in rule_variable_dict.get("words"):  # 關鍵字清單 / keyword list
-                    # 使用 \b 確保完整單字匹配 / use \b for whole word match
-                    pattern = QRegularExpression(rf"\b{word}\b")
-                    self.highlight_rules.append((pattern, text_char_format))
-
-        # -------------------------
-        # 其他語言的擴展高亮（透過插件系統）
-        # Extended highlight for other languages (via plugin system)
-        # -------------------------
+            self._add_word_rules(syntax_word_setting_dict)
         else:
-            from je_editor.plugins import get_programming_language_plugin
-            plugin = get_programming_language_plugin(current_file_suffix)
-            if plugin:
-                # 載入插件的額外語法規則（正則表達式）
-                # Load plugin's extra syntax rules (regex patterns)
-                for rule_variable_dict in plugin.get("syntax_rules", {}).values():
-                    color = rule_variable_dict.get("color")
-                    text_char_format = QTextCharFormat()
-                    text_char_format.setForeground(color)
-                    for rule in rule_variable_dict.get("rules"):
-                        pattern = QRegularExpression(rule)
-                        self.highlight_rules.append((pattern, text_char_format))
-
-                # 載入插件的關鍵字高亮
-                # Load plugin's keyword highlighting
-                for rule_variable_dict in plugin.get("syntax_words", {}).values():
-                    color = rule_variable_dict.get("color")
-                    text_char_format = QTextCharFormat()
-                    text_char_format.setForeground(color)
-                    for word in rule_variable_dict.get("words"):
-                        pattern = QRegularExpression(rf"\b{word}\b")
-                        self.highlight_rules.append((pattern, text_char_format))
-            elif syntax_extend_setting_dict.get(current_file_suffix):
-                # 向後相容：使用舊的 syntax_extend_setting_dict
-                # Backward compatible: use old syntax_extend_setting_dict
-                for rule_variable_dict in syntax_extend_setting_dict.get(current_file_suffix).values():
-                    color = rule_variable_dict.get("color")
-                    text_char_format = QTextCharFormat()
-                    text_char_format.setForeground(color)
-                    for word in rule_variable_dict.get("words"):
-                        pattern = QRegularExpression(rf"\b{word}\b")
-                        self.highlight_rules.append((pattern, text_char_format))
+            self._add_plugin_rules(current_file_suffix)
 
     def highlightBlock(self, text: str) -> None:
         """

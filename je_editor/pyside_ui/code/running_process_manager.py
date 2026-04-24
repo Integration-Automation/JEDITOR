@@ -23,7 +23,7 @@ class RunInstanceManager(object):
         # 初始化，建立一個空的實例清單
         # Initialize with an empty instance list
         jeditor_logger.info("Init RunInstanceManager")
-        self.instance_list: List[Union[ExecManager, ShellManager]] = list()
+        self.instance_list: List[Union[ExecManager, ShellManager]] = []
 
     def remove_instance(self, instance: Union[ExecManager, ShellManager]) -> None:
         """
@@ -41,7 +41,7 @@ class RunInstanceManager(object):
         Close all running instances via their own exit_program for proper cleanup
         """
         jeditor_logger.info("RunInstanceManager close_all_instance")
-        for manager in list(self.instance_list):
+        for manager in self.instance_list[:]:
             # 停止 timer / Stop timer
             if manager.timer is not None:
                 manager.timer.stop()

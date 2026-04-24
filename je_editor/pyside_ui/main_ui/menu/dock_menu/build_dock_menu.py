@@ -129,92 +129,58 @@ def set_dock_menu(ui_we_want_to_set: EditorMain) -> None:
     ui_we_want_to_set.dock_git_menu.addAction(ui_we_want_to_set.dock_menu.new_code_diff_viewer)
 
 
+def _make_editor_dock(ui_we_want_to_set: EditorMain, dock_widget: "DestroyDock") -> bool:
+    """建立 Editor Dock；取消選檔則回傳 False / Build editor dock, False if user cancels."""
+    file_path = QFileDialog().getOpenFileName(
+        parent=ui_we_want_to_set,
+        dir=str(Path.cwd()),
+    )[0]
+    if not file_path:
+        return False
+    result = read_file(file_path)
+    if result is None:
+        return False
+    widget = FullEditorWidget(current_file=file_path)
+    widget.code_edit.setPlainText(result[1])
+    dock_widget.setWindowTitle(language_wrapper.language_word_dict.get("dock_editor_title"))
+    dock_widget.setWidget(widget)
+    return True
+
+
+def _dock_builders(ui_we_want_to_set: EditorMain) -> dict:
+    """回傳 widget_type → (title_key, widget_factory) / Map dock type to title + widget factory."""
+    return {
+        "frontengine": ("dock_frontengine_title", lambda: FrontEngineMainUI(redirect_output=False)),
+        "ipython": ("dock_ipython_title", lambda: IpythonWidget(ui_we_want_to_set)),
+        "chat_ui": ("chat_ui_dock_label", lambda: ChatUI(ui_we_want_to_set)),
+        "git_client": ("tab_menu_git_client_tab_name", GitGui),
+        "git_branch_tree_view": ("tab_menu_git_branch_tree_view_tab_name", GitTreeViewGUI),
+        "variable_inspector": ("tab_menu_variable_inspector_tab_name", VariableInspector),
+        "console_widget": ("tab_menu_console_widget_tab_name", ConsoleWidget),
+        "code_diff_viewer": ("tab_code_diff_viewer_tab_name", DiffViewerWidget),
+    }
+
+
 def add_dock_widget(ui_we_want_to_set: EditorMain, widget_type: str = None) -> None:
-    """
-    根據 widget_type 新增對應的 Dock 視窗，並加到主視窗右側。
-    Add a dock widget based on widget_type and attach it to the right side of the main window.
-    """
+    """根據 widget_type 新增對應的 Dock 視窗 / Add a dock widget based on widget_type."""
     jeditor_logger.info("build_dock_menu.py add_dock_widget "
                         f"ui_we_want_to_set: {ui_we_want_to_set} "
                         f"widget_type: {widget_type}")
 
-    # 建立一個可銷毀的 Dock 容器
-    # Create a destroyable dock container
     dock_widget = DestroyDock()
 
     if widget_type == "editor":
-        # 開啟檔案選擇對話框，讓使用者選擇要打開的檔案
-        # Open file dialog for selecting a file
-        file_path = QFileDialog().getOpenFileName(
-            parent=ui_we_want_to_set,
-            dir=str(Path.cwd())  # 預設目錄為當前工作目錄 / Default directory is current working directory
-        )[0]
-        if file_path is not None and file_path != "":
-            # 建立一個完整的編輯器 Dock，並載入檔案內容
-            # Create a full editor dock and load file content
-            result = read_file(file_path)  # 讀取檔案內容 / Read file content
-            if result is None:
-                return
-            widget = FullEditorWidget(current_file=file_path)
-            widget.code_edit.setPlainText(result[1])
-            dock_widget.setWindowTitle(language_wrapper.language_word_dict.get("dock_editor_title"))
-            dock_widget.setWidget(widget)
-
-    elif widget_type == "frontengine":
-        # 建立 FrontEngine Dock
-        # Create FrontEngine dock
-        dock_widget.setWindowTitle(language_wrapper.language_word_dict.get("dock_frontengine_title"))
-        dock_widget.setWidget(FrontEngineMainUI(redirect_output=False))
-
-    elif widget_type == "ipython":
-        # 建立 Ipython 互動式控制台 Dock
-        # Create Ipython interactive console dock
-        dock_widget.setWindowTitle(language_wrapper.language_word_dict.get("dock_ipython_title"))
-        dock_widget.setWidget(IpythonWidget(ui_we_want_to_set))
-
-    elif widget_type == "chat_ui":
-        # 建立 ChatUI Dock
-        # Create ChatUI dock
-        dock_widget.setWindowTitle(language_wrapper.language_word_dict.get("chat_ui_dock_label"))
-        dock_widget.setWidget(ChatUI(ui_we_want_to_set))
-
-    elif widget_type == "git_client":
-        # 建立 Git 客戶端 Dock
-        # Create Git client dock
-        dock_widget.setWindowTitle(language_wrapper.language_word_dict.get("tab_menu_git_client_tab_name"))
-        dock_widget.setWidget(GitGui())
-
-    elif widget_type == "git_branch_tree_view":
-        # 建立 Git 分支樹視圖 Dock
-        # Create Git branch tree view dock
-        dock_widget.setWindowTitle(language_wrapper.language_word_dict.get("tab_menu_git_branch_tree_view_tab_name"))
-        dock_widget.setWidget(GitTreeViewGUI())
-
-    elif widget_type == "variable_inspector":
-        # 建立變數檢查器 Dock
-        # Create variable inspector dock
-        dock_widget.setWindowTitle(language_wrapper.language_word_dict.get("tab_menu_variable_inspector_tab_name"))
-        dock_widget.setWidget(VariableInspector())
-
-    elif widget_type == "console_widget":
-        # 建立動態 Console Dock
-        # Create dynamic console dock
-        dock_widget.setWindowTitle(language_wrapper.language_word_dict.get("tab_menu_console_widget_tab_name"))
-        dock_widget.setWidget(ConsoleWidget())
-
-    elif widget_type == "code_diff_viewer":
-        # 建立程式碼差異比較視圖 Dock
-        # Create code diff viewer dock
-        dock_widget.setWindowTitle(language_wrapper.language_word_dict.get("tab_code_diff_viewer_tab_name"))
-        dock_widget.setWidget(DiffViewerWidget())
-
+        if not _make_editor_dock(ui_we_want_to_set, dock_widget):
+            return
     else:
-        # 預設為瀏覽器 Dock
-        # Default: Browser dock
-        dock_widget.setWindowTitle(language_wrapper.language_word_dict.get("dock_browser_title"))
-        dock_widget.setWidget(MainBrowserWidget())
+        builder = _dock_builders(ui_we_want_to_set).get(widget_type)
+        if builder is not None:
+            title_key, factory = builder
+            dock_widget.setWindowTitle(language_wrapper.language_word_dict.get(title_key))
+            dock_widget.setWidget(factory())
+        else:
+            dock_widget.setWindowTitle(language_wrapper.language_word_dict.get("dock_browser_title"))
+            dock_widget.setWidget(MainBrowserWidget())
 
-    # 如果成功建立了 widget，將其加到主視窗右側 Dock 區域
-    # If widget is created, add it to the right dock area of the main window
     if dock_widget.widget() is not None:
         ui_we_want_to_set.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, dock_widget)

@@ -1,3 +1,5 @@
+from typing import Any
+
 from PySide6.QtGui import QColor, QTextCursor, QTextCharFormat, QFont
 from PySide6.QtWidgets import QPlainTextEdit, QTextEdit, QWidget, QHBoxLayout, QVBoxLayout, QLabel
 
@@ -43,21 +45,21 @@ class SideBySideDiffWidget(QWidget):
             edit.setFont(mono)
 
         # === 版面配置 / Layout ===
-        leftBox = QVBoxLayout()
-        leftBox.addWidget(self.leftLabel)
-        leftBox.addWidget(self.leftEdit)
+        left_box = QVBoxLayout()
+        left_box.addWidget(self.leftLabel)
+        left_box.addWidget(self.leftEdit)
 
-        rightBox = QVBoxLayout()
-        rightBox.addWidget(self.rightLabel)
-        rightBox.addWidget(self.rightEdit)
+        right_box = QVBoxLayout()
+        right_box.addWidget(self.rightLabel)
+        right_box.addWidget(self.rightEdit)
 
         main = QHBoxLayout(self)
-        leftContainer = QWidget(self)
-        leftContainer.setLayout(leftBox)
-        rightContainer = QWidget(self)
-        rightContainer.setLayout(rightBox)
-        main.addWidget(leftContainer)
-        main.addWidget(rightContainer)
+        left_container = QWidget(self)
+        left_container.setLayout(left_box)
+        right_container = QWidget(self)
+        right_container.setLayout(right_box)
+        main.addWidget(left_container)
+        main.addWidget(right_container)
 
         # 同步左右捲軸 / Sync scrollbars
         self._sync_scrollbars()
@@ -155,103 +157,89 @@ class SideBySideDiffWidget(QWidget):
         sel.cursor = cursor
         return sel
 
+    @staticmethod
+    def _classify_diff_line(raw: str) -> tuple[str, str | None, str, str | None]:
+        """將單行 diff 分類成左右兩側的內容與標記 / Classify a diff line into left/right entries.
+
+        Returns (left_text, left_mark, right_text, right_mark).
+        """
+        if raw.startswith("diff "):
+            return raw, "HDR", raw, "HDR"
+        if raw.startswith("--- "):
+            return raw, "HDR", "", "HDR"
+        if raw.startswith("+++ "):
+            return "", "HDR", raw, "HDR"
+        if raw.startswith("@@"):
+            return raw, "HUNK", raw, "HUNK"
+        if raw.startswith("-"):
+            return raw, "DEL", "", None
+        if raw.startswith("+"):
+            return "", None, raw, "ADD"
+        return raw, None, raw, None
+
     def _parse_unified_diff(self, diff_text: str) -> tuple:
-        """
-        Parse unified diff into left/right lines and marks.
-        將 unified diff 解析成左右行與標記。
-        """
-        left_lines, right_lines, left_marks, right_marks = [], [], [], []
+        """將 unified diff 解析成左右行與標記 / Parse unified diff into paired lines and marks."""
+        left_lines: list[str] = []
+        right_lines: list[str] = []
+        left_marks: list[str] = []
+        right_marks: list[str] = []
         left_name, right_name = None, None
 
-        def add_left(line: str, mark: str | None = None) -> None:
-            left_lines.append(line)
-            left_marks.append(mark or "CTX")
-
-        def add_right(line: str, mark: str | None = None) -> None:
-            right_lines.append(line)
-            right_marks.append(mark or "CTX")
+        def append_side(lines: list, marks: list, line: str, mark: str | None) -> None:
+            lines.append(line)
+            marks.append(mark or "CTX")
 
         def align() -> None:
-            # 對齊左右行數 / Align left and right line counts
-            if len(left_lines) < len(right_lines):
-                for _ in range(len(right_lines) - len(left_lines)):
-                    add_left("")
-            elif len(right_lines) < len(left_lines):
-                for _ in range(len(left_lines) - len(right_lines)):
-                    add_right("")
+            while len(left_lines) < len(right_lines):
+                append_side(left_lines, left_marks, "", None)
+            while len(right_lines) < len(left_lines):
+                append_side(right_lines, right_marks, "", None)
 
         for raw in diff_text.splitlines():
-            if raw.startswith("diff "):
-                add_left(raw, "HDR")
-                add_right(raw, "HDR")
-                align()
-            elif raw.startswith("--- "):
+            if raw.startswith("--- "):
                 left_name = raw[4:].strip()
-                add_left(raw, "HDR")
-                add_right("", "HDR")
-                align()
             elif raw.startswith("+++ "):
                 right_name = raw[4:].strip()
-                add_left("", "HDR")
-                add_right(raw, "HDR")
-                align()
-            elif raw.startswith("@@"):
-                add_left(raw, "HUNK")
-                add_right(raw, "HUNK")
-                align()
-            elif raw.startswith("-"):
-                add_left(raw, "DEL")
-                add_right("", None)
-                align()
-            elif raw.startswith("+"):
-                add_left("", None)
-                add_right(raw, "ADD")
-                align()
-            else:
-                add_left(raw, None)
-                add_right(raw, None)
-                align()
+            l_text, l_mark, r_text, r_mark = self._classify_diff_line(raw)
+            append_side(left_lines, left_marks, l_text, l_mark)
+            append_side(right_lines, right_marks, r_text, r_mark)
+            align()
 
         return left_lines, right_lines, left_marks, right_marks, left_name, right_name
 
+    def _background_for_line(self, text: str) -> QColor | None:
+        """依行首字元選擇背景色 / Pick highlight background for a diff line."""
+        if text.startswith("-"):
+            return self.color_del
+        if text.startswith("+"):
+            return self.color_add
+        if text.startswith("@@"):
+            return self.color_hunk
+        if text.startswith(("diff", "---", "+++")):
+            return self.color_header
+        return None
+
+    def _rebuild_selection_format(self, sel: Any) -> Any:
+        """根據主題重新計算單一 extra selection 的格式 / Rebuild a single selection format."""
+        fmt: QTextCharFormat = QTextCharFormat(sel.format)
+        fmt.setForeground(QColor("#d4d4d4") if self.is_dark else QColor("black"))
+        cursor = sel.cursor
+        cursor.select(QTextCursor.SelectionType.LineUnderCursor)
+        bg = self._background_for_line(cursor.selectedText())
+        if bg is not None:
+            fmt.setBackground(bg)
+        sel.format = fmt
+        return sel
+
     def _reapply_highlights_for_theme(self) -> None:
-        """
-        Reapply highlights when theme changes.
-        主題切換時重新套用高亮。
-        """
+        """主題切換時重新套用高亮 / Reapply diff highlights when the theme changes."""
         for edit in (self.leftEdit, self.rightEdit):
-            if hasattr(edit, "_diff_extras"):
-                updated = []
-                for sel in edit._diff_extras:
-                    fmt: QTextCharFormat = QTextCharFormat(sel.format)
-
-                    # 前景色依主題切換
-                    fmt.setForeground(QColor("#d4d4d4") if self.is_dark else QColor("black"))
-
-                    # 依照 mark 更新背景色
-                    cursor = sel.cursor
-                    cursor.select(QTextCursor.SelectionType.LineUnderCursor)
-                    text = cursor.selectedText()
-
-                    if text.startswith("-"):
-                        fmt.setBackground(self.color_del)
-                    elif text.startswith("+"):
-                        fmt.setBackground(self.color_add)
-                    elif text.startswith("@@"):
-                        fmt.setBackground(self.color_hunk)
-                    elif text.startswith("diff") or text.startswith("---") or text.startswith("+++"):
-                        fmt.setBackground(self.color_header)
-
-                    sel.format = fmt
-                    updated.append(sel)
-
-                edit._diff_extras = updated
-
-                if hasattr(edit, "_current_line_extras"):
-                    merged = updated + edit._current_line_extras
-                else:
-                    merged = updated
-                edit.setExtraSelections(merged)
+            if not hasattr(edit, "_diff_extras"):
+                continue
+            updated = [self._rebuild_selection_format(sel) for sel in edit._diff_extras]
+            edit._diff_extras = updated
+            current_extras = getattr(edit, "_current_line_extras", [])
+            edit.setExtraSelections(updated + current_extras)
 
     def set_dark_theme(self) -> None:
         """

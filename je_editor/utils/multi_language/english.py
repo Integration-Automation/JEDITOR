@@ -1,3 +1,6 @@
+# 共用字串常數 / Shared string constants
+_FONT_SIZE_LABEL = "Font Size"
+
 english_word_dict = {
     # Main
     "application_name": "JEditor",
@@ -83,7 +86,7 @@ english_word_dict = {
     "file_menu_save_file_label": "Save File",
     "file_menu_encoding_label": "Encodings",
     "file_menu_font_label": "Font",
-    "file_menu_font_size_label": "Font Size",
+    "file_menu_font_size_label": _FONT_SIZE_LABEL,
     # Help Menu
     "help_menu_label": "Help",
     "help_menu_open_github_label": "GitHub",
@@ -154,7 +157,7 @@ please make sure that the current encoding is consistent with the default encodi
     # Text Menu
     "text_menu_label": "Text",
     "text_menu_label_font": "Font",
-    "text_menu_label_font_size": "Font Size",
+    "text_menu_label_font_size": _FONT_SIZE_LABEL,
     # System tray
     "system_tray_hide": "Hide",
     "system_tray_maximized": "Maximized",
@@ -168,7 +171,7 @@ please make sure that the current encoding is consistent with the default encodi
     # Qtconsole
     "please_install_qtcontsole_label": "Please python -m pip install qtconsole first.",
     # Chat UI
-    "font_size": "Font Size",
+    "font_size": _FONT_SIZE_LABEL,
     "set_ai_model_waring_title": "Can not set AI Model",
     "set_ai_model_waring_text": "Please check [ai_base_url, ai_api_key, chat_model]",
     "call_ai_model_error_title": "Can't connect to AI Model",

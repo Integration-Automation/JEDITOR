@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import queue
-import subprocess
+import subprocess  # nosec B404 - 管理器僅持有外部子程序物件，呼叫端以引數清單啟動
 from threading import Thread
 from typing import Union
 

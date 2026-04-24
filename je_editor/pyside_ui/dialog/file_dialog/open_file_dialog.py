@@ -22,60 +22,66 @@ from je_editor.pyside_ui.main_ui.editor.editor_widget import EditorWidget
 from je_editor.utils.file.open.open_file import read_file
 
 
+def _prompt_for_file(parent_qt_instance: EditorMain) -> str:
+    """彈出檔案選擇對話框並回傳路徑 (若取消為空字串) / Prompt file dialog; return path or ''."""
+    file_path = QFileDialog().getOpenFileName(
+        parent=parent_qt_instance,
+        dir=str(Path.cwd()),
+        filter="""Python file (*.py);;
+            HTML file (*.html);;
+            File (*.*)"""
+    )[0]
+    return file_path or ""
+
+
+def _focus_existing_tab_for_file(widget: EditorWidget, normalized_path: str) -> bool:
+    """若檔案已開啟，切換到該分頁並回傳 True / Focus existing tab if the file is already open."""
+    if file_is_open_manager_dict.get(normalized_path, None) is None:
+        return False
+    found_widget = widget.tab_manager.findChild(EditorWidget, normalized_path)
+    if found_widget is not None:
+        widget.tab_manager.setCurrentWidget(found_widget)
+    return True
+
+
+def _load_file_into_widget(widget: EditorWidget, file_path: str) -> bool:
+    """讀檔並套用到 EditorWidget，回傳是否成功 / Load file content into the widget."""
+    result = read_file(file_path)
+    if result is None:
+        return False
+    widget.current_file = file_path
+    widget.code_edit.setPlainText(result[1])
+    if widget.code_save_thread is None:
+        init_new_auto_save_thread(widget.current_file, widget)
+    else:
+        widget.code_save_thread.file = widget.current_file
+    return True
+
+
 def choose_file_get_open_file_path(parent_qt_instance: EditorMain) -> None:
-    """
-    開啟檔案並將內容載入編輯器
-    Open file and set code edit content
-    :param parent_qt_instance: Pyside 主視窗 / Pyside parent
-    :return: None
-    """
+    """開啟檔案並將內容載入編輯器 / Open file and load its content into the editor."""
     jeditor_logger.info("open_file_dialog.py choose_file_get_open_file_path"
                         f" parent_qt_instance: {parent_qt_instance}")
     widget = parent_qt_instance.tab_widget.currentWidget()
-    if isinstance(widget, EditorWidget):
-        # 開啟檔案選擇對話框 / Open file dialog
-        file_path = QFileDialog().getOpenFileName(
-            parent=parent_qt_instance,
-            dir=str(Path.cwd()),
-            filter="""Python file (*.py);;
-            HTML file (*.html);;
-            File (*.*)"""
-        )[0]
+    if not isinstance(widget, EditorWidget):
+        return
 
-        if file_path is not None and file_path != "":
-            # 檢查檔案是否已經開啟 / Check if file already opened
-            normalized_path = str(Path(file_path))
-            if file_is_open_manager_dict.get(normalized_path, None) is not None:
-                found_widget = widget.tab_manager.findChild(EditorWidget, normalized_path)
-                if found_widget is not None:
-                    widget.tab_manager.setCurrentWidget(found_widget)
-                return
-            else:
-                # 記錄已開啟檔案 / Register opened file
-                file_is_open_manager_dict.update({normalized_path: str(Path(file_path).name)})
+    file_path = _prompt_for_file(parent_qt_instance)
+    if not file_path:
+        return
 
-            # 設定目前檔案路徑 / Set current file path
-            widget.current_file = file_path
-            # 讀取檔案內容 / Read file content
-            result = read_file(file_path)
-            if result is None:
-                return
-            file_content = result[1]
-            widget.code_edit.setPlainText(file_content)
+    normalized_path = str(Path(file_path))
+    if _focus_existing_tab_for_file(widget, normalized_path):
+        return
+    file_is_open_manager_dict.update({normalized_path: str(Path(file_path).name)})
 
-            # 啟動自動儲存執行緒 / Start auto-save thread
-            if widget.current_file is not None and widget.code_save_thread is None:
-                init_new_auto_save_thread(widget.current_file, widget)
-            elif widget.code_save_thread is not None:
-                widget.code_save_thread.file = widget.current_file
+    if not _load_file_into_widget(widget, file_path):
+        return
 
-            # 更新使用者設定中的最後開啟檔案 / Update last opened file in user settings
-            user_setting_dict.update({"last_file": str(widget.current_file)})
-            # 加入最近開啟檔案清單 / Add to recent files list
-            from je_editor.pyside_ui.main_ui.menu.file_menu.build_file_menu import add_to_recent_files
-            add_to_recent_files(str(widget.current_file))
-            # 更新分頁標題 / Rename tab title
-            widget.rename_self_tab()
+    user_setting_dict.update({"last_file": str(widget.current_file)})
+    from je_editor.pyside_ui.main_ui.menu.file_menu.build_file_menu import add_to_recent_files
+    add_to_recent_files(str(widget.current_file))
+    widget.rename_self_tab()
 
 
 def choose_dir_get_dir_path(parent_qt_instance: EditorMain) -> None:

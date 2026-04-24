@@ -94,13 +94,13 @@ class LineNumberedCodeViewer(QPlainTextEdit):
         painter.fillRect(event.rect(), QColor(40, 40, 40) if getattr(self, "is_dark", False) else QColor(230, 230, 230))
 
         block = self.firstVisibleBlock()
-        blockNumber = block.blockNumber()
+        block_number = block.blockNumber()
         top = int(self.blockBoundingGeometry(block).translated(self.contentOffset()).top())
         bottom = top + int(self.blockBoundingRect(block).height())
 
         while block.isValid() and top <= event.rect().bottom():
             if block.isVisible() and bottom >= event.rect().top():
-                number = str(blockNumber + 1)
+                number = str(block_number + 1)
                 # 行號顏色依主題切換 / Line number color depends on theme
                 painter.setPen(QColor("#d4d4d4") if getattr(self, "is_dark", False) else Qt.GlobalColor.black)
                 painter.drawText(
@@ -110,7 +110,7 @@ class LineNumberedCodeViewer(QPlainTextEdit):
             block = block.next()
             top = bottom
             bottom = top + int(self.blockBoundingRect(block).height())
-            blockNumber += 1
+            block_number += 1
 
     def highlight_current_line(self) -> None:
         """
@@ -118,8 +118,8 @@ class LineNumberedCodeViewer(QPlainTextEdit):
         高亮顯示游標所在的行。
         """
         selection = QTextEdit.ExtraSelection()
-        lineColor = QColor(50, 50, 50) if getattr(self, "is_dark", False) else QColor(232, 232, 255)
-        selection.format.setBackground(lineColor)
+        line_color = QColor(50, 50, 50) if getattr(self, "is_dark", False) else QColor(232, 232, 255)
+        selection.format.setBackground(line_color)
         selection.cursor = self.textCursor()
         selection.cursor.clearSelection()
 

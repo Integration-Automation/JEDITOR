@@ -1,4 +1,4 @@
-import subprocess
+import subprocess  # nosec B404 - 呼叫 ruff 時以引數清單傳遞，未使用 shell
 import threading
 import time
 from queue import Queue
@@ -38,7 +38,9 @@ class RuffThread(threading.Thread):
         在子執行緒中執行 Ruff 程式。
         """
         # 啟動子程序，捕捉 stdout 與 stderr
-        self.ruff_process = subprocess.Popen(
+        # 指令由開發者建立為引數清單，未使用 shell
+        # Command is a dev-provided argument list; no shell interpretation
+        self.ruff_process = subprocess.Popen(  # noqa: S603  # nosec B603
             self.ruff_commands,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
@@ -49,10 +51,10 @@ class RuffThread(threading.Thread):
         # 等待子程序結束
         while self.ruff_process.poll() is None:
             time.sleep(1)
-        else:
-            # 子程序結束後，讀取 stdout 與 stderr
-            for line in self.ruff_process.stdout:
-                self.std_queue.put(line.strip())
 
-            for line in self.ruff_process.stderr:
-                self.stderr_queue.put(line.strip())
+        # 子程序結束後，讀取 stdout 與 stderr
+        for line in self.ruff_process.stdout:
+            self.std_queue.put(line.strip())
+
+        for line in self.ruff_process.stderr:
+            self.stderr_queue.put(line.strip())

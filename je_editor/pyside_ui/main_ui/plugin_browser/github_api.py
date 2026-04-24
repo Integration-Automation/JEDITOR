@@ -16,6 +16,15 @@ from je_editor.utils.logging.loggin_instance import jeditor_logger
 # GitHub API 基底 URL / GitHub API base URL
 _GITHUB_API = "https://api.github.com"
 
+# 僅允許的 URL scheme，避免 file:// 等協定 / Allowed URL schemes; reject file:// and others
+_ALLOWED_SCHEMES = ("http://", "https://")
+
+
+def _assert_safe_url(url: str) -> None:
+    """驗證 URL 只使用允許的 scheme / Ensure URL uses an allowed scheme."""
+    if not url.startswith(_ALLOWED_SCHEMES):
+        raise ValueError(f"Rejected unsafe URL scheme: {url}")
+
 
 def fetch_repo_tree(owner: str, repo: str, branch: str = "main") -> list[dict]:
     """
@@ -107,11 +116,12 @@ def _github_get(url: str) -> list | dict:
     發送 GET 請求到 GitHub API。
     Send GET request to GitHub API.
     """
+    _assert_safe_url(url)
     req = urllib.request.Request(url, headers={
         "Accept": "application/vnd.github.v3+json",
         "User-Agent": "JEditor-PluginBrowser",
     })
-    with urllib.request.urlopen(req, timeout=15) as resp:
+    with urllib.request.urlopen(req, timeout=15) as resp:  # noqa: S310  # nosec B310 - scheme 已驗證
         return json.loads(resp.read().decode("utf-8"))
 
 
@@ -120,8 +130,9 @@ def _download_text(url: str) -> str:
     下載純文字內容。
     Download plain text content.
     """
+    _assert_safe_url(url)
     req = urllib.request.Request(url, headers={
         "User-Agent": "JEditor-PluginBrowser",
     })
-    with urllib.request.urlopen(req, timeout=30) as resp:
+    with urllib.request.urlopen(req, timeout=30) as resp:  # noqa: S310  # nosec B310 - scheme 已驗證
         return resp.read().decode("utf-8")

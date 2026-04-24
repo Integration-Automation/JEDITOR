@@ -18,7 +18,7 @@ def _log(msg):
 if __name__ == "__main__":
     try:
         _log("Step 1: Importing Qt...")
-        from PySide6.QtCore import QCoreApplication, QTimer
+        from PySide6.QtCore import QCoreApplication
         from PySide6.QtWidgets import QApplication
         from qt_material import apply_stylesheet
 
@@ -49,7 +49,7 @@ if __name__ == "__main__":
 
     except SystemExit as e:
         _log(f"SystemExit caught: code={e.code}")
-        os._exit(e.code if isinstance(e.code, int) else 0)
+        raise
     except Exception as e:
         _log(f"Exception: {type(e).__name__}: {e}")
         import traceback

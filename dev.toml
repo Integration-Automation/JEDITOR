@@ -1,7 +1,7 @@
 # Rename to build dev version
 # This is dev version
 [build-system]
-requires = ["setuptools"]
+requires = ["setuptools>=82.0.1"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -40,6 +40,11 @@ content-type = "text/markdown"
 testpaths = ["test"]
 qt_api = "pyside6"
 addopts = "--ignore=test/qt_ui"
+
+[tool.bandit]
+# 測試程式碼使用 assert 是 pytest 的慣例，排除測試目錄以避免 B101 雜訊
+# pytest relies on `assert`; exclude test directories to silence B101
+exclude_dirs = ["test", "tests"]
 
 [tool.setuptools.packages]
 find = { namespaces = false }

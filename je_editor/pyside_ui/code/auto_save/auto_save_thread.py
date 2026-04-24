@@ -83,25 +83,28 @@ class CodeEditSaveThread(Thread):
         except RuntimeError:
             return None
 
+    def _attempt_save(self) -> None:
+        """執行一次儲存動作；錯誤只記錄不中斷 / Run one save attempt; log errors instead of raising."""
+        try:
+            text = self._get_editor_text()
+            if text is None:
+                return
+            if self.before_write_callback is not None:
+                self.before_write_callback()
+            write_file(self.file, text)
+        except (OSError, RuntimeError) as e:
+            jeditor_logger.error(f"Auto-save failed for {self.file}: {e}")
+
     def run(self) -> None:
-        """
-        loop and save current edit file
-        持續迴圈，每隔一段時間自動儲存當前編輯檔案
-        """
+        """迴圈自動儲存當前編輯檔案 / Loop and save the current editor file periodically."""
         jeditor_logger.info("CodeEditSaveThread run")
-        if self.file is not None:
-            path = Path(self.file)
-            while path.is_file() and self.editor is not None:
-                time.sleep(5)
-                if not self.still_run:
-                    break
-                if self.skip_this_round:
-                    continue
-                try:
-                    text = self._get_editor_text()
-                    if text is not None:
-                        if self.before_write_callback is not None:
-                            self.before_write_callback()
-                        write_file(self.file, text)
-                except Exception as e:
-                    jeditor_logger.error(f"Auto-save failed for {self.file}: {e}")
+        if self.file is None:
+            return
+        path = Path(self.file)
+        while path.is_file() and self.editor is not None:
+            time.sleep(5)
+            if not self.still_run:
+                break
+            if self.skip_this_round:
+                continue
+            self._attempt_save()

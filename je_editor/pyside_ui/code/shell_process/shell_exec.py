@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import os
-import subprocess
+import subprocess  # nosec B404 - 以引數清單呼叫，且 shell=True 僅用於使用者自行輸入的 shell 指令
 import sys
 from pathlib import Path
 from typing import Union, Callable
@@ -90,7 +90,9 @@ class ShellManager(BaseProcessManager):
             # shell=True is required: this is the user-facing shell execution feature
             # of the editor, invoked only with commands the user explicitly types.
             # Not a user-input-driven pipeline from untrusted data.
-            self.process = subprocess.Popen(  # noqa: S602  # nosec B602
+            # shell=True 僅用於編輯器的「Shell 執行」功能，由使用者自行輸入指令
+            # shell=True is used only for the editor's explicit "run shell" feature
+            self.process = subprocess.Popen(  # noqa: S602,S603  # nosec B602,B603
                 args=args,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,

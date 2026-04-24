@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING, Callable
 # 匯入 Qt 動作與訊息框
 # Import QAction and QMessageBox from PySide6
 from PySide6.QtGui import QAction
-from PySide6.QtWidgets import QMessageBox
+from PySide6.QtWidgets import QMessageBox, QMenu
 
 # 匯入日誌紀錄器
 # Import logger instance
@@ -24,108 +24,80 @@ if TYPE_CHECKING:
     from je_editor.pyside_ui.main_ui.main_editor import EditorMain
 
 
-def set_plugin_menu(ui_we_want_to_set: EditorMain) -> None:
-    """
-    建立插件選單，顯示所有已載入插件的名稱、版本、作者。
-    Build Plugin menu showing all loaded plugins with name, version, author.
-    同一語言若支援多種副檔名，以子選單呈現。
-    If a language plugin supports multiple suffixes, show them in a submenu.
-    """
-    jeditor_logger.info(f"build_plugin_menu.py set_plugin_menu ui_we_want_to_set: {ui_we_want_to_set}")
+_PLUGIN_MENU_ABOUT = "plugin_menu_about"
+_PLUGIN_MENU_RUN_WITH = "plugin_menu_run_with"
 
+
+def _add_about_action(menu: QMenu, plugin_name: str, plugin_version: str,
+                      plugin_author: str) -> None:
+    """在選單加上「關於」項目 / Append an About action to the given menu."""
+    about_action = QAction(
+        language_wrapper.language_word_dict.get(_PLUGIN_MENU_ABOUT, "About"), menu)
+    about_action.triggered.connect(
+        _make_about_callback(plugin_name, plugin_version, plugin_author))
+    menu.addAction(about_action)
+
+
+def _add_run_action(menu: QMenu, ui_we_want_to_set: EditorMain, run_config: dict,
+                    action_text: str) -> None:
+    """在選單加上「執行」項目 / Append a Run action to the given menu."""
+    run_action = QAction(
+        language_wrapper.language_word_dict.get(_PLUGIN_MENU_RUN_WITH, "Run with {name}").format(
+            name=action_text), menu)
+    run_action.triggered.connect(_make_run_callback(ui_we_want_to_set, run_config))
+    menu.addAction(run_action)
+
+
+def _build_run_submenu(ui_we_want_to_set: EditorMain, meta: dict, run_config: dict) -> None:
+    """為單一有 run_config 的插件建立子選單 / Build submenu for a plugin with run_config."""
+    plugin_name = meta.get("name", "Unknown")
+    plugin_author = meta.get("author", "")
+    plugin_version = meta.get("version", "")
+    suffixes = run_config.get("suffixes", ())
+    config_name = run_config.get("name", plugin_name)
+
+    sub_menu = ui_we_want_to_set.plugin_menu.addMenu(config_name)
+    _add_about_action(sub_menu, plugin_name, plugin_version, plugin_author)
+    sub_menu.addSeparator()
+    if len(suffixes) > 1:
+        for suffix in suffixes:
+            _add_run_action(sub_menu, ui_we_want_to_set, run_config, f"{config_name} ({suffix})")
+    else:
+        _add_run_action(sub_menu, ui_we_want_to_set, run_config, config_name)
+
+
+def _build_about_only_entry(ui_we_want_to_set: EditorMain, meta: dict) -> None:
+    """無執行設定的插件只顯示 About / Plugins without run_config show About only."""
+    plugin_name = meta.get("name", "Unknown")
+    plugin_author = meta.get("author", "")
+    plugin_version = meta.get("version", "")
+    about_action = QAction(plugin_name, ui_we_want_to_set.plugin_menu)
+    about_action.triggered.connect(
+        _make_about_callback(plugin_name, plugin_version, plugin_author))
+    ui_we_want_to_set.plugin_menu.addAction(about_action)
+
+
+def set_plugin_menu(ui_we_want_to_set: EditorMain) -> None:
+    """建立插件選單 / Build the Plugin menu."""
+    jeditor_logger.info(f"build_plugin_menu.py set_plugin_menu ui_we_want_to_set: {ui_we_want_to_set}")
     from je_editor.plugins import get_all_plugin_metadata
 
-    # 建立 Plugin 選單
-    # Create Plugin menu
     ui_we_want_to_set.plugin_menu = ui_we_want_to_set.menu.addMenu(
-        language_wrapper.language_word_dict.get("plugin_menu_label", "Plugins")
-    )
+        language_wrapper.language_word_dict.get("plugin_menu_label", "Plugins"))
 
-    # 插件瀏覽器入口 / Plugin browser entry
     browse_action = QAction(
         language_wrapper.language_word_dict.get("plugin_browser_tab_name", "Plugin Browser"),
-        ui_we_want_to_set.plugin_menu,
-    )
+        ui_we_want_to_set.plugin_menu)
     browse_action.triggered.connect(lambda: _open_plugin_browser(ui_we_want_to_set))
     ui_we_want_to_set.plugin_menu.addAction(browse_action)
     ui_we_want_to_set.plugin_menu.addSeparator()
 
-    metadata_list = get_all_plugin_metadata()
-
-    for meta in metadata_list:
-        plugin_name = meta.get("name", "Unknown")
-        plugin_author = meta.get("author", "")
-        plugin_version = meta.get("version", "")
+    for meta in get_all_plugin_metadata():
         run_config = meta.get("run_config")
-
         if run_config is not None:
-            suffixes = run_config.get("suffixes", ())
-            config_name = run_config.get("name", plugin_name)
-
-            if len(suffixes) > 1:
-                # 多種副檔名：建立子選單
-                # Multiple suffixes: create a submenu
-                sub_menu = ui_we_want_to_set.plugin_menu.addMenu(config_name)
-
-                # 「關於」動作
-                # "About" action
-                about_action = QAction(
-                    language_wrapper.language_word_dict.get("plugin_menu_about", "About"),
-                    sub_menu,
-                )
-                about_action.triggered.connect(
-                    _make_about_callback(plugin_name, plugin_version, plugin_author)
-                )
-                sub_menu.addAction(about_action)
-                sub_menu.addSeparator()
-
-                # 每個副檔名一個執行動作
-                # One run action per suffix
-                for suffix in suffixes:
-                    run_action = QAction(
-                        language_wrapper.language_word_dict.get(
-                            "plugin_menu_run_with", "Run with {name}"
-                        ).format(name=f"{config_name} ({suffix})"),
-                        sub_menu,
-                    )
-                    run_action.triggered.connect(
-                        _make_run_callback(ui_we_want_to_set, run_config, suffix)
-                    )
-                    sub_menu.addAction(run_action)
-            else:
-                # 單一副檔名：直接加入選單
-                # Single suffix: add directly to menu
-                sub_menu = ui_we_want_to_set.plugin_menu.addMenu(config_name)
-
-                about_action = QAction(
-                    language_wrapper.language_word_dict.get("plugin_menu_about", "About"),
-                    sub_menu,
-                )
-                about_action.triggered.connect(
-                    _make_about_callback(plugin_name, plugin_version, plugin_author)
-                )
-                sub_menu.addAction(about_action)
-                sub_menu.addSeparator()
-
-                suffix = suffixes[0] if suffixes else ""
-                run_action = QAction(
-                    language_wrapper.language_word_dict.get(
-                        "plugin_menu_run_with", "Run with {name}"
-                    ).format(name=config_name),
-                    sub_menu,
-                )
-                run_action.triggered.connect(
-                    _make_run_callback(ui_we_want_to_set, run_config, suffix)
-                )
-                sub_menu.addAction(run_action)
+            _build_run_submenu(ui_we_want_to_set, meta, run_config)
         else:
-            # 沒有執行設定的插件（如翻譯插件），只顯示關於
-            # Plugins without run config (e.g. translation), show about only
-            about_action = QAction(plugin_name, ui_we_want_to_set.plugin_menu)
-            about_action.triggered.connect(
-                _make_about_callback(plugin_name, plugin_version, plugin_author)
-            )
-            ui_we_want_to_set.plugin_menu.addAction(about_action)
+            _build_about_only_entry(ui_we_want_to_set, meta)
 
 
 def _open_plugin_browser(ui_we_want_to_set: EditorMain) -> None:
@@ -159,7 +131,7 @@ def _make_about_callback(name: str, version: str, author: str) -> Callable[[], N
     return callback
 
 
-def _make_run_callback(ui_we_want_to_set: EditorMain, run_config: dict, suffix: str) -> Callable[[], None]:
+def _make_run_callback(ui_we_want_to_set: EditorMain, run_config: dict) -> Callable[[], None]:
     """
     建立使用插件執行設定來執行程式的回呼函式。
     Create a callback to run a program using plugin run config.

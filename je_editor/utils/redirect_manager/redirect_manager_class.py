@@ -22,7 +22,9 @@ class RedirectStdOut(logging.Handler):
         redirect_manager_instance.std_out_queue.put(content_to_write)
 
     def flush(self) -> None:
-        pass
+        # Queue 取代檔案緩衝，無需實作 flush
+        # Queue replaces file buffering; flush is intentionally a no-op
+        return
 
     def fileno(self) -> int:
         return sys.__stdout__.fileno() if sys.__stdout__ else 1
@@ -50,7 +52,9 @@ class RedirectStdErr(logging.Handler):
         redirect_manager_instance.std_err_queue.put(content_to_write)
 
     def flush(self) -> None:
-        pass
+        # Queue 取代檔案緩衝，無需實作 flush
+        # Queue replaces file buffering; flush is intentionally a no-op
+        return
 
     def fileno(self) -> int:
         return sys.__stderr__.fileno() if sys.__stderr__ else 2

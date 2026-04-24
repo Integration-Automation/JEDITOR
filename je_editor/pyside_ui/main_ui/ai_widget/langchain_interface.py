@@ -70,8 +70,6 @@ class LangChainInterface(object):
             match = re.search(r"</think>\s*(.*)", message, re.DOTALL)
             if match:
                 message = match.group(1).strip()
-            else:
-                message = message
 
         except Exception as error:
             # 發生錯誤時，彈出警告視窗顯示錯誤訊息

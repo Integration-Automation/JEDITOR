@@ -1,5 +1,6 @@
 from pathlib import Path
 from threading import Lock
+from typing import Optional
 
 # 匯入自訂例外與日誌工具
 # Import custom exception and logging utility
@@ -11,7 +12,7 @@ from je_editor.utils.logging.loggin_instance import jeditor_logger
 _file_read_lock = Lock()
 
 
-def read_file(file_path: str) -> list[Path | str] | None:
+def read_file(file_path: Optional[str]) -> list[Path | str] | None:
     """
     功能說明 (Function Description):
     用來檢查檔案是否存在並嘗試開啟，讀取其內容。

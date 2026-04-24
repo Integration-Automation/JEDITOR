@@ -1,10 +1,7 @@
 """Tests for file open/read utility."""
 from __future__ import annotations
 
-import pytest
-
 from je_editor.utils.file.open.open_file import read_file
-from je_editor.utils.exception.exceptions import JEditorOpenFileException
 
 
 class TestReadFile:
