@@ -92,9 +92,7 @@ class ShellManager(BaseProcessManager):
             # Not a user-input-driven pipeline from untrusted data.
             # shell=True 僅用於編輯器的「Shell 執行」功能，由使用者自行輸入指令
             # shell=True is used only for the editor's explicit "run shell" feature
-            # nosemgrep: python.lang.security.audit.dangerous-subprocess-use-audit.dangerous-subprocess-use-audit
-            # nosemgrep: python.lang.security.audit.subprocess-shell-true.subprocess-shell-true
-            self.process = subprocess.Popen(  # noqa: S602,S603  # nosec B602,B603
+            self.process = subprocess.Popen(  # nosemgrep  # noqa: S602,S603  # nosec B602,B603
                 args=args,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
