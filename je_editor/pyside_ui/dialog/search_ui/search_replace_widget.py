@@ -485,14 +485,21 @@ class SearchReplaceDialog(QDialog):
             return
 
         try:
-            # 將路徑限制在專案根目錄內，避免路徑穿越
-            # Confine path to project root to prevent path traversal
+            # 僅從受信任的 project_root 與經驗證的相對路徑重新組合，
+            # 切斷從使用者輸入流入 write_text() 的 taint 鏈 (SonarCloud S2083)
+            # Rebuild the target path from the trusted project root plus a
+            # validated relative component so user-controlled data never flows
+            # directly into write_text() (SonarCloud S2083).
             project_root = Path(self._get_project_root()).resolve()
-            resolved = Path(file_path).resolve()
-            if not resolved.is_file() or (project_root not in resolved.parents and resolved != project_root):
+            try:
+                relative_part = Path(file_path).resolve().relative_to(project_root)
+            except ValueError:
                 self.status_label.setText(f"Error: invalid file path {file_path}")
                 return
-            p = resolved
+            p = project_root.joinpath(*relative_part.parts)
+            if not p.is_file():
+                self.status_label.setText(f"Error: invalid file path {file_path}")
+                return
             raw = p.read_bytes()
             enc = "utf-8"
             for _enc in ("utf-8-sig", "utf-8", "cp1252", "latin-1"):
