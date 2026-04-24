@@ -14,4 +14,3 @@ pydantic
 jedi
 pytest
 pytest-qt
-je_editor

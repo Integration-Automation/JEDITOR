@@ -14,5 +14,4 @@ pydantic
 jedi
 pytest
 pytest-qt
-je_editor_dev
 auto-py-to-exe
