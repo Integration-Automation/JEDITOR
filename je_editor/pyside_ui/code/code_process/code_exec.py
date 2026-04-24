@@ -97,6 +97,7 @@ class ExecManager(BaseProcessManager):
 
             # 以引數清單呼叫使用者選定的編譯器/直譯器，shell=False
             # Invoke user-selected compiler/interpreter via argv list; no shell
+            # nosemgrep: python.lang.security.audit.dangerous-subprocess-use-audit.dangerous-subprocess-use-audit
             self.process = subprocess.Popen(  # noqa: S603  # nosec B603
                 execute_program_param,
                 stdout=subprocess.PIPE,
@@ -159,6 +160,7 @@ class ExecManager(BaseProcessManager):
 
                 # 以引數清單呼叫外部編譯器，shell=False
                 # Invoke external compiler via argv list; no shell
+                # nosemgrep: python.lang.security.audit.dangerous-subprocess-use-audit.dangerous-subprocess-use-audit
                 compile_process = subprocess.Popen(  # noqa: S603  # nosec B603
                     compile_cmd,
                     stdout=subprocess.PIPE,
@@ -190,7 +192,10 @@ class ExecManager(BaseProcessManager):
                 execute_program_param = [compiler] + args + [reformat_os_file_path]
                 display_cmd = " ".join(execute_program_param)
 
-            self.process = subprocess.Popen(
+            # 以引數清單呼叫使用者選定的編譯器/直譯器，shell=False
+            # Invoke user-selected compiler/interpreter via argv list; no shell
+            # nosemgrep: python.lang.security.audit.dangerous-subprocess-use-audit.dangerous-subprocess-use-audit
+            self.process = subprocess.Popen(  # noqa: S603  # nosec B603
                 execute_program_param,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,

@@ -17,6 +17,7 @@ class GitCLI:
         log.debug("git %s", " ".join(args))
         # 以固定可執行檔 "git" 與引數清單呼叫，沒有使用 shell
         # Invoked with fixed "git" binary and argument list; no shell involved
+        # nosemgrep: python.lang.security.audit.dangerous-subprocess-use-audit.dangerous-subprocess-use-audit
         res = subprocess.run(  # noqa: S603  # nosec B603
             ["git"] + args,
             cwd=self.repo_path,

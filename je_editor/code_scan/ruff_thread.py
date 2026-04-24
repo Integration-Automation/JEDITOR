@@ -40,6 +40,7 @@ class RuffThread(threading.Thread):
         # 啟動子程序，捕捉 stdout 與 stderr
         # 指令由開發者建立為引數清單，未使用 shell
         # Command is a dev-provided argument list; no shell interpretation
+        # nosemgrep: python.lang.security.audit.dangerous-subprocess-use-audit.dangerous-subprocess-use-audit
         self.ruff_process = subprocess.Popen(  # noqa: S603  # nosec B603
             self.ruff_commands,
             stdout=subprocess.PIPE,
