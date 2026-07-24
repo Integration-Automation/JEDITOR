@@ -36,6 +36,9 @@ def update_actually_color_dict() -> None:
             "normal_output_color": _to_qcolor("normal_output_color", [255, 255, 255]),
             "error_output_color": _to_qcolor("error_output_color", [255, 0, 0]),
             "warning_output_color": _to_qcolor("warning_output_color", [204, 204, 0]),
+            "bookmark_marker_color": _to_qcolor("bookmark_marker_color", [66, 165, 245]),
+            "fold_marker_color": _to_qcolor("fold_marker_color", [120, 120, 120]),
+            "occurrence_highlight_color": _to_qcolor("occurrence_highlight_color", [80, 90, 60]),
         }
     )
 
@@ -48,7 +51,10 @@ user_setting_color_dict: Dict[str, list] = {
     "current_line_color": [148, 148, 184],
     "normal_output_color": [255, 255, 255],
     "error_output_color": [255, 0, 0],
-    "warning_output_color": [204, 204, 0]
+    "warning_output_color": [204, 204, 0],
+    "bookmark_marker_color": [66, 165, 245],
+    "fold_marker_color": [120, 120, 120],
+    "occurrence_highlight_color": [80, 90, 60]
 }
 
 # 實際使用的顏色字典 (以 QColor 表示)

@@ -3,11 +3,12 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from PySide6.QtGui import QAction
-from PySide6.QtWidgets import QPlainTextEdit
+from PySide6.QtWidgets import QMessageBox, QPlainTextEdit
 
 from je_editor.pyside_ui.main_ui.editor.editor_widget import EditorWidget
 from je_editor.pyside_ui.main_ui.save_settings.user_setting_file import user_setting_dict
 from je_editor.utils.logging.loggin_instance import jeditor_logger
+from je_editor.utils.text_stats.text_statistics import TextStatistics, text_statistics
 
 # 啟用未來註解功能，允許型別提示使用字串前向參照
 # Enable future annotations, allowing forward references in type hints
@@ -93,6 +94,233 @@ def set_text_menu(ui_we_want_to_set: EditorMain) -> None:
         indent_action.triggered.connect(
             lambda checked=False, s=size: set_indent_size(ui_we_want_to_set, s))
         indent_menu.addAction(indent_action)
+
+    ui_we_want_to_set.text_menu.addSeparator()
+
+    # === 移除行尾空白 (Trim Trailing Whitespace) ===
+    trim_action = QAction(
+        language_wrapper.language_word_dict.get("text_menu_trim_trailing_whitespace"),
+        ui_we_want_to_set)
+    trim_action.triggered.connect(lambda: trim_trailing_whitespace(ui_we_want_to_set))
+    ui_we_want_to_set.text_menu.addAction(trim_action)
+
+    # === 縮排轉換 (Convert Indentation) ===
+    tabs_to_spaces_action = QAction(
+        language_wrapper.language_word_dict.get("text_menu_indent_tabs_to_spaces"),
+        ui_we_want_to_set)
+    tabs_to_spaces_action.triggered.connect(
+        lambda: _convert_indentation(ui_we_want_to_set, to_spaces=True))
+    ui_we_want_to_set.text_menu.addAction(tabs_to_spaces_action)
+
+    spaces_to_tabs_action = QAction(
+        language_wrapper.language_word_dict.get("text_menu_indent_spaces_to_tabs"),
+        ui_we_want_to_set)
+    spaces_to_tabs_action.triggered.connect(
+        lambda: _convert_indentation(ui_we_want_to_set, to_spaces=False))
+    ui_we_want_to_set.text_menu.addAction(spaces_to_tabs_action)
+
+    ui_we_want_to_set.text_menu.addSeparator()
+
+    # === 選取行操作 (Selected-line operations) ===
+    remove_duplicates_action = QAction(
+        language_wrapper.language_word_dict.get("text_menu_remove_duplicate_lines"),
+        ui_we_want_to_set)
+    remove_duplicates_action.triggered.connect(
+        lambda: _run_on_editor(ui_we_want_to_set, "remove_duplicate_selected_lines"))
+    ui_we_want_to_set.text_menu.addAction(remove_duplicates_action)
+
+    reverse_lines_action = QAction(
+        language_wrapper.language_word_dict.get("text_menu_reverse_lines"),
+        ui_we_want_to_set)
+    reverse_lines_action.triggered.connect(
+        lambda: _run_on_editor(ui_we_want_to_set, "reverse_selected_lines"))
+    ui_we_want_to_set.text_menu.addAction(reverse_lines_action)
+
+    natural_sort_action = QAction(
+        language_wrapper.language_word_dict.get("text_menu_natural_sort"),
+        ui_we_want_to_set)
+    natural_sort_action.triggered.connect(
+        lambda: _run_on_editor(ui_we_want_to_set, "natural_sort_selected_lines"))
+    ui_we_want_to_set.text_menu.addAction(natural_sort_action)
+
+    remove_blank_action = QAction(
+        language_wrapper.language_word_dict.get("text_menu_remove_blank_lines"),
+        ui_we_want_to_set)
+    remove_blank_action.triggered.connect(
+        lambda: _run_on_editor(ui_we_want_to_set, "remove_blank_selected_lines"))
+    ui_we_want_to_set.text_menu.addAction(remove_blank_action)
+
+    align_action = QAction(
+        language_wrapper.language_word_dict.get("text_menu_align_by_delimiter"),
+        ui_we_want_to_set)
+    align_action.triggered.connect(
+        lambda: _run_on_editor(ui_we_want_to_set, "align_selected_lines"))
+    ui_we_want_to_set.text_menu.addAction(align_action)
+
+    ui_we_want_to_set.text_menu.addSeparator()
+
+    # === 大小寫轉換 (Case conversion) ===
+    uppercase_action = QAction(
+        language_wrapper.language_word_dict.get("text_menu_uppercase"), ui_we_want_to_set)
+    uppercase_action.triggered.connect(
+        lambda: _run_on_editor(ui_we_want_to_set, "uppercase_selection"))
+    ui_we_want_to_set.text_menu.addAction(uppercase_action)
+
+    lowercase_action = QAction(
+        language_wrapper.language_word_dict.get("text_menu_lowercase"), ui_we_want_to_set)
+    lowercase_action.triggered.connect(
+        lambda: _run_on_editor(ui_we_want_to_set, "lowercase_selection"))
+    ui_we_want_to_set.text_menu.addAction(lowercase_action)
+
+    swapcase_action = QAction(
+        language_wrapper.language_word_dict.get("text_menu_swapcase"), ui_we_want_to_set)
+    swapcase_action.triggered.connect(
+        lambda: _run_on_editor(ui_we_want_to_set, "swapcase_selection"))
+    ui_we_want_to_set.text_menu.addAction(swapcase_action)
+
+    titlecase_action = QAction(
+        language_wrapper.language_word_dict.get("text_menu_titlecase"), ui_we_want_to_set)
+    titlecase_action.triggered.connect(
+        lambda: _run_on_editor(ui_we_want_to_set, "titlecase_selection"))
+    ui_we_want_to_set.text_menu.addAction(titlecase_action)
+
+    # === 命名風格子選單 (Naming-style submenu) ===
+    naming_menu = ui_we_want_to_set.text_menu.addMenu(
+        language_wrapper.language_word_dict.get("text_menu_naming_menu"))
+    for label_key, method_name in (
+        ("text_menu_snake_case", "to_snake_case_selection"),
+        ("text_menu_camel_case", "to_camel_case_selection"),
+        ("text_menu_pascal_case", "to_pascal_case_selection"),
+        ("text_menu_kebab_case", "to_kebab_case_selection"),
+    ):
+        action = QAction(language_wrapper.language_word_dict.get(label_key), naming_menu)
+        action.triggered.connect(
+            lambda checked=False, name=method_name: _run_on_editor(ui_we_want_to_set, name))
+        naming_menu.addAction(action)
+
+    # === 數字進位子選單 (Number-base submenu) ===
+    base_menu = ui_we_want_to_set.text_menu.addMenu(
+        language_wrapper.language_word_dict.get("text_menu_number_base_menu"))
+    for label_key, method_name in (
+        ("text_menu_number_hex", "number_to_hex_selection"),
+        ("text_menu_number_decimal", "number_to_decimal_selection"),
+        ("text_menu_number_binary", "number_to_binary_selection"),
+    ):
+        action = QAction(language_wrapper.language_word_dict.get(label_key), base_menu)
+        action.triggered.connect(
+            lambda checked=False, name=method_name: _run_on_editor(ui_we_want_to_set, name))
+        base_menu.addAction(action)
+
+    # === 編碼／解碼子選單 (Encode/Decode submenu) ===
+    encode_menu = ui_we_want_to_set.text_menu.addMenu(
+        language_wrapper.language_word_dict.get("text_menu_encode_decode_menu"))
+    for label_key, method_name in (
+        ("text_menu_base64_encode", "base64_encode_selection"),
+        ("text_menu_base64_decode", "base64_decode_selection"),
+        ("text_menu_url_encode", "url_encode_selection"),
+        ("text_menu_url_decode", "url_decode_selection"),
+        ("text_menu_html_escape", "html_escape_selection"),
+        ("text_menu_html_unescape", "html_unescape_selection"),
+        ("text_menu_json_escape", "json_escape_selection"),
+        ("text_menu_json_unescape", "json_unescape_selection"),
+    ):
+        action = QAction(language_wrapper.language_word_dict.get(label_key), encode_menu)
+        action.triggered.connect(
+            lambda checked=False, name=method_name: _run_on_editor(ui_we_want_to_set, name))
+        encode_menu.addAction(action)
+
+    ui_we_want_to_set.text_menu.addSeparator()
+
+    # === 文字統計 (Statistics) ===
+    statistics_action = QAction(
+        language_wrapper.language_word_dict.get("text_menu_statistics"), ui_we_want_to_set)
+    statistics_action.triggered.connect(lambda: show_text_statistics(ui_we_want_to_set))
+    ui_we_want_to_set.text_menu.addAction(statistics_action)
+
+
+def _current_editor(ui_we_want_to_set: EditorMain):
+    """取得目前分頁的 EditorWidget / Return the current tab's EditorWidget, or None."""
+    widget = ui_we_want_to_set.tab_widget.currentWidget()
+    return widget if isinstance(widget, EditorWidget) else None
+
+
+def _run_on_editor(ui_we_want_to_set: EditorMain, method_name: str) -> None:
+    """
+    對目前分頁編輯器的 code_edit 呼叫指定方法
+    Call a named method on the current editor's code_edit, if there is one.
+    """
+    jeditor_logger.info(f"build_text_menu.py run_on_editor method: {method_name}")
+    widget = _current_editor(ui_we_want_to_set)
+    if widget is not None:
+        getattr(widget.code_edit, method_name)()
+
+
+def format_statistics(stats: TextStatistics, scope_label: str) -> str:
+    """
+    把統計數據組成可顯示的多行字串
+    Format statistics into a displayable multi-line string.
+
+    :param stats: 統計數據 / The statistics
+    :param scope_label: 範圍描述（整份文件或選取）/ A label for the scope (document or selection)
+    :return: 可直接顯示的字串 / A ready-to-show string
+    """
+    word = language_wrapper.language_word_dict
+    return (
+        f"{scope_label}\n"
+        f"{word.get('text_menu_statistics_lines')}: {stats.lines}\n"
+        f"{word.get('text_menu_statistics_words')}: {stats.words}\n"
+        f"{word.get('text_menu_statistics_chars')}: {stats.characters}\n"
+        f"{word.get('text_menu_statistics_chars_no_spaces')}: {stats.characters_no_spaces}"
+    )
+
+
+def show_text_statistics(ui_we_want_to_set: EditorMain) -> None:
+    """
+    顯示目前編輯器（選取或整份文件）的文字統計
+    Show text statistics for the current editor (selection, or the whole document).
+    """
+    jeditor_logger.info("build_text_menu.py show_text_statistics")
+    widget = _current_editor(ui_we_want_to_set)
+    if widget is None:
+        return
+    cursor = widget.code_edit.textCursor()
+    word = language_wrapper.language_word_dict
+    if cursor.hasSelection():
+        text = cursor.selectedText().replace(" ", "\n")
+        scope_label = word.get("text_menu_statistics_scope_selection")
+    else:
+        text = widget.code_edit.toPlainText()
+        scope_label = word.get("text_menu_statistics_scope_document")
+    message = format_statistics(text_statistics(text), scope_label)
+    QMessageBox.information(
+        ui_we_want_to_set, word.get("text_menu_statistics"), message)
+
+
+def trim_trailing_whitespace(ui_we_want_to_set: EditorMain) -> None:
+    """
+    對目前分頁的編輯器移除每行行尾空白
+    Strip trailing whitespace on the current tab's editor.
+    """
+    jeditor_logger.info("build_text_menu.py trim_trailing_whitespace")
+    widget = _current_editor(ui_we_want_to_set)
+    if widget is not None:
+        widget.code_edit.trim_trailing_whitespace_document()
+
+
+def _convert_indentation(ui_we_want_to_set: EditorMain, to_spaces: bool) -> None:
+    """
+    轉換目前分頁編輯器的縮排（Tab 與空白互轉）
+    Convert the current editor's indentation between tabs and spaces.
+    """
+    jeditor_logger.info(f"build_text_menu.py convert_indentation to_spaces: {to_spaces}")
+    widget = _current_editor(ui_we_want_to_set)
+    if widget is None:
+        return
+    indent_size = user_setting_dict.get("indent_size", 4)
+    if to_spaces:
+        widget.code_edit.convert_indentation_to_spaces(indent_size)
+    else:
+        widget.code_edit.convert_indentation_to_tabs(indent_size)
 
 
 def toggle_word_wrap(ui_we_want_to_set: EditorMain, enabled: bool) -> None:

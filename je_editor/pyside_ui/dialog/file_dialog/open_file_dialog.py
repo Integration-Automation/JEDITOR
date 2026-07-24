@@ -51,6 +51,10 @@ def _load_file_into_widget(widget: EditorWidget, file_path: str) -> bool:
         return False
     widget.current_file = file_path
     widget.code_edit.setPlainText(result[1])
+    try:
+        widget.code_edit.apply_detected_indentation()
+    except Exception as detect_error:
+        jeditor_logger.warning(f"Indent detection failed: {detect_error}")
     if widget.code_save_thread is None:
         init_new_auto_save_thread(widget.current_file, widget)
     else:

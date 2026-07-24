@@ -114,6 +114,33 @@ def build_toolbar(main_window: EditorMain) -> None:
     act_search.triggered.connect(lambda: _open_search(main_window))
     toolbar.addAction(act_search)
 
+    # ── Command palette ───────────────────────────────────────
+    # 使用 Ctrl+Shift+A（JetBrains 的 Find Action）；Ctrl+Shift+P 已被 pip 安裝佔用
+    # Uses Ctrl+Shift+A (JetBrains "Find Action"); Ctrl+Shift+P is taken by pip install
+    act_palette = QAction(_icon(main_window, QStyle.StandardPixmap.SP_FileDialogDetailedView),
+                          lang("toolbar_command_palette"), main_window)
+    act_palette.setToolTip(lang("toolbar_command_palette"))
+    act_palette.setShortcut("Ctrl+Shift+A")
+    act_palette.triggered.connect(lambda: _open_command_palette(main_window))
+    toolbar.addAction(act_palette)
+    main_window.command_palette_action = act_palette
+
+    act_quick_open = QAction(_icon(main_window, QStyle.StandardPixmap.SP_FileDialogListView),
+                             lang("toolbar_quick_open"), main_window)
+    act_quick_open.setToolTip(lang("toolbar_quick_open"))
+    act_quick_open.setShortcut("Ctrl+P")
+    act_quick_open.triggered.connect(lambda: _open_quick_open(main_window))
+    toolbar.addAction(act_quick_open)
+    main_window.quick_open_action = act_quick_open
+
+    act_go_to_symbol = QAction(_icon(main_window, QStyle.StandardPixmap.SP_FileDialogInfoView),
+                               lang("toolbar_go_to_symbol"), main_window)
+    act_go_to_symbol.setToolTip(lang("toolbar_go_to_symbol"))
+    act_go_to_symbol.setShortcut("Ctrl+Shift+O")
+    act_go_to_symbol.triggered.connect(lambda: _open_go_to_symbol(main_window))
+    toolbar.addAction(act_go_to_symbol)
+    main_window.go_to_symbol_action = act_go_to_symbol
+
     # 初始載入 git 分支 / Initial git branch load
     _git_refresh_branches(main_window)
 
@@ -176,6 +203,26 @@ def _open_search(main_window: EditorMain) -> None:
     widget = _get_editor_widget(main_window)
     if widget:
         widget.code_edit.open_search_replace_dialog()
+
+
+def _open_command_palette(main_window: EditorMain) -> None:
+    """開啟指令面板 / Open the command palette"""
+    from je_editor.pyside_ui.main_ui.command_palette.command_palette_dialog import (
+        open_command_palette
+    )
+    open_command_palette(main_window)
+
+
+def _open_quick_open(main_window: EditorMain) -> None:
+    """開啟快速開啟檔案面板 / Open the quick open file picker"""
+    from je_editor.pyside_ui.main_ui.command_palette.quick_open_dialog import open_quick_open
+    open_quick_open(main_window)
+
+
+def _open_go_to_symbol(main_window: EditorMain) -> None:
+    """開啟前往符號面板 / Open the go-to-symbol picker"""
+    from je_editor.pyside_ui.main_ui.command_palette.go_to_symbol_dialog import open_go_to_symbol
+    open_go_to_symbol(main_window)
 
 
 class _GitBranchWorker(QObject):

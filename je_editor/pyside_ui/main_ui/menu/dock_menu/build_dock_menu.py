@@ -19,6 +19,8 @@ from je_editor.pyside_ui.main_ui.console_widget.console_gui import ConsoleWidget
 from je_editor.pyside_ui.main_ui.dock.destroy_dock import DestroyDock
 from je_editor.pyside_ui.main_ui.editor.editor_widget_dock import FullEditorWidget
 from je_editor.pyside_ui.main_ui.ipython_widget.ipython_console import IpythonWidget
+from je_editor.pyside_ui.main_ui.outline_panel.outline_panel_widget import OutlinePanelWidget
+from je_editor.pyside_ui.main_ui.todo_panel.todo_panel_widget import TodoPanelWidget
 from je_editor.utils.file.open.open_file import read_file  # 檔案讀取工具 / File reading utility
 from je_editor.utils.logging.loggin_instance import jeditor_logger  # 日誌紀錄器 / Logger
 from je_editor.utils.multi_language.multi_language_wrapper import language_wrapper  # 多語系支援 / Multi-language wrapper
@@ -128,6 +130,22 @@ def set_dock_menu(ui_we_want_to_set: EditorMain) -> None:
     )
     ui_we_want_to_set.dock_git_menu.addAction(ui_we_want_to_set.dock_menu.new_code_diff_viewer)
 
+    # === TODO Panel Dock ===
+    ui_we_want_to_set.dock_menu.new_todo_panel = QAction(
+        language_wrapper.language_word_dict.get("tab_menu_todo_panel_tab_name"))
+    ui_we_want_to_set.dock_menu.new_todo_panel.triggered.connect(
+        lambda: add_dock_widget(ui_we_want_to_set, "todo_panel")
+    )
+    ui_we_want_to_set.dock_tools_menu.addAction(ui_we_want_to_set.dock_menu.new_todo_panel)
+
+    # === Outline Panel Dock ===
+    ui_we_want_to_set.dock_menu.new_outline_panel = QAction(
+        language_wrapper.language_word_dict.get("tab_menu_outline_panel_tab_name"))
+    ui_we_want_to_set.dock_menu.new_outline_panel.triggered.connect(
+        lambda: add_dock_widget(ui_we_want_to_set, "outline_panel")
+    )
+    ui_we_want_to_set.dock_tools_menu.addAction(ui_we_want_to_set.dock_menu.new_outline_panel)
+
 
 def _make_editor_dock(ui_we_want_to_set: EditorMain, dock_widget: "DestroyDock") -> bool:
     """建立 Editor Dock；取消選檔則回傳 False / Build editor dock, False if user cancels."""
@@ -158,6 +176,10 @@ def _dock_builders(ui_we_want_to_set: EditorMain) -> dict:
         "variable_inspector": ("tab_menu_variable_inspector_tab_name", VariableInspector),
         "console_widget": ("tab_menu_console_widget_tab_name", ConsoleWidget),
         "code_diff_viewer": ("tab_code_diff_viewer_tab_name", DiffViewerWidget),
+        "todo_panel": ("tab_menu_todo_panel_tab_name",
+                       lambda: TodoPanelWidget(ui_we_want_to_set)),
+        "outline_panel": ("tab_menu_outline_panel_tab_name",
+                          lambda: OutlinePanelWidget(ui_we_want_to_set)),
     }
 
 
