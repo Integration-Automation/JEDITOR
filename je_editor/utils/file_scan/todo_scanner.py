@@ -60,8 +60,9 @@ def build_tag_pattern(tags: Sequence[str] = DEFAULT_TAGS) -> re.Pattern:
     escaped = "|".join(re.escape(tag) for tag in tags if tag)
     if not escaped:
         # 沒有標籤時回傳永不相符的樣式，避免呼叫端需要另外處理 None
-        # With no tags, return a never-matching pattern so callers need no None check
-        return re.compile(r"(?!)")
+        # With no tags, return a never-matching pattern so callers need no None check.
+        # ``\b\B`` can never hold at one position, so it matches nothing.
+        return re.compile(r"\b\B")
     return re.compile(
         rf"{COMMENT_MARKERS}\s*\b({escaped})\b[:\s-]*(.*)",
         re.IGNORECASE,

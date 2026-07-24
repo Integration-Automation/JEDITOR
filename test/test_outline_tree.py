@@ -144,7 +144,7 @@ class TestOutlinePanelWidget:
         monkeypatch.setattr(
             outline_panel_widget, "extract_python_symbols",
             lambda text: extract_python_symbols(text))
-        panel = OutlinePanelWidget.__new__(OutlinePanelWidget)
+        panel = OutlinePanelWidget.__new__(OutlinePanelWidget)  # pylint: disable=no-value-for-parameter
         # Build minimally without a real EditorWidget by stubbing current_code_edit.
         from PySide6.QtWidgets import QTreeWidget
         panel.tree = QTreeWidget()
@@ -175,7 +175,7 @@ class TestOutlinePanelWidget:
             OutlinePanelWidget,
         )
         code = _FakeCodeEdit("class A:\n    pass\n")
-        panel = OutlinePanelWidget.__new__(OutlinePanelWidget)
+        panel = OutlinePanelWidget.__new__(OutlinePanelWidget)  # pylint: disable=no-value-for-parameter
         panel.current_code_edit = lambda: code
         assert panel.jump_to_symbol_line(2) is True
         assert code.jumped == [2]
@@ -184,6 +184,6 @@ class TestOutlinePanelWidget:
         from je_editor.pyside_ui.main_ui.outline_panel.outline_panel_widget import (
             OutlinePanelWidget,
         )
-        panel = OutlinePanelWidget.__new__(OutlinePanelWidget)
+        panel = OutlinePanelWidget.__new__(OutlinePanelWidget)  # pylint: disable=no-value-for-parameter
         panel.current_code_edit = lambda: None
         assert panel.jump_to_symbol_line(2) is False

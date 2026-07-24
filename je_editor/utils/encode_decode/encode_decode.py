@@ -9,7 +9,6 @@ unchanged instead of raising.
 from __future__ import annotations
 
 import base64
-import binascii
 import html
 import json
 from urllib.parse import quote, unquote
@@ -43,7 +42,9 @@ def base64_decode(text: str) -> str | None:
     try:
         decoded = base64.b64decode(text.strip(), validate=True)
         return decoded.decode(_ENCODING)
-    except (binascii.Error, ValueError, UnicodeDecodeError):
+    # binascii.Error 與 UnicodeDecodeError 都是 ValueError 的子類別
+    # binascii.Error and UnicodeDecodeError both derive from ValueError
+    except ValueError:
         return None
 
 
@@ -116,6 +117,7 @@ def json_string_unescape(text: str) -> str | None:
     """
     try:
         parsed = json.loads(text.strip())
-    except (json.JSONDecodeError, ValueError):
+    # json.JSONDecodeError 是 ValueError 的子類別 / derives from ValueError
+    except ValueError:
         return None
     return parsed if isinstance(parsed, str) else None

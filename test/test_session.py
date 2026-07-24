@@ -106,7 +106,7 @@ class TestEditorMainSessionGuard:
     def _window():
         # A bare instance is enough: the helpers only touch class-level state.
         from je_editor.pyside_ui.main_ui.main_editor import EditorMain
-        return EditorMain.__new__(EditorMain)
+        return EditorMain.__new__(EditorMain)  # pylint: disable=no-value-for-parameter
 
     def test_restore_flag_defaults_to_false(self):
         assert self._window()._session_restored is False
