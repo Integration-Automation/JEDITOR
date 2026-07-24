@@ -8,6 +8,8 @@ from frontengine import FrontEngineMainUI
 from je_editor.pyside_ui.code.variable_inspector.inspector_gui import VariableInspector
 from je_editor.pyside_ui.main_ui.ai_widget.chat_ui import ChatUI
 from je_editor.pyside_ui.main_ui.ipython_widget.ipython_console import IpythonWidget
+from je_editor.pyside_ui.main_ui.outline_panel.outline_panel_widget import OutlinePanelWidget
+from je_editor.pyside_ui.main_ui.todo_panel.todo_panel_widget import TodoPanelWidget
 from je_editor.utils.logging.loggin_instance import jeditor_logger
 from je_editor.utils.multi_language.multi_language_wrapper import language_wrapper
 
@@ -57,6 +59,26 @@ def set_tab_tools_menu(ui_we_want_to_set: EditorMain) -> None:
     )
     ui_we_want_to_set.tab_menu.tools_menu.addAction(ui_we_want_to_set.tab_menu.tools_menu.add_chat_ui_action)
 
+    # === 待辦事項分頁 ===
+    # === TODO Panel Tab ===
+    ui_we_want_to_set.tab_menu.tools_menu.add_todo_panel_action = QAction(
+        language_wrapper.language_word_dict.get("tab_menu_todo_panel_tab_name"))
+    ui_we_want_to_set.tab_menu.tools_menu.add_todo_panel_action.triggered.connect(
+        lambda: add_todo_panel_tab(ui_we_want_to_set)
+    )
+    ui_we_want_to_set.tab_menu.tools_menu.addAction(
+        ui_we_want_to_set.tab_menu.tools_menu.add_todo_panel_action)
+
+    # === 大綱分頁 ===
+    # === Outline Panel Tab ===
+    ui_we_want_to_set.tab_menu.tools_menu.add_outline_panel_action = QAction(
+        language_wrapper.language_word_dict.get("tab_menu_outline_panel_tab_name"))
+    ui_we_want_to_set.tab_menu.tools_menu.add_outline_panel_action.triggered.connect(
+        lambda: add_outline_panel_tab(ui_we_want_to_set)
+    )
+    ui_we_want_to_set.tab_menu.tools_menu.addAction(
+        ui_we_want_to_set.tab_menu.tools_menu.add_outline_panel_action)
+
 
 def add_ipython_tab(ui_we_want_to_set: EditorMain) -> None:
     # 紀錄日誌：新增 IPython 分頁
@@ -103,5 +125,31 @@ def add_chat_ui_tab(ui_we_want_to_set: EditorMain) -> None:
     ui_we_want_to_set.tab_widget.addTab(
         ChatUI(ui_we_want_to_set),  # 建立聊天元件 / Create Chat UI widget
         f"{language_wrapper.language_word_dict.get('tab_menu_chat_ui_tab_name')} "
+        f"{ui_we_want_to_set.tab_widget.count()}"
+    )
+
+
+def add_todo_panel_tab(ui_we_want_to_set: EditorMain) -> None:
+    # 紀錄日誌：新增待辦事項分頁
+    # Log: add a TODO panel tab
+    jeditor_logger.info(f"build_tab_menu.py add todo panel tab ui_we_want_to_set: {ui_we_want_to_set}")
+    # 在主編輯器中新增待辦事項分頁
+    # Add a TODO panel tab into the main editor
+    ui_we_want_to_set.tab_widget.addTab(
+        TodoPanelWidget(ui_we_want_to_set),  # 建立待辦事項元件 / Create TODO panel widget
+        f"{language_wrapper.language_word_dict.get('tab_menu_todo_panel_tab_name')} "
+        f"{ui_we_want_to_set.tab_widget.count()}"
+    )
+
+
+def add_outline_panel_tab(ui_we_want_to_set: EditorMain) -> None:
+    # 紀錄日誌：新增大綱分頁
+    # Log: add an outline panel tab
+    jeditor_logger.info(f"build_tab_menu.py add outline panel tab ui_we_want_to_set: {ui_we_want_to_set}")
+    # 在主編輯器中新增大綱分頁
+    # Add an outline panel tab into the main editor
+    ui_we_want_to_set.tab_widget.addTab(
+        OutlinePanelWidget(ui_we_want_to_set),  # 建立大綱元件 / Create outline panel widget
+        f"{language_wrapper.language_word_dict.get('tab_menu_outline_panel_tab_name')} "
         f"{ui_we_want_to_set.tab_widget.count()}"
     )

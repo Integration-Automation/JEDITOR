@@ -2,6 +2,11 @@ import os
 
 from PySide6.QtCore import QObject, QProcess, Signal, QTimer
 
+# Windows 啟動 shell 後切換 UTF-8 code page 的延遲 / Delay before switching to UTF-8 on Windows
+UTF8_CODEPAGE_DELAY_MS = 500
+# terminate 之後改用 kill 的等待時間 / How long to wait after terminate before killing
+KILL_DELAY_MS = 1000
+
 
 class ConsoleProcessAdapter(QObject):
     """
@@ -42,8 +47,18 @@ class ConsoleProcessAdapter(QObject):
         self.proc.start(program, args)  # 啟動子程序 / Start process
 
         # Windows 特殊處理：設定 UTF-8 編碼 / Windows-specific: set UTF-8 encoding
+        # 以 self 當作 context 物件，這個介面卡被銷毀時 Qt 會自動丟棄尚未觸發的呼叫；
+        # 沒有 context 的 singleShot 會在物件死後才觸發，存取到已刪除的 QProcess。
+        # Passing self as the context object lets Qt drop the pending call when this
+        # adapter dies; a context-less singleShot fires after death and touches a
+        # already-deleted QProcess.
         if os.name == "nt":
-            QTimer.singleShot(500, lambda: self.send_command("chcp 65001"))
+            QTimer.singleShot(UTF8_CODEPAGE_DELAY_MS, self, self._enable_utf8_codepage)
+
+    # 切換到 UTF-8 code page / Switch the shell to the UTF-8 code page
+    def _enable_utf8_codepage(self) -> None:
+        if self.is_running():
+            self.send_command("chcp 65001")
 
     # 傳送指令到 shell / Send command to shell
     def send_command(self, cmd: str) -> None:
@@ -58,7 +73,28 @@ class ConsoleProcessAdapter(QObject):
             return
         self.proc.terminate()  # 嘗試正常結束 / Try graceful termination
         # 如果 1 秒後仍在執行，強制 kill / Force kill if still running after 1s
-        QTimer.singleShot(1000, lambda: self.is_running() and self.proc.kill())
+        QTimer.singleShot(KILL_DELAY_MS, self, self._kill_if_still_running)
+
+    # 強制結束仍在執行的 shell / Force kill a shell that ignored terminate
+    def _kill_if_still_running(self) -> None:
+        if self.is_running():
+            self.proc.kill()
+
+    def shutdown(self, wait_ms: int = KILL_DELAY_MS) -> None:
+        """
+        同步關閉 shell，確保 QProcess 不會在子程序仍執行時被銷毀
+        Shut the shell down synchronously so the QProcess is never destroyed
+        while its child process is still running.
+
+        :param wait_ms: 每個階段的等待毫秒數 / Milliseconds waited at each stage
+        """
+        if not self.is_running():
+            return
+        self.proc.terminate()
+        if self.proc.waitForFinished(wait_ms):
+            return
+        self.proc.kill()
+        self.proc.waitForFinished(wait_ms)
 
     # 判斷是否正在執行 / Check if process is running
     def is_running(self) -> bool:

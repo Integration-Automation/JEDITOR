@@ -29,6 +29,8 @@ user_setting_dict = {
     "max_line_of_output": 200000,  # 最大輸出行數限制 / Max lines of output
     "recent_files": [],  # 最近開啟的檔案清單 / Recent files list
     "indent_size": 4,  # 縮排空格數 / Indent size (spaces)
+    "open_files": [],  # 上次關閉時開啟的分頁 / Tabs open at last shutdown
+    "restore_session": True,  # 啟動時還原分頁 / Restore tabs on startup
 }
 
 

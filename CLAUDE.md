@@ -151,6 +151,9 @@ All code must pass SonarQube and Codacy quality gates. Adhere to the following r
 ## Git & Commit Rules
 
 - **Commit messages**: Write in English, concise, imperative mood (e.g., "Add plugin hot-reload support")
-- **No AI attribution**: Do not mention any AI tool, assistant, or model name in commit messages or code comments
+- **No AI attribution (mandatory)**: Never mention any AI tool, assistant, agent, model name, or vendor in commit messages, commit trailers, branch names, PR titles, PR descriptions, issue text, code comments, or documentation
+  - No `Co-Authored-By:` trailers referencing an AI tool or model
+  - No "Generated with ...", "Created by ...", or similar footers in commits or PR bodies
+  - PR titles and bodies describe **what changed and why** — nothing about how the change was authored
 - **Branch strategy**: `main` = stable release, `dev` = active development
 - **Clean commits**: Each commit should be a single logical change; no unrelated changes bundled together

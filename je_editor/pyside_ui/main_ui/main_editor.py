@@ -37,6 +37,11 @@ from je_editor.pyside_ui.main_ui.save_settings.user_setting_file import (
 )
 from je_editor.pyside_ui.main_ui.system_tray.extend_system_tray import ExtendSystemTray
 from je_editor.utils.file.open.open_file import read_file
+from je_editor.utils.session.open_files_session import (
+    SESSION_SETTING_KEY,
+    collect_open_files,
+    restorable_files,
+)
 from je_editor.utils.logging.loggin_instance import jeditor_logger
 from je_editor.utils.multi_language.multi_language_wrapper import language_wrapper
 from je_editor.utils.redirect_manager.redirect_manager_class import redirect_manager_instance
@@ -53,6 +58,10 @@ class EditorMain(QMainWindow, QtStyleTools):
     Main editor window class
     繼承 QMainWindow 與 QtStyleTools
     """
+
+    # 類別層級預設值：擴充模式的子類別（如 PyBreeze）也一定讀得到
+    # Class-level default so subclasses in extend mode (e.g. PyBreeze) always see it
+    _session_restored = False
 
     def __init__(self, debug_mode: bool = False, show_system_tray_ray: bool = False, extend: bool = False) -> None:
         # 初始化時記錄 log
@@ -136,6 +145,7 @@ class EditorMain(QMainWindow, QtStyleTools):
         self.tab_widget.tabCloseRequested.connect(self.close_tab)
         self.tab_widget.currentChanged.connect(self._on_tab_changed)
         self._prev_editor_widget = None  # 追蹤前一個分頁 / Track previous tab for signal disconnect
+        self._session_restored = False  # 分頁只還原一次 / Restore tabs only once per window
 
         # 計時器會在後面初始化並連接 redirect
         # Timer will be initialized later with redirect connection
@@ -346,10 +356,57 @@ class EditorMain(QMainWindow, QtStyleTools):
             if not last_file_loaded:
                 last_file_loaded = self._try_restore_last_file(widget)
 
+        self._restore_open_files_session()
+
         app = QApplication.instance()
         if app is not None:
             self.apply_stylesheet(app, user_setting_dict.get("ui_style", "dark_amber.xml"))
         update_actually_color_dict()
+
+    def _open_file_paths(self) -> list[str]:
+        """取得所有分頁目前開啟的檔案 / Every tab's currently open file."""
+        return [
+            self.tab_widget.widget(index).current_file
+            for index in range(self.tab_widget.count())
+            if isinstance(self.tab_widget.widget(index), EditorWidget)
+        ]
+
+    def _restore_open_files_session(self) -> None:
+        """
+        還原上次關閉時開啟的分頁
+        Reopen the tabs that were open at the last shutdown.
+
+        只在每個視窗執行一次：``startup_setting`` 也會在開啟資料夾時被呼叫，
+        若不設旗標，使用者關掉的分頁會在開啟資料夾後又冒出來。
+        Runs once per window: ``startup_setting`` is also called when opening a
+        folder, and without this flag a tab the user closed would come back.
+
+        整段以 try/except 包住：損毀或被手動編輯的設定檔絕不能擋住編輯器啟動。
+        The whole step is guarded: a corrupt or hand-edited settings file must
+        never stop the editor from starting.
+        """
+        if self._session_restored or not user_setting_dict.get("restore_session", True):
+            return
+        self._session_restored = True
+        try:
+            to_restore = restorable_files(
+                user_setting_dict.get(SESSION_SETTING_KEY),
+                already_open=[path for path in self._open_file_paths() if path],
+            )
+            for file_path in to_restore:
+                self.go_to_new_tab(Path(file_path))
+        except Exception as error:
+            jeditor_logger.warning(f"Restoring the open-file session failed: {error}")
+
+    def _save_open_files_session(self) -> None:
+        """
+        記錄目前開啟的分頁，供下次啟動還原
+        Record the currently open tabs so the next startup can restore them.
+        """
+        try:
+            user_setting_dict[SESSION_SETTING_KEY] = collect_open_files(self._open_file_paths())
+        except Exception as error:
+            jeditor_logger.warning(f"Saving the open-file session failed: {error}")
 
     def go_to_new_tab(self, file_path: Path) -> None:
         """
@@ -442,6 +499,7 @@ class EditorMain(QMainWindow, QtStyleTools):
         Periodically save user settings to prevent data loss
         """
         try:
+            self._save_open_files_session()
             write_user_setting()
             write_user_color_setting()
         except Exception as e:
@@ -455,6 +513,9 @@ class EditorMain(QMainWindow, QtStyleTools):
         jeditor_logger.info("EditorMain closeEvent")
         if hasattr(self, '_settings_save_timer'):
             self._settings_save_timer.stop()
+        # 必須在關閉分頁前記錄，否則分頁已消失就抓不到開啟中的檔案
+        # Must run before the tabs close, or the open files are already gone
+        self._save_open_files_session()
         # 關閉所有編輯器分頁（停止自動儲存和檔案監控）
         # Close all editor tabs (stop auto-save and file watchers)
         for i in range(self.tab_widget.count() - 1, -1, -1):

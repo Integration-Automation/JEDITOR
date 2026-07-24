@@ -250,6 +250,12 @@ class EditorWidget(QWidget):
         file, file_content = result
         self.code_edit.setPlainText(file_content)
 
+        # 依內容偵測縮排寬度；失敗不可影響開檔 / Detect indent; must not break opening
+        try:
+            self.code_edit.apply_detected_indentation()
+        except Exception as detect_error:
+            jeditor_logger.warning(f"Indent detection failed: {detect_error}")
+
         # 更新目前檔案資訊 / Update current file info
         self.current_file = file
         self.code_edit.current_file = file
@@ -438,6 +444,10 @@ class EditorWidget(QWidget):
         if self.code_save_thread is not None:
             self.code_save_thread.still_run = False
             self.code_save_thread = None
+
+        # 關閉內嵌終端機的互動式 shell / Shut down the embedded console's interactive shell
+        if self.console_widget is not None:
+            self.console_widget.close()
 
         # 停止所有正在執行的子程序 / Stop all running subprocesses
         for mgr in (self.exec_program, self.exec_shell, self.exec_python_debugger):

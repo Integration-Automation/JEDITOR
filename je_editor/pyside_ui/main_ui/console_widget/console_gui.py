@@ -168,3 +168,11 @@ class ConsoleWidget(QWidget):
             "#888"
         )
         self.proc.system.emit(self.language_word_dict_get("dynamic_console_ready"))
+
+    def closeEvent(self, event: QEvent) -> None:
+        """
+        關閉前結束 shell，避免留下孤兒子程序
+        Shut the shell down on close so no orphaned child process is left behind.
+        """
+        self.proc.shutdown()
+        super().closeEvent(event)

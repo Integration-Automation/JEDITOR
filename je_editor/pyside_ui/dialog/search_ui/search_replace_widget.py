@@ -14,24 +14,14 @@ from PySide6.QtWidgets import (
     QFileDialog, QPlainTextEdit, QMessageBox, QWidget
 )
 
+from je_editor.utils.file_scan.ignore_rules import (
+    IGNORED_DIRECTORY_NAMES as _SKIP_DIRS,
+    is_binary_file as _is_binary,
+)
 from je_editor.utils.multi_language.multi_language_wrapper import language_wrapper
 
 if TYPE_CHECKING:
     from je_editor.pyside_ui.main_ui.editor.editor_widget import EditorWidget
-
-# 二進位嗅探用的 null byte 門檻 / Binary sniff threshold
-_BINARY_SNIFF_BYTES = 4096
-# 搜尋時略過的資料夾 / Folders to skip during search
-_SKIP_DIRS = {".git", ".hg", ".svn", "__pycache__", "node_modules", ".venv", "venv", ".tox", ".mypy_cache"}
-
-
-def _is_binary(path: Path) -> bool:
-    """快速判斷檔案是否為二進位 / Quick check if file is binary"""
-    try:
-        with open(path, "rb") as f:
-            return b"\x00" in f.read(_BINARY_SNIFF_BYTES)
-    except Exception:
-        return True
 
 
 class _SearchWorker(QThread):
