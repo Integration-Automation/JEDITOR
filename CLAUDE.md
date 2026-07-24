@@ -1,5 +1,15 @@
 # CLAUDE.md - JEditor Project Guidelines
 
+## Session Start: Check the Progress Record
+
+At the start of every session, check for `PROGRESS.md` in the repo root (a local,
+untracked working-progress record — it is in `.gitignore`).
+
+- If it exists and lists outstanding items, read it first to resume in-progress work.
+- Keep it updated as work progresses; items may span both the JEditor and PyBreeze repos (each item names its repo).
+- **When every item is done, clear it** — reset the file to just its heading and usage note, leaving no stale tasks.
+- If it does not exist and there is multi-step or cross-session work worth tracking, create it.
+
 ## Project Overview
 
 JEditor is a Python-based code editor built with PySide6 (Qt), featuring syntax highlighting, code formatting, plugin system, Git integration, and LangChain-powered AI assistance.

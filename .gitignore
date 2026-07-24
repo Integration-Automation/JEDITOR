@@ -125,3 +125,6 @@ dmypy.json
 /.idea
 /.claude/
 /output
+
+# Local, untracked Claude working-progress record (see CLAUDE.md)
+/PROGRESS.md
