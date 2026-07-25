@@ -387,6 +387,12 @@ please make sure that the current encoding is consistent with the default encodi
     "tab_menu_diff_against_head_name": "Diff Against HEAD",
     "tab_menu_split_view_label": "Toggle Split View",
     "tab_menu_minimap_label": "Toggle Minimap",
+    "snippet_editor_title": "Snippet Editor",
+    "snippet_editor_hint": "Tab stops are written $1, ${2:default} and $0.",
+    "snippet_editor_body_placeholder": "Snippet body...",
+    "snippet_editor_add": "Add",
+    "snippet_editor_remove": "Remove",
+    "snippet_editor_save": "Save",
     # Editor context menu
     "context_menu_toggle_comment": "Toggle Comment",
     "context_menu_toggle_bookmark": "Toggle Bookmark",

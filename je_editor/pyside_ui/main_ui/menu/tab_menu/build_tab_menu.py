@@ -79,8 +79,34 @@ def set_tab_menu(ui_we_want_to_set: EditorMain) -> None:
     )
     ui_we_want_to_set.tab_menu.addAction(ui_we_want_to_set.tab_menu.toggle_minimap_action)
 
+    # === 片段編輯器 ===
+    # === Snippet editor ===
+    ui_we_want_to_set.tab_menu.edit_snippets_action = QAction(
+        language_wrapper.language_word_dict.get("snippet_editor_title"))
+    ui_we_want_to_set.tab_menu.edit_snippets_action.triggered.connect(
+        lambda: show_snippet_editor(ui_we_want_to_set)
+    )
+    ui_we_want_to_set.tab_menu.addAction(ui_we_want_to_set.tab_menu.edit_snippets_action)
+
     set_tab_tools_menu(ui_we_want_to_set=ui_we_want_to_set)
     set_tab_git_menu(ui_we_want_to_set=ui_we_want_to_set)
+
+
+def show_snippet_editor(ui_we_want_to_set: EditorMain):
+    """
+    開啟片段編輯器
+    Open the snippet editor.
+
+    :param ui_we_want_to_set: 主編輯器視窗 / the main editor window
+    :return: 開啟的對話框 / the dialog that was opened
+    """
+    jeditor_logger.info("build_tab_menu.py show_snippet_editor")
+    from je_editor.pyside_ui.dialog.snippet_dialog.snippet_editor_dialog import (
+        SnippetEditorDialog
+    )
+    dialog = SnippetEditorDialog(ui_we_want_to_set)
+    dialog.show()
+    return dialog
 
 
 def toggle_minimap(ui_we_want_to_set: EditorMain) -> bool:

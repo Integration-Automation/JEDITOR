@@ -90,22 +90,80 @@ def default_snippets() -> dict[str, str]:
     }
 
 
-def merge_snippets(stored: object) -> dict[str, str]:
+# 各語言自己的片段；沒有列到的語言只會拿到通用片段
+# Per-language snippets; a language not listed here gets only the shared ones
+LANGUAGE_SNIPPETS: dict[str, dict[str, str]] = {
+    ".ts": {
+        "fn": "function ${1:name}(${2:args}) {\n    $0\n}",
+        "cls": "class ${1:Name} {\n    constructor(${2:args}) {\n        $0\n    }\n}",
+        "log": "console.log($0);",
+        "iff": "if (${1:condition}) {\n    $0\n}",
+    },
+    ".js": {
+        "fn": "function ${1:name}(${2:args}) {\n    $0\n}",
+        "log": "console.log($0);",
+        "iff": "if (${1:condition}) {\n    $0\n}",
+    },
+    ".go": {
+        "fn": "func ${1:name}(${2:args}) ${3:error} {\n    $0\n}",
+        "iferr": "if err != nil {\n    return $0\n}",
+        "forr": "for ${1:index}, ${2:value} := range ${3:items} {\n    $0\n}",
+    },
+    ".rs": {
+        "fn": "fn ${1:name}(${2:args}) -> ${3:()} {\n    $0\n}",
+        "match": "match ${1:value} {\n    ${2:pattern} => $0,\n}",
+        "test": "#[test]\nfn ${1:name}() {\n    $0\n}",
+    },
+}
+
+
+def language_snippets(suffix: str) -> dict[str, str]:
+    """
+    取得某個副檔名專屬的片段
+    The snippets belonging to one file suffix.
+
+    :param suffix: 副檔名（含點）/ the file suffix, dot included
+    :return: 該語言的片段 / that language's snippets
+    """
+    return dict(LANGUAGE_SNIPPETS.get(suffix.lower(), {}))
+
+
+def merge_snippets(stored: object, suffix: str = "") -> dict[str, str]:
     """
     把使用者定義的片段併入內建片段
     Merge user-defined snippets over the built-in ones.
+
+    順序由通用到專屬：內建的 Python 片段、該語言的片段，最後才是使用者定義的，
+    因此使用者永遠可以蓋掉任何一個。
+    The order runs from general to specific — the built-in Python set, then the
+    language's own, then the user's — so a user definition always wins.
+
+    使用者檔案可以是 ``{觸發字: 內容}``，也可以用副檔名分組，例如
+    ``{".ts": {...}}``；兩種都接受。
+    A user file may be ``{trigger: body}`` or grouped by suffix such as
+    ``{".ts": {...}}``, and both forms are accepted.
 
     設定檔可能被手動編輯，因此型別不符的項目會被略過而不是讓載入失敗。
     A hand-edited file may hold anything, so entries with the wrong type are
     skipped rather than failing the load.
 
     :param stored: 讀進來的使用者片段，任何型別 / the loaded user snippets, any type
+    :param suffix: 目前檔案的副檔名 / the current file's suffix
     :return: 可用的片段對照表 / the usable snippets
     """
     snippets = default_snippets()
+    snippets.update(language_snippets(suffix))
     if not isinstance(stored, dict):
         return snippets
-    for trigger, body in stored.items():
-        if isinstance(trigger, str) and trigger and isinstance(body, str):
-            snippets[trigger] = body
+    for key, value in stored.items():
+        if not isinstance(key, str) or not key:
+            continue
+        if isinstance(value, str):
+            snippets[key] = value
+        elif isinstance(value, dict) and suffix and key.lower() == suffix.lower():
+            # 這一組是給這個副檔名的 / This group belongs to this suffix
+            snippets.update({
+                trigger: body for trigger, body in value.items()
+                if isinstance(trigger, str) and trigger and isinstance(body, str)
+            })
     return snippets

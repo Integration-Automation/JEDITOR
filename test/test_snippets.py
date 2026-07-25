@@ -85,6 +85,42 @@ class TestSnippetSets:
         path.write_text(json.dumps({"log": "print($0)"}), encoding="utf-8")
         assert load_snippets(path)["log"] == "print($0)"
 
+    def test_language_snippets_are_added_for_their_suffix(self):
+        assert "iferr" in merge_snippets(None, ".go")
+        assert "iferr" not in merge_snippets(None, ".py")
+
+    def test_a_user_group_for_a_suffix_is_applied(self):
+        merged = merge_snippets({".go": {"mine": "body"}}, ".go")
+        assert merged["mine"] == "body"
+
+    def test_a_group_for_another_suffix_is_ignored(self):
+        assert "mine" not in merge_snippets({".ts": {"mine": "body"}}, ".go")
+
+    def test_a_user_definition_beats_the_language_set(self):
+        merged = merge_snippets({"iferr": "custom"}, ".go")
+        assert merged["iferr"] == "custom"
+
+
+class TestSaveSnippets:
+    def test_round_trip_through_the_file(self, tmp_path):
+        from je_editor.pyside_ui.code.snippets.snippet_manager import save_snippets
+        path = tmp_path / "snippets.json"
+        assert save_snippets({"mine": "body $0"}, path) is True
+        assert load_snippets(path)["mine"] == "body $0"
+
+    def test_saving_creates_the_directory(self, tmp_path):
+        from je_editor.pyside_ui.code.snippets.snippet_manager import save_snippets
+        path = tmp_path / "nested" / "snippets.json"
+        assert save_snippets({"a": "b"}, path) is True
+        assert path.is_file()
+
+    def test_an_unwritable_path_is_reported(self, tmp_path):
+        from je_editor.pyside_ui.code.snippets.snippet_manager import save_snippets
+        # A directory where the file should be cannot be written to.
+        target = tmp_path / "snippets.json"
+        target.mkdir()
+        assert save_snippets({"a": "b"}, target) is False
+
 
 @pytest.fixture(scope="module")
 def app():
@@ -164,6 +200,17 @@ class TestSnippetExpansionInEditor:
         editor.setTextCursor(cursor)
         _press_tab(editor)
         assert editor.toPlainText().startswith(" ")
+
+    def test_a_typescript_file_gets_typescript_snippets(self, editor):
+        editor.current_file = "app.ts"
+        editor.snippet_manager.reload()
+        snippets = editor.snippet_manager.snippets()
+        assert "log" in snippets and "console.log" in snippets["log"]
+
+    def test_a_python_file_keeps_the_python_set(self, editor):
+        editor.current_file = "module.py"
+        editor.snippet_manager.reload()
+        assert "def" in editor.snippet_manager.snippets()
 
     def test_reloading_picks_up_user_snippets(self, editor, tmp_path):
         path = tmp_path / "snippets.json"

@@ -33,7 +33,27 @@ def snippet_file_path() -> Path:
     return Path.cwd() / SETTING_DIR_NAME / SNIPPET_FILE_NAME
 
 
-def load_snippets(path: Path | None = None) -> dict[str, str]:
+def save_snippets(snippets: dict[str, str], path: Path | None = None) -> bool:
+    """
+    把片段寫回使用者的片段檔
+    Write the snippets back to the user's snippet file.
+
+    :param snippets: 要儲存的片段 / the snippets to store
+    :param path: 片段檔路徑，``None`` 表示預設位置 / the file, or ``None`` for the default
+    :return: 寫入成功時為 ``True`` / ``True`` when the file was written
+    """
+    target = path if path is not None else snippet_file_path()
+    try:
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text(
+            json.dumps(snippets, indent=4, ensure_ascii=False), encoding="utf-8")
+    except OSError as error:
+        jeditor_logger.error(f"snippet_manager: could not save snippets: {error!r}")
+        return False
+    return True
+
+
+def load_snippets(path: Path | None = None, suffix: str = "") -> dict[str, str]:
     """
     載入片段：內建的加上使用者定義的
     Load the snippets: the built-in set plus anything the user defined.
@@ -51,8 +71,8 @@ def load_snippets(path: Path | None = None) -> dict[str, str]:
         stored = json.loads(target.read_text(encoding="utf-8"))
     except (OSError, ValueError) as error:
         jeditor_logger.debug(f"snippet_manager: using built-in snippets only: {error!r}")
-        return merge_snippets(None)
-    return merge_snippets(stored)
+        return merge_snippets(None, suffix)
+    return merge_snippets(stored, suffix)
 
 
 class SnippetManager:
@@ -66,7 +86,7 @@ class SnippetManager:
         :param code_edit: 要展開片段的編輯器 / the editor snippets expand into
         """
         self._code_edit = code_edit
-        self._snippets = load_snippets()
+        self._snippets = load_snippets(suffix=self._suffix())
         # 尚未走訪的定位點（文件中的絕對位置）/ Stops not yet visited, as document positions
         self._pending: list[SnippetStop] = []
 
@@ -74,14 +94,19 @@ class SnippetManager:
         """取得目前可用的片段 / The snippets currently available."""
         return dict(self._snippets)
 
+    def _suffix(self) -> str:
+        """目前檔案的副檔名 / The current file's suffix."""
+        current = getattr(self._code_edit, "current_file", None)
+        return Path(str(current)).suffix if current else ""
+
     def reload(self, path: Path | None = None) -> None:
         """
-        重新載入使用者片段
-        Reload the user's snippets from disk.
+        重新載入使用者片段，並套用目前檔案的語言
+        Reload the user's snippets, for the current file's language.
 
         :param path: 片段檔路徑，``None`` 表示預設位置 / the file, or ``None`` for the default
         """
-        self._snippets = load_snippets(path)
+        self._snippets = load_snippets(path, self._suffix())
 
     @property
     def has_pending_stops(self) -> bool:

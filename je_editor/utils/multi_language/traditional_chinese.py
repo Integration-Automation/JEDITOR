@@ -377,6 +377,12 @@ traditional_chinese_word_dict = {
     "tab_menu_diff_against_head_name": "與 HEAD 比較差異",
     "tab_menu_split_view_label": "切換分割檢視",
     "tab_menu_minimap_label": "切換縮圖",
+    "snippet_editor_title": "片段編輯器",
+    "snippet_editor_hint": "定位點請用 $1、${2:預設值} 與 $0。",
+    "snippet_editor_body_placeholder": "片段內容...",
+    "snippet_editor_add": "新增",
+    "snippet_editor_remove": "刪除",
+    "snippet_editor_save": "儲存",
     # 編輯器右鍵選單
     "context_menu_toggle_comment": "切換註解",
     "context_menu_toggle_bookmark": "切換書籤",
