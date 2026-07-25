@@ -49,6 +49,10 @@ def update_actually_color_dict() -> None:
             "minimap_line_color": _to_qcolor("minimap_line_color", [130, 130, 150]),
             "minimap_viewport_color": _to_qcolor("minimap_viewport_color", [80, 80, 110]),
             "extra_cursor_color": _to_qcolor("extra_cursor_color", [255, 215, 64]),
+            "syntax_keyword_color": _to_qcolor("syntax_keyword_color", [86, 156, 214]),
+            "syntax_string_color": _to_qcolor("syntax_string_color", [206, 145, 120]),
+            "syntax_comment_color": _to_qcolor("syntax_comment_color", [106, 153, 85]),
+            "syntax_number_color": _to_qcolor("syntax_number_color", [181, 206, 168]),
             "trailing_whitespace_color": _to_qcolor("trailing_whitespace_color", [120, 70, 70]),
         }
     )
@@ -76,6 +80,10 @@ user_setting_color_dict: Dict[str, list] = {
     "minimap_line_color": [130, 130, 150],
     "minimap_viewport_color": [80, 80, 110],
     "extra_cursor_color": [255, 215, 64],
+    "syntax_keyword_color": [86, 156, 214],
+    "syntax_string_color": [206, 145, 120],
+    "syntax_comment_color": [106, 153, 85],
+    "syntax_number_color": [181, 206, 168],
     "trailing_whitespace_color": [120, 70, 70]
 }
 

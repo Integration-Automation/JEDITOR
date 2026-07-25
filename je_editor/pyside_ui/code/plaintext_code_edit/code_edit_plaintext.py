@@ -45,6 +45,7 @@ from je_editor.utils.occurrence.word_occurrences import (
     find_occurrences, replace_whole_word, word_at
 )
 from je_editor.utils.text_cleanup.text_cleanup import trim_trailing_whitespace
+from je_editor.pyside_ui.code.syntax.generic_syntax import highlighter_for
 from je_editor.pyside_ui.code.syntax.python_syntax import PythonHighlighter
 from je_editor.pyside_ui.dialog.search_ui.search_text_box import SearchBox
 from je_editor.pyside_ui.dialog.search_ui.search_replace_widget import SearchReplaceDialog
@@ -358,9 +359,21 @@ class CodeEditor(QPlainTextEdit):
         self.start_language_server()
 
     def reset_highlighter(self) -> None:
-        """重設語法高亮 / Reset syntax highlighter"""
+        """
+        依目前檔案的副檔名重設語法高亮
+        Reset the syntax highlighter to match the current file's suffix.
+
+        Python 用專屬的高亮器；其他有規則的語言用通用高亮器；都不符合時仍套用
+        Python 的（新檔案還沒有副檔名，多半就是要寫 Python）。
+        Python gets its own highlighter, another language with rules gets the
+        generic one, and anything else still gets Python's — a new file has no
+        suffix yet and is usually about to become Python.
+        """
         jeditor_logger.info("CodeEditor reset_highlighter")
-        self.highlighter = PythonHighlighter(self.document(), main_window=self)
+        suffix = Path(str(self.current_file)).suffix if self.current_file else ""
+        generic = highlighter_for(self.document(), suffix) if suffix else None
+        self.highlighter = generic if generic is not None else PythonHighlighter(
+            self.document(), main_window=self)
         self.highlight_current_line()
 
     def check_env(self) -> None:
