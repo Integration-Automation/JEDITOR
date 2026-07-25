@@ -2103,11 +2103,45 @@ class CodeEditor(QPlainTextEdit):
         for shortcut, handler in (
             ("Ctrl+Shift+R", self.toggle_macro_recording),
             ("Ctrl+Shift+P", self.play_macro),
+            ("Ctrl+Alt+E", self.show_recent_locations),
         ):
             action = QAction(self)
             action.setShortcut(shortcut)
             action.triggered.connect(handler)
             self.addAction(action)
+
+    def recent_location_labels(self) -> list[str]:
+        """
+        取得最近去過的位置，最新的排在前面
+        The locations visited recently, most recent first.
+
+        :return: 每個位置的顯示文字 / a label for each location
+        """
+        document = self.document()
+        labels: list[str] = []
+        for line in reversed(self.location_history.entries):
+            block = document.findBlockByNumber(line)
+            text = block.text().strip() if block.isValid() else ""
+            labels.append(f"{line + 1}: {text}" if text else f"{line + 1}")
+        return labels
+
+    def show_recent_locations(self) -> bool:
+        """
+        列出最近去過的位置，選一個就跳過去
+        List the recently visited locations and jump to the chosen one.
+
+        :return: 有跳轉時為 ``True`` / ``True`` when the caret moved
+        """
+        labels = self.recent_location_labels()
+        if not labels:
+            return False
+        chosen, confirmed = QInputDialog.getItem(
+            self, language_wrapper.language_word_dict.get("recent_locations_title"),
+            language_wrapper.language_word_dict.get("recent_locations_prompt"),
+            labels, 0, False)
+        if not confirmed or not chosen:
+            return False
+        return self.jump_to_line(int(chosen.split(":", 1)[0]))
 
     def toggle_macro_recording(self) -> bool:
         """

@@ -87,6 +87,8 @@ english_word_dict = {
     "file_menu_encoding_label": "Encodings",
     "file_menu_line_ending_label": "Line Endings",
     "file_menu_save_all_label": "Save All",
+    "recent_locations_title": "Recent Locations",
+    "recent_locations_prompt": "Jump to:",
     "format_on_save_label": "Format on Save",
     "style_menu_indent_guides_label": "Show Indent Guides",
     "style_menu_trailing_whitespace_label": "Show Trailing Whitespace",

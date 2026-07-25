@@ -150,6 +150,31 @@ class TestMacroInEditor:
         assert editor.toPlainText() == before
 
 
+class TestRecentLocations:
+    def test_visited_lines_are_listed_most_recent_first(self, editor):
+        editor.setPlainText("alpha\nbeta\ngamma\ndelta\n")
+        for line in (0, 2, 3):
+            editor.location_history.visit(line)
+        labels = editor.recent_location_labels()
+        assert labels[0].startswith("4:")
+        assert labels[-1].startswith("1:")
+
+    def test_a_label_shows_the_line_text(self, editor):
+        editor.setPlainText("first line\nsecond line\n")
+        editor.location_history.visit(1)
+        assert "second line" in editor.recent_location_labels()[0]
+
+    def test_a_blank_line_still_gets_a_label(self, editor):
+        editor.setPlainText("\n\n")
+        editor.location_history.visit(1)
+        assert editor.recent_location_labels()[0] == "2"
+
+    def test_no_history_means_nothing_to_show(self, editor):
+        editor.location_history.__init__()
+        assert editor.recent_location_labels() == []
+        assert editor.show_recent_locations() is False
+
+
 class _FakeTabs:
     """Stands in for QTabWidget, which cannot hold a mocked widget."""
 
