@@ -15,7 +15,11 @@ def _log(msg):
     sys.__stderr__.flush()
 
 
-from PySide6.QtWidgets import QWidget, QGridLayout, QLineEdit, QPushButton, QLabel
+# Imported after the platform variable above is set: Qt reads it while loading,
+# so importing any Qt module first would lock in the wrong platform plugin.
+from PySide6.QtWidgets import (  # noqa: E402
+    QWidget, QGridLayout, QLineEdit, QPushButton, QLabel
+)
 
 
 class TestUI(QWidget):

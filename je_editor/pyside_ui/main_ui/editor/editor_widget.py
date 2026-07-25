@@ -464,6 +464,7 @@ class EditorWidget(QWidget):
         # 停止仍在執行的背景檢查 / Stop background checks still running
         self.code_edit.diff_marker_manager.stop()
         self.code_edit.lint_manager.stop()
+        self.code_edit.blame_manager.stop()
 
         if self.current_file:
             file_is_open_manager_dict.pop(str(Path(self.current_file)), None)

@@ -377,6 +377,7 @@ please make sure that the current encoding is consistent with the default encodi
     "todo_panel_col_message": "Message",
     "todo_panel_col_file": "File",
     "todo_panel_col_line": "Line",
+    "tab_menu_diff_against_head_name": "Diff Against HEAD",
     # Problems panel
     "tab_menu_problems_panel_tab_name": "Problems",
     "problems_panel_refresh": "Recheck",
