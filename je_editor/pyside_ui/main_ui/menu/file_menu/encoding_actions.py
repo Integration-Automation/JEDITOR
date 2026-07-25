@@ -111,6 +111,38 @@ def format_before_save(widget) -> bool:
     return True
 
 
+def save_all_tabs(ui_we_want_to_set) -> int:
+    """
+    儲存每個有未存修改的編輯分頁
+    Save every editor tab that has unsaved changes.
+
+    只存已經有檔名的分頁；沒有檔名的需要「另存新檔」對話框，不能默默決定位置。
+    Only tabs that already have a file name are saved: one without needs the
+    Save As dialog, and its location must not be decided silently.
+
+    :param ui_we_want_to_set: 主編輯器視窗 / the main editor window
+    :return: 實際存檔的分頁數 / how many tabs were written
+    """
+    from je_editor.pyside_ui.main_ui.editor.editor_widget import EditorWidget
+    from je_editor.utils.encodings.text_codec import DEFAULT_ENCODING
+    from je_editor.utils.file.save.save_file import write_file_with_encoding
+    tab_widget = getattr(ui_we_want_to_set, "tab_widget", None)
+    if tab_widget is None:
+        return 0
+    saved = 0
+    for index in range(tab_widget.count()):
+        widget = tab_widget.widget(index)
+        if not isinstance(widget, EditorWidget) or not widget.current_file:
+            continue
+        format_before_save(widget)
+        write_file_with_encoding(
+            str(widget.current_file), widget.code_edit.toPlainText(),
+            getattr(widget, "file_encoding", DEFAULT_ENCODING),
+            getattr(widget, "line_ending", LINE_ENDING_LF))
+        saved += 1
+    return saved
+
+
 def apply_line_ending_choice(ui_we_want_to_set, line_ending: str = LINE_ENDING_LF) -> bool:
     """
     設定目前檔案存檔時使用的行尾

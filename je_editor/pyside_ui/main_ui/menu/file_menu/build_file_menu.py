@@ -16,7 +16,7 @@ from je_editor.utils.encodings.text_codec import (
     LINE_ENDING_CR, LINE_ENDING_CRLF, LINE_ENDING_LF, line_ending_name
 )
 from je_editor.pyside_ui.main_ui.menu.file_menu.encoding_actions import (
-    apply_encoding, apply_line_ending_choice
+    apply_encoding, apply_line_ending_choice, save_all_tabs
 )
 # 匯入日誌紀錄器
 # Import logger instance
@@ -106,6 +106,14 @@ def set_file_menu(ui_we_want_to_set: EditorMain) -> None:
     add_font_size_menu(ui_we_want_to_set)
     add_encoding_menu(ui_we_want_to_set)
     add_line_ending_menu(ui_we_want_to_set)
+
+    # 儲存所有分頁 / Save every modified tab
+    ui_we_want_to_set.file_menu.save_all_action = QAction(
+        language_wrapper.language_word_dict.get("file_menu_save_all_label"))
+    ui_we_want_to_set.file_menu.save_all_action.setShortcut("Ctrl+Alt+S")
+    ui_we_want_to_set.file_menu.save_all_action.triggered.connect(
+        lambda: save_all_tabs(ui_we_want_to_set))
+    ui_we_want_to_set.file_menu.addAction(ui_we_want_to_set.file_menu.save_all_action)
 
 
 # 最近開啟的檔案選單 / Recent Files menu

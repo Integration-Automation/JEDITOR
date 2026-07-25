@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Union, List
 
 import jedi  # Python 自動補全與靜態分析工具
 from PySide6 import QtGui
-from PySide6.QtCore import Qt, QRect, QTimer, QThread, Signal, QObject
+from PySide6.QtCore import Qt, QEvent, QRect, QTimer, QThread, Signal, QObject
 from PySide6.QtGui import (
     QPainter, QTextCharFormat, QTextFormat, QKeyEvent, QAction,
     QTextDocument, QTextCursor, QTextOption, QColor, QWheelEvent
@@ -34,6 +34,8 @@ from je_editor.utils.indentation.indent_guides import (
     guide_columns, trailing_whitespace_start
 )
 from je_editor.utils.lint.ruff_diagnostics import diagnostics_from_entries
+from je_editor.utils.macro.keystroke_macro import KeystrokeMacro
+from je_editor.utils.selection.surround import SURROUND_PAIRS, surround
 from je_editor.utils.line_ops.line_operations import (
     join_lines, natural_sort, remove_blank_lines, reverse_lines, sort_lines, unique_lines
 )
@@ -340,6 +342,10 @@ class CodeEditor(QPlainTextEdit):
         self._column_anchor: Union[int, None] = None
         self._column_dragged = False
         self._register_multi_cursor_actions()
+
+        # 巨集錄製 / Macro recording
+        self.macro = KeystrokeMacro()
+        self._register_macro_actions()
 
         # 非 Python 檔的補全與診斷都交給語言伺服器；Python 仍走 jedi 與 ruff
         # A non-Python file gets its completion and diagnostics from a language
@@ -2092,6 +2098,77 @@ class CodeEditor(QPlainTextEdit):
         return self.lsp_client.request_completion(
             cursor.blockNumber(), cursor.positionInBlock())
 
+    def _register_macro_actions(self) -> None:
+        """註冊巨集與環繞選取的快捷鍵 / Register the macro and surround shortcuts."""
+        for shortcut, handler in (
+            ("Ctrl+Shift+R", self.toggle_macro_recording),
+            ("Ctrl+Shift+P", self.play_macro),
+        ):
+            action = QAction(self)
+            action.setShortcut(shortcut)
+            action.triggered.connect(handler)
+            self.addAction(action)
+
+    def toggle_macro_recording(self) -> bool:
+        """
+        開始或結束錄製巨集
+        Start recording a macro, or stop the one under way.
+
+        :return: 切換後是否正在錄製 / whether recording is now under way
+        """
+        return self.macro.toggle()
+
+    def play_macro(self) -> bool:
+        """
+        重播錄好的巨集
+        Play back the recorded macro.
+
+        重播用同步送出事件，而不是排入佇列，因此事件物件的生命週期完全在這次呼叫
+        之內。整段重播算一個復原步驟。
+        Playback sends each event synchronously rather than queuing it, so every
+        event object lives only for the duration of this call, and the whole run
+        is a single undo step.
+
+        :return: 有重播時為 ``True`` / ``True`` when anything was played back
+        """
+        if self.macro.recording or self.macro.is_empty:
+            return False
+        cursor = self.textCursor()
+        cursor.beginEditBlock()
+        try:
+            for stroke in list(self.macro.keystrokes):
+                event = QKeyEvent(
+                    QEvent.Type.KeyPress, stroke.key,
+                    Qt.KeyboardModifier(stroke.modifiers), stroke.text)
+                self.keyPressEvent(event)
+        finally:
+            cursor.endEditBlock()
+        return True
+
+    def surround_selection(self, opening: str) -> bool:
+        """
+        用成對字元包住選取的文字
+        Wrap the selection in a matching pair of characters.
+
+        :param opening: 開頭字元 / the opening character
+        :return: 有包住時為 ``True`` / ``True`` when the selection was wrapped
+        """
+        cursor = self.textCursor()
+        if not cursor.hasSelection():
+            return False
+        wrapped = surround(cursor.selectedText(), opening)
+        if wrapped is None:
+            return False
+        start = cursor.selectionStart()
+        cursor.insertText(wrapped)
+        # 重新選取原本的內容，方便接著再包一層
+        # Re-select the original text so it can be wrapped again straight away
+        caret = self.textCursor()
+        caret.setPosition(start + 1)
+        caret.setPosition(start + len(wrapped) - 1, QTextCursor.MoveMode.KeepAnchor)
+        self.setTextCursor(caret)
+        return True
+
     def _register_multi_cursor_actions(self) -> None:
         """註冊多重游標的快捷鍵 / Register the multi-caret shortcuts."""
         for shortcut, handler in (
@@ -2285,6 +2362,17 @@ class CodeEditor(QPlainTextEdit):
         """鍵盤事件處理 / Handle key press events (dispatches to helpers)."""
         key = event.key()
         modifiers = event.modifiers()
+
+        # 錄製中就先記下這個按鍵，再照常處理
+        # While recording, note the keystroke before handling it as usual
+        self.macro.record(int(key), int(modifiers.value), event.text())
+
+        # 對選取範圍輸入成對字元時包住它，而不是取代掉
+        # Typing a pairing character over a selection wraps it instead of
+        # replacing it
+        if event.text() in SURROUND_PAIRS and self.textCursor().hasSelection():
+            if self.surround_selection(event.text()):
+                return
 
         if self._handle_multi_cursor_key(event):
             return
