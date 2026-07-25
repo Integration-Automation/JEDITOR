@@ -15,6 +15,7 @@ from PySide6.QtWidgets import (
 )
 
 from je_editor.pyside_ui.code.bookmark.bookmark_manager import BookmarkManager
+from je_editor.pyside_ui.code.breakpoint.breakpoint_manager import BreakpointManager
 from je_editor.pyside_ui.code.folding.folding_manager import FoldingManager
 from je_editor.pyside_ui.code.git_diff.blame_manager import BlameManager
 from je_editor.pyside_ui.code.git_diff.diff_marker_manager import DiffMarkerManager
@@ -34,6 +35,7 @@ from je_editor.utils.indentation.indent_guides import (
     guide_columns, trailing_whitespace_start
 )
 from je_editor.git_client.file_staging import stage_content, staged_text
+from je_editor.utils.debugger.pdb_commands import breakpoint_commands, step_command
 from je_editor.utils.file_diff.line_status import apply_hunk
 from je_editor.utils.file_diff.unified import unified_diff_text
 from je_editor.utils.lint.ruff_diagnostics import diagnostics_from_entries
@@ -350,6 +352,10 @@ class CodeEditor(QPlainTextEdit):
         # 巨集錄製 / Macro recording
         self.macro = KeystrokeMacro()
         self._register_macro_actions()
+
+        # 中斷點 / Breakpoints
+        self.breakpoint_manager = BreakpointManager(self)
+        self._register_breakpoint_actions()
 
         # 非 Python 檔的補全與診斷都交給語言伺服器；Python 仍走 jedi 與 ruff
         # A non-Python file gets its completion and diagnostics from a language
@@ -1083,6 +1089,7 @@ class CodeEditor(QPlainTextEdit):
         painter.fillRect(event.rect(), actually_color_dict.get("line_number_background_color"))
 
         bookmarked = set(self.bookmark_manager.bookmarked_lines())
+        breakpoints = set(self.breakpoint_manager.lines())
         fold_headers = self._foldable_header_lines()
         folded_headers = self.folding_manager.folded_header_lines()
         diff_statuses = self.diff_marker_manager.statuses()
@@ -1112,7 +1119,9 @@ class CodeEditor(QPlainTextEdit):
                 if diff_status is not None:
                     self._paint_diff_marker(
                         painter, top, line_height, gutter_width, diff_status)
-                if block_number in bookmarked:
+                if block_number in breakpoints:
+                    self._paint_breakpoint_marker(painter, top, line_height)
+                elif block_number in bookmarked:
                     self._paint_bookmark_marker(painter, top, line_height)
                 if block_number in fold_headers:
                     self._paint_fold_marker(
@@ -1122,6 +1131,28 @@ class CodeEditor(QPlainTextEdit):
             top = bottom
             bottom = top + self.blockBoundingRect(block).height()
             block_number += 1
+
+    def _paint_breakpoint_marker(
+            self, painter: QPainter, top: float, line_height: int) -> None:
+        """
+        在行號左側繪製中斷點
+        Draw the breakpoint dot on the gutter's left.
+
+        與書籤共用同一欄，因此畫在同一個位置；顏色不同，且中斷點優先顯示，因為
+        它會影響執行。
+        It shares the bookmark column and so sits in the same place, but in a
+        different colour, and takes precedence because it changes what runs.
+        """
+        painter.save()
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing, True)
+        colour = actually_color_dict.get("breakpoint_marker_color")
+        painter.setBrush(colour)
+        painter.setPen(colour)
+        radius = max(3, line_height // 4)
+        center_y = int(top) + line_height // 2
+        painter.drawEllipse(
+            _BOOKMARK_MARKER_WIDTH // 2 - radius, center_y - radius, radius * 2, radius * 2)
+        painter.restore()
 
     def _paint_bookmark_marker(self, painter: QPainter, top: float, line_height: int) -> None:
         """在行號左側繪製書籤圓點 / Draw the bookmark dot on the gutter's left."""
@@ -2149,6 +2180,84 @@ class CodeEditor(QPlainTextEdit):
         self.lsp_client.did_change(self.toPlainText())
         return self.lsp_client.request_completion(
             cursor.blockNumber(), cursor.positionInBlock())
+
+    def _register_breakpoint_actions(self) -> None:
+        """註冊中斷點與逐步執行的快捷鍵 / Register breakpoint and stepping shortcuts."""
+        for shortcut, handler in (
+            ("F9", self.toggle_breakpoint),
+            ("F5", lambda: self.send_debugger_command("continue")),
+            ("F10", lambda: self.send_debugger_command("over")),
+            ("F11", lambda: self.send_debugger_command("into")),
+            ("Shift+F11", lambda: self.send_debugger_command("out")),
+        ):
+            action = QAction(self)
+            action.setShortcut(shortcut)
+            action.triggered.connect(handler)
+            self.addAction(action)
+
+    def toggle_breakpoint(self) -> bool:
+        """
+        切換游標所在行的中斷點
+        Add or remove a breakpoint on the caret's line.
+
+        :return: 切換後是否有中斷點 / whether the line now has one
+        """
+        result = self.breakpoint_manager.toggle(self.textCursor().blockNumber())
+        self.line_number.update()
+        return result
+
+    def _debugger_process(self):
+        """取得正在執行的除錯器程序 / The debugger process that is running, if any."""
+        manager = getattr(self.main_window, "exec_python_debugger", None)
+        return getattr(manager, "process", None) if manager is not None else None
+
+    def send_debugger_command(self, action: str) -> bool:
+        """
+        送出一個逐步執行指令給除錯器
+        Send one stepping command to the debugger.
+
+        除錯器沒在跑時什麼都不做，因為 pdb 的指令只有在它等待輸入時才有意義。
+        Nothing happens when the debugger is not running, since a pdb command
+        only means something while it is waiting for input.
+
+        :param action: 動作名稱（``into``／``over``／``out``／``continue``／``quit``）
+            the action's name
+        :return: 有送出時為 ``True`` / ``True`` when the command was sent
+        """
+        command = step_command(action)
+        if command is None:
+            return False
+        return self._write_debugger_line(command)
+
+    def send_breakpoints_to_debugger(self) -> int:
+        """
+        把目前的中斷點送給正在執行的除錯器
+        Send the current breakpoints to the running debugger.
+
+        :return: 送出的中斷點數量 / how many breakpoints were sent
+        """
+        if self.current_file is None:
+            return 0
+        sent = 0
+        for command in breakpoint_commands(
+                str(self.current_file), self.breakpoint_manager.pdb_lines()):
+            if self._write_debugger_line(command):
+                sent += 1
+        return sent
+
+    def _write_debugger_line(self, command: str) -> bool:
+        """把一行指令寫進除錯器的標準輸入 / Write one command to the debugger's stdin."""
+        process = self._debugger_process()
+        stdin = getattr(process, "stdin", None) if process is not None else None
+        if stdin is None:
+            return False
+        try:
+            stdin.write(command.encode() + b"\n")
+            stdin.flush()
+        except (OSError, ValueError) as error:
+            jeditor_logger.warning(f"CodeEditor debugger command failed: {error}")
+            return False
+        return True
 
     def _register_macro_actions(self) -> None:
         """註冊巨集與環繞選取的快捷鍵 / Register the macro and surround shortcuts."""
