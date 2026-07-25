@@ -45,6 +45,9 @@ def update_actually_color_dict() -> None:
             "lint_underline_color": _to_qcolor("lint_underline_color", [255, 138, 101]),
             "blame_annotation_color": _to_qcolor("blame_annotation_color", [130, 130, 130]),
             "indent_guide_color": _to_qcolor("indent_guide_color", [90, 90, 110]),
+            "minimap_background_color": _to_qcolor("minimap_background_color", [40, 40, 48]),
+            "minimap_line_color": _to_qcolor("minimap_line_color", [130, 130, 150]),
+            "minimap_viewport_color": _to_qcolor("minimap_viewport_color", [80, 80, 110]),
             "trailing_whitespace_color": _to_qcolor("trailing_whitespace_color", [120, 70, 70]),
         }
     )
@@ -68,6 +71,9 @@ user_setting_color_dict: Dict[str, list] = {
     "lint_underline_color": [255, 138, 101],
     "blame_annotation_color": [130, 130, 130],
     "indent_guide_color": [90, 90, 110],
+    "minimap_background_color": [40, 40, 48],
+    "minimap_line_color": [130, 130, 150],
+    "minimap_viewport_color": [80, 80, 110],
     "trailing_whitespace_color": [120, 70, 70]
 }
 

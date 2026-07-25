@@ -383,6 +383,7 @@ please make sure that the current encoding is consistent with the default encodi
     "todo_panel_col_line": "Line",
     "tab_menu_diff_against_head_name": "Diff Against HEAD",
     "tab_menu_split_view_label": "Toggle Split View",
+    "tab_menu_minimap_label": "Toggle Minimap",
     # Problems panel
     "tab_menu_problems_panel_tab_name": "Problems",
     "problems_panel_refresh": "Recheck",

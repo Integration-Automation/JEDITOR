@@ -19,7 +19,7 @@ from typing import Union
 from PySide6.QtCore import Qt, QFileInfo, QDir, QFileSystemWatcher
 from PySide6.QtGui import QDragEnterEvent, QDropEvent
 from PySide6.QtWidgets import QWidget, QGridLayout, QSplitter, QScrollArea, QFileSystemModel, QTreeView, QTabWidget, \
-    QMessageBox
+    QMessageBox, QHBoxLayout
 
 from je_editor.pyside_ui.code.auto_save.auto_save_manager import auto_save_manager_dict, init_new_auto_save_thread, \
     file_is_open_manager_dict
@@ -29,6 +29,7 @@ from je_editor.pyside_ui.git_ui.git_client.git_client_gui import GitGui
 from je_editor.pyside_ui.code.auto_save.auto_save_thread import CodeEditSaveThread
 from je_editor.pyside_ui.code.code_format.pep8_format import PEP8FormatChecker
 from je_editor.pyside_ui.code.plaintext_code_edit.code_edit_plaintext import CodeEditor
+from je_editor.pyside_ui.code.minimap.minimap_widget import MinimapWidget
 from je_editor.pyside_ui.code.split_view.split_editor_view import SplitEditorView
 from je_editor.pyside_ui.code.textedit_code_result.code_record import CodeRecord
 from je_editor.pyside_ui.main_ui.save_settings.user_color_setting_file import actually_color_dict
@@ -152,15 +153,23 @@ class EditorWidget(QWidget):
         self.code_difference_result.addTab(
             self.git_gui, language_wrapper.language_word_dict.get("tab_menu_git_client_tab_name"))
 
+        # 同檔分割檢視與縮圖，開啟時才建立
+        # The same-file split view and the minimap, both created on demand
+        self.split_view: Union[SplitEditorView, None] = None
+        self.minimap: Union[MinimapWidget, None] = None
+        # 編輯器與縮圖並排的容器 / Holds the editor and the minimap side by side
+        self.editor_row = QWidget()
+        self.editor_row_layout = QHBoxLayout(self.editor_row)
+        self.editor_row_layout.setContentsMargins(0, 0, 0, 0)
+        self.editor_row_layout.setSpacing(0)
+        self.editor_row_layout.addWidget(self.code_edit_scroll_area)
+
         # 加入分割器 / Add widgets to splitters
-        self.edit_splitter.addWidget(self.code_edit_scroll_area)
+        self.edit_splitter.addWidget(self.editor_row)
         self.edit_splitter.addWidget(self.code_difference_result)
         self.edit_splitter.setStretchFactor(0, 3)
         self.edit_splitter.setStretchFactor(1, 1)
         self.edit_splitter.setSizes([300, 100])
-
-        # 同檔分割檢視，開啟時才建立 / The same-file split view, created on demand
-        self.split_view: Union[SplitEditorView, None] = None
 
         self.full_splitter.addWidget(self.project_treeview)
         self.full_splitter.addWidget(self.edit_splitter)
@@ -336,6 +345,23 @@ class EditorWidget(QWidget):
             title = self.tab_manager.tabText(idx)
             if title.endswith(" *"):
                 self.tab_manager.setTabText(idx, title[:-2])
+
+    def toggle_minimap(self) -> bool:
+        """
+        切換縮圖顯示
+        Toggle the minimap.
+
+        :return: 切換後是否為開啟 / whether the minimap is now shown
+        """
+        if self.minimap is not None:
+            self.editor_row_layout.removeWidget(self.minimap)
+            self.minimap.setParent(None)
+            self.minimap.deleteLater()
+            self.minimap = None
+            return False
+        self.minimap = MinimapWidget(self.code_edit)
+        self.editor_row_layout.addWidget(self.minimap)
+        return True
 
     def toggle_split_view(self) -> bool:
         """

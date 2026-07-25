@@ -69,8 +69,36 @@ def set_tab_menu(ui_we_want_to_set: EditorMain) -> None:
     )
     ui_we_want_to_set.tab_menu.addAction(ui_we_want_to_set.tab_menu.toggle_split_view_action)
 
+    # === 縮圖 ===
+    # === Minimap ===
+    ui_we_want_to_set.tab_menu.toggle_minimap_action = QAction(
+        language_wrapper.language_word_dict.get("tab_menu_minimap_label"))
+    ui_we_want_to_set.tab_menu.toggle_minimap_action.setShortcut("Ctrl+Alt+M")
+    ui_we_want_to_set.tab_menu.toggle_minimap_action.triggered.connect(
+        lambda: toggle_minimap(ui_we_want_to_set)
+    )
+    ui_we_want_to_set.tab_menu.addAction(ui_we_want_to_set.tab_menu.toggle_minimap_action)
+
     set_tab_tools_menu(ui_we_want_to_set=ui_we_want_to_set)
     set_tab_git_menu(ui_we_want_to_set=ui_we_want_to_set)
+
+
+def toggle_minimap(ui_we_want_to_set: EditorMain) -> bool:
+    """
+    切換目前分頁的縮圖
+    Toggle the current tab's minimap.
+
+    :param ui_we_want_to_set: 主編輯器視窗 / the main editor window
+    :return: 切換後是否為開啟 / whether the minimap is now shown
+    """
+    jeditor_logger.info("build_tab_menu.py toggle_minimap")
+    tab_widget = getattr(ui_we_want_to_set, "tab_widget", None)
+    if tab_widget is None:
+        return False
+    widget = tab_widget.currentWidget()
+    if not isinstance(widget, EditorWidget):
+        return False
+    return widget.toggle_minimap()
 
 
 def toggle_split_view(ui_we_want_to_set: EditorMain) -> bool:
