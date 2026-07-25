@@ -283,8 +283,10 @@ class EditorWidget(QWidget):
         self.current_file = file
         self.code_edit.current_file = file
         self.code_edit.reset_highlighter()
-        # 換檔後重新取得 git 比較基準 / Reload the git baseline for the new file
+        # 換檔後重新取得 git 比較基準與語言伺服器
+        # Reload the git baseline and the language server for the new file
         self.code_edit.load_git_baseline()
+        self.code_edit.start_language_server()
 
         # 更新使用者設定中的最後開啟檔案 / Update last opened file in user settings
         user_setting_dict.update({"last_file": str(self.current_file)})
@@ -529,6 +531,7 @@ class EditorWidget(QWidget):
         self.code_edit.diff_marker_manager.stop()
         self.code_edit.lint_manager.stop()
         self.code_edit.blame_manager.stop()
+        self.code_edit.lsp_client.stop()
 
         if self.current_file:
             file_is_open_manager_dict.pop(str(Path(self.current_file)), None)

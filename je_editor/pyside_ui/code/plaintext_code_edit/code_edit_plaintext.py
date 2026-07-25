@@ -17,6 +17,7 @@ from je_editor.pyside_ui.code.folding.folding_manager import FoldingManager
 from je_editor.pyside_ui.code.git_diff.blame_manager import BlameManager
 from je_editor.pyside_ui.code.git_diff.diff_marker_manager import DiffMarkerManager
 from je_editor.pyside_ui.code.lint.lint_manager import LintManager
+from je_editor.pyside_ui.code.lsp.lsp_client import LspClient
 from je_editor.pyside_ui.code.multi_cursor.multi_cursor_manager import MultiCursorManager
 from je_editor.pyside_ui.code.selection.smart_selection_manager import SmartSelectionManager
 from je_editor.pyside_ui.code.snippets.snippet_manager import SnippetManager
@@ -301,6 +302,12 @@ class CodeEditor(QPlainTextEdit):
         self.multi_cursor_manager = MultiCursorManager(self)
         self._register_multi_cursor_actions()
 
+        # 非 Python 檔的補全交給語言伺服器；Python 仍走 jedi
+        # Non-Python files complete through a language server; Python keeps jedi
+        self.lsp_client = LspClient(self)
+        self.lsp_client.completions_ready.connect(self.set_complete)
+        self.start_language_server()
+
     def reset_highlighter(self) -> None:
         """重設語法高亮 / Reset syntax highlighter"""
         jeditor_logger.info("CodeEditor reset_highlighter")
@@ -361,6 +368,11 @@ class CodeEditor(QPlainTextEdit):
         使用 Jedi 在背景執行緒進行自動補全，避免阻塞 UI
         Run Jedi autocomplete in background thread to avoid blocking UI
         """
+        # 非 Python 檔改問語言伺服器，jedi 只懂 Python
+        # A non-Python file asks its language server instead; jedi only knows Python
+        if self.request_language_server_completion():
+            return
+
         # 如果上一次補全還在執行，跳過 / Skip if previous completion is still running
         if self._complete_thread is not None and self._complete_thread.isRunning():
             return
@@ -1982,6 +1994,38 @@ class CodeEditor(QPlainTextEdit):
                 self._indent_selection(indent=False)
             return True
         return False
+
+    def start_language_server(self) -> bool:
+        """
+        為目前檔案啟動語言伺服器（如果有對應的）
+        Start the language server for the current file, when one applies.
+
+        Python 檔不啟動，因為補全已經由 jedi 負責。
+        Python files start none, since jedi already provides their completion.
+
+        :return: 有啟動時為 ``True`` / ``True`` when a server was started
+        """
+        if self.current_file is None or Path(str(self.current_file)).suffix.lower() == ".py":
+            self.lsp_client.stop()
+            return False
+        if not self.lsp_client.start_for(str(self.current_file)):
+            return False
+        self.lsp_client.did_open(self.toPlainText())
+        return True
+
+    def request_language_server_completion(self) -> bool:
+        """
+        向語言伺服器要求游標位置的補全
+        Ask the language server for completions at the caret.
+
+        :return: 有送出請求時為 ``True`` / ``True`` when a request was sent
+        """
+        if not self.lsp_client.running:
+            return False
+        cursor = self.textCursor()
+        self.lsp_client.did_change(self.toPlainText())
+        return self.lsp_client.request_completion(
+            cursor.blockNumber(), cursor.positionInBlock())
 
     def _register_multi_cursor_actions(self) -> None:
         """註冊多重游標的快捷鍵 / Register the multi-caret shortcuts."""
