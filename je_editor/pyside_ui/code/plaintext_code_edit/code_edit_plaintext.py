@@ -17,6 +17,7 @@ from je_editor.pyside_ui.code.folding.folding_manager import FoldingManager
 from je_editor.pyside_ui.code.git_diff.blame_manager import BlameManager
 from je_editor.pyside_ui.code.git_diff.diff_marker_manager import DiffMarkerManager
 from je_editor.pyside_ui.code.lint.lint_manager import LintManager
+from je_editor.pyside_ui.code.multi_cursor.multi_cursor_manager import MultiCursorManager
 from je_editor.pyside_ui.code.selection.smart_selection_manager import SmartSelectionManager
 from je_editor.pyside_ui.code.snippets.snippet_manager import SnippetManager
 from je_editor.utils.file_diff.line_status import (
@@ -296,6 +297,10 @@ class CodeEditor(QPlainTextEdit):
         # 片段展開與定位點 / Snippet expansion and its tab stops
         self.snippet_manager = SnippetManager(self)
 
+        # 多重游標 / Extra carets
+        self.multi_cursor_manager = MultiCursorManager(self)
+        self._register_multi_cursor_actions()
+
     def reset_highlighter(self) -> None:
         """重設語法高亮 / Reset syntax highlighter"""
         jeditor_logger.info("CodeEditor reset_highlighter")
@@ -573,6 +578,8 @@ class CodeEditor(QPlainTextEdit):
         QPlainTextEdit.paintEvent(self, event)
         if user_setting_dict.get("show_trailing_whitespace", True):
             self._paint_trailing_whitespace()
+        if self.multi_cursor_manager.active:
+            self._paint_extra_cursors()
         if self.blame_manager.enabled:
             self._paint_blame_annotations()
 
@@ -1976,6 +1983,82 @@ class CodeEditor(QPlainTextEdit):
             return True
         return False
 
+    def _register_multi_cursor_actions(self) -> None:
+        """註冊多重游標的快捷鍵 / Register the multi-caret shortcuts."""
+        for shortcut, handler in (
+            ("Ctrl+Shift+L", self.add_cursors_to_selected_lines),
+            ("Ctrl+Shift+Escape", self.clear_extra_cursors),
+        ):
+            action = QAction(self)
+            action.setShortcut(shortcut)
+            action.triggered.connect(handler)
+            self.addAction(action)
+
+    def add_cursors_to_selected_lines(self) -> int:
+        """
+        在選取範圍的每一行行尾放一個游標
+        Put a caret at the end of every line in the selection.
+
+        :return: 額外游標的數量 / how many extra carets were added
+        """
+        return self.multi_cursor_manager.add_to_selected_lines()
+
+    def clear_extra_cursors(self) -> bool:
+        """
+        清除所有額外游標
+        Drop every extra caret.
+
+        :return: 是否真的清掉了什麼 / whether anything was actually dropped
+        """
+        return self.multi_cursor_manager.clear()
+
+    def _handle_multi_cursor_click(self, event: QtGui.QMouseEvent) -> bool:
+        """
+        Alt+點按新增或移除一個游標；一般點按則收掉額外游標
+        Alt-click adds or removes a caret; a plain click drops the extra ones.
+
+        :param event: 滑鼠事件 / the mouse event
+        :return: 事件是否已被處理 / whether the event was handled here
+        """
+        if event.modifiers() & Qt.KeyboardModifier.AltModifier:
+            self.multi_cursor_manager.toggle_at(self.cursorForPosition(event.pos()).position())
+            return True
+        if self.multi_cursor_manager.active:
+            # 一般點按等於重新開始，因此先收掉額外游標
+            # A plain click starts over, so the extra carets go first
+            self.multi_cursor_manager.clear()
+        return False
+
+    def _paint_extra_cursors(self) -> None:
+        """畫出每個額外游標 / Draw each extra caret."""
+        painter = QPainter(self.viewport())
+        painter.setPen(actually_color_dict.get("extra_cursor_color"))
+        cursor = QTextCursor(self.document())
+        for position in self.multi_cursor_manager.positions():
+            cursor.setPosition(min(position, self.document().characterCount() - 1))
+            rect = self.cursorRect(cursor)
+            painter.drawLine(rect.left(), rect.top(), rect.left(), rect.bottom())
+        painter.end()
+
+    def _handle_multi_cursor_key(self, event: QKeyEvent) -> bool:
+        """
+        把輸入與退格套用到每個額外游標
+        Apply typing and Backspace at every extra caret.
+
+        :param event: 按鍵事件 / the key event
+        :return: 事件是否已被處理 / whether the event was handled here
+        """
+        if not self.multi_cursor_manager.active:
+            return False
+        key = event.key()
+        if key == Qt.Key.Key_Escape:
+            return self.multi_cursor_manager.clear()
+        if key == Qt.Key.Key_Backspace:
+            return self.multi_cursor_manager.delete_before()
+        if event.text() and event.text().isprintable():
+            return self.multi_cursor_manager.insert_text(event.text())
+        return False
+
     def _handle_snippet_tab(self) -> bool:
         """
         以 Tab 展開片段，或跳到片段的下一個定位點
@@ -2036,6 +2119,9 @@ class CodeEditor(QPlainTextEdit):
         key = event.key()
         modifiers = event.modifiers()
 
+        if self._handle_multi_cursor_key(event):
+            return
+
         if modifiers & Qt.KeyboardModifier.ControlModifier and self._handle_ctrl_shortcuts(event):
             return
 
@@ -2074,9 +2160,11 @@ class CodeEditor(QPlainTextEdit):
 
     def mousePressEvent(self, event: QtGui.QMouseEvent) -> None:
         """
-        滑鼠點擊事件
-        Mouse press event
+        滑鼠點擊事件（Alt+點按用於多重游標）
+        Mouse press event; Alt-click drives the extra carets.
         """
+        if self._handle_multi_cursor_click(event):
+            return
         super().mousePressEvent(event)
         self.highlight_current_line()
 
