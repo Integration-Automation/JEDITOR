@@ -15,7 +15,8 @@ if TYPE_CHECKING:
 from PySide6.QtWidgets import QFileDialog
 
 from je_editor.pyside_ui.main_ui.editor.editor_widget import EditorWidget
-from je_editor.utils.file.save.save_file import write_file
+from je_editor.utils.encodings.text_codec import DEFAULT_ENCODING, LINE_ENDING_LF
+from je_editor.utils.file.save.save_file import write_file_with_encoding
 
 
 def _build_save_file_filters() -> list[str]:
@@ -98,8 +99,11 @@ def choose_file_get_save_file_path(parent_qt_instance: EditorMain) -> bool:
             # 更新目前檔案路徑 / Update current file path
             widget.current_file = file_path
 
-            # 將編輯器內容寫入檔案 / Write editor content to file
-            write_file(file_path, widget.code_edit.toPlainText())
+            # 以該分頁的編碼與行尾寫入 / Write with the tab's encoding and line ending
+            write_file_with_encoding(
+                file_path, widget.code_edit.toPlainText(),
+                getattr(widget, "file_encoding", DEFAULT_ENCODING),
+                getattr(widget, "line_ending", LINE_ENDING_LF))
 
             # 更新已開啟檔案管理字典 / Update opened file manager dictionary
             path = Path(file_path)

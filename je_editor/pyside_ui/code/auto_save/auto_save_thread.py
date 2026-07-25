@@ -6,7 +6,8 @@ from typing import Callable, Union
 from PySide6.QtCore import QObject, Qt, Signal, Slot
 
 from je_editor.pyside_ui.code.plaintext_code_edit.code_edit_plaintext import CodeEditor
-from je_editor.utils.file.save.save_file import write_file
+from je_editor.utils.encodings.text_codec import DEFAULT_ENCODING, LINE_ENDING_LF
+from je_editor.utils.file.save.save_file import write_file_with_encoding
 from je_editor.utils.logging.loggin_instance import jeditor_logger
 
 
@@ -66,6 +67,11 @@ class CodeEditSaveThread(Thread):
         self.daemon = True
         self.skip_this_round: bool = False
         self.before_write_callback = before_write_callback
+        # 自動儲存要沿用該檔案原本的編碼與行尾，否則背景存檔會悄悄改寫整份檔案
+        # Auto-save keeps the file's own encoding and line ending, or a background
+        # save would quietly rewrite the whole file
+        self.encoding: str = DEFAULT_ENCODING
+        self.line_ending: str = LINE_ENDING_LF
         # 建立主執行緒上的文字提取器 / Create text fetcher on main thread
         self._text_fetcher: Union[_TextFetcher, None] = None
         if editor is not None:
@@ -91,7 +97,7 @@ class CodeEditSaveThread(Thread):
                 return
             if self.before_write_callback is not None:
                 self.before_write_callback()
-            write_file(self.file, text)
+            write_file_with_encoding(self.file, text, self.encoding, self.line_ending)
         except (OSError, RuntimeError) as e:
             jeditor_logger.error(f"Auto-save failed for {self.file}: {e}")
 

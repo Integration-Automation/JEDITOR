@@ -82,6 +82,7 @@ traditional_chinese_word_dict = {
     "file_menu_open_folder_label": "開啟資料夾",
     "file_menu_save_file_label": "儲存檔案",
     "file_menu_encoding_label": "編碼",
+    "file_menu_line_ending_label": "行尾",
     "file_menu_font_label": "字體",
     "file_menu_font_size_label": "字體大小",
     # Help Menu

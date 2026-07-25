@@ -32,7 +32,10 @@ from je_editor.pyside_ui.code.plaintext_code_edit.code_edit_plaintext import Cod
 from je_editor.pyside_ui.code.textedit_code_result.code_record import CodeRecord
 from je_editor.pyside_ui.main_ui.save_settings.user_color_setting_file import actually_color_dict
 from je_editor.pyside_ui.main_ui.save_settings.user_setting_file import user_setting_dict
-from je_editor.utils.file.open.open_file import read_file
+from je_editor.utils.encodings.text_codec import (
+    DEFAULT_ENCODING, LINE_ENDING_LF
+)
+from je_editor.utils.file.open.open_file import read_file, read_file_with_encoding
 
 
 class EditorWidget(QWidget):
@@ -58,6 +61,11 @@ class EditorWidget(QWidget):
         # ---------------- Init variables 初始化變數 ----------------
         self.checker: Union[PEP8FormatChecker, None] = None
         self.current_file = None
+        # 目前檔案的編碼與行尾，開檔時偵測，存檔時照原樣寫回
+        # The current file's encoding and line ending, detected on open and
+        # written back unchanged on save
+        self.file_encoding: str = DEFAULT_ENCODING
+        self.line_ending: str = LINE_ENDING_LF
         self.tree_view_scroll_area = None
         self.project_treeview: Union[QTreeView, None] = None
         self.project_treeview_model = None
@@ -243,11 +251,13 @@ class EditorWidget(QWidget):
         if self.code_save_thread:
             self.code_save_thread.skip_this_round = True
 
-        # 讀取檔案內容 / Read file content
-        result = read_file(str(path))
+        # 讀取檔案內容，同時記下編碼與行尾，存檔時照原樣寫回
+        # Read the content, remembering the encoding and line ending so a save
+        # writes the file back the way it was found
+        result = read_file_with_encoding(str(path))
         if result is None:
             return False
-        file, file_content = result
+        file, file_content, self.file_encoding, self.line_ending = result
         self.code_edit.setPlainText(file_content)
 
         # 依內容偵測縮排寬度；失敗不可影響開檔 / Detect indent; must not break opening

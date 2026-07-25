@@ -12,6 +12,12 @@ from je_editor.pyside_ui.main_ui.save_settings.user_setting_file import user_set
 # 匯入 Python 編碼清單 (例如 utf-8, gbk 等)
 # Import list of Python encodings (e.g., utf-8, gbk, etc.)
 from je_editor.utils.encodings.python_encodings import python_encodings_list
+from je_editor.utils.encodings.text_codec import (
+    LINE_ENDING_CR, LINE_ENDING_CRLF, LINE_ENDING_LF, line_ending_name
+)
+from je_editor.pyside_ui.main_ui.menu.file_menu.encoding_actions import (
+    apply_encoding, apply_line_ending_choice
+)
 # 匯入日誌紀錄器
 # Import logger instance
 from je_editor.utils.logging.loggin_instance import jeditor_logger
@@ -99,6 +105,7 @@ def set_file_menu(ui_we_want_to_set: EditorMain) -> None:
     add_font_menu(ui_we_want_to_set)
     add_font_size_menu(ui_we_want_to_set)
     add_encoding_menu(ui_we_want_to_set)
+    add_line_ending_menu(ui_we_want_to_set)
 
 
 # 最近開啟的檔案選單 / Recent Files menu
@@ -174,6 +181,25 @@ def set_encoding(ui_we_want_to_set: EditorMain, action: QAction) -> None:
                         f"action: {action}")
     ui_we_want_to_set.encoding = action.text()
     user_setting_dict.update({"encoding": action.text()})
+    # 讓選擇真的作用到目前分頁的讀寫，而不只是記在設定裡
+    # Make the choice reach the current tab's read and write path, rather than
+    # only being recorded in the settings
+    apply_encoding(ui_we_want_to_set, action.text())
+
+
+# 建立行尾選單
+# Add line-ending menu
+def add_line_ending_menu(ui_we_want_to_set: EditorMain) -> None:
+    jeditor_logger.info("build_file_menu.py add_line_ending_menu")
+    ui_we_want_to_set.file_menu.line_ending_menu = ui_we_want_to_set.file_menu.addMenu(
+        language_wrapper.language_word_dict.get("file_menu_line_ending_label"))
+    for ending in (LINE_ENDING_LF, LINE_ENDING_CRLF, LINE_ENDING_CR):
+        ending_action = QAction(
+            line_ending_name(ending), parent=ui_we_want_to_set.file_menu.line_ending_menu)
+        ending_action.triggered.connect(
+            lambda checked=False, value=ending: apply_line_ending_choice(
+                ui_we_want_to_set, value))
+        ui_we_want_to_set.file_menu.line_ending_menu.addAction(ending_action)
 
 
 # 顯示新建檔案對話框

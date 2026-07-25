@@ -4,12 +4,55 @@ from typing import Optional
 
 # 匯入自訂例外與日誌工具
 # Import custom exception and logging utility
+from je_editor.utils.encodings.text_codec import (
+    decode_bytes, detect_line_ending, normalise_line_endings
+)
 from je_editor.utils.exception.exceptions import JEditorOpenFileException
 from je_editor.utils.logging.loggin_instance import jeditor_logger
 
 # 模組層級的鎖，確保多執行緒安全
 # Module-level lock for thread safety
 _file_read_lock = Lock()
+
+
+def read_file_with_encoding(
+        file_path: Optional[str], encoding: Optional[str] = None) -> tuple:
+    """
+    讀取檔案，並回報使用的編碼與原本的行尾
+    Read a file, reporting the encoding used and the line ending it had.
+
+    內容的行尾會正規化為 ``\\n``，因為編輯器內部就是這樣表示換行；原本的行尾
+    另外回傳，存檔時才能寫回去。
+    The content's line endings are normalised to ``\\n``, which is how the editor
+    represents them; the original style is returned separately so saving can put
+    it back.
+
+    :param file_path: 檔案完整路徑 / the full path of the file to read
+    :param encoding: 指定編碼，``None`` 表示自動判斷 / the encoding, or ``None`` to detect
+    :return: ``(路徑, 內容, 編碼, 行尾)``；路徑無效時為 ``None``
+        ``(path, content, encoding, line ending)``, or ``None`` for an invalid path
+    :raises JEditorOpenFileException: 讀取或解碼失敗時 / when the read or decode fails
+    """
+    jeditor_logger.info(f"open_file.py read_file_with_encoding file_path: {file_path}")
+    if not file_path:
+        return None
+    path = Path(file_path)
+    try:
+        _file_read_lock.acquire()
+        if not (path.exists() and path.is_file()):
+            return None
+        raw = path.read_bytes()
+    except OSError as error:
+        jeditor_logger.error(f"Failed to read file {file_path}: {error}")
+        raise JEditorOpenFileException from error
+    finally:
+        _file_read_lock.release()
+    try:
+        text, used_encoding = decode_bytes(raw, encoding)
+    except (UnicodeDecodeError, LookupError) as error:
+        jeditor_logger.error(f"Failed to decode file {file_path}: {error}")
+        raise JEditorOpenFileException from error
+    return path, normalise_line_endings(text), used_encoding, detect_line_ending(text)
 
 
 def read_file(file_path: Optional[str]) -> list[Path | str] | None:
