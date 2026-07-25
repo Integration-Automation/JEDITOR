@@ -374,6 +374,15 @@ traditional_chinese_word_dict = {
     "tab_menu_diff_against_head_name": "與 HEAD 比較差異",
     "tab_menu_split_view_label": "切換分割檢視",
     "tab_menu_minimap_label": "切換縮圖",
+    # Test panel
+    "tab_menu_test_panel_tab_name": "測試",
+    "test_panel_run": "執行測試",
+    "test_panel_ready": "就緒",
+    "test_panel_running": "測試執行中...",
+    "test_panel_no_results": "沒有回報任何測試",
+    "test_panel_col_outcome": "結果",
+    "test_panel_col_test": "測試",
+    "test_panel_col_file": "檔案",
     # Problems panel
     "tab_menu_problems_panel_tab_name": "問題",
     "problems_panel_refresh": "重新檢查",

@@ -21,6 +21,7 @@ from je_editor.pyside_ui.main_ui.editor.editor_widget_dock import FullEditorWidg
 from je_editor.pyside_ui.main_ui.ipython_widget.ipython_console import IpythonWidget
 from je_editor.pyside_ui.main_ui.outline_panel.outline_panel_widget import OutlinePanelWidget
 from je_editor.pyside_ui.main_ui.problems_panel.problems_panel_widget import ProblemsPanelWidget
+from je_editor.pyside_ui.main_ui.test_panel.test_panel_widget import TestPanelWidget
 from je_editor.pyside_ui.main_ui.todo_panel.todo_panel_widget import TodoPanelWidget
 from je_editor.utils.file.open.open_file import read_file  # 檔案讀取工具 / File reading utility
 from je_editor.utils.logging.loggin_instance import jeditor_logger  # 日誌紀錄器 / Logger
@@ -147,6 +148,14 @@ def set_dock_menu(ui_we_want_to_set: EditorMain) -> None:
     )
     ui_we_want_to_set.dock_tools_menu.addAction(ui_we_want_to_set.dock_menu.new_problems_panel)
 
+    # === Test Panel Dock ===
+    ui_we_want_to_set.dock_menu.new_test_panel = QAction(
+        language_wrapper.language_word_dict.get("tab_menu_test_panel_tab_name"))
+    ui_we_want_to_set.dock_menu.new_test_panel.triggered.connect(
+        lambda: add_dock_widget(ui_we_want_to_set, "test_panel")
+    )
+    ui_we_want_to_set.dock_tools_menu.addAction(ui_we_want_to_set.dock_menu.new_test_panel)
+
     # === Outline Panel Dock ===
     ui_we_want_to_set.dock_menu.new_outline_panel = QAction(
         language_wrapper.language_word_dict.get("tab_menu_outline_panel_tab_name"))
@@ -191,6 +200,8 @@ def _dock_builders(ui_we_want_to_set: EditorMain) -> dict:
                           lambda: OutlinePanelWidget(ui_we_want_to_set)),
         "problems_panel": ("tab_menu_problems_panel_tab_name",
                            lambda: ProblemsPanelWidget(ui_we_want_to_set)),
+        "test_panel": ("tab_menu_test_panel_tab_name",
+                       lambda: TestPanelWidget(ui_we_want_to_set)),
     }
 
 

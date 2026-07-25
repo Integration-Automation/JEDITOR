@@ -384,6 +384,15 @@ please make sure that the current encoding is consistent with the default encodi
     "tab_menu_diff_against_head_name": "Diff Against HEAD",
     "tab_menu_split_view_label": "Toggle Split View",
     "tab_menu_minimap_label": "Toggle Minimap",
+    # Test panel
+    "tab_menu_test_panel_tab_name": "Tests",
+    "test_panel_run": "Run Tests",
+    "test_panel_ready": "Ready",
+    "test_panel_running": "Running tests...",
+    "test_panel_no_results": "No tests were reported",
+    "test_panel_col_outcome": "Outcome",
+    "test_panel_col_test": "Test",
+    "test_panel_col_file": "File",
     # Problems panel
     "tab_menu_problems_panel_tab_name": "Problems",
     "problems_panel_refresh": "Recheck",
