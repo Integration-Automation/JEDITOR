@@ -27,6 +27,8 @@ from je_editor.utils.minimap.minimap_layout import (
 # 文件變更後多久重畫縮圖（毫秒）；輸入時不需要每個字都重畫
 # How long after an edit the minimap repaints; it need not follow every keystroke
 _REPAINT_DELAY_MS = 300
+# 標記條的寬度（像素）/ Width in pixels of a marker tick
+_MARKER_WIDTH = 3
 
 
 class MinimapWidget(QWidget):
@@ -52,6 +54,9 @@ class MinimapWidget(QWidget):
 
         code_edit.document().contentsChanged.connect(self._repaint_timer.start)
         code_edit.verticalScrollBar().valueChanged.connect(self.update)
+        # 游標移動會換掉「同字詞出現處」的標記，所以也要跟著重畫
+        # Moving the caret changes which occurrences are marked, so repaint too
+        code_edit.cursorPositionChanged.connect(self._repaint_timer.start)
 
     def _step(self) -> int:
         """目前的取樣間隔 / The sampling step in use right now."""
@@ -68,8 +73,50 @@ class MinimapWidget(QWidget):
         painter.fillRect(event.rect(), actually_color_dict.get("minimap_background_color"))
         step = self._step()
         self._paint_bars(painter, step)
+        self._paint_markers(painter, step)
         self._paint_viewport_band(painter, step)
         painter.end()
+
+    def marker_lines(self) -> dict[str, list[int]]:
+        """
+        取得要在縮圖上標記的行
+        The lines the minimap should mark.
+
+        資料全部來自編輯器已經算好的東西——git 變更、診斷、游標所在字詞的其他
+        出現處——所以標記不需要自己再掃一次檔案。
+        Everything comes from what the editor has already worked out: git
+        changes, diagnostics, and the other occurrences of the word under the
+        caret. The markers never rescan the file themselves.
+
+        :return: 標記種類對應行號（0 起算）/ marker kind -> 0-based line numbers
+        """
+        editor = self._code_edit
+        diagnostics = sorted({item.line - 1 for item in editor.lint_manager.diagnostics()})
+        changes = sorted(editor.diff_marker_manager.statuses())
+        document = editor.document()
+        occurrences = sorted({
+            document.findBlock(position).blockNumber()
+            for position in editor.word_occurrences_under_cursor(
+                editor.toPlainText(), editor.textCursor().position())
+        })
+        return {"diagnostic": diagnostics, "change": changes, "occurrence": occurrences}
+
+    def _paint_markers(self, painter: QPainter, step: int) -> None:
+        """在縮圖兩側畫出診斷、變更與出現處的標記 / Mark diagnostics, changes and hits."""
+        markers = self.marker_lines()
+        for kind, colour_key, left, width in (
+            ("diagnostic", "lint_underline_color", 0, _MARKER_WIDTH),
+            ("occurrence", "occurrence_highlight_color",
+             (self.width() - _MARKER_WIDTH) // 2, _MARKER_WIDTH),
+            ("change", "diff_modified_marker_color",
+             self.width() - _MARKER_WIDTH, _MARKER_WIDTH),
+        ):
+            colour = actually_color_dict.get(colour_key)
+            for line in markers[kind]:
+                row = row_for_line(line, step)
+                if row > self.height():
+                    break
+                painter.fillRect(left, row, width, LINE_PIXELS, colour)
 
     def _paint_bars(self, painter: QPainter, step: int) -> None:
         """把每一行畫成一條與其長度相當的長條 / Draw each line as a bar of its length."""

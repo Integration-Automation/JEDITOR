@@ -143,6 +143,44 @@ class TestMinimapWiring:
         line = minimap.line_at_position(20)
         assert 0 <= line < editor_widget.code_edit.blockCount()
 
+    def test_markers_report_diagnostics(self, editor_widget):
+        from je_editor.utils.lint.ruff_diagnostics import Diagnostic
+        editor_widget.toggle_minimap()
+        editor_widget.code_edit.lint_manager.set_diagnostics([
+            Diagnostic(line=4, column=1, end_line=4, end_column=3, code="F401", message="x")])
+        assert editor_widget.minimap.marker_lines()["diagnostic"] == [3]
+
+    def test_markers_report_git_changes(self, editor_widget):
+        editor_widget.toggle_minimap()
+        editor_widget.code_edit.setPlainText("a\nCHANGED\nc\n")
+        editor_widget.code_edit.diff_marker_manager.set_baseline("a\nb\nc\n")
+        assert editor_widget.minimap.marker_lines()["change"] == [1]
+
+    def test_markers_report_occurrences_of_the_word_under_the_caret(self, editor_widget):
+        editor_widget.toggle_minimap()
+        editor_widget.code_edit.setPlainText("total = 1\nx = total\ny = total\n")
+        cursor = editor_widget.code_edit.textCursor()
+        cursor.setPosition(2)
+        editor_widget.code_edit.setTextCursor(cursor)
+        assert editor_widget.minimap.marker_lines()["occurrence"] == [0, 1, 2]
+
+    def test_no_markers_when_there_is_nothing_to_mark(self, editor_widget):
+        editor_widget.toggle_minimap()
+        editor_widget.code_edit.setPlainText("alpha\nbeta\n")
+        markers = editor_widget.minimap.marker_lines()
+        assert markers["diagnostic"] == [] and markers["change"] == []
+
+    def test_painting_with_markers_does_not_raise(self, editor_widget):
+        from je_editor.utils.lint.ruff_diagnostics import Diagnostic
+        editor_widget.toggle_minimap()
+        editor_widget.code_edit.setPlainText("a\nCHANGED\nc\n")
+        editor_widget.code_edit.diff_marker_manager.set_baseline("a\nb\nc\n")
+        editor_widget.code_edit.lint_manager.set_diagnostics([
+            Diagnostic(line=1, column=1, end_line=1, end_column=2, code="E1", message="x")])
+        editor_widget.show()
+        QApplication.processEvents()
+        editor_widget.hide()
+
     def test_an_empty_document_is_safe_to_map(self, editor_widget):
         editor_widget.code_edit.setPlainText("")
         editor_widget.toggle_minimap()
