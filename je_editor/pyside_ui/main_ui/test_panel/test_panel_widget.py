@@ -17,7 +17,8 @@ from pathlib import Path
 
 from PySide6.QtCore import Qt, QThread, Signal
 from PySide6.QtWidgets import (
-    QHBoxLayout, QLabel, QPushButton, QTreeWidget, QTreeWidgetItem, QVBoxLayout, QWidget
+    QHBoxLayout, QLabel, QLineEdit, QPushButton, QTreeWidget, QTreeWidgetItem,
+    QVBoxLayout, QWidget
 )
 
 from je_editor.utils.logging.loggin_instance import jeditor_logger
@@ -36,7 +37,7 @@ TEST_COLUMN_WIDTH = 360
 RUN_TIMEOUT_SECONDS = 600
 
 
-def pytest_command() -> list[str]:
+def pytest_command(node_ids: list[str] | None = None) -> list[str]:
     """
     組出執行測試的指令
     Build the command that runs the tests.
@@ -45,9 +46,15 @@ def pytest_command() -> list[str]:
     ``-v`` is what lists each test, and ``--tb=line`` prints one location per
     failure, which is exactly what the panel needs.
 
+    :param node_ids: 只跑這些測試，``None`` 表示全部 / run only these, or all when ``None``
     :return: 引數清單（不經過 shell）/ the argument list, never a shell string
     """
-    return [sys.executable, "-m", "pytest", "-v", "--tb=line", "-p", "no:cacheprovider"]
+    command = [sys.executable, "-m", "pytest", "-v", "--tb=line", "-p", "no:cacheprovider"]
+    # 節點名稱是 pytest 自己印出來的，原樣傳回去；仍然是獨立引數，不經過 shell
+    # The node ids came from pytest itself and go straight back as separate
+    # arguments, never through a shell
+    command.extend(node_ids or [])
+    return command
 
 
 class PytestRunThread(QThread):
@@ -58,19 +65,21 @@ class PytestRunThread(QThread):
 
     finished_output = Signal(str)
 
-    def __init__(self, working_dir: str, parent=None) -> None:
+    def __init__(self, working_dir: str, node_ids: list[str] | None = None, parent=None) -> None:
         """
         :param working_dir: 執行測試的目錄 / the directory to run the tests in
+        :param node_ids: 只跑這些測試 / run only these tests
         :param parent: Qt 父物件 / the Qt parent
         """
         super().__init__(parent)
         self._working_dir = working_dir
+        self._node_ids = node_ids
 
     def run(self) -> None:
         """執行測試並回報輸出 / Run the tests and report their output."""
         try:
             completed = subprocess.run(  # nosemgrep  # noqa: S603  # nosec B603
-                pytest_command(),
+                pytest_command(self._node_ids),
                 cwd=self._working_dir,
                 capture_output=True,
                 text=True,
@@ -107,6 +116,13 @@ class TestPanelWidget(QWidget):
 
         self.run_button = QPushButton(word.get("test_panel_run"))
         self.run_button.clicked.connect(self.start_run)
+        self.run_selected_button = QPushButton(word.get("test_panel_run_selected"))
+        self.run_selected_button.clicked.connect(self.start_selected_run)
+        self.rerun_failures_button = QPushButton(word.get("test_panel_rerun_failures"))
+        self.rerun_failures_button.clicked.connect(self.start_failure_run)
+        self.filter_edit = QLineEdit()
+        self.filter_edit.setPlaceholderText(word.get("test_panel_filter_placeholder"))
+        self.filter_edit.textChanged.connect(self._render_items)
         self.status_label = QLabel(word.get("test_panel_ready"))
 
         self.result_tree = QTreeWidget()
@@ -122,6 +138,9 @@ class TestPanelWidget(QWidget):
 
         controls = QHBoxLayout()
         controls.addWidget(self.run_button)
+        controls.addWidget(self.run_selected_button)
+        controls.addWidget(self.rerun_failures_button)
+        controls.addWidget(self.filter_edit)
         controls.addWidget(self.status_label)
         controls.addStretch()
 
@@ -134,7 +153,7 @@ class TestPanelWidget(QWidget):
         """取得目前顯示的結果 / The results currently listed."""
         return list(self._results)
 
-    def start_run(self) -> bool:
+    def start_run(self, node_ids: list[str] | None = None) -> bool:
         """
         啟動一次測試執行
         Start one test run.
@@ -142,17 +161,65 @@ class TestPanelWidget(QWidget):
         已經在執行時會忽略重複觸發，避免覆寫仍在跑的執行緒。
         A re-entrant trigger is ignored so a still-running thread is never dropped.
 
+        :param node_ids: 只跑這些測試，``None`` 表示全部 / run only these, or all
         :return: 是否真的啟動 / whether a run actually started
         """
         if self._thread is not None and self._thread.isRunning():
             return False
         self.run_button.setEnabled(False)
         self.status_label.setText(language_wrapper.language_word_dict.get("test_panel_running"))
-        self._thread = PytestRunThread(self._working_dir)
+        self._thread = PytestRunThread(self._working_dir, node_ids)
         self._thread.finished_output.connect(self.apply_output)
         self._thread.finished.connect(self._thread.deleteLater)
         self._thread.start()
         return True
+
+    def selected_node_ids(self) -> list[str]:
+        """
+        取得清單中被選取的測試
+        The tests currently selected in the list.
+
+        :return: 節點名稱 / their node ids
+        """
+        node_ids: list[str] = []
+        for item in self.result_tree.selectedItems():
+            result = item.data(COLUMN_OUTCOME, Qt.ItemDataRole.UserRole)
+            if result is not None:
+                node_ids.append(result.node_id)
+        return node_ids
+
+    def failed_node_ids(self) -> list[str]:
+        """
+        取得上一輪失敗的測試
+        The tests that failed in the last run.
+
+        :return: 節點名稱 / their node ids
+        """
+        return [result.node_id for result in self._results if result.failed]
+
+    def start_selected_run(self) -> bool:
+        """
+        只重跑選取的測試
+        Re-run only the selected tests.
+
+        :return: 是否真的啟動 / whether a run actually started
+        """
+        selected = self.selected_node_ids()
+        return self.start_run(selected) if selected else False
+
+    def start_failure_run(self) -> bool:
+        """
+        只重跑上一輪失敗的測試
+        Re-run only the tests that failed last time.
+
+        修一個失敗之後不必等整輪跑完，這是這個面板最常用的動作。
+        After fixing one failure there is no need to wait for the whole suite,
+        which makes this the panel's most used action.
+
+        :return: 是否真的啟動 / whether a run actually started
+        """
+        failures = self.failed_node_ids()
+        return self.start_run(failures) if failures else False
 
     def apply_output(self, output: str) -> None:
         """
@@ -172,11 +239,24 @@ class TestPanelWidget(QWidget):
             self.status_label.setText(
                 language_wrapper.language_word_dict.get("test_panel_no_results"))
 
+    def visible_results(self) -> list[PytestResult]:
+        """
+        取得符合篩選條件的結果，失敗的排在最前面
+        The results matching the filter, failures first.
+
+        :return: 要顯示的結果 / the results to show
+        """
+        needle = self.filter_edit.text().strip().lower()
+        matching = [
+            result for result in self._results
+            if not needle or needle in result.node_id.lower()
+        ]
+        return sorted(matching, key=lambda result: not result.failed)
+
     def _render_items(self) -> None:
-        """依目前結果重建清單，失敗的排在最前面 / Rebuild the tree, failures first."""
+        """依目前結果與篩選條件重建清單 / Rebuild the tree for the current filter."""
         self.result_tree.clear()
-        ordered = sorted(self._results, key=lambda result: not result.failed)
-        for result in ordered:
+        for result in self.visible_results():
             row = QTreeWidgetItem([result.outcome, result.name, result.file_path])
             row.setData(COLUMN_OUTCOME, Qt.ItemDataRole.UserRole, result)
             self.result_tree.addTopLevelItem(row)

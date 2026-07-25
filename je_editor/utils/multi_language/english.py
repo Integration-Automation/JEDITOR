@@ -392,6 +392,9 @@ please make sure that the current encoding is consistent with the default encodi
     # Test panel
     "tab_menu_test_panel_tab_name": "Tests",
     "test_panel_run": "Run Tests",
+    "test_panel_run_selected": "Run Selected",
+    "test_panel_rerun_failures": "Re-run Failures",
+    "test_panel_filter_placeholder": "Filter tests...",
     "test_panel_ready": "Ready",
     "test_panel_running": "Running tests...",
     "test_panel_no_results": "No tests were reported",

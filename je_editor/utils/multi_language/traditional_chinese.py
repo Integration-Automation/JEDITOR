@@ -382,6 +382,9 @@ traditional_chinese_word_dict = {
     # Test panel
     "tab_menu_test_panel_tab_name": "測試",
     "test_panel_run": "執行測試",
+    "test_panel_run_selected": "只跑選取的",
+    "test_panel_rerun_failures": "重跑失敗的",
+    "test_panel_filter_placeholder": "篩選測試...",
     "test_panel_ready": "就緒",
     "test_panel_running": "測試執行中...",
     "test_panel_no_results": "沒有回報任何測試",

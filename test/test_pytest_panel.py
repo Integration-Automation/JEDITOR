@@ -160,3 +160,55 @@ class TestTestPanel:
         command = pytest_command()
         assert command[1:3] == ["-m", "pytest"]
         assert "-v" in command and "--tb=line" in command
+
+    def test_command_can_target_specific_tests(self):
+        from je_editor.pyside_ui.main_ui.test_panel.test_panel_widget import pytest_command
+        command = pytest_command(["test/test_a.py::test_one"])
+        assert command[-1] == "test/test_a.py::test_one"
+
+
+class TestTargetedRuns:
+    def test_failed_node_ids_are_collected(self, panel):
+        panel.apply_output(SAMPLE_OUTPUT)
+        assert panel.failed_node_ids() == ["test/test_alpha.py::TestAlpha::test_two"]
+
+    def test_rerunning_failures_without_any_does_nothing(self, panel):
+        panel.apply_output("collected 0 items\n")
+        assert panel.start_failure_run() is False
+
+    def test_running_the_selection_without_one_does_nothing(self, panel):
+        panel.apply_output(SAMPLE_OUTPUT)
+        panel.result_tree.clearSelection()
+        assert panel.start_selected_run() is False
+
+    def test_selected_node_ids_follow_the_tree(self, panel):
+        panel.apply_output(SAMPLE_OUTPUT)
+        panel.result_tree.topLevelItem(0).setSelected(True)
+        assert panel.selected_node_ids() == ["test/test_alpha.py::TestAlpha::test_two"]
+
+
+class TestFiltering:
+    def test_an_empty_filter_shows_everything(self, panel):
+        panel.apply_output(SAMPLE_OUTPUT)
+        assert len(panel.visible_results()) == 3
+
+    def test_filtering_narrows_the_list(self, panel):
+        panel.apply_output(SAMPLE_OUTPUT)
+        panel.filter_edit.setText("beta")
+        assert [result.file_path for result in panel.visible_results()] == ["test/test_beta.py"]
+        assert panel.result_tree.topLevelItemCount() == 1
+
+    def test_filtering_is_case_insensitive(self, panel):
+        panel.apply_output(SAMPLE_OUTPUT)
+        panel.filter_edit.setText("ALPHA")
+        assert len(panel.visible_results()) == 2
+
+    def test_a_filter_matching_nothing_empties_the_list(self, panel):
+        panel.apply_output(SAMPLE_OUTPUT)
+        panel.filter_edit.setText("nothing matches this")
+        assert panel.visible_results() == []
+
+    def test_failures_still_come_first_when_filtered(self, panel):
+        panel.apply_output(SAMPLE_OUTPUT)
+        panel.filter_edit.setText("alpha")
+        assert panel.visible_results()[0].failed is True
