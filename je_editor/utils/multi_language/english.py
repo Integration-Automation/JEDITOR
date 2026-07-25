@@ -410,6 +410,10 @@ please make sure that the current encoding is consistent with the default encodi
     "problems_panel_col_code": "Rule",
     "problems_panel_col_message": "Message",
     "problems_panel_col_line": "Line",
+    "problems_panel_col_file": "File",
+    "problems_panel_whole_project": "Whole project",
+    "problems_panel_all_severities": "All severities",
+    "problems_panel_fix": "Apply Fixes",
     # Outline panel
     "tab_menu_outline_panel_tab_name": "Outline",
     "outline_panel_refresh": "Refresh",

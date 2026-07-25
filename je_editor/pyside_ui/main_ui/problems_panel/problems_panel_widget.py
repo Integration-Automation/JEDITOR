@@ -8,20 +8,31 @@ only displays them and jumps to a line, never running the linter itself.
 """
 from __future__ import annotations
 
+import os
+from pathlib import Path
+
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
-    QHBoxLayout, QLabel, QPushButton, QTreeWidget, QTreeWidgetItem, QVBoxLayout, QWidget
+    QCheckBox, QComboBox, QHBoxLayout, QLabel, QPushButton, QTreeWidget,
+    QTreeWidgetItem, QVBoxLayout, QWidget
 )
 
-from je_editor.utils.lint.ruff_diagnostics import Diagnostic
+from je_editor.code_scan.ruff_lint import apply_fixes, lint_project
+from je_editor.utils.file.open.open_file import read_file_with_encoding
+from je_editor.utils.lint.ruff_diagnostics import (
+    SEVERITY_ERROR, SEVERITY_INFO, SEVERITY_WARNING, Diagnostic
+)
 from je_editor.utils.multi_language.multi_language_wrapper import language_wrapper
 
 # 樹狀清單欄位索引 / Column indexes in the tree
 COLUMN_CODE = 0
 COLUMN_MESSAGE = 1
 COLUMN_LINE = 2
+COLUMN_FILE = 3
 # 訊息欄的預設寬度 / Default width of the message column
 MESSAGE_COLUMN_WIDTH = 460
+# 「全部嚴重度」的篩選值 / Filter value meaning "every severity"
+ALL_SEVERITIES = "*"
 
 
 def current_code_editor(main_window):
@@ -57,14 +68,24 @@ class ProblemsPanelWidget(QWidget):
 
         self.refresh_button = QPushButton(word.get("problems_panel_refresh"))
         self.refresh_button.clicked.connect(self.refresh)
+        self.project_check = QCheckBox(word.get("problems_panel_whole_project"))
+        self.project_check.stateChanged.connect(self.refresh)
+        self.severity_filter = QComboBox()
+        self.severity_filter.addItem(word.get("problems_panel_all_severities"), ALL_SEVERITIES)
+        for severity in (SEVERITY_ERROR, SEVERITY_WARNING, SEVERITY_INFO):
+            self.severity_filter.addItem(severity, severity)
+        self.severity_filter.currentIndexChanged.connect(self._render_items)
+        self.fix_button = QPushButton(word.get("problems_panel_fix"))
+        self.fix_button.clicked.connect(self.apply_available_fixes)
         self.status_label = QLabel(word.get("problems_panel_ready"))
 
         self.result_tree = QTreeWidget()
-        self.result_tree.setColumnCount(3)
+        self.result_tree.setColumnCount(4)
         self.result_tree.setHeaderLabels([
             word.get("problems_panel_col_code"),
             word.get("problems_panel_col_message"),
             word.get("problems_panel_col_line"),
+            word.get("problems_panel_col_file"),
         ])
         self.result_tree.setColumnWidth(COLUMN_MESSAGE, MESSAGE_COLUMN_WIDTH)
         self.result_tree.setRootIsDecorated(False)
@@ -72,6 +93,9 @@ class ProblemsPanelWidget(QWidget):
 
         controls = QHBoxLayout()
         controls.addWidget(self.refresh_button)
+        controls.addWidget(self.project_check)
+        controls.addWidget(self.severity_filter)
+        controls.addWidget(self.fix_button)
         controls.addWidget(self.status_label)
         controls.addStretch()
 
@@ -95,26 +119,87 @@ class ProblemsPanelWidget(QWidget):
         The editor keeps checking in the background, so this only picks up its
         latest result.
         """
-        code_edit = current_code_editor(self._main_window)
-        if code_edit is None:
-            self._diagnostics = []
+        if self.project_check.isChecked():
+            self._diagnostics = lint_project(self._project_root())
         else:
-            code_edit.request_lint()
-            self._diagnostics = code_edit.lint_manager.diagnostics()
+            code_edit = current_code_editor(self._main_window)
+            if code_edit is None:
+                self._diagnostics = []
+            else:
+                code_edit.request_lint()
+                self._diagnostics = code_edit.lint_manager.diagnostics()
         self._render_items()
 
+    def _project_root(self) -> str:
+        """取得要檢查的專案根目錄 / The project root to check."""
+        working_dir = getattr(self._main_window, "working_dir", None)
+        if working_dir and Path(str(working_dir)).is_dir():
+            return str(working_dir)
+        return os.getcwd()
+
+    def visible_diagnostics(self) -> list[Diagnostic]:
+        """
+        取得符合嚴重度篩選的診斷
+        The diagnostics matching the severity filter.
+
+        :return: 要顯示的診斷 / the diagnostics to show
+        """
+        selected = self.severity_filter.currentData()
+        if selected in (None, ALL_SEVERITIES):
+            return list(self._diagnostics)
+        return [item for item in self._diagnostics if item.level == selected]
+
+    def apply_available_fixes(self) -> bool:
+        """
+        套用 ruff 能自動修正的部分，並重新檢查
+        Apply the fixes ruff can make, then check again.
+
+        修正會改寫磁碟上的檔案，因此完成後把目前分頁重新讀進來，畫面才不會停在
+        舊內容上。
+        Fixing rewrites the files on disk, so the current tab is reloaded
+        afterwards rather than left showing the old content.
+
+        :return: ruff 可用並已執行時為 ``True`` / ``True`` when ruff ran
+        """
+        target = self._project_root() if self.project_check.isChecked() else self._current_file()
+        if target is None:
+            return False
+        if not apply_fixes(target):
+            return False
+        self._reload_current_tab()
+        self.refresh()
+        return True
+
+    def _current_file(self) -> str | None:
+        """目前分頁的檔案 / The current tab's file."""
+        code_edit = current_code_editor(self._main_window)
+        path = getattr(code_edit, "current_file", None) if code_edit is not None else None
+        return str(path) if path else None
+
+    def _reload_current_tab(self) -> None:
+        """把目前分頁的內容重新讀進來 / Re-read the current tab's file from disk."""
+        code_edit = current_code_editor(self._main_window)
+        path = self._current_file()
+        if code_edit is None or path is None:
+            return
+        result = read_file_with_encoding(path)
+        if result is not None:
+            code_edit.setPlainText(result[1])
+
     def _render_items(self) -> None:
-        """依目前診斷重建清單 / Rebuild the tree from the current diagnostics."""
+        """依目前診斷與篩選條件重建清單 / Rebuild the tree for the current filter."""
         word = language_wrapper.language_word_dict
+        visible = self.visible_diagnostics()
         self.result_tree.clear()
-        for diagnostic in self._diagnostics:
+        for diagnostic in visible:
             row = QTreeWidgetItem([
-                diagnostic.code, diagnostic.message, str(diagnostic.line)])
+                diagnostic.code, diagnostic.message, str(diagnostic.line),
+                Path(diagnostic.file_path).name if diagnostic.file_path else ""])
             row.setData(COLUMN_CODE, Qt.ItemDataRole.UserRole, diagnostic)
             self.result_tree.addTopLevelItem(row)
-        if self._diagnostics:
+        if visible:
             self.status_label.setText(
-                word.get("problems_panel_found").format(count=len(self._diagnostics)))
+                word.get("problems_panel_found").format(count=len(visible)))
         else:
             self.status_label.setText(word.get("problems_panel_clean"))
 
@@ -127,12 +212,14 @@ class ProblemsPanelWidget(QWidget):
 
     def jump_to_diagnostic(self, diagnostic: Diagnostic) -> bool:
         """
-        把目前分頁的游標移到診斷所在行
-        Move the current tab's caret to a diagnostic's line.
+        跳到診斷所在的位置，必要時先開啟該檔案
+        Jump to a diagnostic, opening its file first when it is another one.
 
         :param diagnostic: 目標診斷 / the diagnostic to jump to
         :return: 成功跳轉時為 ``True`` / ``True`` when the caret moved
         """
+        if diagnostic.file_path and hasattr(self._main_window, "go_to_new_tab"):
+            self._main_window.go_to_new_tab(Path(diagnostic.file_path))
         code_edit = current_code_editor(self._main_window)
         if code_edit is None:
             return False

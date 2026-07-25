@@ -400,6 +400,10 @@ traditional_chinese_word_dict = {
     "problems_panel_col_code": "規則",
     "problems_panel_col_message": "訊息",
     "problems_panel_col_line": "行號",
+    "problems_panel_col_file": "檔案",
+    "problems_panel_whole_project": "整個專案",
+    "problems_panel_all_severities": "所有嚴重度",
+    "problems_panel_fix": "套用修正",
     # Outline panel
     "tab_menu_outline_panel_tab_name": "大綱",
     "outline_panel_refresh": "重新整理",

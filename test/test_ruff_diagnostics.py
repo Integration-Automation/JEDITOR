@@ -32,7 +32,8 @@ class TestParseRuffJson:
         found = parse_ruff_json(json.dumps([_entry()]))
         assert found == [Diagnostic(
             line=1, column=8, end_line=1, end_column=10,
-            code="F401", message="`os` imported but unused")]
+            code="F401", message="`os` imported but unused",
+            file_path="/project/app.py")]
 
     def test_several_findings_keep_their_order(self):
         output = json.dumps([

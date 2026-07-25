@@ -20,6 +20,38 @@ from dataclasses import dataclass
 # ruff 對語法錯誤不會給規則代碼 / ruff reports no rule code for a syntax error
 SYNTAX_ERROR_CODE = "SyntaxError"
 
+# 嚴重度 / Severity levels
+SEVERITY_ERROR = "error"
+SEVERITY_WARNING = "warning"
+SEVERITY_INFO = "info"
+
+# ruff 規則代碼開頭對應的嚴重度；其餘視為提示
+# What each ruff rule-code prefix means; anything else counts as a hint
+_SEVERITY_BY_PREFIX = {
+    "E": SEVERITY_ERROR,  # pycodestyle errors
+    "F": SEVERITY_ERROR,  # pyflakes
+    "W": SEVERITY_WARNING,  # pycodestyle warnings
+    "C": SEVERITY_WARNING,  # complexity
+    "B": SEVERITY_WARNING,  # bugbear
+    "S": SEVERITY_WARNING,  # security
+}
+
+# LSP 的嚴重度編號 / The numbers LSP uses for severity
+_LSP_SEVERITY = {1: SEVERITY_ERROR, 2: SEVERITY_WARNING, 3: SEVERITY_INFO, 4: SEVERITY_INFO}
+
+
+def severity_for_code(code: str) -> str:
+    """
+    由規則代碼推出嚴重度
+    Work out a severity from a rule code.
+
+    :param code: 規則代碼，例如 ``F401`` / the rule code, such as ``F401``
+    :return: 嚴重度 / the severity
+    """
+    if not code or code == SYNTAX_ERROR_CODE:
+        return SEVERITY_ERROR
+    return _SEVERITY_BY_PREFIX.get(code[0].upper(), SEVERITY_INFO)
+
 
 @dataclass(frozen=True)
 class Diagnostic:
@@ -33,6 +65,10 @@ class Diagnostic:
     :param end_column: 結束欄 / end column
     :param code: 規則代碼，例如 ``F401`` / the rule code, e.g. ``F401``
     :param message: 說明文字 / the human-readable message
+    :param severity: 嚴重度，未給時由代碼推出 / the severity, derived from the code
+        when not given
+    :param file_path: 所屬檔案；只檢查目前緩衝區時為空
+        the file it belongs to, empty when only the current buffer was checked
     """
 
     line: int
@@ -41,11 +77,18 @@ class Diagnostic:
     end_column: int
     code: str
     message: str
+    severity: str = ""
+    file_path: str = ""
 
     @property
     def label(self) -> str:
         """給面板顯示的一行說明 / A single line for the panel."""
         return f"{self.code} {self.message}" if self.code else self.message
+
+    @property
+    def level(self) -> str:
+        """嚴重度；沒有明講時由規則代碼推出 / The severity, derived from the code if unset."""
+        return self.severity or severity_for_code(self.code)
 
 
 def _as_position(raw: object, fallback_row: int, fallback_column: int) -> tuple[int, int]:
@@ -79,6 +122,7 @@ def _as_diagnostic(entry: object) -> Diagnostic | None:
         end_column=end_column,
         code=code if isinstance(code, str) else SYNTAX_ERROR_CODE,
         message=message,
+        file_path=str(entry.get("filename") or ""),
     )
 
 
@@ -132,9 +176,13 @@ def diagnostic_from_entry(entry: dict) -> Diagnostic | None:
     end_column = entry.get("end_column")
     end_column = end_column if isinstance(end_column, int) and end_column >= 1 else column
     code = entry.get("code")
+    severity = entry.get("severity")
     return Diagnostic(
         line=line, column=column, end_line=end_line, end_column=end_column,
-        code=code if isinstance(code, str) and code else SYNTAX_ERROR_CODE, message=message)
+        code=code if isinstance(code, str) and code else SYNTAX_ERROR_CODE,
+        message=message,
+        severity=_LSP_SEVERITY.get(severity, "") if isinstance(severity, int) else "",
+        file_path=str(entry.get("file_path") or ""))
 
 
 def diagnostics_from_entries(entries: list) -> list[Diagnostic]:
