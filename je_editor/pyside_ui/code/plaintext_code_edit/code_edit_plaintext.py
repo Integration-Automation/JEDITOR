@@ -25,6 +25,9 @@ from je_editor.utils.indentation.indent_convert import (
     convert_leading_spaces_to_tabs, convert_leading_tabs_to_spaces,
     detect_indent_width, detect_indentation_uses_tabs
 )
+from je_editor.utils.indentation.indent_guides import (
+    guide_columns, trailing_whitespace_start
+)
 from je_editor.utils.line_ops.line_operations import (
     join_lines, natural_sort, remove_blank_lines, reverse_lines, sort_lines, unique_lines
 )
@@ -38,6 +41,7 @@ from je_editor.pyside_ui.code.syntax.python_syntax import PythonHighlighter
 from je_editor.pyside_ui.dialog.search_ui.search_text_box import SearchBox
 from je_editor.pyside_ui.dialog.search_ui.search_replace_widget import SearchReplaceDialog
 from je_editor.pyside_ui.main_ui.save_settings.user_color_setting_file import actually_color_dict
+from je_editor.pyside_ui.main_ui.save_settings.user_setting_file import user_setting_dict
 from je_editor.utils.align.align import align_by_delimiter
 from je_editor.utils.case_convert.case_convert import (
     to_camel_case, to_kebab_case, to_pascal_case, to_snake_case
@@ -554,12 +558,60 @@ class CodeEditor(QPlainTextEdit):
 
     def paintEvent(self, event: QtGui.QPaintEvent) -> None:
         """
-        繪製內容，並在開啟時附上行尾的 blame 標註
-        Paint the text, then the end-of-line blame annotations when they are on.
+        繪製內容，並疊上縮排參考線、尾端空白與 blame 標註
+        Paint the text, then overlay indent guides, trailing whitespace and the
+        blame annotations.
         """
+        # 參考線畫在文字之前，才不會蓋住字
+        # Guides are painted first so they sit behind the text
+        if user_setting_dict.get("show_indent_guides", True):
+            self._paint_indent_guides()
         QPlainTextEdit.paintEvent(self, event)
+        if user_setting_dict.get("show_trailing_whitespace", True):
+            self._paint_trailing_whitespace()
         if self.blame_manager.enabled:
             self._paint_blame_annotations()
+
+    def _visible_blocks(self):
+        """逐一產生可見的區塊與其頂端座標 / Yield each visible block and its top."""
+        block = self.firstVisibleBlock()
+        top = self.blockBoundingGeometry(block).translated(self.contentOffset()).top()
+        bottom_limit = self.viewport().rect().bottom()
+        while block.isValid() and top <= bottom_limit:
+            if block.isVisible():
+                yield block, top
+            top += self.blockBoundingRect(block).height()
+            block = block.next()
+
+    def _paint_indent_guides(self) -> None:
+        """在每一層縮排畫出垂直參考線 / Draw a vertical line at each indent level."""
+        painter = QPainter(self.viewport())
+        painter.setPen(actually_color_dict.get("indent_guide_color"))
+        metrics = self.fontMetrics()
+        space_width = metrics.horizontalAdvance(" ")
+        line_height = metrics.height()
+        indent_size = self.indent_size()
+        for block, top in self._visible_blocks():
+            for column in guide_columns(block.text(), indent_size):
+                position = int(column * space_width)
+                painter.drawLine(position, int(top), position, int(top) + line_height)
+        painter.end()
+
+    def _paint_trailing_whitespace(self) -> None:
+        """標出每一行尾端多餘的空白 / Mark the stray whitespace at each line's end."""
+        painter = QPainter(self.viewport())
+        colour = actually_color_dict.get("trailing_whitespace_color")
+        metrics = self.fontMetrics()
+        line_height = metrics.height()
+        for block, top in self._visible_blocks():
+            text = block.text()
+            start = trailing_whitespace_start(text)
+            if start is None:
+                continue
+            left = metrics.horizontalAdvance(text[:start])
+            width = metrics.horizontalAdvance(text[start:])
+            painter.fillRect(int(left), int(top), max(1, int(width)), line_height, colour)
+        painter.end()
 
     def _paint_blame_annotations(self) -> None:
         """在每個可見行的文字後面畫出 blame 標註 / Draw blame after each visible line."""

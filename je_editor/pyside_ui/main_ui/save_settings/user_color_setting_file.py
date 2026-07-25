@@ -44,6 +44,8 @@ def update_actually_color_dict() -> None:
             "diff_removed_marker_color": _to_qcolor("diff_removed_marker_color", [229, 57, 53]),
             "lint_underline_color": _to_qcolor("lint_underline_color", [255, 138, 101]),
             "blame_annotation_color": _to_qcolor("blame_annotation_color", [130, 130, 130]),
+            "indent_guide_color": _to_qcolor("indent_guide_color", [90, 90, 110]),
+            "trailing_whitespace_color": _to_qcolor("trailing_whitespace_color", [120, 70, 70]),
         }
     )
 
@@ -64,7 +66,9 @@ user_setting_color_dict: Dict[str, list] = {
     "diff_modified_marker_color": [255, 167, 38],
     "diff_removed_marker_color": [229, 57, 53],
     "lint_underline_color": [255, 138, 101],
-    "blame_annotation_color": [130, 130, 130]
+    "blame_annotation_color": [130, 130, 130],
+    "indent_guide_color": [90, 90, 110],
+    "trailing_whitespace_color": [120, 70, 70]
 }
 
 # 實際使用的顏色字典 (以 QColor 表示)

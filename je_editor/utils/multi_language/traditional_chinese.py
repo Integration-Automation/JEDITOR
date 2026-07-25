@@ -84,6 +84,8 @@ traditional_chinese_word_dict = {
     "file_menu_encoding_label": "編碼",
     "file_menu_line_ending_label": "行尾",
     "format_on_save_label": "存檔時自動格式化",
+    "style_menu_indent_guides_label": "顯示縮排參考線",
+    "style_menu_trailing_whitespace_label": "顯示尾端空白",
     "file_menu_font_label": "字體",
     "file_menu_font_size_label": "字體大小",
     # Help Menu
