@@ -8,6 +8,8 @@ reaching the read or write path; this makes the choice take effect.
 """
 from __future__ import annotations
 
+from pathlib import Path
+
 from je_editor.utils.encodings.text_codec import LINE_ENDING_LF
 from je_editor.utils.exception.exceptions import JEditorOpenFileException
 from je_editor.utils.file.open.open_file import read_file_with_encoding
@@ -74,6 +76,38 @@ def apply_encoding(ui_we_want_to_set, encoding: str) -> bool:
         widget.file_encoding = used_encoding
         widget.line_ending = line_ending
         _update_auto_save(widget)
+    return True
+
+
+def format_before_save(widget) -> bool:
+    """
+    存檔前套用格式化（若已開啟該設定）
+    Format the buffer before saving, when the setting is on.
+
+    只格式化 Python 檔；格式化失敗（例如程式碼還沒寫完）時保持原內容。
+    Only Python files are formatted, and source that cannot be formatted — half
+    -written code, say — is left exactly as it is.
+
+    :param widget: 要格式化的編輯分頁 / the editor tab to format
+    :return: 內容有被改寫時為 ``True`` / ``True`` when the text was rewritten
+    """
+    from je_editor.pyside_ui.main_ui.save_settings.user_setting_file import user_setting_dict
+    from je_editor.utils.format_code.yapf_format import format_python_source
+    if not user_setting_dict.get("format_on_save", False):
+        return False
+    file_path = getattr(widget, "current_file", None)
+    if file_path is None or Path(str(file_path)).suffix.lower() != ".py":
+        return False
+    source = widget.code_edit.toPlainText()
+    formatted = format_python_source(source)
+    if formatted == source:
+        return False
+    # 保留游標所在行，格式化後才不會跳到檔頭
+    # Keep the caret's line so formatting does not throw it back to the top
+    cursor = widget.code_edit.textCursor()
+    line = cursor.blockNumber()
+    widget.code_edit.setPlainText(formatted)
+    widget.code_edit.jump_to_line(line + 1)
     return True
 
 

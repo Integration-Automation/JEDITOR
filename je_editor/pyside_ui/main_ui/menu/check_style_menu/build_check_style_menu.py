@@ -10,8 +10,9 @@ if TYPE_CHECKING:
     from je_editor.pyside_ui.main_ui.main_editor import EditorMain  # 僅在型別檢查時匯入 / Import only for type checking
 
 from PySide6.QtGui import QAction, QKeySequence  # Qt 動作與快捷鍵 / Qt actions and shortcuts
-from yapf.yapflib.yapf_api import FormatCode  # YAPF 程式碼格式化工具 / YAPF code formatter
 
+from je_editor.pyside_ui.main_ui.save_settings.user_setting_file import user_setting_dict  # 使用者設定 / User settings
+from je_editor.utils.format_code.yapf_format import format_python_source  # 格式化邏輯 / Formatting logic
 from je_editor.utils.json_format.json_process import reformat_json  # JSON 格式化工具 / JSON reformatter
 
 
@@ -61,6 +62,26 @@ def set_check_menu(ui_we_want_to_set: EditorMain) -> None:
     )
     ui_we_want_to_set.check_menu.addAction(ui_we_want_to_set.check_menu.check_python_format)
 
+    # === 4. 存檔時自動格式化 / Format on save ===
+    ui_we_want_to_set.check_menu.format_on_save_action = QAction(
+        language_wrapper.language_word_dict.get("format_on_save_label"))
+    ui_we_want_to_set.check_menu.format_on_save_action.setCheckable(True)
+    ui_we_want_to_set.check_menu.format_on_save_action.setChecked(
+        bool(user_setting_dict.get("format_on_save", False)))
+    ui_we_want_to_set.check_menu.format_on_save_action.toggled.connect(set_format_on_save)
+    ui_we_want_to_set.check_menu.addAction(ui_we_want_to_set.check_menu.format_on_save_action)
+
+
+def set_format_on_save(enabled: bool) -> None:
+    """
+    設定是否在存檔時自動格式化
+    Turn format-on-save on or off.
+
+    :param enabled: 是否開啟 / whether it should be on
+    """
+    jeditor_logger.info(f"build_check_style_menu.py set_format_on_save enabled: {enabled}")
+    user_setting_dict.update({"format_on_save": bool(enabled)})
+
 
 def yapf_check_python_code(ui_we_want_to_set: EditorMain) -> None:
     """
@@ -72,12 +93,9 @@ def yapf_check_python_code(ui_we_want_to_set: EditorMain) -> None:
     if isinstance(widget, EditorWidget):
         code_text = widget.code_edit.toPlainText()  # 取得編輯器文字 / Get code text
         widget.code_result.setPlainText("")  # 清空結果區域 / Clear result area
-        format_code = FormatCode(
-            unformatted_source=code_text,
-            style_config="google"  # 使用 Google 風格 / Use Google style
-        )
-        if isinstance(format_code, tuple):
-            widget.code_edit.setPlainText(format_code[0])  # 將格式化後的程式碼寫回編輯器 / Write formatted code back
+        formatted = format_python_source(code_text)
+        if formatted != code_text:
+            widget.code_edit.setPlainText(formatted)  # 寫回格式化結果 / Write the result back
 
 
 def reformat_json_text(ui_we_want_to_set: EditorMain) -> None:

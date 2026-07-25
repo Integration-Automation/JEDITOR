@@ -86,6 +86,7 @@ english_word_dict = {
     "file_menu_save_file_label": "Save File",
     "file_menu_encoding_label": "Encodings",
     "file_menu_line_ending_label": "Line Endings",
+    "format_on_save_label": "Format on Save",
     "file_menu_font_label": "Font",
     "file_menu_font_size_label": _FONT_SIZE_LABEL,
     # Help Menu

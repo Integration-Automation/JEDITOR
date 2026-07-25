@@ -15,6 +15,7 @@ if TYPE_CHECKING:
 from PySide6.QtWidgets import QFileDialog
 
 from je_editor.pyside_ui.main_ui.editor.editor_widget import EditorWidget
+from je_editor.pyside_ui.main_ui.menu.file_menu.encoding_actions import format_before_save
 from je_editor.utils.encodings.text_codec import DEFAULT_ENCODING, LINE_ENDING_LF
 from je_editor.utils.file.save.save_file import write_file_with_encoding
 
@@ -98,6 +99,10 @@ def choose_file_get_save_file_path(parent_qt_instance: EditorMain) -> bool:
         if file_path is not None and file_path != "":
             # 更新目前檔案路徑 / Update current file path
             widget.current_file = file_path
+
+            # 若已開啟「存檔時格式化」，先套用再寫出
+            # Apply format-on-save, when that setting is on, before writing
+            format_before_save(widget)
 
             # 以該分頁的編碼與行尾寫入 / Write with the tab's encoding and line ending
             write_file_with_encoding(

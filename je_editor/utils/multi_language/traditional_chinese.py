@@ -83,6 +83,7 @@ traditional_chinese_word_dict = {
     "file_menu_save_file_label": "儲存檔案",
     "file_menu_encoding_label": "編碼",
     "file_menu_line_ending_label": "行尾",
+    "format_on_save_label": "存檔時自動格式化",
     "file_menu_font_label": "字體",
     "file_menu_font_size_label": "字體大小",
     # Help Menu
