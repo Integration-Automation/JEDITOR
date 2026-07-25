@@ -316,8 +316,11 @@ class CodeEditor(QPlainTextEdit):
         # 片段展開與定位點 / Snippet expansion and its tab stops
         self.snippet_manager = SnippetManager(self)
 
-        # 多重游標 / Extra carets
+        # 多重游標；欄選取拖曳的起點在按下 Alt 時記下
+        # Extra carets; a column drag records its anchor when Alt is pressed
         self.multi_cursor_manager = MultiCursorManager(self)
+        self._column_anchor: Union[int, None] = None
+        self._column_dragged = False
         self._register_multi_cursor_actions()
 
         # 非 Python 檔的補全與診斷都交給語言伺服器；Python 仍走 jedi 與 ruff
@@ -2136,13 +2139,42 @@ class CodeEditor(QPlainTextEdit):
         :return: 事件是否已被處理 / whether the event was handled here
         """
         if event.modifiers() & Qt.KeyboardModifier.AltModifier:
-            self.multi_cursor_manager.toggle_at(self.cursorForPosition(event.pos()).position())
+            # 記下起點，之後拖曳就是欄選取；沒有拖曳就當作切換一個游標
+            # Remember the anchor: dragging from here is a column selection, and
+            # not dragging counts as toggling one caret
+            self._column_anchor = self.cursorForPosition(event.pos()).position()
+            self._column_dragged = False
             return True
+        self._column_anchor = None
         if self.multi_cursor_manager.active:
             # 一般點按等於重新開始，因此先收掉額外游標
             # A plain click starts over, so the extra carets go first
             self.multi_cursor_manager.clear()
         return False
+
+    def mouseMoveEvent(self, event: QtGui.QMouseEvent) -> None:
+        """
+        Alt+拖曳做欄選取，其餘照原本行為
+        Alt-drag makes a column selection; every other drag behaves as before.
+        """
+        if self._column_anchor is not None and event.buttons() & Qt.MouseButton.LeftButton:
+            self._column_dragged = True
+            self.multi_cursor_manager.select_column(
+                self._column_anchor, self.cursorForPosition(event.pos()).position())
+            return
+        super().mouseMoveEvent(event)
+
+    def mouseReleaseEvent(self, event: QtGui.QMouseEvent) -> None:
+        """
+        放開 Alt+點按時，若沒有拖曳就切換一個游標
+        On releasing an Alt-click that did not drag, toggle a single caret.
+        """
+        if self._column_anchor is not None:
+            if not self._column_dragged:
+                self.multi_cursor_manager.toggle_at(self._column_anchor)
+            self._column_anchor = None
+            return
+        super().mouseReleaseEvent(event)
 
     def _paint_extra_cursors(self) -> None:
         """畫出每個額外游標 / Draw each extra caret."""

@@ -12,7 +12,7 @@ from __future__ import annotations
 from PySide6.QtGui import QTextCursor
 
 from je_editor.utils.multi_cursor.cursor_positions import (
-    add_position, clamp_positions, toggle_position
+    add_position, clamp_positions, column_caret_columns, column_span, toggle_position
 )
 
 
@@ -236,6 +236,48 @@ class MultiCursorManager:
             [position + offset for position in self._positions], self._document_limit())
         self._code_edit.viewport().update()
         return True
+
+    def select_column(self, anchor_position: int, current_position: int) -> int:
+        """
+        以矩形範圍在每一行放一個游標
+        Put a caret on every line a rectangle covers.
+
+        這就是欄選取：從起點拖到目前位置，涵蓋的每一行都在同一欄得到一個游標，
+        比該欄短的行則停在行尾。
+        This is column selection: dragging from the anchor to here gives every
+        covered line a caret at the same column, with shorter lines stopping at
+        their end.
+
+        :param anchor_position: 拖曳起點的字元位置 / where the drag started
+        :param current_position: 目前的字元位置 / where the pointer is now
+        :return: 額外游標的數量 / how many extra carets there now are
+        """
+        document = self._code_edit.document()
+        anchor_block = document.findBlock(anchor_position)
+        current_block = document.findBlock(current_position)
+        lines = column_span(anchor_block.blockNumber(), current_block.blockNumber())
+        blocks = [document.findBlockByNumber(line) for line in lines]
+        blocks = [block for block in blocks if block.isValid()]
+        if not blocks:
+            return 0
+        columns = column_caret_columns(
+            anchor_position - anchor_block.position(),
+            current_position - current_block.position(),
+            [len(block.text()) for block in blocks],
+        )
+        positions = [
+            block.position() + column for block, column in zip(blocks, columns)
+        ]
+        # 主游標留在拖曳到的那一行，其餘是額外游標
+        # The primary caret keeps the line the drag reached; the rest are extra
+        main_position = positions[-1] if current_block.blockNumber() >= anchor_block.blockNumber() \
+            else positions[0]
+        self._positions = sorted(set(positions) - {main_position})
+        main = self._code_edit.textCursor()
+        main.setPosition(min(main_position, self._document_limit()))
+        self._code_edit.setTextCursor(main)
+        self._code_edit.viewport().update()
+        return len(self._positions)
 
     def add_caret_on_neighbouring_line(self, direction: int) -> bool:
         """

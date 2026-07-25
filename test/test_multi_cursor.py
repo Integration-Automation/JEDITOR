@@ -11,6 +11,8 @@ from PySide6.QtWidgets import QApplication
 from je_editor.utils.multi_cursor.cursor_positions import (
     add_position,
     clamp_positions,
+    column_caret_columns,
+    column_span,
     remove_position,
     shift_after_delete,
     shift_after_insert,
@@ -64,6 +66,29 @@ class TestShifting:
 
     def test_clamping_an_empty_document(self):
         assert clamp_positions([3], -1) == []
+
+
+class TestColumnGeometry:
+    def test_span_downwards(self):
+        assert list(column_span(2, 5)) == [2, 3, 4, 5]
+
+    def test_span_upwards_is_the_same_range(self):
+        assert list(column_span(5, 2)) == [2, 3, 4, 5]
+
+    def test_span_of_one_line(self):
+        assert list(column_span(3, 3)) == [3]
+
+    def test_columns_follow_the_pointer(self):
+        assert column_caret_columns(2, 6, [10, 10, 10]) == [6, 6, 6]
+
+    def test_a_short_line_stops_at_its_end(self):
+        assert column_caret_columns(2, 6, [10, 3, 10]) == [6, 3, 6]
+
+    def test_dragging_straight_down_keeps_the_anchor_column(self):
+        assert column_caret_columns(4, 4, [10, 10]) == [4, 4]
+
+    def test_no_lines_covered(self):
+        assert column_caret_columns(0, 3, []) == []
 
 
 @pytest.fixture(scope="module")
@@ -288,6 +313,40 @@ class TestMultiCursorEditing:
         editor.add_cursor_at_next_occurrence()
         _type(editor, "s")
         assert editor.toPlainText() == "names = names"
+
+    def test_column_selection_puts_a_caret_on_each_line(self, editor):
+        editor.setPlainText("alpha\nbeta\ngamma")
+        # Drag from column 2 of line 0 to column 2 of line 2.
+        extra = editor.multi_cursor_manager.select_column(2, 14)
+        assert extra == 2
+        assert editor.textCursor().blockNumber() == 2
+
+    def test_column_selection_covers_every_line_between(self, editor):
+        editor.setPlainText("alpha\nbeta\ngamma")
+        editor.multi_cursor_manager.select_column(2, 14)
+        lines = {
+            editor.document().findBlock(position).blockNumber()
+            for position in editor.multi_cursor_manager.positions()
+        }
+        assert lines == {0, 1}
+
+    def test_column_selection_clamps_short_lines(self, editor):
+        editor.setPlainText("a longer line\nab\nanother line")
+        editor.multi_cursor_manager.select_column(8, 8 + 14 + 8)
+        for position in editor.multi_cursor_manager.positions():
+            block = editor.document().findBlock(position)
+            assert position - block.position() <= len(block.text())
+
+    def test_dragging_upwards_works_the_same(self, editor):
+        editor.setPlainText("alpha\nbeta\ngamma")
+        assert editor.multi_cursor_manager.select_column(14, 2) == 2
+        assert editor.textCursor().blockNumber() == 0
+
+    def test_typing_after_a_column_selection_edits_each_line(self, editor):
+        editor.setPlainText("aaa\nbbb\nccc")
+        editor.multi_cursor_manager.select_column(0, 8)
+        _type(editor, "-")
+        assert editor.toPlainText() == "-aaa\n-bbb\n-ccc"
 
     def test_painting_extra_cursors_does_not_raise(self, editor):
         editor.setPlainText("one\ntwo\nthree")
