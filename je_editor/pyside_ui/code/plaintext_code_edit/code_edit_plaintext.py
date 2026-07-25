@@ -33,6 +33,9 @@ from je_editor.utils.indentation.indent_convert import (
 from je_editor.utils.indentation.indent_guides import (
     guide_columns, trailing_whitespace_start
 )
+from je_editor.git_client.file_staging import stage_content, staged_text
+from je_editor.utils.file_diff.line_status import apply_hunk
+from je_editor.utils.file_diff.unified import unified_diff_text
 from je_editor.utils.lint.ruff_diagnostics import diagnostics_from_entries
 from je_editor.utils.macro.keystroke_macro import KeystrokeMacro
 from je_editor.utils.selection.surround import SURROUND_PAIRS, surround
@@ -723,6 +726,42 @@ class CodeEditor(QPlainTextEdit):
             block = block.next()
             block_number += 1
         painter.end()
+
+    def stage_change_at_cursor(self) -> bool:
+        """
+        只把游標所在的變更區塊加入索引
+        Stage just the change block under the caret.
+
+        索引拿到「基準加上這一段」的版本，其他變更維持已提交的樣子，磁碟上的檔案
+        完全不動。
+        The index receives the baseline with this one hunk applied, every other
+        change stays as committed, and the file on disk is untouched.
+
+        :return: 有暫存時為 ``True`` / ``True`` when the hunk was staged
+        """
+        baseline = self.diff_marker_manager.baseline()
+        if baseline is None or self.current_file is None:
+            return False
+        hunk = self.diff_marker_manager.hunk_at(self.textCursor().blockNumber())
+        if hunk is None:
+            return False
+        staged = apply_hunk(baseline, self.toPlainText(), hunk)
+        return stage_content(str(self.current_file), staged)
+
+    def staged_diff_text(self) -> str:
+        """
+        取得索引版本與編輯中內容的差異
+        The diff between what is staged and what is being edited.
+
+        :return: diff 文字；沒有差異或不在索引中時為空字串 / the diff, or an empty string
+        """
+        if self.current_file is None:
+            return ""
+        staged = staged_text(str(self.current_file))
+        if staged is None:
+            return ""
+        return unified_diff_text(
+            staged, self.toPlainText(), Path(str(self.current_file)).name)
 
     def revert_change_at_cursor(self) -> bool:
         """
@@ -2485,6 +2524,8 @@ class CodeEditor(QPlainTextEdit):
             ("context_menu_rename_symbol", self.rename_symbol, True),
             ("context_menu_format_document", self.format_with_language_server,
              self.lsp_client.running),
+            ("context_menu_stage_hunk", self.stage_change_at_cursor,
+             self.diff_marker_manager.has_baseline),
             ("context_menu_revert_hunk", self.revert_change_at_cursor,
              self.diff_marker_manager.has_baseline),
         ):

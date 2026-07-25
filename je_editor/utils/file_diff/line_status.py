@@ -163,6 +163,32 @@ def baseline_lines_of(baseline: str, hunk: Hunk) -> list[str]:
     return _split_lines(baseline)[hunk.baseline_start:hunk.baseline_end]
 
 
+def apply_hunk(baseline: str, current: str, hunk: Hunk) -> str:
+    """
+    只把一段變更套用到基準內容上
+    Apply one hunk of change to the baseline, leaving the rest of it alone.
+
+    這是「只暫存這一段」需要的內容：其他變更維持成已提交的樣子。
+    This is the content needed to stage one hunk: every other change stays as it
+    was committed.
+
+    :param baseline: 已提交的內容 / the committed content
+    :param current: 編輯中的內容 / the buffer being edited
+    :param hunk: 要套用的變更 / the hunk to apply
+    :return: 套用後的內容 / the content with that one hunk applied
+    """
+    baseline_lines = _split_lines(baseline)
+    current_lines = _split_lines(current)
+    merged = (
+        baseline_lines[:hunk.baseline_start]
+        + current_lines[hunk.start:hunk.end]
+        + baseline_lines[hunk.baseline_end:]
+    )
+    if not merged:
+        return ""
+    return "\n".join(merged) + "\n"
+
+
 def changed_line_numbers(statuses: dict[int, str]) -> list[int]:
     """
     取得有變更的行號（由小到大）

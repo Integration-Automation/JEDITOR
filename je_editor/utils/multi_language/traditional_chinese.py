@@ -388,6 +388,7 @@ traditional_chinese_word_dict = {
     "context_menu_toggle_bookmark": "切換書籤",
     "context_menu_go_to_definition": "跳到定義",
     "context_menu_revert_hunk": "還原這段變更",
+    "context_menu_stage_hunk": "暫存這段變更",
     "context_menu_hover": "說明這個符號",
     "context_menu_rename_symbol": "重新命名符號",
     "context_menu_rename_prompt": "新名稱：",
