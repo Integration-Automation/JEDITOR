@@ -118,6 +118,22 @@ _MULTI_CURSOR_KEYS = {
 }
 
 
+def _document_position(document: QTextDocument, line: int, column: int) -> Union[int, None]:
+    """
+    把 1 起算的行列換成文件中的字元位置
+    Turn a 1-based line and column into a character position in the document.
+
+    :param document: 目標文件 / the document to look in
+    :param line: 1 起算的行號 / the 1-based line
+    :param column: 1 起算的欄位 / the 1-based column
+    :return: 字元位置，該行不存在時為 ``None`` / the position, or ``None``
+    """
+    block = document.findBlockByNumber(line - 1)
+    if not block.isValid():
+        return None
+    return block.position() + min(max(0, column - 1), len(block.text()))
+
+
 def _lint_underline_format() -> QTextCharFormat:
     """診斷底線的樣式 / The format used to underline a diagnostic."""
     formats = QTextCharFormat()
@@ -330,6 +346,9 @@ class CodeEditor(QPlainTextEdit):
         # server; Python keeps jedi and ruff
         self.lsp_client.completions_ready.connect(self.set_complete)
         self.lsp_client.diagnostics_ready.connect(self.apply_server_diagnostics)
+        self.lsp_client.hover_ready.connect(self.show_hover_text)
+        self.lsp_client.edits_ready.connect(self.apply_server_edits)
+        self.lsp_client.definition_ready.connect(self.go_to_definition_location)
         self.start_language_server()
 
     def reset_highlighter(self) -> None:
@@ -2327,6 +2346,10 @@ class CodeEditor(QPlainTextEdit):
             ("context_menu_toggle_bookmark", self.toggle_bookmark, True),
             ("context_menu_go_to_definition", self.go_to_definition,
              self.lsp_client.running),
+            ("context_menu_hover", self.request_hover, self.lsp_client.running),
+            ("context_menu_rename_symbol", self.rename_symbol, True),
+            ("context_menu_format_document", self.format_with_language_server,
+             self.lsp_client.running),
             ("context_menu_revert_hunk", self.revert_change_at_cursor,
              self.diff_marker_manager.has_baseline),
         ):
@@ -2340,6 +2363,115 @@ class CodeEditor(QPlainTextEdit):
         menu = self.build_context_menu()
         menu.exec(event.globalPos())
         menu.deleteLater()
+
+    def go_to_definition_location(self, location: dict) -> bool:
+        """
+        跳到語言伺服器回報的定義位置
+        Jump to the definition a language server reported.
+
+        定義在別的檔案時交給主視窗開啟；在同一個檔案就直接跳行。
+        A definition in another file is opened by the main window; one in this
+        file is just a jump.
+
+        :param location: ``{"path", "line", "column"}``
+        :return: 有跳轉時為 ``True`` / ``True`` when the caret moved
+        """
+        path = location.get("path", "")
+        line = location.get("line", 1)
+        same_file = self.current_file is not None and Path(str(self.current_file)) == Path(path)
+        if not same_file and path:
+            window = getattr(self.main_window, "main_window", None)
+            if window is not None and hasattr(window, "go_to_new_tab"):
+                window.go_to_new_tab(Path(path))
+                return True
+            return False
+        return self.jump_to_line(line)
+
+    def apply_server_edits(self, edits: list) -> bool:
+        """
+        套用語言伺服器回傳的文字編輯
+        Apply the text edits a language server returned.
+
+        由後往前套用，前面的編輯位置就不會被前一次改動推移；整批算一個復原步驟。
+        The edits are applied from the end backwards so an earlier one is never
+        moved by a change already made after it, and the batch is one undo step.
+
+        :param edits: 編輯清單 / the edits to apply
+        :return: 有套用時為 ``True`` / ``True`` when anything was applied
+        """
+        if not edits:
+            return False
+        document = self.document()
+        ordered = sorted(
+            edits, key=lambda edit: (edit["start_line"], edit["start_column"]), reverse=True)
+        cursor = self.textCursor()
+        cursor.beginEditBlock()
+        try:
+            for edit in ordered:
+                start = _document_position(document, edit["start_line"], edit["start_column"])
+                end = _document_position(document, edit["end_line"], edit["end_column"])
+                if start is None or end is None:
+                    continue
+                cursor.setPosition(start)
+                cursor.setPosition(max(end, start), QTextCursor.MoveMode.KeepAnchor)
+                cursor.insertText(edit["new_text"])
+        finally:
+            cursor.endEditBlock()
+        return True
+
+    def show_hover_text(self, text: str) -> None:
+        """
+        顯示語言伺服器回傳的說明
+        Show the description a language server returned.
+
+        :param text: 說明文字 / the description
+        """
+        self.setToolTip(text)
+
+    def request_hover(self) -> bool:
+        """
+        向語言伺服器要求游標所在符號的說明
+        Ask the language server to describe the symbol under the caret.
+
+        :return: 有送出請求時為 ``True`` / ``True`` when a request was sent
+        """
+        cursor = self.textCursor()
+        return self.lsp_client.request_hover(
+            cursor.blockNumber(), cursor.positionInBlock())
+
+    def rename_symbol(self) -> bool:
+        """
+        透過語言伺服器重新命名游標所在的符號
+        Rename the symbol under the caret through the language server.
+
+        沒有伺服器時退回既有的整份檔案字詞取代，因此 Python 檔仍然可以改名。
+        Without a server this falls back to the existing whole-file word replace,
+        so renaming still works in a Python file.
+
+        :return: 有進行重新命名時為 ``True`` / ``True`` when a rename happened
+        """
+        if not self.lsp_client.running:
+            return self.rename_word_under_cursor()
+        cursor = self.textCursor()
+        current = self.textCursor()
+        current.select(QTextCursor.SelectionType.WordUnderCursor)
+        new_name, confirmed = QInputDialog.getText(
+            self, language_wrapper.language_word_dict.get("context_menu_rename_symbol"),
+            language_wrapper.language_word_dict.get("context_menu_rename_prompt"),
+            text=current.selectedText())
+        if not confirmed or not new_name:
+            return False
+        return self.lsp_client.request_rename(
+            cursor.blockNumber(), cursor.positionInBlock(), new_name)
+
+    def format_with_language_server(self) -> bool:
+        """
+        請語言伺服器格式化整份檔案
+        Ask the language server to format the whole file.
+
+        :return: 有送出請求時為 ``True`` / ``True`` when a request was sent
+        """
+        return self.lsp_client.request_formatting(self.indent_size())
 
     def go_to_definition(self) -> bool:
         """

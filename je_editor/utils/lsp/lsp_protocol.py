@@ -202,6 +202,77 @@ def definition_location(result: object) -> dict | None:
     return {"path": path, "line": line, "column": column}
 
 
+def hover_text(result: object) -> str:
+    """
+    從 hover 回應取出說明文字
+    Take the description out of a hover response.
+
+    ``contents`` 可能是字串、``{"value": ...}``，或兩者混合的清單，全部都要接受。
+    ``contents`` may be a string, a ``{"value": ...}`` object, or a list mixing
+    both, and all of those are accepted.
+
+    :param result: 伺服器的回應內容 / the server's result
+    :return: 說明文字，沒有內容時為空字串 / the text, or an empty string
+    """
+    if not isinstance(result, dict):
+        return ""
+    contents = result.get("contents")
+    parts = contents if isinstance(contents, list) else [contents]
+    texts: list[str] = []
+    for part in parts:
+        if isinstance(part, str) and part.strip():
+            texts.append(part.strip())
+        elif isinstance(part, dict):
+            value = part.get("value")
+            if isinstance(value, str) and value.strip():
+                texts.append(value.strip())
+    return "\n".join(texts)
+
+
+def text_edits(result: object, file_uri_text: str = "") -> list[dict]:
+    """
+    從 rename 或 formatting 回應取出要套用的編輯
+    Take the edits to apply out of a rename or formatting response.
+
+    格式化回傳的是編輯清單；重新命名回傳的是 ``WorkspaceEdit``，其中的 ``changes``
+    以 URI 分組。只取目前這個檔案的編輯，跨檔案的重新命名不在這裡處理。
+    Formatting returns a list of edits, while a rename returns a
+    ``WorkspaceEdit`` whose ``changes`` are grouped by URI. Only the edits for
+    this file are taken; a rename spanning several files is not handled here.
+
+    :param result: 伺服器的回應內容 / the server's result
+    :param file_uri_text: 目前檔案的 URI / this file's URI
+    :return: 每筆編輯的範圍與新文字 / each edit's range and replacement text
+    """
+    raw = result
+    if isinstance(result, dict):
+        changes = result.get("changes")
+        if isinstance(changes, dict):
+            raw = changes.get(file_uri_text) or next(iter(changes.values()), [])
+        else:
+            raw = result.get("documentChanges") or []
+            if raw and isinstance(raw[0], dict):
+                raw = raw[0].get("edits", [])
+    if not isinstance(raw, list):
+        return []
+    edits: list[dict] = []
+    for item in raw:
+        if not isinstance(item, dict):
+            continue
+        span = item.get("range")
+        new_text = item.get("newText")
+        if not isinstance(span, dict) or not isinstance(new_text, str):
+            continue
+        start_line, start_column = _position(span.get("start"))
+        end_line, end_column = _position(span.get("end"), start_line - 1, start_column - 1)
+        edits.append({
+            "start_line": start_line, "start_column": start_column,
+            "end_line": end_line, "end_column": end_column,
+            "new_text": new_text,
+        })
+    return edits
+
+
 def diagnostic_entries(params: object) -> list[dict]:
     """
     從 publishDiagnostics 通知取出診斷

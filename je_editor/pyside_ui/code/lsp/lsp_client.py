@@ -27,8 +27,10 @@ from je_editor.utils.lsp.lsp_protocol import (
     diagnostic_entries,
     encode_message,
     file_uri,
+    hover_text,
     notification,
     request,
+    text_edits,
 )
 
 # 等待伺服器結束的時間（毫秒）/ How long to wait for the server to exit
@@ -44,6 +46,8 @@ class LspClient(QObject):
     completions_ready = Signal(list)  # list[str]
     diagnostics_ready = Signal(list)  # list[dict]
     definition_ready = Signal(dict)  # {"path": str, "line": int, "column": int}
+    hover_ready = Signal(str)
+    edits_ready = Signal(list)  # list[dict] of text edits to apply
 
     def __init__(self, parent: QObject | None = None) -> None:
         """
@@ -57,6 +61,8 @@ class LspClient(QObject):
         self._version = 0
         self._pending_completion_id: int | None = None
         self._pending_definition_id: int | None = None
+        self._pending_hover_id: int | None = None
+        self._pending_edit_id: int | None = None
 
     @property
     def running(self) -> bool:
@@ -162,6 +168,55 @@ class LspClient(QObject):
             "position": {"line": line, "character": column},
         }))
 
+    def request_hover(self, line: int, column: int) -> bool:
+        """
+        要求某個位置的說明
+        Ask for the description of what is at a position.
+
+        :param line: 以 0 起算的行號 / the 0-based line
+        :param column: 以 0 起算的欄位 / the 0-based column
+        :return: 有送出時為 ``True`` / ``True`` when the request was sent
+        """
+        return self._position_request(
+            "textDocument/hover", line, column, "_pending_hover_id")
+
+    def request_rename(self, line: int, column: int, new_name: str) -> bool:
+        """
+        要求把某個位置的符號重新命名
+        Ask to rename the symbol at a position.
+
+        :param line: 以 0 起算的行號 / the 0-based line
+        :param column: 以 0 起算的欄位 / the 0-based column
+        :param new_name: 新名稱 / the new name
+        :return: 有送出時為 ``True`` / ``True`` when the request was sent
+        """
+        if self._file_path is None or not new_name:
+            return False
+        request_id = self._take_id()
+        self._pending_edit_id = request_id
+        return self._send(request(request_id, "textDocument/rename", {
+            "textDocument": {"uri": file_uri(self._file_path)},
+            "position": {"line": line, "character": column},
+            "newName": new_name,
+        }))
+
+    def request_formatting(self, tab_size: int = 4) -> bool:
+        """
+        要求格式化整份檔案
+        Ask the server to format the whole file.
+
+        :param tab_size: 縮排寬度 / the indent width to format with
+        :return: 有送出時為 ``True`` / ``True`` when the request was sent
+        """
+        if self._file_path is None:
+            return False
+        request_id = self._take_id()
+        self._pending_edit_id = request_id
+        return self._send(request(request_id, "textDocument/formatting", {
+            "textDocument": {"uri": file_uri(self._file_path)},
+            "options": {"tabSize": tab_size, "insertSpaces": True},
+        }))
+
     def request_definition(self, line: int, column: int) -> bool:
         """
         要求某個位置的定義位置
@@ -207,6 +262,19 @@ class LspClient(QObject):
             location = definition_location(message.get("result"))
             if location is not None:
                 self.definition_ready.emit(location)
+            return
+        if message.get("id") == self._pending_hover_id:
+            self._pending_hover_id = None
+            text = hover_text(message.get("result"))
+            if text:
+                self.hover_ready.emit(text)
+            return
+        if message.get("id") == self._pending_edit_id:
+            self._pending_edit_id = None
+            uri = file_uri(self._file_path) if self._file_path else ""
+            edits = text_edits(message.get("result"), uri)
+            if edits:
+                self.edits_ready.emit(edits)
 
     def _read_output(self) -> None:
         """讀取伺服器輸出並逐則處理 / Read the server's output and handle each message."""

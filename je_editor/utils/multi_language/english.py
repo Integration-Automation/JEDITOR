@@ -389,6 +389,10 @@ please make sure that the current encoding is consistent with the default encodi
     "context_menu_toggle_bookmark": "Toggle Bookmark",
     "context_menu_go_to_definition": "Go to Definition",
     "context_menu_revert_hunk": "Revert This Change",
+    "context_menu_hover": "Describe Symbol",
+    "context_menu_rename_symbol": "Rename Symbol",
+    "context_menu_rename_prompt": "New name:",
+    "context_menu_format_document": "Format Document",
     # Test panel
     "tab_menu_test_panel_tab_name": "Tests",
     "test_panel_run": "Run Tests",
