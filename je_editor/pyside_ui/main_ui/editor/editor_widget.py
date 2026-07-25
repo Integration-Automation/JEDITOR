@@ -461,8 +461,9 @@ class EditorWidget(QWidget):
         self.exec_shell = None
         self.exec_python_debugger = None
 
-        # 停止仍在讀取 git 基準的背景執行緒 / Stop a git baseline read still running
+        # 停止仍在執行的背景檢查 / Stop background checks still running
         self.code_edit.diff_marker_manager.stop()
+        self.code_edit.lint_manager.stop()
 
         if self.current_file:
             file_is_open_manager_dict.pop(str(Path(self.current_file)), None)

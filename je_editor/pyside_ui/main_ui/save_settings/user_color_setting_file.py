@@ -42,6 +42,7 @@ def update_actually_color_dict() -> None:
             "diff_added_marker_color": _to_qcolor("diff_added_marker_color", [76, 175, 80]),
             "diff_modified_marker_color": _to_qcolor("diff_modified_marker_color", [255, 167, 38]),
             "diff_removed_marker_color": _to_qcolor("diff_removed_marker_color", [229, 57, 53]),
+            "lint_underline_color": _to_qcolor("lint_underline_color", [255, 138, 101]),
         }
     )
 
@@ -60,7 +61,8 @@ user_setting_color_dict: Dict[str, list] = {
     "occurrence_highlight_color": [80, 90, 60],
     "diff_added_marker_color": [76, 175, 80],
     "diff_modified_marker_color": [255, 167, 38],
-    "diff_removed_marker_color": [229, 57, 53]
+    "diff_removed_marker_color": [229, 57, 53],
+    "lint_underline_color": [255, 138, 101]
 }
 
 # 實際使用的顏色字典 (以 QColor 表示)

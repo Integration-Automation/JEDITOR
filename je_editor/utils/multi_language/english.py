@@ -377,6 +377,15 @@ please make sure that the current encoding is consistent with the default encodi
     "todo_panel_col_message": "Message",
     "todo_panel_col_file": "File",
     "todo_panel_col_line": "Line",
+    # Problems panel
+    "tab_menu_problems_panel_tab_name": "Problems",
+    "problems_panel_refresh": "Recheck",
+    "problems_panel_ready": "Ready",
+    "problems_panel_clean": "No problems found",
+    "problems_panel_found": "{count} problems",
+    "problems_panel_col_code": "Rule",
+    "problems_panel_col_message": "Message",
+    "problems_panel_col_line": "Line",
     # Outline panel
     "tab_menu_outline_panel_tab_name": "Outline",
     "outline_panel_refresh": "Refresh",

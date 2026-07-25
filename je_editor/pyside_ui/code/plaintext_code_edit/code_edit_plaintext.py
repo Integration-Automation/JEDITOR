@@ -15,6 +15,7 @@ from PySide6.QtWidgets import QPlainTextEdit, QWidget, QTextEdit, QCompleter, QI
 from je_editor.pyside_ui.code.bookmark.bookmark_manager import BookmarkManager
 from je_editor.pyside_ui.code.folding.folding_manager import FoldingManager
 from je_editor.pyside_ui.code.git_diff.diff_marker_manager import DiffMarkerManager
+from je_editor.pyside_ui.code.lint.lint_manager import LintManager
 from je_editor.pyside_ui.code.selection.smart_selection_manager import SmartSelectionManager
 from je_editor.utils.file_diff.line_status import (
     LINE_ADDED, LINE_MODIFIED, LINE_REMOVED_ABOVE
@@ -88,6 +89,19 @@ _DIFF_MARKER_WIDTH = 4
 # How long typing must pause before the git change markers are recomputed
 _DIFF_REFRESH_DELAY_MS = 400
 
+# 輸入停止多久之後才重新執行 lint（毫秒）；比變更標記長，因為要開子程序
+# How long typing must pause before ruff runs again; longer than the change
+# markers because it spawns a subprocess
+_LINT_REFRESH_DELAY_MS = 900
+
+def _lint_underline_format() -> QTextCharFormat:
+    """診斷底線的樣式 / The format used to underline a diagnostic."""
+    formats = QTextCharFormat()
+    formats.setUnderlineStyle(QTextCharFormat.UnderlineStyle.WaveUnderline)
+    formats.setUnderlineColor(actually_color_dict.get("lint_underline_color"))
+    return formats
+
+
 # 變更狀態對應的顏色設定鍵 / Colour setting key for each change status
 _DIFF_MARKER_COLOR_KEYS = {
     LINE_ADDED: "diff_added_marker_color",
@@ -136,6 +150,11 @@ class CodeEditor(QPlainTextEdit):
         # 主視窗 (父元件)
         self.main_window = main_window
         self.current_file = main_window.current_file
+
+        # lint 診斷狀態；必須在第一次高亮之前建立，因為高亮會附加診斷底線
+        # Lint state, created before the first highlight because highlighting
+        # appends the diagnostic underlines
+        self.lint_manager = LintManager(self)
 
         # 定義哪些按鍵不會觸發補全視窗
         self.skip_popup_behavior_list = [
@@ -253,6 +272,15 @@ class CodeEditor(QPlainTextEdit):
         self._diff_timer.timeout.connect(self._refresh_diff_markers)
         self._register_diff_marker_actions()
         self.load_git_baseline()
+
+        # lint 檢查會開子程序，因此同樣等輸入停下來才跑（管理器已於前面建立）
+        # The lint check spawns a subprocess, so it too waits for a pause in
+        # typing; its manager was created earlier in __init__
+        self._lint_timer = QTimer(self)
+        self._lint_timer.setSingleShot(True)
+        self._lint_timer.setInterval(_LINT_REFRESH_DELAY_MS)
+        self._lint_timer.timeout.connect(self.request_lint)
+        self.request_lint()
 
     def reset_highlighter(self) -> None:
         """重設語法高亮 / Reset syntax highlighter"""
@@ -451,6 +479,7 @@ class CodeEditor(QPlainTextEdit):
         # With no baseline there is nothing to recompute
         if self.diff_marker_manager.has_baseline:
             self._diff_timer.start()
+        self._lint_timer.start()
 
     def _refresh_diff_markers(self) -> None:
         """重算 git 變更標記，有變化才重繪 / Recompute markers, repainting only on a change."""
@@ -503,6 +532,77 @@ class CodeEditor(QPlainTextEdit):
         if line is None:
             return False
         return self.jump_to_line(line + 1)
+
+    def _show_lint_message_for_caret(self) -> None:
+        """
+        把游標所在行的診斷顯示為提示文字
+        Show the caret line's diagnostics as the editor's tooltip.
+        """
+        message = self.lint_manager.message_for_line(self.textCursor().blockNumber() + 1)
+        self.setToolTip(message or "")
+
+    def request_lint(self) -> bool:
+        """
+        對目前內容排一次 lint 檢查
+        Start one lint check of the current text.
+
+        :return: 是否真的啟動了檢查（非 Python 檔不檢查）
+            whether a check started; non-Python files are not linted
+        """
+        started = self.lint_manager.request(self.current_file)
+        if not started and self.lint_manager.clear():
+            self.refresh_lint_display()
+        return started
+
+    def refresh_lint_display(self) -> None:
+        """重畫診斷底線 / Repaint the diagnostic underlines."""
+        self._highlight_matching_bracket()
+
+    def _append_lint_selections(self, selections: list) -> None:
+        """
+        把診斷位置加入波浪底線
+        Append a wavy underline for each diagnostic.
+
+        :param selections: 要附加的選取清單 / the selection list to append to
+        """
+        diagnostics = self.lint_manager.diagnostics()
+        if not diagnostics:
+            return
+        document = self.document()
+        for diagnostic in diagnostics:
+            cursor = self._diagnostic_cursor(document, diagnostic)
+            if cursor is None:
+                continue
+            selection = QTextEdit.ExtraSelection()
+            selection.cursor = cursor
+            selection.format = _lint_underline_format()
+            selections.append(selection)
+
+    @staticmethod
+    def _diagnostic_cursor(
+            document: QTextDocument, diagnostic) -> Union[QTextCursor, None]:
+        """
+        取得診斷範圍的游標，範圍不存在時回傳 ``None``
+        Return a cursor spanning a diagnostic, or ``None`` when it is out of range.
+        """
+        block = document.findBlockByNumber(diagnostic.line - 1)
+        if not block.isValid():
+            return None
+        start = block.position() + max(0, diagnostic.column - 1)
+        end_block = document.findBlockByNumber(diagnostic.end_line - 1)
+        if end_block.isValid():
+            end = end_block.position() + max(0, diagnostic.end_column - 1)
+        else:
+            end = block.position() + block.length() - 1
+        # 零寬度的範圍看不見，至少標一個字元
+        # A zero-width range is invisible, so mark at least one character
+        end = min(max(end, start + 1), document.characterCount() - 1)
+        if start >= end:
+            return None
+        cursor = QTextCursor(document)
+        cursor.setPosition(start)
+        cursor.setPosition(end, QTextCursor.MoveMode.KeepAnchor)
+        return cursor
 
     def _foldable_header_lines(self) -> set:
         """取得可折疊標頭行號（快取）/ Foldable header lines (cached)."""
@@ -811,6 +911,7 @@ class CodeEditor(QPlainTextEdit):
             selections.append(selection)
             selection.format.setBackground(color_of_the_line)
             selection.format.setProperty(QTextFormat.FullWidthSelection, True)
+        self._append_lint_selections(selections)
         self.setExtraSelections(selections)
 
     def _highlight_matching_bracket(self) -> None:
@@ -852,7 +953,9 @@ class CodeEditor(QPlainTextEdit):
                     selections.append(sel)
 
         self._append_occurrence_selections(selections, text, pos)
+        self._append_lint_selections(selections)
         self.setExtraSelections(selections)
+        self._show_lint_message_for_caret()
 
     def word_occurrences_under_cursor(self, text: str, position: int) -> list[int]:
         """

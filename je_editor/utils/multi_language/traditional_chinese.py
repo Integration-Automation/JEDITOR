@@ -367,6 +367,15 @@ traditional_chinese_word_dict = {
     "todo_panel_col_message": "說明",
     "todo_panel_col_file": "檔案",
     "todo_panel_col_line": "行號",
+    # Problems panel
+    "tab_menu_problems_panel_tab_name": "問題",
+    "problems_panel_refresh": "重新檢查",
+    "problems_panel_ready": "就緒",
+    "problems_panel_clean": "沒有發現問題",
+    "problems_panel_found": "{count} 個問題",
+    "problems_panel_col_code": "規則",
+    "problems_panel_col_message": "訊息",
+    "problems_panel_col_line": "行號",
     # Outline panel
     "tab_menu_outline_panel_tab_name": "大綱",
     "outline_panel_refresh": "重新整理",
