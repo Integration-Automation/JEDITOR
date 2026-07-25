@@ -10,7 +10,9 @@ from PySide6.QtGui import (
     QPainter, QTextCharFormat, QTextFormat, QKeyEvent, QAction,
     QTextDocument, QTextCursor, QTextOption, QColor, QWheelEvent
 )
-from PySide6.QtWidgets import QPlainTextEdit, QWidget, QTextEdit, QCompleter, QInputDialog
+from PySide6.QtWidgets import (
+    QPlainTextEdit, QWidget, QTextEdit, QCompleter, QInputDialog, QMenu
+)
 
 from je_editor.pyside_ui.code.bookmark.bookmark_manager import BookmarkManager
 from je_editor.pyside_ui.code.folding.folding_manager import FoldingManager
@@ -2303,6 +2305,52 @@ class CodeEditor(QPlainTextEdit):
             if self.completer.popup().isVisible():
                 self.completer.popup().close()
             self._complete_timer.start()
+
+    def build_context_menu(self) -> QMenu:
+        """
+        建立右鍵選單
+        Build the right-click menu.
+
+        用 Qt 內建的編輯選單當底（剪下／複製／貼上／復原都在裡面，且啟用狀態由 Qt
+        自己維護），再接上編輯器自己的動作。
+        Qt's own edit menu is the base — cut, copy, paste and undo are already
+        there with Qt keeping their enabled state right — and the editor's own
+        actions are appended to it.
+
+        :return: 可直接顯示的選單 / a menu ready to show
+        """
+        word = language_wrapper.language_word_dict
+        menu = self.createStandardContextMenu()
+        menu.addSeparator()
+        for label_key, handler, enabled in (
+            ("context_menu_toggle_comment", self.toggle_comment, True),
+            ("context_menu_toggle_bookmark", self.toggle_bookmark, True),
+            ("context_menu_go_to_definition", self.go_to_definition,
+             self.lsp_client.running),
+            ("context_menu_revert_hunk", self.revert_change_at_cursor,
+             self.diff_marker_manager.has_baseline),
+        ):
+            action = menu.addAction(word.get(label_key))
+            action.triggered.connect(handler)
+            action.setEnabled(enabled)
+        return menu
+
+    def contextMenuEvent(self, event: QtGui.QContextMenuEvent) -> None:
+        """顯示右鍵選單 / Show the right-click menu."""
+        menu = self.build_context_menu()
+        menu.exec(event.globalPos())
+        menu.deleteLater()
+
+    def go_to_definition(self) -> bool:
+        """
+        請語言伺服器跳到游標所在符號的定義
+        Ask the language server to jump to the definition under the caret.
+
+        :return: 有送出請求時為 ``True`` / ``True`` when a request was sent
+        """
+        cursor = self.textCursor()
+        return self.lsp_client.request_definition(
+            cursor.blockNumber(), cursor.positionInBlock())
 
     def closeEvent(self, event: QtGui.QCloseEvent) -> None:
         """

@@ -384,6 +384,11 @@ please make sure that the current encoding is consistent with the default encodi
     "tab_menu_diff_against_head_name": "Diff Against HEAD",
     "tab_menu_split_view_label": "Toggle Split View",
     "tab_menu_minimap_label": "Toggle Minimap",
+    # Editor context menu
+    "context_menu_toggle_comment": "Toggle Comment",
+    "context_menu_toggle_bookmark": "Toggle Bookmark",
+    "context_menu_go_to_definition": "Go to Definition",
+    "context_menu_revert_hunk": "Revert This Change",
     # Test panel
     "tab_menu_test_panel_tab_name": "Tests",
     "test_panel_run": "Run Tests",

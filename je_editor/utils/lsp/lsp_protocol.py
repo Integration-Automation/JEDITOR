@@ -14,6 +14,7 @@ Pure logic: it starts no process, so it can be tested by feeding it bytes.
 from __future__ import annotations
 
 import json
+from urllib.parse import unquote
 
 # 標頭與內容之間的分隔 / What separates the header from the body
 HEADER_SEPARATOR = b"\r\n\r\n"
@@ -156,6 +157,49 @@ def completion_labels(response: object) -> list[str]:
         if isinstance(label, str) and label and label not in labels:
             labels.append(label)
     return labels
+
+
+def path_from_uri(uri: object) -> str:
+    """
+    把 LSP 的 ``file://`` URI 轉回檔案路徑
+    Turn an LSP ``file://`` URI back into a file path.
+
+    :param uri: 伺服器回報的 URI / the URI the server reported
+    :return: 檔案路徑，無法辨識時為空字串 / the path, or an empty string
+    """
+    if not isinstance(uri, str) or not uri.startswith("file://"):
+        return ""
+    path = unquote(uri[len("file://"):])
+    # Windows 的 URI 會多一個開頭斜線：``/D:/x`` 要還原成 ``D:/x``
+    # A Windows URI carries a leading slash: ``/D:/x`` becomes ``D:/x``
+    if len(path) > 2 and path[0] == "/" and path[2] == ":":
+        return path[1:]
+    return path
+
+
+def definition_location(result: object) -> dict | None:
+    """
+    從 definition 回應取出第一個位置
+    Take the first location out of a definition response.
+
+    回應可能是單一位置、位置清單，或 ``LocationLink`` 清單，三種都要接受。
+    A response may be a single location, a list of them, or a list of
+    ``LocationLink``, and all three are accepted.
+
+    :param result: 伺服器的回應內容 / the server's result
+    :return: ``{"path", "line", "column"}``，無法辨識時為 ``None``
+        the location, or ``None`` when it cannot be read
+    """
+    first = result[0] if isinstance(result, list) and result else result
+    if not isinstance(first, dict):
+        return None
+    uri = first.get("uri") or first.get("targetUri")
+    span = first.get("range") or first.get("targetSelectionRange") or first.get("targetRange")
+    path = path_from_uri(uri)
+    if not path or not isinstance(span, dict):
+        return None
+    line, column = _position(span.get("start"))
+    return {"path": path, "line": line, "column": column}
 
 
 def diagnostic_entries(params: object) -> list[dict]:

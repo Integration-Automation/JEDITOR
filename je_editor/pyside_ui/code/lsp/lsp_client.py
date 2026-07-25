@@ -23,6 +23,7 @@ from je_editor.utils.lsp.language_servers import language_id, server_command
 from je_editor.utils.lsp.lsp_protocol import (
     MessageReader,
     completion_labels,
+    definition_location,
     diagnostic_entries,
     encode_message,
     file_uri,
@@ -42,6 +43,7 @@ class LspClient(QObject):
 
     completions_ready = Signal(list)  # list[str]
     diagnostics_ready = Signal(list)  # list[dict]
+    definition_ready = Signal(dict)  # {"path": str, "line": int, "column": int}
 
     def __init__(self, parent: QObject | None = None) -> None:
         """
@@ -54,6 +56,7 @@ class LspClient(QObject):
         self._file_path: str | None = None
         self._version = 0
         self._pending_completion_id: int | None = None
+        self._pending_definition_id: int | None = None
 
     @property
     def running(self) -> bool:
@@ -159,6 +162,29 @@ class LspClient(QObject):
             "position": {"line": line, "character": column},
         }))
 
+    def request_definition(self, line: int, column: int) -> bool:
+        """
+        要求某個位置的定義位置
+        Ask where the symbol at a position is defined.
+
+        :param line: 以 0 起算的行號 / the 0-based line
+        :param column: 以 0 起算的欄位 / the 0-based column
+        :return: 有送出時為 ``True`` / ``True`` when the request was sent
+        """
+        return self._position_request("textDocument/definition", line, column, "_pending_definition_id")
+
+    def _position_request(
+            self, method: str, line: int, column: int, pending_attribute: str) -> bool:
+        """送出一則以游標位置為參數的請求 / Send one request about a caret position."""
+        if self._file_path is None:
+            return False
+        request_id = self._take_id()
+        setattr(self, pending_attribute, request_id)
+        return self._send(request(request_id, method, {
+            "textDocument": {"uri": file_uri(self._file_path)},
+            "position": {"line": line, "character": column},
+        }))
+
     def handle_message(self, message: dict) -> None:
         """
         處理伺服器送來的一則訊息
@@ -170,9 +196,17 @@ class LspClient(QObject):
             entries = diagnostic_entries(message.get("params"))
             self.diagnostics_ready.emit(entries)
             return
-        if message.get("id") == self._pending_completion_id and "result" in message:
+        if "result" not in message:
+            return
+        if message.get("id") == self._pending_completion_id:
             self._pending_completion_id = None
             self.completions_ready.emit(completion_labels(message.get("result")))
+            return
+        if message.get("id") == self._pending_definition_id:
+            self._pending_definition_id = None
+            location = definition_location(message.get("result"))
+            if location is not None:
+                self.definition_ready.emit(location)
 
     def _read_output(self) -> None:
         """讀取伺服器輸出並逐則處理 / Read the server's output and handle each message."""
