@@ -29,6 +29,7 @@ from je_editor.pyside_ui.git_ui.git_client.git_client_gui import GitGui
 from je_editor.pyside_ui.code.auto_save.auto_save_thread import CodeEditSaveThread
 from je_editor.pyside_ui.code.code_format.pep8_format import PEP8FormatChecker
 from je_editor.pyside_ui.code.plaintext_code_edit.code_edit_plaintext import CodeEditor
+from je_editor.pyside_ui.code.split_view.split_editor_view import SplitEditorView
 from je_editor.pyside_ui.code.textedit_code_result.code_record import CodeRecord
 from je_editor.pyside_ui.main_ui.save_settings.user_color_setting_file import actually_color_dict
 from je_editor.pyside_ui.main_ui.save_settings.user_setting_file import user_setting_dict
@@ -157,6 +158,9 @@ class EditorWidget(QWidget):
         self.edit_splitter.setStretchFactor(0, 3)
         self.edit_splitter.setStretchFactor(1, 1)
         self.edit_splitter.setSizes([300, 100])
+
+        # 同檔分割檢視，開啟時才建立 / The same-file split view, created on demand
+        self.split_view: Union[SplitEditorView, None] = None
 
         self.full_splitter.addWidget(self.project_treeview)
         self.full_splitter.addWidget(self.edit_splitter)
@@ -332,6 +336,30 @@ class EditorWidget(QWidget):
             title = self.tab_manager.tabText(idx)
             if title.endswith(" *"):
                 self.tab_manager.setTabText(idx, title[:-2])
+
+    def toggle_split_view(self) -> bool:
+        """
+        切換同檔分割檢視
+        Toggle the split view of the same file.
+
+        兩個檢視共用同一份文件，因此任一邊的編輯會立刻出現在另一邊，而捲動與游標
+        各自獨立。
+        Both views share one document, so an edit in either appears in the other
+        at once, while scrolling and the caret stay independent.
+
+        :return: 切換後是否為開啟 / whether the split view is now shown
+        """
+        if self.split_view is not None:
+            self.split_view.close()
+            self.split_view.setParent(None)
+            self.split_view.deleteLater()
+            self.split_view = None
+            return False
+        self.split_view = SplitEditorView(self.code_edit)
+        # 插在主編輯器下方、輸出區上方 / Below the main editor, above the output
+        self.edit_splitter.insertWidget(1, self.split_view)
+        self.edit_splitter.setSizes([200, 200, 100])
+        return True
 
     def rename_self_tab(self) -> None:
         """

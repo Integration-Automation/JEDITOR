@@ -59,8 +59,36 @@ def set_tab_menu(ui_we_want_to_set: EditorMain) -> None:
     )
     ui_we_want_to_set.tab_menu.addAction(ui_we_want_to_set.tab_menu.add_console_widget_ui_action)
 
+    # === 同檔分割檢視 ===
+    # === Split view of the same file ===
+    ui_we_want_to_set.tab_menu.toggle_split_view_action = QAction(
+        language_wrapper.language_word_dict.get("tab_menu_split_view_label"))
+    ui_we_want_to_set.tab_menu.toggle_split_view_action.setShortcut("Ctrl+Alt+\\")
+    ui_we_want_to_set.tab_menu.toggle_split_view_action.triggered.connect(
+        lambda: toggle_split_view(ui_we_want_to_set)
+    )
+    ui_we_want_to_set.tab_menu.addAction(ui_we_want_to_set.tab_menu.toggle_split_view_action)
+
     set_tab_tools_menu(ui_we_want_to_set=ui_we_want_to_set)
     set_tab_git_menu(ui_we_want_to_set=ui_we_want_to_set)
+
+
+def toggle_split_view(ui_we_want_to_set: EditorMain) -> bool:
+    """
+    切換目前分頁的同檔分割檢視
+    Toggle the split view of the current tab's file.
+
+    :param ui_we_want_to_set: 主編輯器視窗 / the main editor window
+    :return: 切換後是否為開啟 / whether the split view is now shown
+    """
+    jeditor_logger.info("build_tab_menu.py toggle_split_view")
+    tab_widget = getattr(ui_we_want_to_set, "tab_widget", None)
+    if tab_widget is None:
+        return False
+    widget = tab_widget.currentWidget()
+    if not isinstance(widget, EditorWidget):
+        return False
+    return widget.toggle_split_view()
 
 
 # === 以下為各分頁新增函式 ===
