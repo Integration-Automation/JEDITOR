@@ -39,6 +39,9 @@ def update_actually_color_dict() -> None:
             "bookmark_marker_color": _to_qcolor("bookmark_marker_color", [66, 165, 245]),
             "fold_marker_color": _to_qcolor("fold_marker_color", [120, 120, 120]),
             "occurrence_highlight_color": _to_qcolor("occurrence_highlight_color", [80, 90, 60]),
+            "diff_added_marker_color": _to_qcolor("diff_added_marker_color", [76, 175, 80]),
+            "diff_modified_marker_color": _to_qcolor("diff_modified_marker_color", [255, 167, 38]),
+            "diff_removed_marker_color": _to_qcolor("diff_removed_marker_color", [229, 57, 53]),
         }
     )
 
@@ -54,7 +57,10 @@ user_setting_color_dict: Dict[str, list] = {
     "warning_output_color": [204, 204, 0],
     "bookmark_marker_color": [66, 165, 245],
     "fold_marker_color": [120, 120, 120],
-    "occurrence_highlight_color": [80, 90, 60]
+    "occurrence_highlight_color": [80, 90, 60],
+    "diff_added_marker_color": [76, 175, 80],
+    "diff_modified_marker_color": [255, 167, 38],
+    "diff_removed_marker_color": [229, 57, 53]
 }
 
 # 實際使用的顏色字典 (以 QColor 表示)

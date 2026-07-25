@@ -14,7 +14,11 @@ from PySide6.QtWidgets import QPlainTextEdit, QWidget, QTextEdit, QCompleter, QI
 
 from je_editor.pyside_ui.code.bookmark.bookmark_manager import BookmarkManager
 from je_editor.pyside_ui.code.folding.folding_manager import FoldingManager
+from je_editor.pyside_ui.code.git_diff.diff_marker_manager import DiffMarkerManager
 from je_editor.pyside_ui.code.selection.smart_selection_manager import SmartSelectionManager
+from je_editor.utils.file_diff.line_status import (
+    LINE_ADDED, LINE_MODIFIED, LINE_REMOVED_ABOVE
+)
 from je_editor.utils.indentation.indent_convert import (
     convert_leading_spaces_to_tabs, convert_leading_tabs_to_spaces,
     detect_indent_width, detect_indentation_uses_tabs
@@ -74,10 +78,22 @@ class _JediCompleteWorker(QObject):
             self.finished.emit([])
 
 
-# 行號區域中書籤欄與折疊欄的寬度（像素）
-# Width in pixels of the bookmark and fold columns inside the gutter
+# 行號區域中書籤欄、折疊欄與 git 變更欄的寬度（像素）
+# Width in pixels of the bookmark, fold and git-change columns inside the gutter
 _BOOKMARK_MARKER_WIDTH = 14
 _FOLD_MARKER_WIDTH = 14
+_DIFF_MARKER_WIDTH = 4
+
+# 輸入停止多久之後才重算 git 變更標記（毫秒）
+# How long typing must pause before the git change markers are recomputed
+_DIFF_REFRESH_DELAY_MS = 400
+
+# 變更狀態對應的顏色設定鍵 / Colour setting key for each change status
+_DIFF_MARKER_COLOR_KEYS = {
+    LINE_ADDED: "diff_added_marker_color",
+    LINE_MODIFIED: "diff_modified_marker_color",
+    LINE_REMOVED_ABOVE: "diff_removed_marker_color",
+}
 
 # 游標移動幾行以上才視為「跳轉」並記入導覽歷史
 # How many lines the caret must move to count as a "jump" recorded in history
@@ -226,6 +242,17 @@ class CodeEditor(QPlainTextEdit):
         # 由檔案內容偵測的每檔縮排寬度（None 代表用全域設定）
         # Per-file detected indent width (None means use the global setting)
         self._indent_size_override: Union[int, None] = None
+
+        # git 變更標記：基準在背景讀取，重算則在輸入停止後 debounce 執行
+        # git change markers: the baseline loads in the background, and the
+        # recompute is debounced so typing does not diff on every keystroke
+        self.diff_marker_manager = DiffMarkerManager(self)
+        self._diff_timer = QTimer(self)
+        self._diff_timer.setSingleShot(True)
+        self._diff_timer.setInterval(_DIFF_REFRESH_DELAY_MS)
+        self._diff_timer.timeout.connect(self._refresh_diff_markers)
+        self._register_diff_marker_actions()
+        self.load_git_baseline()
 
     def reset_highlighter(self) -> None:
         """重設語法高亮 / Reset syntax highlighter"""
@@ -420,6 +447,62 @@ class CodeEditor(QPlainTextEdit):
         # Only re-apply when something is folded, so unfolded editing has no cost
         if self.folding_manager.is_any_folded():
             self.folding_manager.refresh()
+        # 沒有基準時完全不需要排程重算
+        # With no baseline there is nothing to recompute
+        if self.diff_marker_manager.has_baseline:
+            self._diff_timer.start()
+
+    def _refresh_diff_markers(self) -> None:
+        """重算 git 變更標記，有變化才重繪 / Recompute markers, repainting only on a change."""
+        if self.diff_marker_manager.refresh():
+            self.line_number.update()
+
+    def load_git_baseline(self) -> None:
+        """
+        重新讀取目前檔案在 HEAD 的內容作為比較基準
+        Reload the current file's committed content as the comparison baseline.
+
+        開檔或換檔後呼叫；讀取在背景執行緒進行。
+        Call this after opening or switching files; the read runs in a thread.
+        """
+        self.diff_marker_manager.load_baseline(self.current_file)
+
+    def _register_diff_marker_actions(self) -> None:
+        """註冊變更跳轉快捷鍵 / Register the change-navigation shortcuts."""
+        for shortcut, handler in (
+            ("Ctrl+Alt+Down", self.next_change),
+            ("Ctrl+Alt+Up", self.previous_change),
+        ):
+            action = QAction(self)
+            action.setShortcut(shortcut)
+            action.triggered.connect(handler)
+            self.addAction(action)
+
+    def next_change(self) -> bool:
+        """
+        跳到下一個有變更的行
+        Jump to the next changed line.
+
+        :return: 是否有跳轉 / whether the caret moved
+        """
+        return self._go_to_change(
+            self.diff_marker_manager.next_change(self.textCursor().blockNumber()))
+
+    def previous_change(self) -> bool:
+        """
+        跳到上一個有變更的行
+        Jump to the previous changed line.
+
+        :return: 是否有跳轉 / whether the caret moved
+        """
+        return self._go_to_change(
+            self.diff_marker_manager.previous_change(self.textCursor().blockNumber()))
+
+    def _go_to_change(self, line: Union[int, None]) -> bool:
+        """移動游標到指定變更行 / Move the caret to a changed line."""
+        if line is None:
+            return False
+        return self.jump_to_line(line + 1)
 
     def _foldable_header_lines(self) -> set:
         """取得可折疊標頭行號（快取）/ Foldable header lines (cached)."""
@@ -578,6 +661,7 @@ class CodeEditor(QPlainTextEdit):
         bookmarked = set(self.bookmark_manager.bookmarked_lines())
         fold_headers = self._foldable_header_lines()
         folded_headers = self.folding_manager.folded_header_lines()
+        diff_statuses = self.diff_marker_manager.statuses()
         gutter_width = self.line_number.width()
         line_height = self.fontMetrics().height()
 
@@ -594,11 +678,16 @@ class CodeEditor(QPlainTextEdit):
                 painter.drawText(
                     _BOOKMARK_MARKER_WIDTH,
                     int(top),
-                    gutter_width - _BOOKMARK_MARKER_WIDTH - _FOLD_MARKER_WIDTH,
+                    gutter_width - _BOOKMARK_MARKER_WIDTH - _FOLD_MARKER_WIDTH
+                    - _DIFF_MARKER_WIDTH,
                     line_height,
                     Qt.AlignmentFlag.AlignCenter,
                     str(block_number + 1),
                 )
+                diff_status = diff_statuses.get(block_number)
+                if diff_status is not None:
+                    self._paint_diff_marker(
+                        painter, top, line_height, gutter_width, diff_status)
                 if block_number in bookmarked:
                     self._paint_bookmark_marker(painter, top, line_height)
                 if block_number in fold_headers:
@@ -640,13 +729,36 @@ class CodeEditor(QPlainTextEdit):
         )
         painter.restore()
 
+    def _paint_diff_marker(
+            self, painter: QPainter, top: float, line_height: int,
+            gutter_width: int, status: str) -> None:
+        """
+        在折疊欄左側繪製 git 變更長條
+        Draw the git change bar just left of the fold column.
+        """
+        color = _DIFF_MARKER_COLOR_KEYS.get(status)
+        if color is None:
+            return
+        painter.save()
+        painter.fillRect(
+            gutter_width - _FOLD_MARKER_WIDTH - _DIFF_MARKER_WIDTH,
+            int(top),
+            _DIFF_MARKER_WIDTH,
+            # 刪除以細線表示，因為被刪的行已經不在畫面上
+            # A deletion is a thin line: the removed lines are no longer on screen
+            2 if status == LINE_REMOVED_ABOVE else line_height,
+            actually_color_dict.get(color),
+        )
+        painter.restore()
+
     def line_number_width(self) -> int:
         """
-        計算行號區域寬度（含書籤與折疊欄）
-        Calculate gutter width, including the bookmark and fold columns.
+        計算行號區域寬度（含書籤、git 變更與折疊欄）
+        Calculate gutter width, including the bookmark, git-change and fold columns.
         """
         digits = len(str(self.blockCount()))  # 根據總行數決定位數
-        return 12 * digits + _BOOKMARK_MARKER_WIDTH + _FOLD_MARKER_WIDTH
+        return (12 * digits + _BOOKMARK_MARKER_WIDTH + _FOLD_MARKER_WIDTH
+                + _DIFF_MARKER_WIDTH)
 
     def update_line_number_area_width(self, value: int) -> None:
         """

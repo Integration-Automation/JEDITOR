@@ -260,6 +260,8 @@ class EditorWidget(QWidget):
         self.current_file = file
         self.code_edit.current_file = file
         self.code_edit.reset_highlighter()
+        # 換檔後重新取得 git 比較基準 / Reload the git baseline for the new file
+        self.code_edit.load_git_baseline()
 
         # 更新使用者設定中的最後開啟檔案 / Update last opened file in user settings
         user_setting_dict.update({"last_file": str(self.current_file)})
@@ -458,6 +460,9 @@ class EditorWidget(QWidget):
         self.exec_program = None
         self.exec_shell = None
         self.exec_python_debugger = None
+
+        # 停止仍在讀取 git 基準的背景執行緒 / Stop a git baseline read still running
+        self.code_edit.diff_marker_manager.stop()
 
         if self.current_file:
             file_is_open_manager_dict.pop(str(Path(self.current_file)), None)
