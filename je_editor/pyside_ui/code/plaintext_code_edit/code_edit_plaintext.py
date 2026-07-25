@@ -14,6 +14,7 @@ from PySide6.QtWidgets import QPlainTextEdit, QWidget, QTextEdit, QCompleter, QI
 
 from je_editor.pyside_ui.code.bookmark.bookmark_manager import BookmarkManager
 from je_editor.pyside_ui.code.folding.folding_manager import FoldingManager
+from je_editor.pyside_ui.code.git_diff.blame_manager import BlameManager
 from je_editor.pyside_ui.code.git_diff.diff_marker_manager import DiffMarkerManager
 from je_editor.pyside_ui.code.lint.lint_manager import LintManager
 from je_editor.pyside_ui.code.selection.smart_selection_manager import SmartSelectionManager
@@ -101,6 +102,10 @@ def _lint_underline_format() -> QTextCharFormat:
     formats.setUnderlineColor(actually_color_dict.get("lint_underline_color"))
     return formats
 
+
+# 行尾文字與 blame 標註之間的間隔（像素）
+# Gap in pixels between a line's text and its blame annotation
+_BLAME_TEXT_GAP = 24
 
 # 變更狀態對應的顏色設定鍵 / Colour setting key for each change status
 _DIFF_MARKER_COLOR_KEYS = {
@@ -266,6 +271,7 @@ class CodeEditor(QPlainTextEdit):
         # git change markers: the baseline loads in the background, and the
         # recompute is debounced so typing does not diff on every keystroke
         self.diff_marker_manager = DiffMarkerManager(self)
+        self.blame_manager = BlameManager(self)
         self._diff_timer = QTimer(self)
         self._diff_timer.setSingleShot(True)
         self._diff_timer.setInterval(_DIFF_REFRESH_DELAY_MS)
@@ -501,6 +507,8 @@ class CodeEditor(QPlainTextEdit):
         for shortcut, handler in (
             ("Ctrl+Alt+Down", self.next_change),
             ("Ctrl+Alt+Up", self.previous_change),
+            ("Ctrl+Alt+Z", self.revert_change_at_cursor),
+            ("Ctrl+Alt+B", self.toggle_blame),
         ):
             action = QAction(self)
             action.setShortcut(shortcut)
@@ -532,6 +540,124 @@ class CodeEditor(QPlainTextEdit):
         if line is None:
             return False
         return self.jump_to_line(line + 1)
+
+    def toggle_blame(self) -> bool:
+        """
+        切換行內 blame 顯示
+        Toggle the inline blame annotations.
+
+        :return: 切換後是否為開啟 / whether the annotations are now shown
+        """
+        enabled = self.blame_manager.toggle(self.current_file)
+        self.viewport().update()
+        return enabled
+
+    def paintEvent(self, event: QtGui.QPaintEvent) -> None:
+        """
+        繪製內容，並在開啟時附上行尾的 blame 標註
+        Paint the text, then the end-of-line blame annotations when they are on.
+        """
+        QPlainTextEdit.paintEvent(self, event)
+        if self.blame_manager.enabled:
+            self._paint_blame_annotations()
+
+    def _paint_blame_annotations(self) -> None:
+        """在每個可見行的文字後面畫出 blame 標註 / Draw blame after each visible line."""
+        painter = QPainter(self.viewport())
+        painter.setPen(actually_color_dict.get("blame_annotation_color"))
+        metrics = self.fontMetrics()
+        line_height = metrics.height()
+        block = self.firstVisibleBlock()
+        block_number = block.blockNumber()
+        top = self.blockBoundingGeometry(block).translated(self.contentOffset()).top()
+        while block.isValid() and top <= self.viewport().rect().bottom():
+            if block.isVisible():
+                annotation = self.blame_manager.annotation(block_number)
+                if annotation:
+                    # 接在該行文字之後，中間留一段空白
+                    # Placed after the line's own text, with a gap between them
+                    text_width = metrics.horizontalAdvance(block.text())
+                    painter.drawText(
+                        int(text_width) + _BLAME_TEXT_GAP, int(top),
+                        self.viewport().width(), line_height,
+                        Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter,
+                        annotation)
+            top += self.blockBoundingRect(block).height()
+            block = block.next()
+            block_number += 1
+        painter.end()
+
+    def revert_change_at_cursor(self) -> bool:
+        """
+        把游標所在的變更區塊還原成已提交的內容
+        Restore the change block under the caret to its committed content.
+
+        還原是單一復原步驟，因此按一次 Ctrl+Z 就能取消。
+        The revert is one undo step, so a single Ctrl+Z takes it back.
+
+        :return: 有東西被還原時為 ``True`` / ``True`` when something was reverted
+        """
+        line = self.textCursor().blockNumber()
+        hunk = self.diff_marker_manager.hunk_at(line)
+        if hunk is None:
+            return False
+        original = self.diff_marker_manager.baseline_lines(hunk)
+        cursor = self.textCursor()
+        cursor.beginEditBlock()
+        try:
+            self._replace_lines_with(cursor, hunk, original)
+        finally:
+            cursor.endEditBlock()
+        self._refresh_diff_markers()
+        return True
+
+    def _replace_lines_with(self, cursor: QTextCursor, hunk, original: List[str]) -> None:
+        """
+        以基準內容取代一段變更的行
+        Replace a hunk's lines with the baseline content.
+
+        純刪除在目前內容中沒有範圍，因此改為在該位置插回原本的行；純新增在基準
+        中沒有內容，因此要連同換行整行移除，只清掉文字會留下一個空行。
+        A pure deletion spans no lines, so its content is inserted back instead;
+        a pure insertion has no baseline content, so the whole line is removed
+        including its line break — clearing only the text would leave a blank line.
+        """
+        document = self.document()
+        if hunk.is_pure_deletion:
+            block = document.findBlockByNumber(min(hunk.start, document.blockCount() - 1))
+            cursor.setPosition(block.position())
+            cursor.insertText("\n".join(original) + "\n")
+            return
+        if not original:
+            self._remove_blocks(cursor, hunk.start, hunk.end)
+            return
+        start_block = document.findBlockByNumber(hunk.start)
+        end_block = document.findBlockByNumber(hunk.end - 1)
+        cursor.setPosition(start_block.position())
+        cursor.setPosition(
+            end_block.position() + end_block.length() - 1, QTextCursor.MoveMode.KeepAnchor)
+        cursor.insertText("\n".join(original))
+
+    def _remove_blocks(self, cursor: QTextCursor, start: int, end: int) -> None:
+        """
+        移除整段行，包含行尾的換行
+        Remove whole lines, line breaks included.
+        """
+        document = self.document()
+        start_block = document.findBlockByNumber(start)
+        end_block = document.findBlockByNumber(end - 1)
+        start_position = start_block.position()
+        end_position = end_block.position() + end_block.length()
+        last_position = document.characterCount() - 1
+        if end_position > last_position:
+            # 刪到檔尾：改為往前吃掉上一行的換行，才不會留下空行
+            # Deleting to the end of the file: take the preceding line break
+            # instead, so no blank line is left behind
+            end_position = last_position
+            start_position = max(0, start_position - 1)
+        cursor.setPosition(start_position)
+        cursor.setPosition(end_position, QTextCursor.MoveMode.KeepAnchor)
+        cursor.removeSelectedText()
 
     def _show_lint_message_for_caret(self) -> None:
         """

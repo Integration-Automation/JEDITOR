@@ -16,6 +16,9 @@ from PySide6.QtCore import QThread, Signal
 
 from je_editor.git_client.file_baseline import baseline_text
 from je_editor.utils.file_diff.line_status import (
+    Hunk,
+    baseline_lines_of,
+    hunk_at_line,
     line_statuses,
     next_changed_line,
     previous_changed_line,
@@ -62,6 +65,15 @@ class DiffMarkerManager:
     def has_baseline(self) -> bool:
         """是否已取得基準（檔案在 git 中且有提交過）/ Whether a baseline is known."""
         return self._baseline is not None
+
+    def baseline(self) -> str | None:
+        """
+        取得目前的基準文字
+        Return the baseline the markers are computed against.
+
+        :return: HEAD 版本的內容，沒有基準時為 ``None`` / the committed text, or ``None``
+        """
+        return self._baseline
 
     def set_baseline(self, text: str | None) -> None:
         """
@@ -118,6 +130,30 @@ class DiffMarkerManager:
     def previous_change(self, line: int) -> int | None:
         """上一個變更行 / The previous changed line, wrapping around."""
         return previous_changed_line(self._statuses, line)
+
+    def hunk_at(self, line: int) -> Hunk | None:
+        """
+        取得包含指定行的變更區塊
+        Return the hunk of change containing *line*.
+
+        :param line: 以 0 起算的行號 / the 0-based line number
+        :return: 變更區塊，該行沒有變更時為 ``None`` / the hunk, or ``None``
+        """
+        if self._baseline is None:
+            return None
+        return hunk_at_line(self._baseline, self._code_edit.toPlainText(), line)
+
+    def baseline_lines(self, hunk: Hunk) -> list[str]:
+        """
+        取得一段變更在基準中的原始內容
+        The baseline lines a hunk replaced.
+
+        :param hunk: 目標變更區塊 / the hunk to look up
+        :return: 原始行 / the original lines
+        """
+        if self._baseline is None:
+            return []
+        return baseline_lines_of(self._baseline, hunk)
 
     def load_baseline(self, file_path: str | Path | None) -> None:
         """

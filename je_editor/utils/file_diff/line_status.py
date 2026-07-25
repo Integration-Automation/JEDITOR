@@ -11,6 +11,7 @@ Pure logic: no Qt, no git, no I/O, so it can be tested on its own.
 """
 from __future__ import annotations
 
+from dataclasses import dataclass
 from difflib import SequenceMatcher
 
 # 一行相對於基準的狀態 / How one line differs from the baseline
@@ -73,6 +74,93 @@ def line_statuses(baseline: str, current: str) -> dict[int, str]:
         elif tag == "delete":
             _mark_removal(statuses, start, len(current_lines))
     return statuses
+
+
+@dataclass(frozen=True)
+class Hunk:
+    """
+    一段連續的變更，以及它在基準中的對應範圍
+    One run of change, and the baseline range it corresponds to.
+
+    :param start: 目前內容中的起始行（0 起算）/ start line in the current text
+    :param end: 目前內容中的結束行（不含）/ end line in the current text, exclusive
+    :param baseline_start: 基準中的起始行 / start line in the baseline
+    :param baseline_end: 基準中的結束行（不含）/ end line in the baseline, exclusive
+    """
+
+    start: int
+    end: int
+    baseline_start: int
+    baseline_end: int
+
+    @property
+    def is_pure_deletion(self) -> bool:
+        """這段變更是否只有刪除（目前內容中沒有對應的行）/ Whether only lines were removed."""
+        return self.start == self.end
+
+    def contains(self, line: int) -> bool:
+        """
+        判斷某行是否屬於這段變更
+        Whether *line* belongs to this hunk.
+
+        純刪除在目前內容中沒有範圍，因此以刪除位置那一行為準。
+        A pure deletion spans no lines, so the line at the deletion point counts.
+
+        :param line: 以 0 起算的行號 / the 0-based line number
+        :return: 屬於這段變更時為 ``True`` / ``True`` when the line is inside
+        """
+        if self.is_pure_deletion:
+            return line == self.start
+        return self.start <= line < self.end
+
+
+def hunks(baseline: str, current: str) -> list[Hunk]:
+    """
+    找出所有變更區塊
+    Find every run of change between the baseline and the current text.
+
+    :param baseline: 已提交的內容 / the committed content
+    :param current: 編輯中的內容 / the buffer being edited
+    :return: 變更區塊，依出現順序 / the hunks, in order
+    """
+    baseline_lines = _split_lines(baseline)
+    current_lines = _split_lines(current)
+    if max(len(baseline_lines), len(current_lines)) > MAX_DIFFED_LINES:
+        return []
+    matcher = SequenceMatcher(None, baseline_lines, current_lines, autojunk=False)
+    return [
+        Hunk(start=start, end=end, baseline_start=base_start, baseline_end=base_end)
+        for tag, base_start, base_end, start, end in matcher.get_opcodes()
+        if tag != "equal"
+    ]
+
+
+def hunk_at_line(baseline: str, current: str, line: int) -> Hunk | None:
+    """
+    取得包含指定行的變更區塊
+    Return the hunk that contains *line*.
+
+    :param baseline: 已提交的內容 / the committed content
+    :param current: 編輯中的內容 / the buffer being edited
+    :param line: 以 0 起算的行號 / the 0-based line number
+    :return: 該變更區塊，該行沒有變更時為 ``None`` / the hunk, or ``None``
+    """
+    for hunk in hunks(baseline, current):
+        if hunk.contains(line):
+            return hunk
+    return None
+
+
+def baseline_lines_of(baseline: str, hunk: Hunk) -> list[str]:
+    """
+    取得一段變更在基準中的原始內容
+    Return the baseline lines a hunk replaced.
+
+    :param baseline: 已提交的內容 / the committed content
+    :param hunk: 目標變更區塊 / the hunk to look up
+    :return: 原始行（不含換行字元）/ the original lines, without line breaks
+    """
+    return _split_lines(baseline)[hunk.baseline_start:hunk.baseline_end]
 
 
 def changed_line_numbers(statuses: dict[int, str]) -> list[int]:
