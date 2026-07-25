@@ -103,6 +103,54 @@ def parse_ruff_json(output: str) -> list[Diagnostic]:
     return [diagnostic for diagnostic in diagnostics if diagnostic is not None]
 
 
+def diagnostic_from_entry(entry: dict) -> Diagnostic | None:
+    """
+    把其他來源的診斷轉成同一種形式
+    Convert a diagnostic from another source into the same shape.
+
+    語言伺服器回報的診斷與 ruff 的欄位不同，但編輯器只認得一種形式；統一之後
+    底線與問題面板就不必分辨診斷是誰報的。
+    A language server reports different fields from ruff, but the editor knows
+    only one shape. Converting here means the underlines and the problems panel
+    never have to care which tool produced a finding.
+
+    :param entry: 來源診斷，需含 ``line`` 與 ``message`` / the source diagnostic
+    :return: 統一形式的診斷，資料不足時為 ``None`` / the diagnostic, or ``None``
+    """
+    if not isinstance(entry, dict):
+        return None
+    message = entry.get("message")
+    line = entry.get("line")
+    if not isinstance(message, str) or not message:
+        return None
+    if not isinstance(line, int) or line < 1:
+        return None
+    column = entry.get("column")
+    column = column if isinstance(column, int) and column >= 1 else 1
+    end_line = entry.get("end_line")
+    end_line = end_line if isinstance(end_line, int) and end_line >= line else line
+    end_column = entry.get("end_column")
+    end_column = end_column if isinstance(end_column, int) and end_column >= 1 else column
+    code = entry.get("code")
+    return Diagnostic(
+        line=line, column=column, end_line=end_line, end_column=end_column,
+        code=code if isinstance(code, str) and code else SYNTAX_ERROR_CODE, message=message)
+
+
+def diagnostics_from_entries(entries: list) -> list[Diagnostic]:
+    """
+    批次轉換其他來源的診斷
+    Convert a batch of diagnostics from another source.
+
+    :param entries: 來源診斷清單 / the source diagnostics
+    :return: 可用的診斷 / the usable diagnostics
+    """
+    if not isinstance(entries, list):
+        return []
+    converted = [diagnostic_from_entry(entry) for entry in entries]
+    return [item for item in converted if item is not None]
+
+
 def diagnostics_by_line(diagnostics: list[Diagnostic]) -> dict[int, list[Diagnostic]]:
     """
     依行號分組

@@ -31,6 +31,7 @@ from je_editor.utils.indentation.indent_convert import (
 from je_editor.utils.indentation.indent_guides import (
     guide_columns, trailing_whitespace_start
 )
+from je_editor.utils.lint.ruff_diagnostics import diagnostics_from_entries
 from je_editor.utils.line_ops.line_operations import (
     join_lines, natural_sort, remove_blank_lines, reverse_lines, sort_lines, unique_lines
 )
@@ -167,6 +168,10 @@ class CodeEditor(QPlainTextEdit):
         # Lint state, created before the first highlight because highlighting
         # appends the diagnostic underlines
         self.lint_manager = LintManager(self)
+        # 語言伺服器連線；lint 會問它是否正在提供診斷，所以要一起先建立
+        # The language server connection: the lint pass asks whether it is
+        # supplying diagnostics, so it has to exist by then too
+        self.lsp_client = LspClient(self)
 
         # 定義哪些按鍵不會觸發補全視窗
         self.skip_popup_behavior_list = [
@@ -302,10 +307,11 @@ class CodeEditor(QPlainTextEdit):
         self.multi_cursor_manager = MultiCursorManager(self)
         self._register_multi_cursor_actions()
 
-        # 非 Python 檔的補全交給語言伺服器；Python 仍走 jedi
-        # Non-Python files complete through a language server; Python keeps jedi
-        self.lsp_client = LspClient(self)
+        # 非 Python 檔的補全與診斷都交給語言伺服器；Python 仍走 jedi 與 ruff
+        # A non-Python file gets its completion and diagnostics from a language
+        # server; Python keeps jedi and ruff
         self.lsp_client.completions_ready.connect(self.set_complete)
+        self.lsp_client.diagnostics_ready.connect(self.apply_server_diagnostics)
         self.start_language_server()
 
     def reset_highlighter(self) -> None:
@@ -751,9 +757,31 @@ class CodeEditor(QPlainTextEdit):
             whether a check started; non-Python files are not linted
         """
         started = self.lint_manager.request(self.current_file)
-        if not started and self.lint_manager.clear():
+        if started or self.lsp_client.running:
+            # 診斷由語言伺服器提供時不能清掉，否則每次輸入停下來就會被抹掉
+            # Diagnostics from a language server must survive: clearing them here
+            # would wipe them at every pause in typing
+            return started
+        if self.lint_manager.clear():
             self.refresh_lint_display()
-        return started
+        return False
+
+    def apply_server_diagnostics(self, entries: list) -> bool:
+        """
+        把語言伺服器回報的診斷顯示出來
+        Show the diagnostics a language server reported.
+
+        與 ruff 的診斷走同一條顯示路徑，因此非 Python 檔也有波浪底線與問題面板。
+        These take the same path as ruff's, so a non-Python file gets the same
+        underlines and the same problems panel.
+
+        :param entries: 伺服器回報的診斷 / the diagnostics the server reported
+        :return: 顯示內容有變時為 ``True`` / ``True`` when the display changed
+        """
+        if not self.lint_manager.set_diagnostics(diagnostics_from_entries(entries)):
+            return False
+        self.refresh_lint_display()
+        return True
 
     def refresh_lint_display(self) -> None:
         """重畫診斷底線 / Repaint the diagnostic underlines."""
@@ -2201,6 +2229,25 @@ class CodeEditor(QPlainTextEdit):
             if self.completer.popup().isVisible():
                 self.completer.popup().close()
             self._complete_timer.start()
+
+    def closeEvent(self, event: QtGui.QCloseEvent) -> None:
+        """
+        關閉前停掉所有背景工作
+        Stop every background worker before closing.
+
+        lint、git 基準、blame 與語言伺服器都各自持有執行緒或子程序；編輯器被銷毀
+        時若它們還在跑，Qt 會在之後某個時間點刪掉仍在執行的物件而當掉，而當掉的
+        位置離真正的原因很遠。
+        The lint pass, the git baseline, blame and the language server each hold a
+        thread or a subprocess. If they are still running when the editor is
+        destroyed, Qt tears down a live object later and crashes far away from the
+        actual cause.
+        """
+        self.lint_manager.stop()
+        self.diff_marker_manager.stop()
+        self.blame_manager.stop()
+        self.lsp_client.stop()
+        super().closeEvent(event)
 
     def mousePressEvent(self, event: QtGui.QMouseEvent) -> None:
         """

@@ -121,7 +121,9 @@ class TestResultParsing:
     def test_diagnostics_are_converted_to_one_based_lines(self):
         entries = diagnostic_entries({"diagnostics": [
             {"range": {"start": {"line": 4, "character": 2}}, "message": "boom"}]})
-        assert entries == [{"line": 5, "column": 3, "message": "boom"}]
+        assert entries[0]["line"] == 5
+        assert entries[0]["column"] == 3
+        assert entries[0]["message"] == "boom"
 
     def test_diagnostics_without_a_message_are_skipped(self):
         assert diagnostic_entries({"diagnostics": [{"range": {}}]}) == []

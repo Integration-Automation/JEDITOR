@@ -164,7 +164,7 @@ def diagnostic_entries(params: object) -> list[dict]:
     Take the diagnostics out of a ``publishDiagnostics`` notification.
 
     :param params: 通知的參數 / the notification's parameters
-    :return: 每筆診斷的 ``行、欄、訊息`` / each diagnostic's line, column and message
+    :return: 每筆診斷的位置、代碼與訊息 / each diagnostic's range, code and message
     """
     if not isinstance(params, dict):
         return []
@@ -173,17 +173,42 @@ def diagnostic_entries(params: object) -> list[dict]:
         return []
     entries: list[dict] = []
     for item in raw:
-        if not isinstance(item, dict):
-            continue
-        start = (item.get("range") or {}).get("start") or {}
-        message = item.get("message")
-        if not isinstance(message, str):
-            continue
-        entries.append({
-            # LSP 的行列是 0 起算，編輯器用 1 起算
-            # LSP counts lines and columns from zero; the editor counts from one
-            "line": int(start.get("line", 0)) + 1,
-            "column": int(start.get("character", 0)) + 1,
-            "message": message,
-        })
+        entry = _diagnostic_entry(item)
+        if entry is not None:
+            entries.append(entry)
     return entries
+
+
+def _position(raw: object, fallback_line: int = 0, fallback_column: int = 0) -> tuple[int, int]:
+    """讀出 LSP 位置並轉成 1 起算 / Read an LSP position, converted to 1-based."""
+    if not isinstance(raw, dict):
+        return fallback_line + 1, fallback_column + 1
+    line = raw.get("line")
+    column = raw.get("character")
+    return (
+        (line if isinstance(line, int) and line >= 0 else fallback_line) + 1,
+        (column if isinstance(column, int) and column >= 0 else fallback_column) + 1,
+    )
+
+
+def _diagnostic_entry(item: object) -> dict | None:
+    """把一筆 LSP 診斷轉成編輯器用的形式 / Convert one LSP diagnostic for the editor."""
+    if not isinstance(item, dict):
+        return None
+    message = item.get("message")
+    if not isinstance(message, str) or not message:
+        return None
+    span = item.get("range") if isinstance(item.get("range"), dict) else {}
+    line, column = _position(span.get("start"))
+    end_line, end_column = _position(span.get("end"), line - 1, column - 1)
+    code = item.get("code")
+    return {
+        # LSP 的行列是 0 起算，編輯器用 1 起算
+        # LSP counts lines and columns from zero; the editor counts from one
+        "line": line,
+        "column": column,
+        "end_line": max(end_line, line),
+        "end_column": end_column,
+        "code": str(code) if isinstance(code, (str, int)) else "",
+        "message": message,
+    }
