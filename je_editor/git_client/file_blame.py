@@ -64,13 +64,25 @@ def blame_lines(file_path: str | Path) -> dict[int, BlameLine]:
     repo = open_repository(file_path)
     if repo is None:
         return {}
-    try:
-        relative = Path(file_path).resolve().relative_to(Path(repo.working_tree_dir).resolve())
-        entries = repo.blame("HEAD", relative.as_posix())
-    except (KeyError, ValueError, TypeError, AttributeError, GitError, OSError) as error:
-        # 未提交過、不在工作區內、或沒有 HEAD / Never committed, outside the tree, or no HEAD
-        jeditor_logger.debug(f"file_blame: no blame for {file_path}: {error!r}")
-        return {}
+    # 每個 Repo 都會開著常駐的 git 子程序，用完一定要關掉
+    # Every Repo keeps long-lived git subprocesses open, so it must be closed
+    with repo:
+        try:
+            relative = Path(file_path).resolve().relative_to(
+                Path(repo.working_tree_dir).resolve())
+            entries = repo.blame("HEAD", relative.as_posix())
+        except (KeyError, ValueError, TypeError, AttributeError, GitError, OSError) as error:
+            # 未提交過、不在工作區內、或沒有 HEAD
+            # Never committed, outside the tree, or no HEAD
+            jeditor_logger.debug(f"file_blame: no blame for {file_path}: {error!r}")
+            return {}
+        # 提交資料在 Repo 關閉前就要讀完，關閉之後就取不到了
+        # The commit data is read before the Repo closes; afterwards it is gone
+        return _annotations_from(entries)
+
+
+def _annotations_from(entries: object) -> dict[int, BlameLine]:
+    """把 GitPython 的 blame 結果轉成逐行標註 / Turn a blame result into per-line notes."""
     annotations: dict[int, BlameLine] = {}
     line_number = 0
     for entry in entries or []:

@@ -12,7 +12,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from PySide6.QtCore import QThread, Signal
+from PySide6.QtCore import QObject, QThread, Signal
 
 from je_editor.git_client.file_baseline import baseline_text
 from je_editor.utils.file_diff.line_status import (
@@ -46,16 +46,23 @@ class BaselineLoader(QThread):
         self.loaded.emit(baseline_text(self._file_path))
 
 
-class DiffMarkerManager:
+class DiffMarkerManager(QObject):
     """
     追蹤緩衝區相對於已提交版本的逐行差異
     Track how the buffer differs, line by line, from its committed version.
+
+    是編輯器的 QObject 子物件，讀取執行緒的訊號才有接收者可斷開；否則編輯器銷毀
+    後，佇列中的結果會打到已經釋放的物件上。
+    A QObject child of the editor, so the loader's signal has a receiver Qt can
+    disconnect; otherwise a queued result would arrive at an editor that is
+    already gone.
     """
 
     def __init__(self, code_edit) -> None:
         """
         :param code_edit: 這些標記所屬的編輯器 / the editor these markers belong to
         """
+        super().__init__(code_edit)
         self._code_edit = code_edit
         self._baseline: str | None = None
         self._statuses: dict[int, str] = {}
@@ -166,18 +173,31 @@ class DiffMarkerManager:
         if file_path is None:
             self.clear()
             return
-        loader = BaselineLoader(file_path)
+        loader = BaselineLoader(file_path, self)
         self._loader = loader
-        # 只接受目前這個 loader 的結果，換檔案時舊結果就過期了
-        # Accept a result only from the current loader; switching files makes an
-        # in-flight read stale.
-        loader.loaded.connect(lambda text: self._on_loaded(loader, text))
+        loader.loaded.connect(self._on_loaded)
+        # 先放掉參考再刪除：留著已被刪除的 wrapper，之後呼叫它就會拋 RuntimeError
+        # Drop the reference before deleting: keeping a wrapper whose C++ object
+        # is gone makes the next call on it raise RuntimeError
+        loader.finished.connect(self._on_loader_finished)
         loader.finished.connect(loader.deleteLater)
         loader.start()
 
-    def _on_loaded(self, loader: BaselineLoader, text: str | None) -> None:
-        """套用背景讀取的結果 / Apply a baseline that finished loading."""
-        if loader is not self._loader:
+    def _on_loader_finished(self) -> None:
+        """讀取結束後放掉參考 / Let go of the loader once it has finished."""
+        if self.sender() is self._loader:
+            self._loader = None
+
+    def _on_loaded(self, text: str | None) -> None:
+        """
+        套用背景讀取的結果
+        Apply a baseline that finished loading.
+
+        只接受目前這個 loader 的結果，換檔案時舊結果就過期了。
+        Only the current loader's result is accepted; switching files makes an
+        in-flight read stale.
+        """
+        if self.sender() is not self._loader:
             return
         self.set_baseline(text)
         self._code_edit.line_number.update()
@@ -188,6 +208,13 @@ class DiffMarkerManager:
         Stop a baseline read that is still running.
         """
         loader, self._loader = self._loader, None
-        if loader is not None and loader.isRunning():
-            loader.quit()
-            loader.wait()
+        if loader is None:
+            return
+        try:
+            if loader.isRunning():
+                loader.quit()
+                loader.wait()
+        except RuntimeError:
+            # 它已經跑完並被刪除了，沒有東西要停
+            # It already finished and was deleted, so there is nothing to stop
+            return

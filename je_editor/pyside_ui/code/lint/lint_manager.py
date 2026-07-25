@@ -10,7 +10,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from PySide6.QtCore import QThread, Signal
+from PySide6.QtCore import QObject, QThread, Signal
 
 from je_editor.code_scan.ruff_lint import is_lintable, lint_text
 from je_editor.utils.lint.ruff_diagnostics import Diagnostic, message_for_line
@@ -39,16 +39,25 @@ class LintWorker(QThread):
         self.linted.emit(lint_text(self._text, self._file_path))
 
 
-class LintManager:
+class LintManager(QObject):
     """
     追蹤編輯器目前的診斷
     Track the diagnostics currently reported for an editor.
+
+    是編輯器的 QObject 子物件：worker 的訊號要接到「有接收者」的槽，編輯器被銷毀
+    時 Qt 才會自動斷開。用 lambda 接收會讓 Qt 找不到接收者，佇列中的訊號之後就會
+    打到已經釋放的編輯器上。
+    A QObject child of the editor: a worker's signal must reach a slot that has a
+    receiver, so Qt disconnects it when the editor is destroyed. A lambda gives Qt
+    no receiver, which lets a queued signal arrive at an editor that is already
+    gone.
     """
 
     def __init__(self, code_edit) -> None:
         """
         :param code_edit: 這些診斷所屬的編輯器 / the editor being linted
         """
+        super().__init__(code_edit)
         self._code_edit = code_edit
         self._diagnostics: list[Diagnostic] = []
         self._worker: LintWorker | None = None
@@ -114,19 +123,31 @@ class LintManager:
         self.stop()
         if not is_lintable(file_path):
             return False
-        worker = LintWorker(self._code_edit.toPlainText(), file_path)
+        worker = LintWorker(self._code_edit.toPlainText(), file_path, self)
         self._worker = worker
-        # 只接受目前這個 worker 的結果；換檔或再次輸入都會讓舊結果過期
-        # Accept a result only from the current worker: switching files or typing
-        # again makes an in-flight check stale.
-        worker.linted.connect(lambda diagnostics: self._on_linted(worker, diagnostics))
+        worker.linted.connect(self._on_linted)
+        # 先放掉參考再刪除，避免之後對已刪除的物件呼叫方法
+        # Drop the reference before deleting, so nothing calls a deleted object
+        worker.finished.connect(self._on_worker_finished)
         worker.finished.connect(worker.deleteLater)
         worker.start()
         return True
 
-    def _on_linted(self, worker: LintWorker, diagnostics: list) -> None:
-        """套用背景檢查的結果 / Apply diagnostics that finished arriving."""
-        if worker is not self._worker:
+    def _on_worker_finished(self) -> None:
+        """檢查結束後放掉參考 / Let go of the worker once it has finished."""
+        if self.sender() is self._worker:
+            self._worker = None
+
+    def _on_linted(self, diagnostics: list) -> None:
+        """
+        套用背景檢查的結果
+        Apply diagnostics that finished arriving.
+
+        只接受目前這個 worker 的結果；換檔或再次輸入都會讓舊結果過期。
+        Only the current worker's result is accepted: switching files or typing
+        again makes an in-flight check stale.
+        """
+        if self.sender() is not self._worker:
             return
         if self.set_diagnostics(diagnostics):
             self._code_edit.refresh_lint_display()
@@ -134,6 +155,12 @@ class LintManager:
     def stop(self) -> None:
         """結束仍在執行的檢查 / Stop a check that is still running."""
         worker, self._worker = self._worker, None
-        if worker is not None and worker.isRunning():
-            worker.blockSignals(True)
-            worker.wait()
+        if worker is None:
+            return
+        try:
+            if worker.isRunning():
+                worker.blockSignals(True)
+                worker.wait()
+        except RuntimeError:
+            # 它已經跑完並被刪除了 / It already finished and was deleted
+            return

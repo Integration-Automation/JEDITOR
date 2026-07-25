@@ -52,14 +52,19 @@ def baseline_text(file_path: str | Path) -> str | None:
     repo = open_repository(file_path)
     if repo is None:
         return None
-    try:
-        relative = Path(file_path).resolve().relative_to(Path(repo.working_tree_dir).resolve())
-        blob = repo.head.commit.tree / relative.as_posix()
-        text = blob.data_stream.read().decode("utf-8")
-        return text.replace("\r\n", "\n").replace("\r", "\n")
-    except (KeyError, ValueError, TypeError, AttributeError, GitError, OSError):
-        # 新檔案、尚無提交、或路徑不在工作區內 / New file, no commit yet, or outside the tree
-        return None
-    except UnicodeDecodeError:
-        jeditor_logger.debug("file_baseline: %s is not utf-8 text", file_path)
-        return None
+    # 每個 Repo 都會開著常駐的 git 子程序，用完一定要關掉
+    # Every Repo keeps long-lived git subprocesses open, so it must be closed
+    with repo:
+        try:
+            relative = Path(file_path).resolve().relative_to(
+                Path(repo.working_tree_dir).resolve())
+            blob = repo.head.commit.tree / relative.as_posix()
+            text = blob.data_stream.read().decode("utf-8")
+            return text.replace("\r\n", "\n").replace("\r", "\n")
+        except (KeyError, ValueError, TypeError, AttributeError, GitError, OSError):
+            # 新檔案、尚無提交、或路徑不在工作區內
+            # New file, no commit yet, or outside the tree
+            return None
+        except UnicodeDecodeError:
+            jeditor_logger.debug("file_baseline: %s is not utf-8 text", file_path)
+            return None

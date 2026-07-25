@@ -5,8 +5,8 @@ import json
 from unittest.mock import MagicMock, patch
 
 import pytest
-from PySide6.QtGui import QKeyEvent
-from PySide6.QtCore import QEvent, Qt
+from PySide6.QtCore import Qt
+from PySide6.QtTest import QTest
 from PySide6.QtWidgets import QApplication
 
 from je_editor.pyside_ui.code.snippets.snippet_manager import load_snippets
@@ -110,8 +110,9 @@ def editor(app):
 
 
 def _press_tab(editor) -> None:
-    editor.keyPressEvent(
-        QKeyEvent(QEvent.Type.KeyPress, Qt.Key.Key_Tab, Qt.KeyboardModifier.NoModifier, "\t"))
+    # Sent through QTest so Qt owns the event object; a QKeyEvent built here
+    # could be collected while Qt still holds it.
+    QTest.keyClick(editor, Qt.Key.Key_Tab)
 
 
 class TestSnippetExpansionInEditor:

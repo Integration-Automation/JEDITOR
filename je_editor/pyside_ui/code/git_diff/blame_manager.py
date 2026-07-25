@@ -10,7 +10,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from PySide6.QtCore import QThread, Signal
+from PySide6.QtCore import QObject, QThread, Signal
 
 from je_editor.git_client.file_blame import BlameLine, blame_lines
 
@@ -36,16 +36,21 @@ class BlameLoader(QThread):
         self.loaded.emit(blame_lines(self._file_path))
 
 
-class BlameManager:
+class BlameManager(QObject):
     """
     追蹤行內 blame 的開關與內容
     Track whether inline blame is shown, and what it says.
+
+    是編輯器的 QObject 子物件，取得執行緒的訊號才有接收者可斷開。
+    A QObject child of the editor, so the loader's signal has a receiver Qt can
+    disconnect.
     """
 
     def __init__(self, code_edit) -> None:
         """
         :param code_edit: 這些標註所屬的編輯器 / the editor being annotated
         """
+        super().__init__(code_edit)
         self._code_edit = code_edit
         self._annotations: dict[int, BlameLine] = {}
         self._enabled = False
@@ -99,16 +104,29 @@ class BlameManager:
         if file_path is None:
             return False
         self._enabled = True
-        loader = BlameLoader(file_path)
+        loader = BlameLoader(file_path, self)
         self._loader = loader
-        loader.loaded.connect(lambda annotations: self._on_loaded(loader, annotations))
+        loader.loaded.connect(self._on_loaded)
+        # 先放掉參考再刪除，避免之後對已刪除的物件呼叫方法
+        # Drop the reference before deleting, so nothing calls a deleted object
+        loader.finished.connect(self._on_loader_finished)
         loader.finished.connect(loader.deleteLater)
         loader.start()
         return True
 
-    def _on_loaded(self, loader: BlameLoader, annotations: dict) -> None:
-        """套用背景取得的結果 / Apply annotations that finished loading."""
-        if loader is not self._loader:
+    def _on_loader_finished(self) -> None:
+        """取得結束後放掉參考 / Let go of the loader once it has finished."""
+        if self.sender() is self._loader:
+            self._loader = None
+
+    def _on_loaded(self, annotations: dict) -> None:
+        """
+        套用背景取得的結果
+        Apply annotations that finished loading.
+
+        只接受目前這個 loader 的結果 / Only the current loader's result is accepted.
+        """
+        if self.sender() is not self._loader:
             return
         self.set_annotations(annotations)
         self._code_edit.viewport().update()
@@ -116,6 +134,12 @@ class BlameManager:
     def stop(self) -> None:
         """結束仍在進行的取得 / Stop a fetch that is still running."""
         loader, self._loader = self._loader, None
-        if loader is not None and loader.isRunning():
-            loader.blockSignals(True)
-            loader.wait()
+        if loader is None:
+            return
+        try:
+            if loader.isRunning():
+                loader.blockSignals(True)
+                loader.wait()
+        except RuntimeError:
+            # 它已經跑完並被刪除了 / It already finished and was deleted
+            return

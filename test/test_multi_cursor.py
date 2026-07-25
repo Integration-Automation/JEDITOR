@@ -4,8 +4,8 @@ from __future__ import annotations
 from unittest.mock import MagicMock, patch
 
 import pytest
-from PySide6.QtCore import QEvent, Qt
-from PySide6.QtGui import QKeyEvent
+from PySide6.QtCore import Qt
+from PySide6.QtTest import QTest
 from PySide6.QtWidgets import QApplication
 
 from je_editor.utils.multi_cursor.cursor_positions import (
@@ -97,8 +97,18 @@ def _select_all(editor) -> None:
 
 
 def _type(editor, text: str) -> None:
-    editor.keyPressEvent(
-        QKeyEvent(QEvent.Type.KeyPress, Qt.Key.Key_A, Qt.KeyboardModifier.NoModifier, text))
+    """Send a keystroke the way Qt does, so it owns the event object.
+
+    Building a QKeyEvent in Python and handing it to the handler leaves Qt
+    holding an object Python may collect, which crashes the interpreter later
+    when the event queue is processed.
+    """
+    QTest.keyClicks(editor, text)
+
+
+def _press(editor, key) -> None:
+    """Send one non-printable key."""
+    QTest.keyClick(editor, key)
 
 
 class TestMultiCursorEditing:
@@ -131,8 +141,7 @@ class TestMultiCursorEditing:
         editor.setPlainText("one!\ntwo!\nthree!")
         _select_all(editor)
         editor.add_cursors_to_selected_lines()
-        editor.keyPressEvent(QKeyEvent(
-            QEvent.Type.KeyPress, Qt.Key.Key_Backspace, Qt.KeyboardModifier.NoModifier))
+        _press(editor, Qt.Key.Key_Backspace)
         assert editor.toPlainText() == "one\ntwo\nthree"
 
     def test_multi_cursor_edit_is_one_undo_step(self, editor):
@@ -147,8 +156,7 @@ class TestMultiCursorEditing:
         editor.setPlainText("one\ntwo")
         _select_all(editor)
         editor.add_cursors_to_selected_lines()
-        editor.keyPressEvent(QKeyEvent(
-            QEvent.Type.KeyPress, Qt.Key.Key_Escape, Qt.KeyboardModifier.NoModifier))
+        _press(editor, Qt.Key.Key_Escape)
         assert editor.multi_cursor_manager.active is False
 
     def test_clearing_leaves_typing_to_the_primary_caret(self, editor):
