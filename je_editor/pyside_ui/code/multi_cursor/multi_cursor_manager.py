@@ -11,7 +11,9 @@ from __future__ import annotations
 
 from PySide6.QtGui import QTextCursor
 
-from je_editor.utils.multi_cursor.cursor_positions import clamp_positions, toggle_position
+from je_editor.utils.multi_cursor.cursor_positions import (
+    add_position, clamp_positions, toggle_position
+)
 
 
 class MultiCursorManager:
@@ -97,7 +99,8 @@ class MultiCursorManager:
         """
         return sorted({*self._positions, self._code_edit.textCursor().position()})
 
-    def _apply_at_targets(self, edit, shift_per_target: int) -> None:
+    def _apply_at_targets(
+            self, edit, shift_per_target: int, shift_others: int | None = None) -> None:
         """
         由後往前在每個位置套用一次編輯，再把游標移到新位置
         Apply one edit at each position from the end backwards, then move the
@@ -110,10 +113,17 @@ class MultiCursorManager:
         moves by ``(n + 1) * shift_per_target``.
 
         :param edit: 對單一位置執行的編輯 / the edit to run at one position
-        :param shift_per_target: 每次編輯造成的位移（插入為正，刪除為負）
-            how far one edit moves what follows it: positive to insert, negative
-            to delete
+        :param shift_per_target: 這個位置自己編輯後要移動多少（插入為正，Backspace
+            為負，Delete 為 0，因為刪的是游標後面的字元）
+            how far this position itself moves after its own edit: positive to
+            insert, negative for Backspace, zero for Delete, which removes the
+            character after the caret
+        :param shift_others: 每次編輯讓「後面的位置」移動多少；省略時與
+            *shift_per_target* 相同
+            how far each edit moves the positions after it; defaults to
+            *shift_per_target*
         """
+        following = shift_per_target if shift_others is None else shift_others
         targets = self._edit_targets()
         main_position = self._code_edit.textCursor().position()
         cursor = self._code_edit.textCursor()
@@ -125,7 +135,7 @@ class MultiCursorManager:
             cursor.endEditBlock()
 
         moved = {
-            position: position + (index + 1) * shift_per_target
+            position: position + index * following + shift_per_target
             for index, position in enumerate(targets)
         }
         main = self._code_edit.textCursor()
@@ -176,6 +186,108 @@ class MultiCursorManager:
             cursor.deletePreviousChar()
 
         self._apply_at_targets(delete, -1)
+        return True
+
+    def delete_after(self) -> bool:
+        """
+        在每個游標刪除後一個字元（Delete）
+        Delete the character after every caret, as Delete does.
+
+        任何一個游標已經在文件結尾時就整批不做，理由與 Backspace 相同。
+        Nothing is deleted when any caret sits at the very end, for the same
+        reason as Backspace.
+
+        :return: 有刪除時為 ``True`` / ``True`` when anything was deleted
+        """
+        limit = self._document_limit()
+        if not self._positions or any(position >= limit for position in self._edit_targets()):
+            return False
+
+        def delete(cursor: QTextCursor, position: int) -> None:
+            cursor.setPosition(position)
+            cursor.deleteChar()
+
+        # 刪除的是游標之後的字元，游標自己不動，只有其後的位置要往前
+        # The character after the caret goes, so the caret stays where it is and
+        # only what follows shifts back
+        self._apply_at_targets(delete, 0, shift_others=-1)
+        return True
+
+    def insert_newline(self) -> bool:
+        """
+        在每個游標插入換行
+        Insert a line break at every caret.
+
+        :return: 有插入時為 ``True`` / ``True`` when anything was inserted
+        """
+        return self.insert_text("\n")
+
+    def move_all(self, offset: int) -> bool:
+        """
+        把每個額外游標左右移動
+        Move every extra caret left or right.
+
+        :param offset: 移動量（負數往左）/ how far to move, negative for left
+        :return: 有移動時為 ``True`` / ``True`` when the carets moved
+        """
+        if not self._positions:
+            return False
+        self._positions = clamp_positions(
+            [position + offset for position in self._positions], self._document_limit())
+        self._code_edit.viewport().update()
+        return True
+
+    def add_caret_on_neighbouring_line(self, direction: int) -> bool:
+        """
+        在上一行或下一行的同一欄加一個游標
+        Add a caret on the line above or below, at the same column.
+
+        :param direction: ``-1`` 為上一行，``1`` 為下一行 / ``-1`` above, ``1`` below
+        :return: 有加入時為 ``True`` / ``True`` when a caret was added
+        """
+        document = self._code_edit.document()
+        cursor = self._code_edit.textCursor()
+        reference = max(self._positions, default=cursor.position()) if direction > 0 else \
+            min(self._positions, default=cursor.position())
+        block = document.findBlock(reference)
+        column = reference - block.position()
+        target = document.findBlockByNumber(block.blockNumber() + direction)
+        if not target.isValid():
+            return False
+        position = target.position() + min(column, len(target.text()))
+        self._positions = add_position(self._positions, position)
+        self._code_edit.viewport().update()
+        return True
+
+    def add_caret_at_next_occurrence(self) -> bool:
+        """
+        在游標所在字詞的下一個出現處加一個游標
+        Add a caret at the next occurrence of the word under the caret.
+
+        游標放在該字詞的結尾，接著輸入就會接在它後面——這是「同時改掉每一處」
+        最常用的形式。
+        The caret goes to the end of that occurrence, so typing continues after
+        it, which is the form most used for changing every occurrence at once.
+
+        :return: 找到並加入時為 ``True`` / ``True`` when another occurrence was found
+        """
+        cursor = self._code_edit.textCursor()
+        word_cursor = self._code_edit.textCursor()
+        word_cursor.select(QTextCursor.SelectionType.WordUnderCursor)
+        word = word_cursor.selectedText()
+        if not word:
+            return False
+        text = self._code_edit.toPlainText()
+        start_from = max([cursor.position(), *self._positions], default=0)
+        found = text.find(word, start_from)
+        if found < 0:
+            # 找到檔尾就從頭再找一次，與其他編輯器的行為一致
+            # Wrapping to the top matches what other editors do
+            found = text.find(word)
+            if found < 0 or found + len(word) in self._positions:
+                return False
+        self._positions = add_position(self._positions, found + len(word))
+        self._code_edit.viewport().update()
         return True
 
     def _document_limit(self) -> int:

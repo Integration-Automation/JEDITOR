@@ -103,6 +103,19 @@ _DIFF_REFRESH_DELAY_MS = 400
 # markers because it spawns a subprocess
 _LINT_REFRESH_DELAY_MS = 900
 
+# 多重游標啟用時，這些按鍵各自對應一個整批動作
+# With extra carets active, each of these keys drives one batched action
+_MULTI_CURSOR_KEYS = {
+    Qt.Key.Key_Escape: lambda manager: manager.clear(),
+    Qt.Key.Key_Backspace: lambda manager: manager.delete_before(),
+    Qt.Key.Key_Delete: lambda manager: manager.delete_after(),
+    Qt.Key.Key_Return: lambda manager: manager.insert_newline(),
+    Qt.Key.Key_Enter: lambda manager: manager.insert_newline(),
+    Qt.Key.Key_Left: lambda manager: manager.move_all(-1),
+    Qt.Key.Key_Right: lambda manager: manager.move_all(1),
+}
+
+
 def _lint_underline_format() -> QTextCharFormat:
     """診斷底線的樣式 / The format used to underline a diagnostic."""
     formats = QTextCharFormat()
@@ -2060,6 +2073,9 @@ class CodeEditor(QPlainTextEdit):
         for shortcut, handler in (
             ("Ctrl+Shift+L", self.add_cursors_to_selected_lines),
             ("Ctrl+Shift+Escape", self.clear_extra_cursors),
+            ("Ctrl+Alt+Shift+Up", self.add_cursor_above),
+            ("Ctrl+Alt+Shift+Down", self.add_cursor_below),
+            ("Ctrl+D", self.add_cursor_at_next_occurrence),
         ):
             action = QAction(self)
             action.setShortcut(shortcut)
@@ -2074,6 +2090,33 @@ class CodeEditor(QPlainTextEdit):
         :return: 額外游標的數量 / how many extra carets were added
         """
         return self.multi_cursor_manager.add_to_selected_lines()
+
+    def add_cursor_above(self) -> bool:
+        """
+        在上一行的同一欄加一個游標
+        Add a caret on the line above, at the same column.
+
+        :return: 有加入時為 ``True`` / ``True`` when a caret was added
+        """
+        return self.multi_cursor_manager.add_caret_on_neighbouring_line(-1)
+
+    def add_cursor_below(self) -> bool:
+        """
+        在下一行的同一欄加一個游標
+        Add a caret on the line below, at the same column.
+
+        :return: 有加入時為 ``True`` / ``True`` when a caret was added
+        """
+        return self.multi_cursor_manager.add_caret_on_neighbouring_line(1)
+
+    def add_cursor_at_next_occurrence(self) -> bool:
+        """
+        在游標所在字詞的下一個出現處加一個游標
+        Add a caret at the next occurrence of the word under the caret.
+
+        :return: 找到並加入時為 ``True`` / ``True`` when another occurrence was found
+        """
+        return self.multi_cursor_manager.add_caret_at_next_occurrence()
 
     def clear_extra_cursors(self) -> bool:
         """
@@ -2123,10 +2166,9 @@ class CodeEditor(QPlainTextEdit):
         if not self.multi_cursor_manager.active:
             return False
         key = event.key()
-        if key == Qt.Key.Key_Escape:
-            return self.multi_cursor_manager.clear()
-        if key == Qt.Key.Key_Backspace:
-            return self.multi_cursor_manager.delete_before()
+        handler = _MULTI_CURSOR_KEYS.get(key)
+        if handler is not None:
+            return handler(self.multi_cursor_manager)
         if event.text() and event.text().isprintable():
             return self.multi_cursor_manager.insert_text(event.text())
         return False

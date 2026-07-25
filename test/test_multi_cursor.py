@@ -187,6 +187,108 @@ class TestMultiCursorEditing:
         assert editor.multi_cursor_manager.delete_before() is False
         assert editor.toPlainText() == "abc"
 
+    def test_delete_reaches_every_line(self, editor):
+        editor.setPlainText("one!\ntwo!\nthree!")
+        _select_all(editor)
+        editor.add_cursors_to_selected_lines()
+        # Each caret sits at its line end, so Delete takes the newline after it.
+        editor.multi_cursor_manager.move_all(-1)
+        cursor = editor.textCursor()
+        cursor.setPosition(cursor.position() - 1)
+        editor.setTextCursor(cursor)
+        _press(editor, Qt.Key.Key_Delete)
+        assert editor.toPlainText() == "one\ntwo\nthree"
+
+    def test_delete_at_the_document_end_is_refused(self, editor):
+        editor.setPlainText("abc")
+        editor.multi_cursor_manager.toggle_at(3)
+        assert editor.multi_cursor_manager.delete_after() is False
+        assert editor.toPlainText() == "abc"
+
+    def test_enter_splits_every_line(self, editor):
+        editor.setPlainText("ab\ncd")
+        _select_all(editor)
+        editor.add_cursors_to_selected_lines()
+        _press(editor, Qt.Key.Key_Return)
+        assert editor.toPlainText() == "ab\n\ncd\n"
+
+    def test_arrow_keys_move_the_extra_carets(self, editor):
+        editor.setPlainText("hello world")
+        editor.multi_cursor_manager.toggle_at(5)
+        _press(editor, Qt.Key.Key_Right)
+        assert editor.multi_cursor_manager.positions() == [6]
+        _press(editor, Qt.Key.Key_Left)
+        assert editor.multi_cursor_manager.positions() == [5]
+
+    def test_carets_never_move_outside_the_document(self, editor):
+        editor.setPlainText("ab")
+        editor.multi_cursor_manager.toggle_at(0)
+        editor.multi_cursor_manager.move_all(-5)
+        assert editor.multi_cursor_manager.positions() == [0]
+        editor.multi_cursor_manager.move_all(99)
+        assert editor.multi_cursor_manager.positions() == [2]
+
+    def test_a_caret_can_be_added_on_the_line_below(self, editor):
+        editor.setPlainText("alpha\nbeta\ngamma")
+        cursor = editor.textCursor()
+        cursor.setPosition(2)
+        editor.setTextCursor(cursor)
+        assert editor.add_cursor_below() is True
+        assert editor.multi_cursor_manager.positions() == [8]
+
+    def test_a_caret_can_be_added_on_the_line_above(self, editor):
+        editor.setPlainText("alpha\nbeta\ngamma")
+        cursor = editor.textCursor()
+        cursor.setPosition(8)
+        editor.setTextCursor(cursor)
+        assert editor.add_cursor_above() is True
+        assert editor.multi_cursor_manager.positions() == [2]
+
+    def test_no_caret_beyond_the_first_or_last_line(self, editor):
+        editor.setPlainText("only one line")
+        assert editor.add_cursor_above() is False
+        assert editor.add_cursor_below() is False
+
+    def test_a_short_line_clamps_the_column(self, editor):
+        editor.setPlainText("longer line\nab")
+        cursor = editor.textCursor()
+        cursor.setPosition(9)
+        editor.setTextCursor(cursor)
+        editor.add_cursor_below()
+        assert editor.multi_cursor_manager.positions() == [14]
+
+    def test_next_occurrence_adds_a_caret(self, editor):
+        editor.setPlainText("name = name + name")
+        cursor = editor.textCursor()
+        cursor.setPosition(1)
+        editor.setTextCursor(cursor)
+        assert editor.add_cursor_at_next_occurrence() is True
+        assert editor.multi_cursor_manager.positions() == [11]
+
+    def test_next_occurrence_of_a_unique_word_wraps_to_itself(self, editor):
+        editor.setPlainText("unique word")
+        cursor = editor.textCursor()
+        cursor.setPosition(1)
+        editor.setTextCursor(cursor)
+        editor.add_cursor_at_next_occurrence()
+        assert editor.multi_cursor_manager.positions() == [6]
+
+    def test_next_occurrence_without_a_word_does_nothing(self, editor):
+        editor.setPlainText("   ")
+        cursor = editor.textCursor()
+        cursor.setPosition(1)
+        editor.setTextCursor(cursor)
+        assert editor.add_cursor_at_next_occurrence() is False
+
+    def test_typing_after_next_occurrence_changes_both(self, editor):
+        editor.setPlainText("name = name")
+        cursor = editor.textCursor()
+        cursor.setPosition(4)
+        editor.setTextCursor(cursor)
+        editor.add_cursor_at_next_occurrence()
+        _type(editor, "s")
+        assert editor.toPlainText() == "names = names"
+
     def test_painting_extra_cursors_does_not_raise(self, editor):
         editor.setPlainText("one\ntwo\nthree")
         _select_all(editor)
