@@ -18,6 +18,7 @@ from je_editor.pyside_ui.code.git_diff.blame_manager import BlameManager
 from je_editor.pyside_ui.code.git_diff.diff_marker_manager import DiffMarkerManager
 from je_editor.pyside_ui.code.lint.lint_manager import LintManager
 from je_editor.pyside_ui.code.selection.smart_selection_manager import SmartSelectionManager
+from je_editor.pyside_ui.code.snippets.snippet_manager import SnippetManager
 from je_editor.utils.file_diff.line_status import (
     LINE_ADDED, LINE_MODIFIED, LINE_REMOVED_ABOVE
 )
@@ -291,6 +292,9 @@ class CodeEditor(QPlainTextEdit):
         self._lint_timer.setInterval(_LINT_REFRESH_DELAY_MS)
         self._lint_timer.timeout.connect(self.request_lint)
         self.request_lint()
+
+        # 片段展開與定位點 / Snippet expansion and its tab stops
+        self.snippet_manager = SnippetManager(self)
 
     def reset_highlighter(self) -> None:
         """重設語法高亮 / Reset syntax highlighter"""
@@ -1961,6 +1965,8 @@ class CodeEditor(QPlainTextEdit):
     def _handle_tab_indent(self, event: QKeyEvent) -> bool:
         """處理 Tab/Shift+Tab 區塊縮排 / Handle block indent; return True if consumed."""
         key = event.key()
+        if key == Qt.Key.Key_Tab and self._handle_snippet_tab():
+            return True
         if key == Qt.Key.Key_Tab and self.textCursor().hasSelection():
             self._indent_selection(indent=True)
             return True
@@ -1969,6 +1975,20 @@ class CodeEditor(QPlainTextEdit):
                 self._indent_selection(indent=False)
             return True
         return False
+
+    def _handle_snippet_tab(self) -> bool:
+        """
+        以 Tab 展開片段，或跳到片段的下一個定位點
+        Expand a snippet on Tab, or move to its next stop.
+
+        兩者都不適用時回傳 ``False``，Tab 就維持原本的縮排行為。
+        Returns ``False`` when neither applies, leaving Tab to indent as before.
+
+        :return: Tab 是否被片段處理掉 / whether Tab was consumed by a snippet
+        """
+        if self.snippet_manager.has_pending_stops:
+            return self.snippet_manager.next_stop()
+        return self.snippet_manager.expand_at_cursor()
 
     def _handle_enter_autoindent(self, event: QKeyEvent) -> None:
         """Enter 自動縮排 / Auto-indent on Enter."""
