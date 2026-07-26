@@ -306,6 +306,7 @@ Plugins are automatically discovered from the `jeditor_plugins/` directory. See 
 | `Ctrl+O` | Open file |
 | `Ctrl+K` | Open folder |
 | `Ctrl+S` | Save file |
+| `Ctrl+Shift+S` | Save every modified tab |
 | `Ctrl+Shift+A` | Command palette |
 | `Ctrl+P` | Quick open (go to file) |
 | `Ctrl+Shift+O` | Go to symbol |
@@ -325,13 +326,33 @@ Plugins are automatically discovered from the `jeditor_plugins/` directory. See 
 | `Ctrl+Alt+Up` | Increment number under caret |
 | `Ctrl+Alt+Down` | Decrement number under caret |
 | `F2` | Rename occurrences in file |
+| `Ctrl+D` | Duplicate line / selection |
+| `Alt+Up` / `Alt+Down` | Move line up / down |
+| `Ctrl+/` | Toggle comment |
+| `Ctrl+Shift+L` | Caret at the end of every selected line |
+| `Ctrl+Alt+N` | Add caret at next occurrence |
+| `Ctrl+Alt+Shift+Up` / `Down` | Add caret above / below |
+| `Ctrl+Shift+Esc` | Back to a single caret |
+| `Ctrl+Shift+R` | Start / stop macro recording |
+| `Ctrl+Shift+G` | Play macro |
+| `Ctrl+Alt+E` | Recent locations |
+| `Ctrl+Alt+\` | Toggle split view |
+| `Ctrl+Alt+M` | Toggle minimap |
+| `F7` / `Shift+F7` | Next / previous change |
+| `Ctrl+Alt+Z` | Revert the change at the caret |
+| `Ctrl+Alt+B` | Toggle inline blame |
 | `Ctrl+J` | Reformat JSON |
 | `Ctrl+Shift+Y` | YAPF Python format |
 | `Ctrl+Alt+P` | PEP8 format checker |
-| `Ctrl+F` | Find text (browser) |
+| `Ctrl+F` | Find text (editor, browser) |
+| `Ctrl+H` | Find and replace |
+| `Ctrl+G` | Go to line |
 | `F5` | Run program |
 | `F9` | Debug |
 | `Shift+F5` | Stop program |
+| `Ctrl+F9` | Toggle breakpoint |
+| `Ctrl+F5` | Debugger: continue |
+| `F10` / `F11` / `Shift+F11` | Debugger: step over / into / out |
 | `Up/Down` | Command history (console) |
 
 ---

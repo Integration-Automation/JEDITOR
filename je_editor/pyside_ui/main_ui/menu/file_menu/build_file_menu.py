@@ -110,7 +110,10 @@ def set_file_menu(ui_we_want_to_set: EditorMain) -> None:
     # 儲存所有分頁 / Save every modified tab
     ui_we_want_to_set.file_menu.save_all_action = QAction(
         language_wrapper.language_word_dict.get("file_menu_save_all_label"))
-    ui_we_want_to_set.file_menu.save_all_action.setShortcut("Ctrl+Alt+S")
+    # Ctrl+Alt+S 是編輯器的「排序選取的行」，因此這裡用慣例的 Ctrl+Shift+S
+    # Ctrl+Alt+S sorts the selected lines in the editor, so this uses the
+    # conventional Ctrl+Shift+S
+    ui_we_want_to_set.file_menu.save_all_action.setShortcut("Ctrl+Shift+S")
     ui_we_want_to_set.file_menu.save_all_action.triggered.connect(
         lambda: save_all_tabs(ui_we_want_to_set))
     ui_we_want_to_set.file_menu.addAction(ui_we_want_to_set.file_menu.save_all_action)

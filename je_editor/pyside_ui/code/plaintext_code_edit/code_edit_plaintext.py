@@ -41,6 +41,9 @@ from je_editor.utils.file_diff.unified import unified_diff_text
 from je_editor.utils.lint.ruff_diagnostics import diagnostics_from_entries
 from je_editor.utils.macro.keystroke_macro import KeystrokeMacro
 from je_editor.utils.selection.surround import SURROUND_PAIRS, surround
+from je_editor.utils.shortcuts.shortcut_registry import (
+    WINDOW_SHORTCUTS, ShortcutRegistry
+)
 from je_editor.utils.line_ops.line_operations import (
     join_lines, natural_sort, remove_blank_lines, reverse_lines, sort_lines, unique_lines
 )
@@ -252,23 +255,20 @@ class CodeEditor(QPlainTextEdit):
         self.setLineWrapMode(self.LineWrapMode.NoWrap)
         self.setWordWrapMode(QTextOption.WrapMode.WrapAnywhere)
 
-        # 搜尋功能 (Ctrl+F)
-        self.search_action = QAction("Search")
-        self.search_action.setShortcut("Ctrl+f")
-        self.search_action.triggered.connect(self.start_search_dialog)
-        self.addAction(self.search_action)
+        # 這個編輯器已經指派出去的快捷鍵；以選單與工具列佔用的組合作為起點，
+        # 重複指派時會留下警告紀錄
+        # The sequences this editor has handed out, seeded with the ones the menus
+        # and toolbar already take; a clash is logged rather than passing silently
+        self.shortcut_registry = ShortcutRegistry(WINDOW_SHORTCUTS)
 
-        # 搜尋與取代 (Ctrl+Shift+F) / Search & Replace shortcut
-        self.search_replace_action = QAction("Search & Replace")
-        self.search_replace_action.setShortcut("Ctrl+Shift+f")
-        self.search_replace_action.triggered.connect(self.open_search_replace_dialog)
-        self.addAction(self.search_replace_action)
-
-        # 跳到指定行 (Ctrl+G) / Go to Line shortcut
-        self.goto_line_action = QAction("Go to Line")
-        self.goto_line_action.setShortcut("Ctrl+g")
-        self.goto_line_action.triggered.connect(self.go_to_line)
-        self.addAction(self.goto_line_action)
+        # 搜尋 (Ctrl+F)、搜尋與取代 (Ctrl+H)、跳到指定行 (Ctrl+G)
+        # Search (Ctrl+F), search & replace (Ctrl+H) and go to line (Ctrl+G)
+        self.search_action = self._add_shortcut_action(
+            "Ctrl+F", "search", self.start_search_dialog)
+        self.search_replace_action = self._add_shortcut_action(
+            "Ctrl+H", "search_and_replace", self.open_search_replace_dialog)
+        self.goto_line_action = self._add_shortcut_action(
+            "Ctrl+G", "go_to_line", self.go_to_line)
 
         # 自動補全初始化
         self.completer: Union[None, QCompleter] = None
@@ -548,22 +548,58 @@ class CodeEditor(QPlainTextEdit):
             text = self.search_box.search_input.text()
             self.find(text, QTextDocument.FindFlag.FindBackward)
 
+    # ── 快捷鍵註冊 / Shortcut registration ────────────────────────
+
+    def _add_shortcut_action(self, sequence: str, command: str, handler) -> QAction:
+        """
+        建立一個綁定快捷鍵的動作，並登記到本編輯器的快捷鍵表
+        Create an action bound to a key sequence and record it in this editor's table.
+
+        兩個動作共用同一組按鍵時，Qt 不會挑一個執行而是兩個都不執行，因此每組按鍵
+        都要先登記；重複指派會留下警告紀錄，測試也會直接失敗。
+        Two actions sharing a sequence make Qt run neither of them, so every
+        sequence is recorded here first: a clash is logged, and a test fails on it
+        outright.
+
+        :param sequence: 按鍵組合 / the key sequence
+        :param command: 指令名稱，用於衝突訊息 / the command name, used in clash messages
+        :param handler: 觸發時呼叫的函式 / what to call when it fires
+        :return: 建立好的動作 / the action that was created
+        """
+        action = QAction(self)
+        action.setObjectName(command)
+        action.setShortcut(sequence)
+        action.triggered.connect(handler)
+        owner = self.shortcut_registry.register(sequence, command)
+        if owner is not None:
+            jeditor_logger.warning(
+                f"CodeEditor shortcut {sequence} for {command} is already taken by {owner}")
+        self.addAction(action)
+        return action
+
+    def _add_shortcut_actions(self, bindings) -> None:
+        """
+        一次註冊多組快捷鍵
+        Register several shortcuts at once.
+
+        :param bindings: ``(按鍵, 指令名稱, 處理函式)`` 的序列
+            / a sequence of ``(key sequence, command name, handler)``
+        """
+        for sequence, command, handler in bindings:
+            self._add_shortcut_action(sequence, command, handler)
+
     # ── 程式碼折疊與書籤 / Code folding and bookmarks ──────────────
 
     def _register_fold_bookmark_actions(self) -> None:
         """註冊折疊與書籤的快捷鍵 / Register folding and bookmark shortcuts."""
-        for shortcut, handler in (
-            ("Ctrl+Shift+[", self.toggle_fold_at_cursor),
-            ("Ctrl+Alt+[", self.fold_all),
-            ("Ctrl+Alt+]", self.unfold_all),
-            ("Ctrl+Alt+K", self.toggle_bookmark),
-            ("Ctrl+Alt+L", self.next_bookmark),
-            ("Ctrl+Alt+J", self.previous_bookmark),
-        ):
-            action = QAction(self)
-            action.setShortcut(shortcut)
-            action.triggered.connect(handler)
-            self.addAction(action)
+        self._add_shortcut_actions((
+            ("Ctrl+Shift+[", "toggle_fold", self.toggle_fold_at_cursor),
+            ("Ctrl+Alt+[", "fold_all", self.fold_all),
+            ("Ctrl+Alt+]", "unfold_all", self.unfold_all),
+            ("Ctrl+Alt+K", "toggle_bookmark", self.toggle_bookmark),
+            ("Ctrl+Alt+L", "next_bookmark", self.next_bookmark),
+            ("Ctrl+Alt+J", "previous_bookmark", self.previous_bookmark),
+        ))
 
     def _on_text_changed_for_features(self) -> None:
         """
@@ -599,17 +635,20 @@ class CodeEditor(QPlainTextEdit):
         self.diff_marker_manager.load_baseline(self.current_file)
 
     def _register_diff_marker_actions(self) -> None:
-        """註冊變更跳轉快捷鍵 / Register the change-navigation shortcuts."""
-        for shortcut, handler in (
-            ("Ctrl+Alt+Down", self.next_change),
-            ("Ctrl+Alt+Up", self.previous_change),
-            ("Ctrl+Alt+Z", self.revert_change_at_cursor),
-            ("Ctrl+Alt+B", self.toggle_blame),
-        ):
-            action = QAction(self)
-            action.setShortcut(shortcut)
-            action.triggered.connect(handler)
-            self.addAction(action)
+        """
+        註冊變更跳轉快捷鍵
+        Register the change-navigation shortcuts.
+
+        用 F7／Shift+F7 而不是 Ctrl+Alt+Up／Down：後者是游標處數字加減的按鍵。
+        F7 and Shift+F7 rather than Ctrl+Alt+Up/Down, which increment and
+        decrement the number under the caret.
+        """
+        self._add_shortcut_actions((
+            ("F7", "next_change", self.next_change),
+            ("Shift+F7", "previous_change", self.previous_change),
+            ("Ctrl+Alt+Z", "revert_change", self.revert_change_at_cursor),
+            ("Ctrl+Alt+B", "toggle_blame", self.toggle_blame),
+        ))
 
     def next_change(self) -> bool:
         """
@@ -972,14 +1011,10 @@ class CodeEditor(QPlainTextEdit):
 
     def _register_history_actions(self) -> None:
         """註冊上一步／下一步快捷鍵 / Register back/forward shortcuts."""
-        for shortcut, handler in (
-            ("Alt+Left", self.navigate_back),
-            ("Alt+Right", self.navigate_forward),
-        ):
-            action = QAction(self)
-            action.setShortcut(shortcut)
-            action.triggered.connect(handler)
-            self.addAction(action)
+        self._add_shortcut_actions((
+            ("Alt+Left", "navigate_back", self.navigate_back),
+            ("Alt+Right", "navigate_forward", self.navigate_forward),
+        ))
 
     def _record_cursor_jump(self) -> None:
         """
@@ -1432,14 +1467,10 @@ class CodeEditor(QPlainTextEdit):
 
     def _register_smart_selection_actions(self) -> None:
         """註冊智慧選取快捷鍵 / Register smart selection shortcuts."""
-        for shortcut, handler in (
-            ("Ctrl+Alt+Right", self.expand_selection),
-            ("Ctrl+Alt+Left", self.shrink_selection),
-        ):
-            action = QAction(self)
-            action.setShortcut(shortcut)
-            action.triggered.connect(handler)
-            self.addAction(action)
+        self._add_shortcut_actions((
+            ("Ctrl+Alt+Right", "expand_selection", self.expand_selection),
+            ("Ctrl+Alt+Left", "shrink_selection", self.shrink_selection),
+        ))
 
     def expand_selection(self) -> None:
         """把選取擴大到下一個更大的範圍 / Expand the selection to the next larger range."""
@@ -1453,15 +1484,11 @@ class CodeEditor(QPlainTextEdit):
 
     def _register_number_actions(self) -> None:
         """註冊數字加減快捷鍵 / Register number increment/decrement shortcuts."""
-        for shortcut, delta in (("Ctrl+Alt+Up", 1), ("Ctrl+Alt+Down", -1)):
-            action = QAction(self)
-            action.setShortcut(shortcut)
-            action.triggered.connect(lambda checked=False, step=delta: self.adjust_number(step))
-            self.addAction(action)
-        rename_action = QAction(self)
-        rename_action.setShortcut("F2")
-        rename_action.triggered.connect(self.rename_word_under_cursor)
-        self.addAction(rename_action)
+        self._add_shortcut_actions((
+            ("Ctrl+Alt+Up", "increment_number", lambda: self.adjust_number(1)),
+            ("Ctrl+Alt+Down", "decrement_number", lambda: self.adjust_number(-1)),
+            ("F2", "rename_occurrences", self.rename_word_under_cursor),
+        ))
 
     def rename_word_under_cursor(self) -> bool:
         """
@@ -1521,15 +1548,11 @@ class CodeEditor(QPlainTextEdit):
 
     def _register_line_operation_actions(self) -> None:
         """註冊行操作快捷鍵 / Register line-operation shortcuts."""
-        for shortcut, handler in (
-            ("Ctrl+Shift+D", self.delete_current_line),
-            ("Ctrl+Shift+J", self.join_selected_lines),
-            ("Ctrl+Alt+S", self.sort_selected_lines),
-        ):
-            action = QAction(self)
-            action.setShortcut(shortcut)
-            action.triggered.connect(handler)
-            self.addAction(action)
+        self._add_shortcut_actions((
+            ("Ctrl+Shift+D", "delete_line", self.delete_current_line),
+            ("Ctrl+Shift+J", "join_lines", self.join_selected_lines),
+            ("Ctrl+Alt+S", "sort_lines", self.sort_selected_lines),
+        ))
 
     def _selected_block_range(self, cursor: QTextCursor) -> tuple[int, int]:
         """取得選取（或游標所在）涵蓋的 block 區間 / The block range covered by the selection."""
@@ -2182,18 +2205,22 @@ class CodeEditor(QPlainTextEdit):
             cursor.blockNumber(), cursor.positionInBlock())
 
     def _register_breakpoint_actions(self) -> None:
-        """註冊中斷點與逐步執行的快捷鍵 / Register breakpoint and stepping shortcuts."""
-        for shortcut, handler in (
-            ("F9", self.toggle_breakpoint),
-            ("F5", lambda: self.send_debugger_command("continue")),
-            ("F10", lambda: self.send_debugger_command("over")),
-            ("F11", lambda: self.send_debugger_command("into")),
-            ("Shift+F11", lambda: self.send_debugger_command("out")),
-        ):
-            action = QAction(self)
-            action.setShortcut(shortcut)
-            action.triggered.connect(handler)
-            self.addAction(action)
+        """
+        註冊中斷點與逐步執行的快捷鍵
+        Register breakpoint and stepping shortcuts.
+
+        F9 與 F5 是工具列的「執行除錯器」與「執行」，因此切換中斷點與繼續執行改用
+        Ctrl+F9 與 Ctrl+F5。
+        The toolbar runs the debugger on F9 and the program on F5, so toggling a
+        breakpoint and continuing use Ctrl+F9 and Ctrl+F5 instead.
+        """
+        self._add_shortcut_actions((
+            ("Ctrl+F9", "toggle_breakpoint", self.toggle_breakpoint),
+            ("Ctrl+F5", "debug_continue", lambda: self.send_debugger_command("continue")),
+            ("F10", "debug_step_over", lambda: self.send_debugger_command("over")),
+            ("F11", "debug_step_into", lambda: self.send_debugger_command("into")),
+            ("Shift+F11", "debug_step_out", lambda: self.send_debugger_command("out")),
+        ))
 
     def toggle_breakpoint(self) -> bool:
         """
@@ -2260,16 +2287,18 @@ class CodeEditor(QPlainTextEdit):
         return True
 
     def _register_macro_actions(self) -> None:
-        """註冊巨集與環繞選取的快捷鍵 / Register the macro and surround shortcuts."""
-        for shortcut, handler in (
-            ("Ctrl+Shift+R", self.toggle_macro_recording),
-            ("Ctrl+Shift+P", self.play_macro),
-            ("Ctrl+Alt+E", self.show_recent_locations),
-        ):
-            action = QAction(self)
-            action.setShortcut(shortcut)
-            action.triggered.connect(handler)
-            self.addAction(action)
+        """
+        註冊巨集與最近位置的快捷鍵
+        Register the macro and recent-location shortcuts.
+
+        重播用 Ctrl+Shift+G，因為 Ctrl+Shift+P 是選單的 pip 安裝。
+        Playback uses Ctrl+Shift+G because Ctrl+Shift+P installs packages with pip.
+        """
+        self._add_shortcut_actions((
+            ("Ctrl+Shift+R", "record_macro", self.toggle_macro_recording),
+            ("Ctrl+Shift+G", "play_macro", self.play_macro),
+            ("Ctrl+Alt+E", "recent_locations", self.show_recent_locations),
+        ))
 
     def recent_location_labels(self) -> list[str]:
         """
@@ -2365,18 +2394,21 @@ class CodeEditor(QPlainTextEdit):
         return True
 
     def _register_multi_cursor_actions(self) -> None:
-        """註冊多重游標的快捷鍵 / Register the multi-caret shortcuts."""
-        for shortcut, handler in (
-            ("Ctrl+Shift+L", self.add_cursors_to_selected_lines),
-            ("Ctrl+Shift+Escape", self.clear_extra_cursors),
-            ("Ctrl+Alt+Shift+Up", self.add_cursor_above),
-            ("Ctrl+Alt+Shift+Down", self.add_cursor_below),
-            ("Ctrl+D", self.add_cursor_at_next_occurrence),
-        ):
-            action = QAction(self)
-            action.setShortcut(shortcut)
-            action.triggered.connect(handler)
-            self.addAction(action)
+        """
+        註冊多重游標的快捷鍵
+        Register the multi-caret shortcuts.
+
+        「在下一個出現處加游標」用 Ctrl+Alt+N：Ctrl+D 一直是複製目前行。
+        Adding a caret at the next occurrence uses Ctrl+Alt+N, because Ctrl+D has
+        always duplicated the current line.
+        """
+        self._add_shortcut_actions((
+            ("Ctrl+Shift+L", "cursors_on_selected_lines", self.add_cursors_to_selected_lines),
+            ("Ctrl+Shift+Escape", "clear_extra_cursors", self.clear_extra_cursors),
+            ("Ctrl+Alt+Shift+Up", "cursor_above", self.add_cursor_above),
+            ("Ctrl+Alt+Shift+Down", "cursor_below", self.add_cursor_below),
+            ("Ctrl+Alt+N", "cursor_at_next_occurrence", self.add_cursor_at_next_occurrence),
+        ))
 
     def add_cursors_to_selected_lines(self) -> int:
         """
