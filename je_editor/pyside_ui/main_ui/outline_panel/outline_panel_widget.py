@@ -66,6 +66,20 @@ class OutlinePanelWidget(QWidget):
 
         self.refresh()
 
+    def retranslate(self) -> None:
+        """
+        換語言後重新標示自己
+        Relabel after the language changes.
+        """
+        word = language_wrapper.language_word_dict
+        self.refresh_button.setText(word.get("outline_panel_refresh"))
+        self.tree.setHeaderLabels([
+            word.get("outline_panel_col_symbol"),
+            word.get("outline_panel_col_kind"),
+            word.get("outline_panel_col_line"),
+        ])
+        self.refresh()
+
     def current_code_edit(self):
         """
         取得目前分頁的程式碼編輯器
