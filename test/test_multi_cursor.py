@@ -13,6 +13,7 @@ from je_editor.utils.multi_cursor.cursor_positions import (
     clamp_positions,
     column_caret_columns,
     column_span,
+    positions_after_replacing,
     remove_position,
     shift_after_delete,
     shift_after_insert,
@@ -66,6 +67,29 @@ class TestShifting:
 
     def test_clamping_an_empty_document(self):
         assert clamp_positions([3], -1) == []
+
+
+class TestPositionsAfterReplacing:
+    """Where each caret lands once every range is swapped for the same text."""
+
+    def test_an_insertion_puts_the_caret_after_it(self):
+        assert positions_after_replacing([(3, 3)], 2) == [5]
+
+    def test_a_later_caret_absorbs_the_earlier_insertions(self):
+        assert positions_after_replacing([(0, 0), (5, 5)], 1) == [1, 7]
+
+    def test_replacing_accounts_for_what_was_removed(self):
+        # "XXX" -> "Z" at 1 and 7 leaves the second caret two places earlier.
+        assert positions_after_replacing([(1, 4), (7, 10)], 1) == [2, 6]
+
+    def test_deleting_pulls_the_carets_back(self):
+        assert positions_after_replacing([(1, 2), (5, 6)], 0) == [1, 4]
+
+    def test_ranges_are_handled_in_position_order(self):
+        assert positions_after_replacing([(5, 5), (0, 0)], 1) == [1, 7]
+
+    def test_no_ranges_gives_no_positions(self):
+        assert positions_after_replacing([], 3) == []
 
 
 class TestColumnGeometry:
@@ -131,9 +155,9 @@ def _type(editor, text: str) -> None:
     QTest.keyClicks(editor, text)
 
 
-def _press(editor, key) -> None:
-    """Send one non-printable key."""
-    QTest.keyClick(editor, key)
+def _press(editor, key, modifier=Qt.KeyboardModifier.NoModifier) -> None:
+    """Send one non-printable key, optionally with a modifier held."""
+    QTest.keyClick(editor, key, modifier)
 
 
 class TestMultiCursorEditing:
@@ -304,6 +328,81 @@ class TestMultiCursorEditing:
     def test_vertical_movement_needs_extra_carets(self, editor):
         editor.setPlainText("alpha\nbravo")
         assert editor.multi_cursor_manager.move_all_vertically(1) is False
+
+    def test_shift_right_selects_at_every_caret(self, editor):
+        editor.setPlainText("abcd\nefgh")
+        editor.multi_cursor_manager.toggle_at(0)
+        cursor = editor.textCursor()
+        cursor.setPosition(5)
+        editor.setTextCursor(cursor)
+        _press(editor, Qt.Key.Key_Right, Qt.KeyboardModifier.ShiftModifier)
+        assert editor.multi_cursor_manager.selections() == [(0, 1)]
+        assert editor.textCursor().selectedText() == "e"
+
+    def test_the_selection_keeps_growing(self, editor):
+        editor.setPlainText("abcd")
+        editor.multi_cursor_manager.toggle_at(0)
+        _press(editor, Qt.Key.Key_Right, Qt.KeyboardModifier.ShiftModifier)
+        _press(editor, Qt.Key.Key_Right, Qt.KeyboardModifier.ShiftModifier)
+        assert editor.multi_cursor_manager.selections() == [(0, 2)]
+
+    def test_selecting_backwards_works_too(self, editor):
+        editor.setPlainText("abcd")
+        editor.multi_cursor_manager.toggle_at(3)
+        _press(editor, Qt.Key.Key_Left, Qt.KeyboardModifier.ShiftModifier)
+        assert editor.multi_cursor_manager.selections() == [(2, 3)]
+
+    def test_shift_end_selects_to_the_line_end(self, editor):
+        editor.setPlainText("abcd\nefgh")
+        editor.multi_cursor_manager.toggle_at(1)
+        _press(editor, Qt.Key.Key_End, Qt.KeyboardModifier.ShiftModifier)
+        assert editor.multi_cursor_manager.selections() == [(1, 4)]
+
+    def test_typing_replaces_every_selection(self, editor):
+        editor.setPlainText("aXc\ndXf")
+        editor.multi_cursor_manager.toggle_at(1)
+        cursor = editor.textCursor()
+        cursor.setPosition(5)
+        editor.setTextCursor(cursor)
+        _press(editor, Qt.Key.Key_Right, Qt.KeyboardModifier.ShiftModifier)
+        _press(editor, Qt.Key.Key_Y)
+        assert editor.toPlainText() == "ayc\ndyf"
+
+    def test_backspace_removes_every_selection(self, editor):
+        editor.setPlainText("aXc\ndXf")
+        editor.multi_cursor_manager.toggle_at(1)
+        cursor = editor.textCursor()
+        cursor.setPosition(5)
+        editor.setTextCursor(cursor)
+        _press(editor, Qt.Key.Key_Right, Qt.KeyboardModifier.ShiftModifier)
+        _press(editor, Qt.Key.Key_Backspace)
+        assert editor.toPlainText() == "ac\ndf"
+
+    def test_replacing_a_longer_selection_still_lines_up(self, editor):
+        editor.setPlainText("aXXXc\ndXXXf")
+        editor.multi_cursor_manager.toggle_at(1)
+        cursor = editor.textCursor()
+        cursor.setPosition(7)
+        editor.setTextCursor(cursor)
+        for _ in range(3):
+            _press(editor, Qt.Key.Key_Right, Qt.KeyboardModifier.ShiftModifier)
+        _press(editor, Qt.Key.Key_Z)
+        assert editor.toPlainText() == "azc\ndzf"
+
+    def test_moving_without_shift_drops_the_selection(self, editor):
+        editor.setPlainText("abcd")
+        editor.multi_cursor_manager.toggle_at(0)
+        _press(editor, Qt.Key.Key_Right, Qt.KeyboardModifier.ShiftModifier)
+        _press(editor, Qt.Key.Key_Right)
+        assert editor.multi_cursor_manager.selections() == []
+
+    def test_painting_a_selection_does_not_raise(self, editor):
+        editor.setPlainText("abcd\nefgh")
+        editor.multi_cursor_manager.toggle_at(0)
+        _press(editor, Qt.Key.Key_Down, Qt.KeyboardModifier.ShiftModifier)
+        editor.show()
+        QApplication.processEvents()
+        editor.hide()
 
     def test_carets_never_move_outside_the_document(self, editor):
         editor.setPlainText("ab")

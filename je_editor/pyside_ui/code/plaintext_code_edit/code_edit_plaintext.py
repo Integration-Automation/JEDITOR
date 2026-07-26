@@ -118,6 +118,13 @@ _DIFF_REFRESH_DELAY_MS = 400
 # markers because it spawns a subprocess
 _LINT_REFRESH_DELAY_MS = 900
 
+# 額外游標選取範圍的底色透明度；夠淡才不會蓋掉底下的文字
+# How solid an extra caret's selection wash is; faint enough to read through
+_EXTRA_SELECTION_ALPHA = 70
+# 選取範圍剛好落在行尾時仍畫出的最小寬度
+# The width still drawn when a selection ends exactly at a line's end
+_EMPTY_SELECTION_WIDTH = 2
+
 # 多重游標啟用時，這些按鍵各自對應一個整批動作
 # With extra carets active, each of these keys drives one batched action
 _MULTI_CURSOR_KEYS = {
@@ -132,6 +139,17 @@ _MULTI_CURSOR_KEYS = {
     Qt.Key.Key_Down: lambda manager: manager.move_all_vertically(1),
     Qt.Key.Key_Home: lambda manager: manager.move_all_to_line_edge(False),
     Qt.Key.Key_End: lambda manager: manager.move_all_to_line_edge(True),
+}
+
+# 按住 Shift 時，同樣的按鍵改為擴大每個游標的選取範圍
+# With Shift held, the same keys extend each caret's selection instead
+_MULTI_CURSOR_SHIFT_KEYS = {
+    Qt.Key.Key_Left: lambda manager: manager.extend_all(-1),
+    Qt.Key.Key_Right: lambda manager: manager.extend_all(1),
+    Qt.Key.Key_Up: lambda manager: manager.extend_all_vertically(-1),
+    Qt.Key.Key_Down: lambda manager: manager.extend_all_vertically(1),
+    Qt.Key.Key_Home: lambda manager: manager.extend_all_to_line_edge(False),
+    Qt.Key.Key_End: lambda manager: manager.extend_all_to_line_edge(True),
 }
 
 
@@ -2597,15 +2615,59 @@ class CodeEditor(QPlainTextEdit):
         super().mouseReleaseEvent(event)
 
     def _paint_extra_cursors(self) -> None:
-        """畫出每個額外游標 / Draw each extra caret."""
+        """畫出每個額外游標與它選取的範圍 / Draw each extra caret and what it selects."""
         painter = QPainter(self.viewport())
-        painter.setPen(actually_color_dict.get("extra_cursor_color"))
+        colour = actually_color_dict.get("extra_cursor_color")
+        self._paint_extra_selections(painter, colour)
+        painter.setPen(colour)
         cursor = QTextCursor(self.document())
         for position in self.multi_cursor_manager.positions():
             cursor.setPosition(min(position, self.document().characterCount() - 1))
             rect = self.cursorRect(cursor)
             painter.drawLine(rect.left(), rect.top(), rect.left(), rect.bottom())
         painter.end()
+
+    def _paint_extra_selections(self, painter: QPainter, colour) -> None:
+        """
+        把每個額外游標選取的範圍畫成淡色底
+        Wash each extra caret's selection in a faint version of the caret colour.
+
+        逐行畫：一段選取可能跨好幾行，每一行的矩形都要各自算。
+        Line by line: a selection can span several, and each needs its own rect.
+        """
+        tint = QColor(colour)
+        tint.setAlpha(_EXTRA_SELECTION_ALPHA)
+        cursor = QTextCursor(self.document())
+        for start, end in self.multi_cursor_manager.selections():
+            for line_start, line_end in self._selection_rows(start, end):
+                cursor.setPosition(line_start)
+                left = self.cursorRect(cursor)
+                cursor.setPosition(line_end)
+                right = self.cursorRect(cursor)
+                painter.fillRect(
+                    left.left(), left.top(),
+                    max(right.left() - left.left(), _EMPTY_SELECTION_WIDTH),
+                    left.height(), tint)
+
+    def _selection_rows(self, start: int, end: int) -> list[tuple[int, int]]:
+        """
+        把一段選取切成每一行各自的範圍
+        Split a selection into one range per line it covers.
+
+        :param start: 選取的起點 / where the selection starts
+        :param end: 選取的終點 / where it ends
+        :return: 每一行的 ``(起, 訖)`` / the ``(start, end)`` of each line's part
+        """
+        document = self.document()
+        rows: list[tuple[int, int]] = []
+        block = document.findBlock(start)
+        while block.isValid() and block.position() < end:
+            row_start = max(start, block.position())
+            row_end = min(end, block.position() + len(block.text()))
+            if row_end >= row_start:
+                rows.append((row_start, row_end))
+            block = block.next()
+        return rows
 
     def _handle_multi_cursor_key(self, event: QKeyEvent) -> bool:
         """
@@ -2618,6 +2680,10 @@ class CodeEditor(QPlainTextEdit):
         if not self.multi_cursor_manager.active:
             return False
         key = event.key()
+        if event.modifiers() & Qt.KeyboardModifier.ShiftModifier:
+            extend = _MULTI_CURSOR_SHIFT_KEYS.get(key)
+            if extend is not None:
+                return extend(self.multi_cursor_manager)
         handler = _MULTI_CURSOR_KEYS.get(key)
         if handler is not None:
             return handler(self.multi_cursor_manager)

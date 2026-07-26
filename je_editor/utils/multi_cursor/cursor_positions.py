@@ -126,6 +126,29 @@ def column_caret_columns(
     return [min(target, max(0, length)) for length in line_lengths]
 
 
+def positions_after_replacing(ranges: list[tuple[int, int]], length: int) -> list[int]:
+    """
+    把每個範圍都換成等長的文字之後，各游標落在哪裡
+    Where each caret lands once every range is replaced by text of one length.
+
+    範圍由前往後累積位移：排在越後面的範圍，前面被改寫的次數越多。游標停在自己
+    那段新文字的結尾，接著輸入就會接在後面。
+    The shift accumulates front to back, since a later range has more rewrites
+    ahead of it. Each caret ends up after its own new text, so typing carries on
+    from there.
+
+    :param ranges: 每個游標涵蓋的範圍 ``(起, 訖)``，訖不含 / each caret's ``(start, end)``, end exclusive
+    :param length: 換上去的文字長度 / the length of the text replacing each range
+    :return: 各游標的新位置（依原順序）/ the new caret positions, in the given order
+    """
+    shift = 0
+    moved: list[int] = []
+    for start, end in sorted(ranges):
+        moved.append(start + shift + length)
+        shift += length - (end - start)
+    return moved
+
+
 def clamp_positions(positions: list[int], limit: int) -> list[int]:
     """
     把位置限制在文件範圍內
