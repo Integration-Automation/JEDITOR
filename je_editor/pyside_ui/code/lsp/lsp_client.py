@@ -21,13 +21,17 @@ from PySide6.QtCore import QObject, Signal
 from je_editor.pyside_ui.code.lsp.lsp_session import LspSession, session_registry
 from je_editor.utils.lsp.language_servers import language_id, server_command
 from je_editor.utils.lsp.lsp_protocol import (
+    code_action_titles,
     completion_labels,
     definition_location,
     diagnostic_entries,
+    document_symbols,
     file_uri,
     hover_text,
     notification,
+    reference_locations,
     request,
+    signature_text,
     text_edits,
 )
 
@@ -43,6 +47,10 @@ class LspClient(QObject):
     definition_ready = Signal(dict)  # {"path": str, "line": int, "column": int}
     hover_ready = Signal(str)
     edits_ready = Signal(list)  # list[dict] of text edits to apply
+    signature_ready = Signal(str)
+    references_ready = Signal(list)  # list[dict] of {"path", "line", "column"}
+    code_actions_ready = Signal(list)  # list[dict] of {"title", "edits"}
+    symbols_ready = Signal(list)  # list[dict] of {"name", "kind", "line", "depth"}
 
     def __init__(self, parent: QObject | None = None) -> None:
         """
@@ -56,6 +64,25 @@ class LspClient(QObject):
         self._pending_definition_id: int | None = None
         self._pending_hover_id: int | None = None
         self._pending_edit_id: int | None = None
+        self._pending_signature_id: int | None = None
+        self._pending_references_id: int | None = None
+        self._pending_action_id: int | None = None
+        self._pending_symbol_id: int | None = None
+        # 伺服器最後一次回報的診斷，未經轉換 / The server's last diagnostics, unconverted
+        self._raw_diagnostics: list = []
+
+    def diagnostics_on_line(self, line: int) -> list:
+        """
+        取得某一行的診斷，維持伺服器給的原始格式
+        The diagnostics on one line, exactly as the server reported them.
+
+        :param line: 以 0 起算的行號，與 LSP 相同 / the 0-based line, as LSP counts them
+        :return: 該行的診斷 / the diagnostics there
+        """
+        return [
+            item for item in self._raw_diagnostics
+            if ((item.get("range") or {}).get("start") or {}).get("line") == line
+        ]
 
     @property
     def running(self) -> bool:
@@ -204,6 +231,79 @@ class LspClient(QObject):
             "options": {"tabSize": tab_size, "insertSpaces": True},
         }))
 
+    def request_signature_help(self, line: int, column: int) -> bool:
+        """
+        要求目前正在輸入的呼叫的簽章
+        Ask for the signature of the call being typed.
+
+        :param line: 以 0 起算的行號 / the 0-based line
+        :param column: 以 0 起算的欄位 / the 0-based column
+        :return: 有送出時為 ``True`` / ``True`` when the request was sent
+        """
+        return self._position_request(
+            "textDocument/signatureHelp", line, column, "_pending_signature_id")
+
+    def request_references(self, line: int, column: int) -> bool:
+        """
+        要求游標所在符號的所有參照
+        Ask where the symbol at a position is referred to.
+
+        :param line: 以 0 起算的行號 / the 0-based line
+        :param column: 以 0 起算的欄位 / the 0-based column
+        :return: 有送出時為 ``True`` / ``True`` when the request was sent
+        """
+        if self._file_path is None:
+            return False
+        request_id = self._take_id()
+        self._pending_references_id = request_id
+        return self._send_request(request(request_id, "textDocument/references", {
+            "textDocument": {"uri": file_uri(self._file_path)},
+            "position": {"line": line, "character": column},
+            "context": {"includeDeclaration": True},
+        }))
+
+    def request_code_actions(self, line: int, column: int, diagnostics: list | None = None) -> bool:
+        """
+        要求某個位置可以套用的修正
+        Ask what can be done about a position.
+
+        把該處的診斷一併送去，伺服器才知道要提出哪些修正——沒有診斷時通常只會回
+        重構類的動作。
+        The diagnostics there go along with it, since that is what tells the
+        server which fixes to offer; without them the reply is usually only
+        refactorings.
+
+        :param line: 以 0 起算的行號 / the 0-based line
+        :param column: 以 0 起算的欄位 / the 0-based column
+        :param diagnostics: 該處的診斷 / the diagnostics reported there
+        :return: 有送出時為 ``True`` / ``True`` when the request was sent
+        """
+        if self._file_path is None:
+            return False
+        request_id = self._take_id()
+        self._pending_action_id = request_id
+        position = {"line": line, "character": column}
+        return self._send_request(request(request_id, "textDocument/codeAction", {
+            "textDocument": {"uri": file_uri(self._file_path)},
+            "range": {"start": position, "end": position},
+            "context": {"diagnostics": diagnostics or []},
+        }))
+
+    def request_document_symbols(self) -> bool:
+        """
+        要求這個檔案裡的所有符號
+        Ask for every symbol in this file.
+
+        :return: 有送出時為 ``True`` / ``True`` when the request was sent
+        """
+        if self._file_path is None:
+            return False
+        request_id = self._take_id()
+        self._pending_symbol_id = request_id
+        return self._send_request(request(request_id, "textDocument/documentSymbol", {
+            "textDocument": {"uri": file_uri(self._file_path)},
+        }))
+
     def request_definition(self, line: int, column: int) -> bool:
         """
         要求某個位置的定義位置
@@ -235,8 +335,15 @@ class LspClient(QObject):
         :param message: 已解析的訊息 / the parsed message
         """
         if message.get("method") == "textDocument/publishDiagnostics":
-            entries = diagnostic_entries(message.get("params"))
-            self.diagnostics_ready.emit(entries)
+            params = message.get("params")
+            # 原樣留一份：要求修正時得把伺服器自己給的診斷送回去，而不是編輯器
+            # 轉換過的版本（行號起算方式都不同）
+            # Keep them as they came: asking for a fix means handing the server
+            # back its own diagnostics, not the editor's converted form, which
+            # does not even count lines the same way
+            raw = (params or {}).get("diagnostics")
+            self._raw_diagnostics = list(raw) if isinstance(raw, list) else []
+            self.diagnostics_ready.emit(diagnostic_entries(params))
             return
         if "result" not in message:
             return
@@ -262,6 +369,35 @@ class LspClient(QObject):
             edits = text_edits(message.get("result"), uri)
             if edits:
                 self.edits_ready.emit(edits)
+            return
+        self._handle_reply(message)
+
+    def _handle_reply(self, message: dict) -> None:
+        """
+        處理其餘幾種回覆
+        Handle the remaining kinds of reply.
+
+        每一種都是「編號對得上就解析結果並發出訊號」，因此用一張表處理，不必為每
+        一種各寫一段幾乎相同的判斷。
+        Each is the same shape — a matching id means parse the result and emit —
+        so one table handles them rather than a near-identical branch for each.
+
+        :param message: 已解析的訊息 / the parsed message
+        """
+        replies = (
+            ("_pending_signature_id", signature_text, self.signature_ready),
+            ("_pending_references_id", reference_locations, self.references_ready),
+            ("_pending_action_id", code_action_titles, self.code_actions_ready),
+            ("_pending_symbol_id", document_symbols, self.symbols_ready),
+        )
+        for attribute, parse, signal in replies:
+            if message.get("id") != getattr(self, attribute):
+                continue
+            setattr(self, attribute, None)
+            parsed = parse(message.get("result"))
+            if parsed:
+                signal.emit(parsed)
+            return
 
     def stop(self) -> None:
         """

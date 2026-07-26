@@ -229,6 +229,131 @@ def hover_text(result: object) -> str:
     return "\n".join(texts)
 
 
+def signature_text(result: object) -> str:
+    """
+    從 signature help 回應取出目前這個簽章
+    Take the signature currently in play out of a signature help response.
+
+    只取伺服器指的那一個：一個函式可能有好幾個多載，全部列出來反而看不出正在打的
+    是哪一個。
+    Only the one the server points at is taken: a function may have several
+    overloads, and listing them all hides the one being typed.
+
+    :param result: 伺服器的回應內容 / the server's result
+    :return: 簽章文字，沒有內容時為空字串 / the signature, or an empty string
+    """
+    if not isinstance(result, dict):
+        return ""
+    signatures = result.get("signatures")
+    if not isinstance(signatures, list) or not signatures:
+        return ""
+    index = result.get("activeSignature")
+    if not isinstance(index, int) or not 0 <= index < len(signatures):
+        index = 0
+    active = signatures[index]
+    if not isinstance(active, dict):
+        return ""
+    label = active.get("label")
+    documentation = active.get("documentation")
+    if isinstance(documentation, dict):
+        documentation = documentation.get("value")
+    parts = [str(part).strip() for part in (label, documentation) if isinstance(part, str)]
+    return "\n".join(part for part in parts if part)
+
+
+def reference_locations(result: object) -> list[dict]:
+    """
+    從 references 回應取出所有位置
+    Take every location out of a references response.
+
+    行列與 :func:`definition_location` 一樣轉成 1 起算，跳轉才不必再換算一次。
+    Lines and columns come back 1-based, as :func:`definition_location` gives
+    them, so a jump does not have to convert again.
+
+    :param result: 伺服器的回應內容 / the server's result
+    :return: ``{"path", "line", "column"}`` 的清單 / the locations
+    """
+    if not isinstance(result, list):
+        return []
+    locations = []
+    for item in result:
+        location = definition_location(item)
+        if location is not None:
+            locations.append(location)
+    return locations
+
+
+def code_action_titles(result: object) -> list[dict]:
+    """
+    從 code action 回應取出可以套用的動作
+    Take the applicable actions out of a code action response.
+
+    只保留帶著編輯內容的動作。純指令型的動作要再跟伺服器往返一次才知道要改什麼，
+    列出來卻按不動比不列還糟。
+    Only actions carrying edits are kept: a command-only action needs another
+    round trip before anything can be changed, and listing one that does nothing
+    when pressed is worse than not listing it.
+
+    :param result: 伺服器的回應內容 / the server's result
+    :return: ``{"title", "edits"}`` 的清單 / the actions
+    """
+    if not isinstance(result, list):
+        return []
+    actions = []
+    for item in result:
+        if not isinstance(item, dict):
+            continue
+        title = item.get("title")
+        edits = text_edits(item.get("edit"))
+        if isinstance(title, str) and title.strip() and edits:
+            actions.append({"title": title.strip(), "edits": edits})
+    return actions
+
+
+def document_symbols(result: object) -> list[dict]:
+    """
+    從 document symbol 回應取出符號，巢狀的一併攤平
+    Take the symbols out of a document symbol response, nesting included.
+
+    回應可能是 ``DocumentSymbol``（有 ``children``）或 ``SymbolInformation``
+    （帶 ``location``），兩種格式都要接受。
+    A response may be ``DocumentSymbol`` with ``children`` or
+    ``SymbolInformation`` with a ``location``, and both are accepted.
+
+    行號轉成 1 起算，與其他位置一致。
+    Lines come back 1-based, as every other position here does.
+
+    :param result: 伺服器的回應內容 / the server's result
+    :return: ``{"name", "kind", "line", "depth"}`` 的清單 / the symbols
+    """
+    return _flatten_symbols(result, depth=0)
+
+
+def _flatten_symbols(result: object, depth: int) -> list[dict]:
+    """把符號樹攤成一層，並記下每個符號的深度 / Flatten the symbol tree, noting each depth."""
+    if not isinstance(result, list):
+        return []
+    symbols: list[dict] = []
+    for item in result:
+        if not isinstance(item, dict):
+            continue
+        name = item.get("name")
+        if not isinstance(name, str) or not name.strip():
+            continue
+        span = item.get("selectionRange") or item.get("range")
+        if span is None:
+            span = (item.get("location") or {}).get("range")
+        line, _column = _position(span.get("start") if isinstance(span, dict) else None)
+        symbols.append({
+            "name": name.strip(),
+            "kind": item.get("kind") if isinstance(item.get("kind"), int) else 0,
+            "line": line,
+            "depth": depth,
+        })
+        symbols.extend(_flatten_symbols(item.get("children"), depth + 1))
+    return symbols
+
+
 def text_edits(result: object, file_uri_text: str = "") -> list[dict]:
     """
     從 rename 或 formatting 回應取出要套用的編輯

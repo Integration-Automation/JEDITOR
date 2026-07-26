@@ -389,6 +389,9 @@ class CodeEditor(QPlainTextEdit):
         self.lsp_client.hover_ready.connect(self.show_hover_text)
         self.lsp_client.edits_ready.connect(self.apply_server_edits)
         self.lsp_client.definition_ready.connect(self.go_to_definition_location)
+        self.lsp_client.signature_ready.connect(self.show_signature_text)
+        self.lsp_client.references_ready.connect(self.show_references)
+        self.lsp_client.code_actions_ready.connect(self.show_quick_fixes)
         self.start_language_server()
 
     def reset_highlighter(self) -> None:
@@ -2824,6 +2827,10 @@ class CodeEditor(QPlainTextEdit):
             ("context_menu_go_to_definition", self.go_to_definition,
              self.lsp_client.running),
             ("context_menu_hover", self.request_hover, self.lsp_client.running),
+            ("context_menu_find_references", self.find_references,
+             self.lsp_client.running),
+            ("context_menu_quick_fix", self.request_quick_fixes,
+             self.lsp_client.running),
             ("context_menu_rename_symbol", self.rename_symbol, True),
             ("context_menu_format_document", self.format_with_language_server,
              self.lsp_client.running),
@@ -2962,6 +2969,94 @@ class CodeEditor(QPlainTextEdit):
         cursor = self.textCursor()
         return self.lsp_client.request_definition(
             cursor.blockNumber(), cursor.positionInBlock())
+
+    def request_signature_help(self) -> bool:
+        """
+        請語言伺服器說明正在輸入的呼叫
+        Ask the language server about the call being typed.
+
+        :return: 有送出請求時為 ``True`` / ``True`` when a request was sent
+        """
+        cursor = self.textCursor()
+        return self.lsp_client.request_signature_help(
+            cursor.blockNumber(), cursor.positionInBlock())
+
+    def show_signature_text(self, text: str) -> None:
+        """
+        顯示簽章說明
+        Show the signature the server described.
+
+        :param text: 簽章文字 / the signature
+        """
+        self.setToolTip(text)
+
+    def find_references(self) -> bool:
+        """
+        請語言伺服器找出游標所在符號的所有參照
+        Ask the language server where the symbol under the caret is referred to.
+
+        :return: 有送出請求時為 ``True`` / ``True`` when a request was sent
+        """
+        cursor = self.textCursor()
+        return self.lsp_client.request_references(
+            cursor.blockNumber(), cursor.positionInBlock())
+
+    def show_references(self, locations: list) -> bool:
+        """
+        列出參照位置，選一個就跳過去
+        List the references and jump to the chosen one.
+
+        :param locations: 參照位置 / the locations found
+        :return: 有跳轉時為 ``True`` / ``True`` when something was opened
+        """
+        if not locations:
+            return False
+        # 位置的行號已經是 1 起算的，與跳轉用的一致
+        # The locations already count lines from one, as the jump does
+        labels = [f"{Path(item['path']).name}:{item['line']}" for item in locations]
+        chosen, confirmed = QInputDialog.getItem(
+            self, language_wrapper.language_word_dict.get("lsp_references_title"),
+            language_wrapper.language_word_dict.get("lsp_references_prompt"),
+            labels, 0, False)
+        if not confirmed or not chosen:
+            return False
+        return self.go_to_definition_location(locations[labels.index(chosen)])
+
+    def request_quick_fixes(self) -> bool:
+        """
+        請語言伺服器提出游標所在位置的修正
+        Ask the language server what can be fixed at the caret.
+
+        把該行的診斷一併送過去，伺服器才知道要針對哪個問題提修正。
+        The line's diagnostics go with it, since that is what tells the server
+        which problem to offer a fix for.
+
+        :return: 有送出請求時為 ``True`` / ``True`` when a request was sent
+        """
+        cursor = self.textCursor()
+        line = cursor.blockNumber()
+        return self.lsp_client.request_code_actions(
+            line, cursor.positionInBlock(), self.lsp_client.diagnostics_on_line(line))
+
+    def show_quick_fixes(self, actions: list) -> bool:
+        """
+        列出可套用的修正，選一個就套用
+        List the available fixes and apply the chosen one.
+
+        :param actions: 伺服器提供的修正 / the fixes the server offered
+        :return: 有套用時為 ``True`` / ``True`` when a fix was applied
+        """
+        if not actions:
+            return False
+        titles = [action["title"] for action in actions]
+        chosen, confirmed = QInputDialog.getItem(
+            self, language_wrapper.language_word_dict.get("lsp_quick_fix_title"),
+            language_wrapper.language_word_dict.get("lsp_quick_fix_prompt"),
+            titles, 0, False)
+        if not confirmed or not chosen:
+            return False
+        self.apply_server_edits(actions[titles.index(chosen)]["edits"])
+        return True
 
     def closeEvent(self, event: QtGui.QCloseEvent) -> None:
         """

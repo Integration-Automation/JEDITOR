@@ -409,6 +409,13 @@ traditional_chinese_word_dict = {
     "shortcut_settings_reset": "還原預設值",
     "shortcut_settings_hint": "儲存後對之後開啟的分頁生效。",
     "shortcut_settings_conflict": "{keys} 同時被 {commands} 使用",
+    # 語言伺服器 / Language server
+    "lsp_references_title": "參照",
+    "lsp_references_prompt": "跳到：",
+    "lsp_quick_fix_title": "快速修正",
+    "lsp_quick_fix_prompt": "套用：",
+    "context_menu_find_references": "尋找參照",
+    "context_menu_quick_fix": "快速修正…",
     "test_panel_traceback_placeholder": "選擇一個失敗的測試以查看原因",
     "test_panel_ready": "就緒",
     "test_panel_running": "測試執行中...",

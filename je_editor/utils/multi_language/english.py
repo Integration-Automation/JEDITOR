@@ -419,6 +419,13 @@ please make sure that the current encoding is consistent with the default encodi
     "shortcut_settings_reset": "Restore defaults",
     "shortcut_settings_hint": "Changes apply to tabs opened after saving.",
     "shortcut_settings_conflict": "{keys} is claimed by {commands}",
+    # Language server
+    "lsp_references_title": "References",
+    "lsp_references_prompt": "Go to:",
+    "lsp_quick_fix_title": "Quick Fixes",
+    "lsp_quick_fix_prompt": "Apply:",
+    "context_menu_find_references": "Find References",
+    "context_menu_quick_fix": "Quick Fix...",
     "test_panel_traceback_placeholder": "Select a failing test to see why it failed",
     "test_panel_ready": "Ready",
     "test_panel_running": "Running tests...",
