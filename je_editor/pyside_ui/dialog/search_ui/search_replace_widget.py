@@ -240,6 +240,8 @@ class SearchReplaceDialog(QDialog):
         """在目前檔案中搜尋 / Search in current file"""
         self.result_tree.clear()
         editor = self.editor_widget.code_edit
+        # 讓縮圖標出命中的行 / So the minimap marks the lines it hits
+        editor.set_search_term(pattern)
         text = editor.toPlainText()
         case = self.chk_case.isChecked()
         use_regex = self.chk_regex.isChecked()
@@ -586,8 +588,11 @@ class SearchReplaceDialog(QDialog):
         return os.getcwd()
 
     def closeEvent(self, event: QCloseEvent) -> None:
-        """關閉對話框時停止搜尋執行緒 / Stop search worker on close"""
+        """關閉對話框時停止搜尋執行緒並清掉縮圖標記 / Stop the worker and clear the marks"""
         if self._worker and self._worker.isRunning():
             self._worker.stop()
             self._worker.wait()
+        editor = getattr(self.editor_widget, "code_edit", None)
+        if editor is not None:
+            editor.set_search_term("")
         super().closeEvent(event)

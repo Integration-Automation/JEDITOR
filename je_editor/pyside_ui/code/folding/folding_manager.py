@@ -9,11 +9,11 @@ Folding only toggles ``QTextBlock`` visibility and never edits text, so saving a
 """
 from __future__ import annotations
 
+from pathlib import Path
 from typing import TYPE_CHECKING
 
-from je_editor.utils.code_folding.fold_regions import (
-    FoldRegion, compute_fold_regions, region_at_line
-)
+from je_editor.utils.code_folding.brace_regions import fold_regions_for
+from je_editor.utils.code_folding.fold_regions import FoldRegion, region_at_line
 from je_editor.utils.logging.loggin_instance import jeditor_logger
 
 if TYPE_CHECKING:
@@ -44,10 +44,19 @@ class FoldingManager:
         依目前文字計算所有可折疊區塊
         Compute every foldable region for the current text.
 
+        折疊方式依語言而定：以大括號劃分區塊的語言看括號配對，其餘看縮排。
+        How the regions are found depends on the language: brace-delimited ones
+        follow their pairs, and everything else follows indentation.
+
         :return: 可折疊區塊清單 / The list of foldable regions
         """
         text = self._editor.toPlainText()
-        return compute_fold_regions(text.split("\n"))
+        return fold_regions_for(text.split("\n"), self._suffix())
+
+    def _suffix(self) -> str:
+        """目前檔案的副檔名 / The current file's suffix."""
+        current = getattr(self._editor, "current_file", None)
+        return Path(str(current)).suffix if current else ""
 
     def foldable_header_lines(self) -> set[int]:
         """

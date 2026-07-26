@@ -1,6 +1,7 @@
 """Tests for the minimap's geometry and its wiring into the editor."""
 from __future__ import annotations
 
+
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -163,6 +164,43 @@ class TestMinimapWiring:
         cursor.setPosition(2)
         editor_widget.code_edit.setTextCursor(cursor)
         assert editor_widget.minimap.marker_lines()["occurrence"] == [0, 1, 2]
+
+    def test_a_search_term_replaces_the_word_occurrences(self, editor_widget):
+        # What the user is looking for is the search, not the word they last
+        # happened to leave the caret on.
+        editor_widget.toggle_minimap()
+        editor = editor_widget.code_edit
+        editor.setPlainText("total = 1\nx = total\nnothing here\n")
+        cursor = editor.textCursor()
+        cursor.setPosition(2)
+        editor.setTextCursor(cursor)
+        editor.set_search_term("here")
+        assert editor_widget.minimap.marker_lines()["occurrence"] == [2]
+
+    def test_a_search_hit_inside_a_longer_word_counts(self, editor_widget):
+        editor_widget.toggle_minimap()
+        editor = editor_widget.code_edit
+        editor.setPlainText("value\nother\n")
+        editor.set_search_term("val")
+        assert editor_widget.minimap.marker_lines()["occurrence"] == [0]
+
+    def test_the_search_ignores_case(self, editor_widget):
+        editor_widget.toggle_minimap()
+        editor = editor_widget.code_edit
+        editor.setPlainText("Total\nnothing\n")
+        editor.set_search_term("total")
+        assert editor_widget.minimap.marker_lines()["occurrence"] == [0]
+
+    def test_clearing_the_search_goes_back_to_occurrences(self, editor_widget):
+        editor_widget.toggle_minimap()
+        editor = editor_widget.code_edit
+        editor.setPlainText("total = 1\nx = total\n")
+        cursor = editor.textCursor()
+        cursor.setPosition(2)
+        editor.setTextCursor(cursor)
+        editor.set_search_term("total")
+        editor.set_search_term("")
+        assert editor_widget.minimap.marker_lines()["occurrence"] == [0, 1]
 
     def test_no_markers_when_there_is_nothing_to_mark(self, editor_widget):
         editor_widget.toggle_minimap()

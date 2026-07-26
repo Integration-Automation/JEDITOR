@@ -17,14 +17,15 @@ from pathlib import Path
 
 from PySide6.QtCore import Qt, QThread, Signal
 from PySide6.QtWidgets import (
-    QHBoxLayout, QLabel, QLineEdit, QPushButton, QTreeWidget, QTreeWidgetItem,
-    QVBoxLayout, QWidget
+    QCheckBox, QHBoxLayout, QLabel, QLineEdit, QPlainTextEdit, QPushButton,
+    QSplitter, QTreeWidget, QTreeWidgetItem, QVBoxLayout, QWidget
 )
 
 from je_editor.utils.logging.loggin_instance import jeditor_logger
 from je_editor.utils.multi_language.multi_language_wrapper import language_wrapper
 from je_editor.utils.test_runner.pytest_output import (
-    PytestResult, failure_for_result, parse_failures, parse_results, parse_summary
+    PytestResult, failure_for_result, parse_coverage, parse_failures, parse_results,
+    parse_summary, parse_tracebacks, traceback_for_result
 )
 
 # 樹狀清單欄位索引 / Column indexes in the tree
@@ -35,21 +36,32 @@ COLUMN_FILE = 2
 TEST_COLUMN_WIDTH = 360
 # 單次測試執行的逾時（秒）/ Timeout for one test run
 RUN_TIMEOUT_SECONDS = 600
+# 清單與追蹤訊息的高度比例 / How the list and the traceback share the height
+_RESULT_STRETCH = 3
+_TRACEBACK_STRETCH = 2
 
 
-def pytest_command(node_ids: list[str] | None = None) -> list[str]:
+def pytest_command(node_ids: list[str] | None = None,
+                   with_coverage: bool = False) -> list[str]:
     """
     組出執行測試的指令
     Build the command that runs the tests.
 
-    ``-v`` 才會逐項列出結果，``--tb=line`` 讓每個失敗只印一行位置，剛好夠面板用。
-    ``-v`` is what lists each test, and ``--tb=line`` prints one location per
-    failure, which is exactly what the panel needs.
+    ``-v`` 才會逐項列出結果；``--tb=short`` 每個失敗印出足夠閱讀的追蹤訊息，同時
+    仍然保留「檔案:行號」那一行，跳轉才有得用。
+    ``-v`` is what lists each test, and ``--tb=short`` prints a traceback worth
+    reading while still carrying the ``file:line`` the jump needs.
 
     :param node_ids: 只跑這些測試，``None`` 表示全部 / run only these, or all when ``None``
+    :param with_coverage: 是否一併量測覆蓋率 / whether to measure coverage too
     :return: 引數清單（不經過 shell）/ the argument list, never a shell string
     """
-    command = [sys.executable, "-m", "pytest", "-v", "--tb=line", "-p", "no:cacheprovider"]
+    command = [sys.executable, "-m", "pytest", "-v", "--tb=short", "-p", "no:cacheprovider"]
+    if with_coverage:
+        # 需要目標專案裝有 pytest-cov；沒有的話 pytest 會直接說不認得這個參數
+        # This needs pytest-cov in the target project; without it pytest simply
+        # reports that it does not recognise the argument
+        command.extend(["--cov=.", "--cov-report=term"])
     # 節點名稱是 pytest 自己印出來的，原樣傳回去；仍然是獨立引數，不經過 shell
     # The node ids came from pytest itself and go straight back as separate
     # arguments, never through a shell
@@ -65,21 +77,25 @@ class PytestRunThread(QThread):
 
     finished_output = Signal(str)
 
-    def __init__(self, working_dir: str, node_ids: list[str] | None = None, parent=None) -> None:
+    def __init__(self, working_dir: str, node_ids: list[str] | None = None,
+                 with_coverage: bool = False, parent=None) -> None:
         """
         :param working_dir: 執行測試的目錄 / the directory to run the tests in
         :param node_ids: 只跑這些測試 / run only these tests
+        :param with_coverage: 是否一併量測覆蓋率 / whether to measure coverage too
         :param parent: Qt 父物件 / the Qt parent
         """
         super().__init__(parent)
+        self.setObjectName("PytestRunThread")
         self._working_dir = working_dir
         self._node_ids = node_ids
+        self._with_coverage = with_coverage
 
     def run(self) -> None:
         """執行測試並回報輸出 / Run the tests and report their output."""
         try:
             completed = subprocess.run(  # nosemgrep  # noqa: S603  # nosec B603
-                pytest_command(self._node_ids),
+                pytest_command(self._node_ids, self._with_coverage),
                 cwd=self._working_dir,
                 capture_output=True,
                 text=True,
@@ -112,6 +128,7 @@ class TestPanelWidget(QWidget):
         self._working_dir = working_dir or resolve_working_dir(main_window)
         self._results: list[PytestResult] = []
         self._failures: list = []
+        self._tracebacks: dict[str, str] = {}
         self._thread: PytestRunThread | None = None
 
         self.run_button = QPushButton(word.get("test_panel_run"))
@@ -123,7 +140,14 @@ class TestPanelWidget(QWidget):
         self.filter_edit = QLineEdit()
         self.filter_edit.setPlaceholderText(word.get("test_panel_filter_placeholder"))
         self.filter_edit.textChanged.connect(self._render_items)
+        self.coverage_check = QCheckBox(word.get("test_panel_coverage"))
         self.status_label = QLabel(word.get("test_panel_ready"))
+
+        # 失敗的追蹤訊息：選到某個測試就顯示它的那一段
+        # The failing traceback: selecting a test shows the block belonging to it
+        self.traceback_view = QPlainTextEdit()
+        self.traceback_view.setReadOnly(True)
+        self.traceback_view.setPlaceholderText(word.get("test_panel_traceback_placeholder"))
 
         self.result_tree = QTreeWidget()
         self.result_tree.setColumnCount(3)
@@ -135,18 +159,28 @@ class TestPanelWidget(QWidget):
         self.result_tree.setColumnWidth(COLUMN_TEST, TEST_COLUMN_WIDTH)
         self.result_tree.setRootIsDecorated(False)
         self.result_tree.itemDoubleClicked.connect(self._open_item)
+        self.result_tree.itemSelectionChanged.connect(self._show_selected_traceback)
 
         controls = QHBoxLayout()
         controls.addWidget(self.run_button)
         controls.addWidget(self.run_selected_button)
         controls.addWidget(self.rerun_failures_button)
         controls.addWidget(self.filter_edit)
+        controls.addWidget(self.coverage_check)
         controls.addWidget(self.status_label)
         controls.addStretch()
 
+        # 清單與追蹤訊息上下並排，中間可以拖動
+        # The list and the traceback sit one above the other, with a draggable split
+        split = QSplitter(Qt.Orientation.Vertical)
+        split.addWidget(self.result_tree)
+        split.addWidget(self.traceback_view)
+        split.setStretchFactor(0, _RESULT_STRETCH)
+        split.setStretchFactor(1, _TRACEBACK_STRETCH)
+
         layout = QVBoxLayout(self)
         layout.addLayout(controls)
-        layout.addWidget(self.result_tree)
+        layout.addWidget(split)
         self.setLayout(layout)
 
     def results(self) -> list[PytestResult]:
@@ -168,7 +202,8 @@ class TestPanelWidget(QWidget):
             return False
         self.run_button.setEnabled(False)
         self.status_label.setText(language_wrapper.language_word_dict.get("test_panel_running"))
-        self._thread = PytestRunThread(self._working_dir, node_ids)
+        self._thread = PytestRunThread(
+            self._working_dir, node_ids, self.coverage_check.isChecked())
         self._thread.finished_output.connect(self.apply_output)
         self._thread.finished.connect(self._thread.deleteLater)
         self._thread.start()
@@ -230,14 +265,38 @@ class TestPanelWidget(QWidget):
         """
         self._results = parse_results(output)
         self._failures = parse_failures(output)
+        self._tracebacks = parse_tracebacks(output)
         summary = parse_summary(output)
+        coverage = parse_coverage(output)
         self.run_button.setEnabled(True)
         self._render_items()
+        self.traceback_view.setPlainText("")
         if summary:
-            self.status_label.setText(summary)
+            self.status_label.setText(
+                f"{summary} — {coverage}" if coverage else summary)
         elif not self._results:
             self.status_label.setText(
                 language_wrapper.language_word_dict.get("test_panel_no_results"))
+
+    def traceback_for(self, result: PytestResult) -> str:
+        """
+        取得某個測試的追蹤訊息
+        The traceback reported for one test.
+
+        :param result: 測試結果 / the test result
+        :return: 追蹤訊息，沒有時為空字串 / the traceback, or an empty string
+        """
+        return traceback_for_result(result, self._tracebacks)
+
+    def _show_selected_traceback(self) -> None:
+        """把選取測試的追蹤訊息顯示出來 / Show the selected test's traceback."""
+        items = self.result_tree.selectedItems()
+        if not items:
+            self.traceback_view.setPlainText("")
+            return
+        result = items[0].data(COLUMN_OUTCOME, Qt.ItemDataRole.UserRole)
+        self.traceback_view.setPlainText(
+            self.traceback_for(result) if result is not None else "")
 
     def visible_results(self) -> list[PytestResult]:
         """

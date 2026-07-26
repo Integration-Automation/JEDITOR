@@ -63,7 +63,7 @@ class TestToolbarActions:
     def test_every_toolbar_shortcut_is_reserved(self, toolbar_window):
         # The editor checks its own shortcuts against this table, so a sequence
         # the toolbar takes without listing it there could be claimed twice.
-        reserved = {normalise_sequence(sequence) for sequence in WINDOW_SHORTCUTS}
+        reserved = {normalise_sequence(sequence) for sequence in WINDOW_SHORTCUTS.values()}
         for action in toolbar_window.main_toolbar.actions():
             sequence = normalise_sequence(action.shortcut().toString())
             if sequence:

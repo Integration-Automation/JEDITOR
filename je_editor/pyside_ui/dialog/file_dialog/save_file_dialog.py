@@ -120,6 +120,10 @@ def choose_file_get_save_file_path(parent_qt_instance: EditorMain) -> bool:
                 widget.code_save_thread.file = file_path
                 widget.code_save_thread.editor = widget.code_edit
 
+            # 告訴語言伺服器檔案存了：有些檢查只在存檔後才跑
+            # Tell the language server the file was saved: some checks only run then
+            widget.code_edit.lsp_client.did_save(widget.code_edit.toPlainText())
+
             # 更新分頁標題並清除未儲存標記 / Update tab title and clear unsaved marker
             widget.rename_self_tab()
             widget.mark_saved()

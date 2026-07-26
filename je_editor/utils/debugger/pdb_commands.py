@@ -45,7 +45,37 @@ def breakpoint_command(file_path: str | Path, line: int) -> str:
     :param line: 1 起算的行號 / the 1-based line number
     :return: pdb 指令 / the pdb command
     """
-    return f"break {Path(file_path).as_posix()}:{max(1, line)}"
+    return f"break {_location(file_path, line)}"
+
+
+def clear_command(file_path: str | Path, line: int) -> str:
+    """
+    組出清除一個中斷點的指令
+    Build the command that clears one breakpoint.
+
+    :param file_path: 檔案路徑 / the file the breakpoint is in
+    :param line: 1 起算的行號 / the 1-based line number
+    :return: pdb 指令 / the pdb command
+    """
+    return f"clear {_location(file_path, line)}"
+
+
+def toggle_command(file_path: str | Path, line: int, is_set: bool) -> str:
+    """
+    組出切換一個中斷點的指令
+    Build the command for toggling one breakpoint.
+
+    :param file_path: 檔案路徑 / the file the breakpoint is in
+    :param line: 1 起算的行號 / the 1-based line number
+    :param is_set: 切換後該行是否有中斷點 / whether the line now has one
+    :return: pdb 指令 / the pdb command
+    """
+    return breakpoint_command(file_path, line) if is_set else clear_command(file_path, line)
+
+
+def _location(file_path: str | Path, line: int) -> str:
+    """組出 pdb 認得的「檔案:行號」/ The ``file:line`` pdb understands."""
+    return f"{Path(file_path).as_posix()}:{max(1, line)}"
 
 
 def breakpoint_commands(file_path: str | Path, lines: list[int]) -> list[str]:

@@ -22,6 +22,29 @@ from je_editor.utils.syntax.language_rules import LanguageRules, rules_for
 _INSIDE_BLOCK_COMMENT = 1
 
 
+def keyword_pattern(keywords: tuple[str, ...]) -> str:
+    """
+    把所有關鍵字組成一個交替式樣
+    Build one alternation covering every keyword.
+
+    每個關鍵字各一條規則的話，每一行都要重跑幾十次比對；併成一條之後只掃一次，
+    大檔案上色因此快上一個數量級。
+    A pattern per keyword means running dozens of matches over every line; one
+    alternation scans it once, which is an order of magnitude off the cost of
+    highlighting a large file.
+
+    長的關鍵字排在前面，交替式才不會先被短的吃掉；字界本身也擋得住，但排序讓這件
+    事不必依賴細節。
+    Longer keywords come first so a short one cannot claim the match. The word
+    boundaries already prevent that, but the ordering means not relying on it.
+
+    :param keywords: 該語言的關鍵字 / the language's keywords
+    :return: 一條正規表示式 / a single regular expression
+    """
+    ordered = sorted(set(keywords), key=lambda word: (-len(word), word))
+    return r"\b(?:" + "|".join(re.escape(word) for word in ordered) + r")\b"
+
+
 def _format_for(colour_key: str) -> QTextCharFormat:
     """建立指定顏色的格式 / Build a format in the given colour."""
     text_format = QTextCharFormat()
@@ -43,10 +66,10 @@ class GenericHighlighter(QSyntaxHighlighter):
         super().__init__(document)
         self._rules = rules
         self._patterns: list[tuple[QRegularExpression, QTextCharFormat]] = []
-        keyword_format = _format_for("syntax_keyword_color")
-        for keyword in rules.keywords:
+        if rules.keywords:
             self._patterns.append(
-                (QRegularExpression(rf"\b{re.escape(keyword)}\b"), keyword_format))
+                (QRegularExpression(keyword_pattern(rules.keywords)),
+                 _format_for("syntax_keyword_color")))
         number_format = _format_for("syntax_number_color")
         self._patterns.append((QRegularExpression(r"\b\d+(\.\d+)?\b"), number_format))
         string_format = _format_for("syntax_string_color")

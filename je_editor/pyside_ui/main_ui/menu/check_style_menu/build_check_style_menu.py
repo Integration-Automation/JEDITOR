@@ -3,13 +3,14 @@ from __future__ import annotations  # 啟用未來版本的型別註解功能 / 
 from typing import TYPE_CHECKING  # 僅在型別檢查時使用，避免循環匯入 / Used only for type checking to avoid circular imports
 
 from je_editor.pyside_ui.main_ui.editor.editor_widget import EditorWidget  # 編輯器分頁元件 / Editor tab widget
+from je_editor.pyside_ui.main_ui.save_settings.shortcut_setting import bind
 from je_editor.utils.logging.loggin_instance import jeditor_logger  # 專案內的日誌紀錄器 / Project logger
 from je_editor.utils.multi_language.multi_language_wrapper import language_wrapper  # 多語系支援 / Multi-language wrapper
 
 if TYPE_CHECKING:
     from je_editor.pyside_ui.main_ui.main_editor import EditorMain  # 僅在型別檢查時匯入 / Import only for type checking
 
-from PySide6.QtGui import QAction, QKeySequence  # Qt 動作與快捷鍵 / Qt actions and shortcuts
+from PySide6.QtGui import QAction  # Qt 動作與快捷鍵 / Qt actions and shortcuts
 
 from je_editor.pyside_ui.main_ui.save_settings.user_setting_file import user_setting_dict  # 使用者設定 / User settings
 from je_editor.utils.format_code.yapf_format import format_python_source  # 格式化邏輯 / Formatting logic
@@ -37,8 +38,7 @@ def set_check_menu(ui_we_want_to_set: EditorMain) -> None:
     # === 1. Yapf Python 程式碼格式化 / Yapf Python code reformat ===
     ui_we_want_to_set.check_menu.yapf_check_python_action = QAction(
         language_wrapper.language_word_dict.get("yapf_reformat_label"))
-    ui_we_want_to_set.check_menu.yapf_check_python_action.setShortcut(
-        QKeySequence("Ctrl+Shift+Y"))  # 設定快捷鍵 / Set shortcut
+    bind(ui_we_want_to_set.check_menu.yapf_check_python_action, "yapf_reformat")  # 設定快捷鍵 / Set shortcut
     ui_we_want_to_set.check_menu.yapf_check_python_action.triggered.connect(
         lambda: yapf_check_python_code(ui_we_want_to_set)
     )
@@ -47,7 +47,7 @@ def set_check_menu(ui_we_want_to_set: EditorMain) -> None:
     # === 2. JSON 重新格式化 / Reformat JSON ===
     ui_we_want_to_set.check_menu.reformat_json_action = QAction(
         language_wrapper.language_word_dict.get("reformat_json_label"))
-    ui_we_want_to_set.check_menu.reformat_json_action.setShortcut("Ctrl+j")
+    bind(ui_we_want_to_set.check_menu.reformat_json_action, "reformat_json")
     ui_we_want_to_set.check_menu.reformat_json_action.triggered.connect(
         lambda: reformat_json_text(ui_we_want_to_set)
     )
@@ -56,7 +56,7 @@ def set_check_menu(ui_we_want_to_set: EditorMain) -> None:
     # === 3. Python 格式檢查 / Python format check ===
     ui_we_want_to_set.check_menu.check_python_format = QAction(
         language_wrapper.language_word_dict.get("python_format_checker"))
-    ui_we_want_to_set.check_menu.check_python_format.setShortcut("Ctrl+Alt+p")
+    bind(ui_we_want_to_set.check_menu.check_python_format, "check_python_format")
     ui_we_want_to_set.check_menu.check_python_format.triggered.connect(
         lambda: check_python_format(ui_we_want_to_set)
     )

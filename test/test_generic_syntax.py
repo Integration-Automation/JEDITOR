@@ -1,6 +1,7 @@
 """Tests for highlighting languages other than Python."""
 from __future__ import annotations
 
+import re
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -8,6 +9,50 @@ from PySide6.QtGui import QTextDocument
 from PySide6.QtWidgets import QApplication
 
 from je_editor.utils.syntax.language_rules import LANGUAGE_RULES, rules_for, supported_suffixes
+
+
+class TestKeywordPattern:
+    """
+    All the keywords go into one alternation. Running a pattern per keyword cost
+    four times as much per line, which a large file feels on open.
+    """
+
+    @staticmethod
+    def _matches(pattern: str, text: str) -> list[str]:
+        return re.findall(pattern, text)
+
+    def test_a_keyword_matches(self):
+        from je_editor.pyside_ui.code.syntax.generic_syntax import keyword_pattern
+        assert self._matches(keyword_pattern(("if", "else")), "if x") == ["if"]
+
+    def test_every_keyword_is_covered(self):
+        from je_editor.pyside_ui.code.syntax.generic_syntax import keyword_pattern
+        pattern = keyword_pattern(("if", "else", "return"))
+        assert self._matches(pattern, "if a else return b") == ["if", "else", "return"]
+
+    def test_a_keyword_inside_a_word_does_not_match(self):
+        from je_editor.pyside_ui.code.syntax.generic_syntax import keyword_pattern
+        assert self._matches(keyword_pattern(("in",)), "printing") == []
+
+    def test_a_longer_keyword_wins_over_its_prefix(self):
+        from je_editor.pyside_ui.code.syntax.generic_syntax import keyword_pattern
+        pattern = keyword_pattern(("in", "instanceof"))
+        assert self._matches(pattern, "a instanceof B") == ["instanceof"]
+
+    def test_a_regex_character_in_a_keyword_is_literal(self):
+        from je_editor.pyside_ui.code.syntax.generic_syntax import keyword_pattern
+        assert self._matches(keyword_pattern(("c++",)), "c++ code") == []
+
+    def test_duplicates_do_not_repeat(self):
+        from je_editor.pyside_ui.code.syntax.generic_syntax import keyword_pattern
+        assert keyword_pattern(("if", "if")).count("if") == 1
+
+    @pytest.mark.parametrize("suffix", sorted(LANGUAGE_RULES))
+    def test_every_language_builds_a_usable_pattern(self, suffix):
+        from je_editor.pyside_ui.code.syntax.generic_syntax import keyword_pattern
+        rules = rules_for(suffix)
+        # A pattern that does not compile would break highlighting for the language.
+        assert re.compile(keyword_pattern(rules.keywords)) is not None
 
 
 class TestLanguageRules:

@@ -7,6 +7,7 @@ from PySide6.QtWidgets import QMessageBox, QPlainTextEdit
 
 from je_editor.pyside_ui.main_ui.editor.editor_widget import EditorWidget
 from je_editor.pyside_ui.main_ui.save_settings.user_setting_file import user_setting_dict
+from je_editor.pyside_ui.main_ui.save_settings.shortcut_setting import bind
 from je_editor.utils.logging.loggin_instance import jeditor_logger
 from je_editor.utils.text_stats.text_statistics import TextStatistics, text_statistics
 
@@ -81,7 +82,7 @@ def set_text_menu(ui_we_want_to_set: EditorMain) -> None:
         language_wrapper.language_word_dict.get("text_menu_word_wrap"), ui_we_want_to_set)
     word_wrap_action.setCheckable(True)
     word_wrap_action.setChecked(False)
-    word_wrap_action.setShortcut("Alt+w")
+    bind(word_wrap_action, "word_wrap")
     word_wrap_action.triggered.connect(
         lambda checked: toggle_word_wrap(ui_we_want_to_set, checked))
     ui_we_want_to_set.text_menu.addAction(word_wrap_action)

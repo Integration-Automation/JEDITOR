@@ -6,7 +6,9 @@ from unittest.mock import MagicMock, patch
 import pytest
 from PySide6.QtWidgets import QApplication
 
-from je_editor.git_client.file_staging import stage_content, staged_text
+from je_editor.git_client.file_staging import (
+    commit_index, stage_content, staged_text, unstage_file
+)
 from je_editor.utils.file_diff.line_status import apply_hunk, hunk_at_line
 
 git = pytest.importorskip("git")
@@ -89,6 +91,69 @@ class TestStaging:
         new_file = repo / "untracked.py"
         new_file.write_text("x\n", encoding="utf-8")
         assert staged_text(new_file) is None
+
+
+class TestUnstaging:
+    """The only way back from staging a hunk that should not have been staged."""
+
+    def test_the_index_returns_to_the_committed_content(self, repo):
+        tracked = repo / "tracked.py"
+        stage_content(tracked, "a\nSTAGED\nc\n")
+        assert unstage_file(tracked) is True
+        assert staged_text(tracked) == "a\nb\nc\n"
+
+    def test_the_working_tree_is_left_alone(self, repo):
+        tracked = repo / "tracked.py"
+        tracked.write_text("a\nWORKING\nc\n", encoding="utf-8")
+        stage_content(tracked, "a\nSTAGED\nc\n")
+        unstage_file(tracked)
+        assert tracked.read_text(encoding="utf-8") == "a\nWORKING\nc\n"
+
+    def test_a_never_committed_file_leaves_the_index(self, repo):
+        new_file = repo / "fresh.py"
+        new_file.write_text("x\n", encoding="utf-8")
+        stage_content(new_file, "x\n")
+        assert unstage_file(new_file) is True
+        assert staged_text(new_file) is None
+
+    def test_a_file_that_was_never_staged_changes_nothing(self, repo):
+        new_file = repo / "never.py"
+        new_file.write_text("x\n", encoding="utf-8")
+        assert unstage_file(new_file) is False
+
+    def test_a_file_outside_a_repository_cannot_be_unstaged(self, tmp_path):
+        loose = tmp_path / "loose.py"
+        loose.write_text("x\n", encoding="utf-8")
+        assert unstage_file(loose) is False
+
+
+class TestCommittingTheIndex:
+    """Staging hunk by hunk is only useful if the index is what gets committed."""
+
+    def test_only_the_staged_content_is_committed(self, repo):
+        tracked = repo / "tracked.py"
+        tracked.write_text("a\nWORKING\nc\n", encoding="utf-8")
+        stage_content(tracked, "a\nSTAGED\nc\n")
+        assert commit_index(tracked, "stage only") is True
+        repository = git.Repo(repo)
+        committed = (repository.head.commit.tree / "tracked.py").data_stream.read()
+        repository.close()
+        assert committed.decode("utf-8") == "a\nSTAGED\nc\n"
+
+    def test_the_working_tree_keeps_the_unstaged_edit(self, repo):
+        tracked = repo / "tracked.py"
+        tracked.write_text("a\nWORKING\nc\n", encoding="utf-8")
+        stage_content(tracked, "a\nSTAGED\nc\n")
+        commit_index(tracked, "stage only")
+        assert tracked.read_text(encoding="utf-8") == "a\nWORKING\nc\n"
+
+    def test_an_empty_message_is_refused(self, repo):
+        assert commit_index(repo / "tracked.py", "   ") is False
+
+    def test_a_file_outside_a_repository_cannot_be_committed(self, tmp_path):
+        loose = tmp_path / "loose.py"
+        loose.write_text("x\n", encoding="utf-8")
+        assert commit_index(loose, "message") is False
 
 
 @pytest.fixture(scope="module")

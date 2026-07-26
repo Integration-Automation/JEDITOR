@@ -25,9 +25,9 @@ from je_editor.pyside_ui.code.auto_save.auto_save_manager import init_new_auto_s
 from je_editor.pyside_ui.main_ui.editor.editor_widget import EditorWidget
 from je_editor.pyside_ui.main_ui.menu.set_menu_bar import set_menu_bar
 from je_editor.pyside_ui.main_ui.save_settings.user_color_setting_file import (
+    apply_theme_colors,
     write_user_color_setting,
     read_user_color_setting,
-    update_actually_color_dict,
     actually_color_dict
 )
 from je_editor.pyside_ui.main_ui.save_settings.user_setting_file import (
@@ -38,6 +38,9 @@ from je_editor.pyside_ui.main_ui.save_settings.user_setting_file import (
 from je_editor.pyside_ui.main_ui.system_tray.extend_system_tray import ExtendSystemTray
 from je_editor.utils.file.open.open_file import read_file
 from je_editor.utils.session.editor_state import editor_state, restore_editor_state
+from je_editor.utils.status.status_text import (
+    PLAIN_TEXT, cursor_position, encoding_name, language_name, line_ending_display
+)
 from je_editor.utils.session.open_files_session import (
     SESSION_SETTING_KEY,
     SESSION_STATE_KEY,
@@ -169,11 +172,13 @@ class EditorMain(QMainWindow, QtStyleTools):
         from je_editor.pyside_ui.main_ui.toolbar.toolbar_builder import build_toolbar
         build_toolbar(self)
 
-        # 設定狀態列 (行/列位置、編碼、行尾)
-        # Setup status bar (line/column, encoding, line ending)
+        # 設定狀態列 (語言、行尾、編碼、行/列位置)
+        # Setup status bar (language, line ending, encoding, line/column)
+        self._language_label = QLabel(PLAIN_TEXT)
         self._line_ending_label = QLabel("LF")
         self._encoding_label = QLabel("UTF-8")
         self._cursor_pos_label = QLabel("Ln 1, Col 1")
+        self.statusBar().addPermanentWidget(self._language_label)
         self.statusBar().addPermanentWidget(self._line_ending_label)
         self.statusBar().addPermanentWidget(self._encoding_label)
         self.statusBar().addPermanentWidget(self._cursor_pos_label)
@@ -363,9 +368,12 @@ class EditorMain(QMainWindow, QtStyleTools):
         self._restore_open_files_session()
 
         app = QApplication.instance()
+        style_name = user_setting_dict.get("ui_style", "dark_amber.xml")
         if app is not None:
-            self.apply_stylesheet(app, user_setting_dict.get("ui_style", "dark_amber.xml"))
-        update_actually_color_dict()
+            self.apply_stylesheet(app, style_name)
+        # 顏色跟著樣式走：淺色樣式要用淺色底調出來的那一組
+        # The colours follow the style: a light one needs the light set
+        apply_theme_colors(style_name)
 
     def _open_file_paths(self) -> list[str]:
         """取得所有分頁目前開啟的檔案 / Every tab's currently open file."""
@@ -476,9 +484,7 @@ class EditorMain(QMainWindow, QtStyleTools):
         if isinstance(widget, EditorWidget):
             widget.code_edit.cursorPositionChanged.connect(self._update_cursor_pos)
             self._prev_editor_widget = widget
-            self._update_cursor_pos()
-            self._update_encoding_label()
-            self._update_line_ending_label(widget)
+        self.refresh_status_bar()
 
     def _update_cursor_pos(self) -> None:
         """
@@ -488,37 +494,35 @@ class EditorMain(QMainWindow, QtStyleTools):
         widget = self.tab_widget.currentWidget()
         if isinstance(widget, EditorWidget):
             cursor = widget.code_edit.textCursor()
-            line = cursor.blockNumber() + 1
-            col = cursor.positionInBlock() + 1
-            self._cursor_pos_label.setText(f"Ln {line}, Col {col}")
+            self._cursor_pos_label.setText(cursor_position(
+                cursor.blockNumber() + 1, cursor.positionInBlock() + 1))
 
-    def _update_encoding_label(self) -> None:
+    def refresh_status_bar(self) -> None:
         """
-        更新狀態列的編碼顯示
-        Update status bar encoding display
-        """
-        encoding = user_setting_dict.get("encoding", "utf-8").upper()
-        self._encoding_label.setText(encoding)
+        依目前分頁重畫狀態列
+        Redraw the status bar from the current tab.
 
-    def _update_line_ending_label(self, widget: EditorWidget) -> None:
+        顯示的是這個分頁記憶中的狀態，而不是全域設定或磁碟上的內容：使用者從選單
+        改過編碼或行尾之後，狀態列要跟著改，而不是繼續顯示檔案原本的樣子。改完
+        設定的地方要呼叫這個方法。
+        What it shows is the tab's own state, not the global setting or what is on
+        disk: after the user changes the encoding or line ending from the menu the
+        status bar has to follow, rather than keep describing the file as it was
+        opened. Whatever changes those settings calls this.
         """
-        偵測並更新行尾格式 (CRLF/LF/CR)
-        Detect and update line ending format
-        """
-        if widget.current_file is not None:
-            try:
-                with open(widget.current_file, "rb") as f:
-                    raw = f.read(8192)
-                if b"\r\n" in raw:
-                    self._line_ending_label.setText("CRLF")
-                elif b"\r" in raw:
-                    self._line_ending_label.setText("CR")
-                else:
-                    self._line_ending_label.setText("LF")
-            except (OSError, TypeError):
-                self._line_ending_label.setText("LF")
-        else:
-            self._line_ending_label.setText("LF")
+        widget = self.tab_widget.currentWidget()
+        if not isinstance(widget, EditorWidget):
+            self._language_label.setText(PLAIN_TEXT)
+            self._line_ending_label.setText(line_ending_display(None))
+            self._encoding_label.setText(encoding_name(None))
+            self._cursor_pos_label.setText(cursor_position(1, 1))
+            return
+        self._language_label.setText(language_name(widget.current_file))
+        self._line_ending_label.setText(
+            line_ending_display(getattr(widget, "line_ending", None)))
+        self._encoding_label.setText(
+            encoding_name(getattr(widget, "file_encoding", None)))
+        self._update_cursor_pos()
 
     def _periodic_save_settings(self) -> None:
         """

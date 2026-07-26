@@ -7,6 +7,7 @@ from PySide6.QtGui import QColor
 from je_editor.pyside_ui.main_ui.save_settings.setting_utils import write_setting
 from je_editor.utils.json.json_file import read_json
 from je_editor.utils.logging.loggin_instance import jeditor_logger
+from je_editor.utils.theme.theme_colors import DARK_COLORS, retheme
 
 
 def _to_qcolor(key: str, fallback: list) -> QColor:
@@ -59,34 +60,10 @@ def update_actually_color_dict() -> None:
     )
 
 
-# 使用者設定的顏色字典 (以 RGB list 表示)
-# User-defined color dictionary (stored as RGB lists)
+# 使用者設定的顏色字典 (以 RGB list 表示)，預設為深色底的那一組
+# User-defined color dictionary (stored as RGB lists), starting from the dark set
 user_setting_color_dict: Dict[str, list] = {
-    "line_number_color": [255, 255, 255],
-    "line_number_background_color": [179, 179, 179],
-    "current_line_color": [148, 148, 184],
-    "normal_output_color": [255, 255, 255],
-    "error_output_color": [255, 0, 0],
-    "warning_output_color": [204, 204, 0],
-    "bookmark_marker_color": [66, 165, 245],
-    "fold_marker_color": [120, 120, 120],
-    "occurrence_highlight_color": [80, 90, 60],
-    "diff_added_marker_color": [76, 175, 80],
-    "diff_modified_marker_color": [255, 167, 38],
-    "diff_removed_marker_color": [229, 57, 53],
-    "lint_underline_color": [255, 138, 101],
-    "blame_annotation_color": [130, 130, 130],
-    "indent_guide_color": [90, 90, 110],
-    "minimap_background_color": [40, 40, 48],
-    "minimap_line_color": [130, 130, 150],
-    "minimap_viewport_color": [80, 80, 110],
-    "extra_cursor_color": [255, 215, 64],
-    "breakpoint_marker_color": [229, 57, 53],
-    "syntax_keyword_color": [86, 156, 214],
-    "syntax_string_color": [206, 145, 120],
-    "syntax_comment_color": [106, 153, 85],
-    "syntax_number_color": [181, 206, 168],
-    "trailing_whitespace_color": [120, 70, 70]
+    key: list(value) for key, value in DARK_COLORS.items()
 }
 
 # 實際使用的顏色字典 (以 QColor 表示)
@@ -96,6 +73,22 @@ actually_color_dict: Dict[str, QColor] = {}
 # 初始化時先更新一次
 # Update once at initialization
 update_actually_color_dict()
+
+
+def apply_theme_colors(style_name: str) -> None:
+    """
+    依視窗樣式換上對應的編輯器顏色
+    Move the editor's own colours to the ones that suit the window style.
+
+    使用者親自挑過的顏色不會被蓋掉；只有還是預設值的那些會跟著主題走。
+    A colour the user picked is left alone; only those still at a default follow
+    the theme.
+
+    :param style_name: qt-material 的樣式檔名 / the qt-material style file name
+    """
+    jeditor_logger.info(f"user_color_setting_file.py apply_theme_colors {style_name}")
+    user_setting_color_dict.update(retheme(user_setting_color_dict, style_name))
+    update_actually_color_dict()
 
 
 def write_user_color_setting() -> None:

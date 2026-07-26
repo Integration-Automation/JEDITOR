@@ -34,23 +34,26 @@ from je_editor.utils.indentation.indent_convert import (
 from je_editor.utils.indentation.indent_guides import (
     guide_columns, trailing_whitespace_start
 )
-from je_editor.git_client.file_staging import stage_content, staged_text
-from je_editor.utils.debugger.pdb_commands import breakpoint_commands, step_command
+from je_editor.git_client.file_staging import (
+    commit_index, stage_content, staged_text, unstage_file
+)
+from je_editor.utils.debugger.pdb_commands import (
+    breakpoint_commands, step_command, toggle_command
+)
 from je_editor.utils.file_diff.line_status import apply_hunk
 from je_editor.utils.file_diff.unified import unified_diff_text
 from je_editor.utils.lint.ruff_diagnostics import diagnostics_from_entries
 from je_editor.utils.macro.keystroke_macro import KeystrokeMacro
 from je_editor.utils.selection.surround import SURROUND_PAIRS, surround
-from je_editor.utils.shortcuts.shortcut_registry import (
-    WINDOW_SHORTCUTS, ShortcutRegistry
-)
+from je_editor.pyside_ui.main_ui.save_settings.shortcut_setting import bind, shortcut_for
+from je_editor.utils.shortcuts.shortcut_registry import WINDOW_SHORTCUTS, ShortcutRegistry
 from je_editor.utils.line_ops.line_operations import (
     join_lines, natural_sort, remove_blank_lines, reverse_lines, sort_lines, unique_lines
 )
 from je_editor.utils.navigation.location_history import LocationHistory
 from je_editor.utils.number_ops.number_ops import adjust_number_at, to_base
 from je_editor.utils.occurrence.word_occurrences import (
-    find_occurrences, replace_whole_word, word_at
+    find_occurrences, lines_containing, replace_whole_word, word_at
 )
 from je_editor.utils.text_cleanup.text_cleanup import trim_trailing_whitespace
 from je_editor.pyside_ui.code.syntax.generic_syntax import highlighter_for
@@ -116,6 +119,13 @@ _DIFF_REFRESH_DELAY_MS = 400
 # markers because it spawns a subprocess
 _LINT_REFRESH_DELAY_MS = 900
 
+# 額外游標選取範圍的底色透明度；夠淡才不會蓋掉底下的文字
+# How solid an extra caret's selection wash is; faint enough to read through
+_EXTRA_SELECTION_ALPHA = 70
+# 選取範圍剛好落在行尾時仍畫出的最小寬度
+# The width still drawn when a selection ends exactly at a line's end
+_EMPTY_SELECTION_WIDTH = 2
+
 # 多重游標啟用時，這些按鍵各自對應一個整批動作
 # With extra carets active, each of these keys drives one batched action
 _MULTI_CURSOR_KEYS = {
@@ -126,6 +136,21 @@ _MULTI_CURSOR_KEYS = {
     Qt.Key.Key_Enter: lambda manager: manager.insert_newline(),
     Qt.Key.Key_Left: lambda manager: manager.move_all(-1),
     Qt.Key.Key_Right: lambda manager: manager.move_all(1),
+    Qt.Key.Key_Up: lambda manager: manager.move_all_vertically(-1),
+    Qt.Key.Key_Down: lambda manager: manager.move_all_vertically(1),
+    Qt.Key.Key_Home: lambda manager: manager.move_all_to_line_edge(False),
+    Qt.Key.Key_End: lambda manager: manager.move_all_to_line_edge(True),
+}
+
+# 按住 Shift 時，同樣的按鍵改為擴大每個游標的選取範圍
+# With Shift held, the same keys extend each caret's selection instead
+_MULTI_CURSOR_SHIFT_KEYS = {
+    Qt.Key.Key_Left: lambda manager: manager.extend_all(-1),
+    Qt.Key.Key_Right: lambda manager: manager.extend_all(1),
+    Qt.Key.Key_Up: lambda manager: manager.extend_all_vertically(-1),
+    Qt.Key.Key_Down: lambda manager: manager.extend_all_vertically(1),
+    Qt.Key.Key_Home: lambda manager: manager.extend_all_to_line_edge(False),
+    Qt.Key.Key_End: lambda manager: manager.extend_all_to_line_edge(True),
 }
 
 
@@ -232,6 +257,9 @@ class CodeEditor(QPlainTextEdit):
 
         # 搜尋框 (延遲建立)
         self.search_box = None
+        # 目前搜尋框在找的字串；縮圖用它標出命中的行
+        # What the search box is looking for; the minimap marks the lines it hits
+        self._search_term = ""
 
         # 行號區域 (LineNumber 是另一個自訂類別)
         self.line_number: LineNumber = LineNumber(self)
@@ -263,12 +291,10 @@ class CodeEditor(QPlainTextEdit):
 
         # 搜尋 (Ctrl+F)、搜尋與取代 (Ctrl+H)、跳到指定行 (Ctrl+G)
         # Search (Ctrl+F), search & replace (Ctrl+H) and go to line (Ctrl+G)
-        self.search_action = self._add_shortcut_action(
-            "Ctrl+F", "search", self.start_search_dialog)
+        self.search_action = self._add_shortcut_action("search", self.start_search_dialog)
         self.search_replace_action = self._add_shortcut_action(
-            "Ctrl+H", "search_and_replace", self.open_search_replace_dialog)
-        self.goto_line_action = self._add_shortcut_action(
-            "Ctrl+G", "go_to_line", self.go_to_line)
+            "search_and_replace", self.open_search_replace_dialog)
+        self.goto_line_action = self._add_shortcut_action("go_to_line", self.go_to_line)
 
         # 自動補全初始化
         self.completer: Union[None, QCompleter] = None
@@ -365,6 +391,9 @@ class CodeEditor(QPlainTextEdit):
         self.lsp_client.hover_ready.connect(self.show_hover_text)
         self.lsp_client.edits_ready.connect(self.apply_server_edits)
         self.lsp_client.definition_ready.connect(self.go_to_definition_location)
+        self.lsp_client.signature_ready.connect(self.show_signature_text)
+        self.lsp_client.references_ready.connect(self.show_references)
+        self.lsp_client.code_actions_ready.connect(self.show_quick_fixes)
         self.start_language_server()
 
     def reset_highlighter(self) -> None:
@@ -536,6 +565,7 @@ class CodeEditor(QPlainTextEdit):
         jeditor_logger.info("CodeEditor find_next_text")
         if self.search_box.isVisible():
             text = self.search_box.search_input.text()
+            self.set_search_term(text)
             self.find(text)
 
     def find_back_text(self) -> None:
@@ -546,14 +576,65 @@ class CodeEditor(QPlainTextEdit):
         jeditor_logger.info("CodeEditor find_back_text")
         if self.search_box.isVisible():
             text = self.search_box.search_input.text()
+            self.set_search_term(text)
             self.find(text, QTextDocument.FindFlag.FindBackward)
+
+    def set_search_term(self, term: str) -> bool:
+        """
+        記下目前正在搜尋的字串
+        Remember what is currently being searched for.
+
+        縮圖用它來標出命中的行；搜尋框關掉或字串清空時就恢復標記游標所在的字詞。
+        The minimap marks the lines it hits; clearing it, or closing the search,
+        goes back to marking the word under the caret.
+
+        :param term: 搜尋字串 / the string being searched for
+        :return: 字串有變時為 ``True`` / ``True`` when it changed
+        """
+        term = term or ""
+        if term == self._search_term:
+            return False
+        self._search_term = term
+        minimap = getattr(self.main_window, "minimap", None)
+        if minimap is not None:
+            minimap.update()
+        return True
+
+    def search_term(self) -> str:
+        """
+        取得目前的搜尋字串
+        The string currently being searched for.
+
+        搜尋框關掉之後就不算還在搜尋了，因此標記會跟著消失。
+        A closed search box means nothing is being searched for any more, so the
+        marks go with it.
+
+        :return: 搜尋字串，沒在搜尋時為空字串 / the term, or an empty string
+        """
+        box = self.search_box
+        if box is not None and not box.isVisible():
+            return ""
+        return self._search_term
+
+    def search_hit_lines(self) -> list[int]:
+        """
+        取得含有目前搜尋字串的行
+        The lines holding the current search term.
+
+        :return: 行號（0 起算）/ the 0-based line numbers
+        """
+        return lines_containing(self.toPlainText(), self._search_term)
 
     # ── 快捷鍵註冊 / Shortcut registration ────────────────────────
 
-    def _add_shortcut_action(self, sequence: str, command: str, handler) -> QAction:
+    def _add_shortcut_action(self, command: str, handler) -> QAction:
         """
         建立一個綁定快捷鍵的動作，並登記到本編輯器的快捷鍵表
         Create an action bound to a key sequence and record it in this editor's table.
+
+        按鍵來自共用的快捷鍵表，因此使用者改過的設定會直接生效，這裡不再各自寫死。
+        The sequence comes from the shared table, so a setting the user changed
+        takes effect here without any of these being written down twice.
 
         兩個動作共用同一組按鍵時，Qt 不會挑一個執行而是兩個都不執行，因此每組按鍵
         都要先登記；重複指派會留下警告紀錄，測試也會直接失敗。
@@ -561,14 +642,25 @@ class CodeEditor(QPlainTextEdit):
         sequence is recorded here first: a clash is logged, and a test fails on it
         outright.
 
-        :param sequence: 按鍵組合 / the key sequence
-        :param command: 指令名稱，用於衝突訊息 / the command name, used in clash messages
+        內容脈絡設為 ``WidgetWithChildrenShortcut``，動作只在這個編輯器有焦點時作用。
+        Qt 比對快捷鍵時會略過看不見的 widget，所以分頁之間本來就不會互相干擾；但分割
+        檢視是同一個視窗裡兩個**同時可見**的編輯器，用視窗層級的脈絡就會讓每一組編輯器
+        快捷鍵各有兩個擁有者，於是兩個都不執行。
+        The context is ``WidgetWithChildrenShortcut`` so an action only fires while
+        this editor has focus. Qt already skips invisible widgets when matching, so
+        tabs never collide; but a split view puts two editors on screen **at once**,
+        and with the window-level context every editor shortcut would have two
+        owners and none of them would fire.
+
+        :param command: 指令名稱 / the command's name
         :param handler: 觸發時呼叫的函式 / what to call when it fires
         :return: 建立好的動作 / the action that was created
         """
+        sequence = shortcut_for(command)
         action = QAction(self)
         action.setObjectName(command)
-        action.setShortcut(sequence)
+        bind(action, command)
+        action.setShortcutContext(Qt.ShortcutContext.WidgetWithChildrenShortcut)
         action.triggered.connect(handler)
         owner = self.shortcut_registry.register(sequence, command)
         if owner is not None:
@@ -582,23 +674,23 @@ class CodeEditor(QPlainTextEdit):
         一次註冊多組快捷鍵
         Register several shortcuts at once.
 
-        :param bindings: ``(按鍵, 指令名稱, 處理函式)`` 的序列
-            / a sequence of ``(key sequence, command name, handler)``
+        :param bindings: ``(指令名稱, 處理函式)`` 的序列
+            / a sequence of ``(command name, handler)``
         """
-        for sequence, command, handler in bindings:
-            self._add_shortcut_action(sequence, command, handler)
+        for command, handler in bindings:
+            self._add_shortcut_action(command, handler)
 
     # ── 程式碼折疊與書籤 / Code folding and bookmarks ──────────────
 
     def _register_fold_bookmark_actions(self) -> None:
         """註冊折疊與書籤的快捷鍵 / Register folding and bookmark shortcuts."""
         self._add_shortcut_actions((
-            ("Ctrl+Shift+[", "toggle_fold", self.toggle_fold_at_cursor),
-            ("Ctrl+Alt+[", "fold_all", self.fold_all),
-            ("Ctrl+Alt+]", "unfold_all", self.unfold_all),
-            ("Ctrl+Alt+K", "toggle_bookmark", self.toggle_bookmark),
-            ("Ctrl+Alt+L", "next_bookmark", self.next_bookmark),
-            ("Ctrl+Alt+J", "previous_bookmark", self.previous_bookmark),
+            ("toggle_fold", self.toggle_fold_at_cursor),
+            ("fold_all", self.fold_all),
+            ("unfold_all", self.unfold_all),
+            ("toggle_bookmark", self.toggle_bookmark),
+            ("next_bookmark", self.next_bookmark),
+            ("previous_bookmark", self.previous_bookmark),
         ))
 
     def _on_text_changed_for_features(self) -> None:
@@ -644,10 +736,10 @@ class CodeEditor(QPlainTextEdit):
         decrement the number under the caret.
         """
         self._add_shortcut_actions((
-            ("F7", "next_change", self.next_change),
-            ("Shift+F7", "previous_change", self.previous_change),
-            ("Ctrl+Alt+Z", "revert_change", self.revert_change_at_cursor),
-            ("Ctrl+Alt+B", "toggle_blame", self.toggle_blame),
+            ("next_change", self.next_change),
+            ("previous_change", self.previous_change),
+            ("revert_change", self.revert_change_at_cursor),
+            ("toggle_blame", self.toggle_blame),
         ))
 
     def next_change(self) -> bool:
@@ -792,6 +884,42 @@ class CodeEditor(QPlainTextEdit):
             return False
         staged = apply_hunk(baseline, self.toPlainText(), hunk)
         return stage_content(str(self.current_file), staged)
+
+    def unstage_current_file(self) -> bool:
+        """
+        取消這個檔案的暫存內容
+        Unstage this file.
+
+        索引回到已提交的版本，編輯中的內容完全不動——暫存錯一段之後只能這樣收回。
+        The index returns to the committed version and what is being edited is
+        untouched, which is the only way back from staging the wrong hunk.
+
+        :return: 索引有變時為 ``True`` / ``True`` when the index changed
+        """
+        if self.current_file is None:
+            return False
+        return unstage_file(str(self.current_file))
+
+    def commit_current_file(self) -> bool:
+        """
+        把已暫存的內容提交出去
+        Commit what is currently staged.
+
+        提交的是索引裡的內容，不是編輯器裡的：逐段暫存之後，這樣才能只提交挑好的
+        那幾段。
+        What is committed is the index, not the buffer: after staging hunk by
+        hunk, that is what makes committing only the chosen parts possible.
+
+        :return: 有提交時為 ``True`` / ``True`` when a commit was made
+        """
+        if self.current_file is None:
+            return False
+        message, confirmed = QInputDialog.getText(
+            self, language_wrapper.language_word_dict.get("git_commit_title"),
+            language_wrapper.language_word_dict.get("git_commit_prompt"))
+        if not confirmed or not message.strip():
+            return False
+        return commit_index(str(self.current_file), message)
 
     def staged_diff_text(self) -> str:
         """
@@ -1012,8 +1140,8 @@ class CodeEditor(QPlainTextEdit):
     def _register_history_actions(self) -> None:
         """註冊上一步／下一步快捷鍵 / Register back/forward shortcuts."""
         self._add_shortcut_actions((
-            ("Alt+Left", "navigate_back", self.navigate_back),
-            ("Alt+Right", "navigate_forward", self.navigate_forward),
+            ("navigate_back", self.navigate_back),
+            ("navigate_forward", self.navigate_forward),
         ))
 
     def _record_cursor_jump(self) -> None:
@@ -1468,8 +1596,8 @@ class CodeEditor(QPlainTextEdit):
     def _register_smart_selection_actions(self) -> None:
         """註冊智慧選取快捷鍵 / Register smart selection shortcuts."""
         self._add_shortcut_actions((
-            ("Ctrl+Alt+Right", "expand_selection", self.expand_selection),
-            ("Ctrl+Alt+Left", "shrink_selection", self.shrink_selection),
+            ("expand_selection", self.expand_selection),
+            ("shrink_selection", self.shrink_selection),
         ))
 
     def expand_selection(self) -> None:
@@ -1485,9 +1613,9 @@ class CodeEditor(QPlainTextEdit):
     def _register_number_actions(self) -> None:
         """註冊數字加減快捷鍵 / Register number increment/decrement shortcuts."""
         self._add_shortcut_actions((
-            ("Ctrl+Alt+Up", "increment_number", lambda: self.adjust_number(1)),
-            ("Ctrl+Alt+Down", "decrement_number", lambda: self.adjust_number(-1)),
-            ("F2", "rename_occurrences", self.rename_word_under_cursor),
+            ("increment_number", lambda: self.adjust_number(1)),
+            ("decrement_number", lambda: self.adjust_number(-1)),
+            ("rename_occurrences", self.rename_word_under_cursor),
         ))
 
     def rename_word_under_cursor(self) -> bool:
@@ -1549,9 +1677,9 @@ class CodeEditor(QPlainTextEdit):
     def _register_line_operation_actions(self) -> None:
         """註冊行操作快捷鍵 / Register line-operation shortcuts."""
         self._add_shortcut_actions((
-            ("Ctrl+Shift+D", "delete_line", self.delete_current_line),
-            ("Ctrl+Shift+J", "join_lines", self.join_selected_lines),
-            ("Ctrl+Alt+S", "sort_lines", self.sort_selected_lines),
+            ("delete_line", self.delete_current_line),
+            ("join_lines", self.join_selected_lines),
+            ("sort_lines", self.sort_selected_lines),
         ))
 
     def _selected_block_range(self, cursor: QTextCursor) -> tuple[int, int]:
@@ -2215,11 +2343,11 @@ class CodeEditor(QPlainTextEdit):
         breakpoint and continuing use Ctrl+F9 and Ctrl+F5 instead.
         """
         self._add_shortcut_actions((
-            ("Ctrl+F9", "toggle_breakpoint", self.toggle_breakpoint),
-            ("Ctrl+F5", "debug_continue", lambda: self.send_debugger_command("continue")),
-            ("F10", "debug_step_over", lambda: self.send_debugger_command("over")),
-            ("F11", "debug_step_into", lambda: self.send_debugger_command("into")),
-            ("Shift+F11", "debug_step_out", lambda: self.send_debugger_command("out")),
+            ("toggle_breakpoint", self.toggle_breakpoint),
+            ("debug_continue", lambda: self.send_debugger_command("continue")),
+            ("debug_step_over", lambda: self.send_debugger_command("over")),
+            ("debug_step_into", lambda: self.send_debugger_command("into")),
+            ("debug_step_out", lambda: self.send_debugger_command("out")),
         ))
 
     def toggle_breakpoint(self) -> bool:
@@ -2227,11 +2355,38 @@ class CodeEditor(QPlainTextEdit):
         切換游標所在行的中斷點
         Add or remove a breakpoint on the caret's line.
 
+        除錯器正在跑的話，這次改動也會送過去，中斷點因此在除錯途中也能加減，而不是
+        只能在啟動前決定好。
+        With the debugger running the change is sent across as well, so breakpoints
+        can be added and removed part-way through a session rather than only being
+        settled before it starts.
+
         :return: 切換後是否有中斷點 / whether the line now has one
         """
-        result = self.breakpoint_manager.toggle(self.textCursor().blockNumber())
+        line = self.textCursor().blockNumber()
+        result = self.breakpoint_manager.toggle(line)
         self.line_number.update()
+        self.send_breakpoint_change(line, result)
         return result
+
+    def send_breakpoint_change(self, line: int, is_set: bool) -> bool:
+        """
+        把一行的中斷點改動送給正在執行的除錯器
+        Send one line's breakpoint change to the running debugger.
+
+        pdb 只在提示符時讀指令，所以程式還在跑的話這個指令會等到下次停下來才生效
+        ——那正是它該生效的時機。
+        pdb only reads commands at its prompt, so while the program is running the
+        command waits for the next stop, which is exactly when it should apply.
+
+        :param line: 以 0 起算的行號 / the 0-based line number
+        :param is_set: 該行現在是否有中斷點 / whether the line now has one
+        :return: 有送出時為 ``True`` / ``True`` when the command was sent
+        """
+        if self.current_file is None:
+            return False
+        return self._write_debugger_line(
+            toggle_command(str(self.current_file), line + 1, is_set))
 
     def _debugger_process(self):
         """取得正在執行的除錯器程序 / The debugger process that is running, if any."""
@@ -2295,9 +2450,9 @@ class CodeEditor(QPlainTextEdit):
         Playback uses Ctrl+Shift+G because Ctrl+Shift+P installs packages with pip.
         """
         self._add_shortcut_actions((
-            ("Ctrl+Shift+R", "record_macro", self.toggle_macro_recording),
-            ("Ctrl+Shift+G", "play_macro", self.play_macro),
-            ("Ctrl+Alt+E", "recent_locations", self.show_recent_locations),
+            ("record_macro", self.toggle_macro_recording),
+            ("play_macro", self.play_macro),
+            ("recent_locations", self.show_recent_locations),
         ))
 
     def recent_location_labels(self) -> list[str]:
@@ -2403,11 +2558,11 @@ class CodeEditor(QPlainTextEdit):
         always duplicated the current line.
         """
         self._add_shortcut_actions((
-            ("Ctrl+Shift+L", "cursors_on_selected_lines", self.add_cursors_to_selected_lines),
-            ("Ctrl+Shift+Escape", "clear_extra_cursors", self.clear_extra_cursors),
-            ("Ctrl+Alt+Shift+Up", "cursor_above", self.add_cursor_above),
-            ("Ctrl+Alt+Shift+Down", "cursor_below", self.add_cursor_below),
-            ("Ctrl+Alt+N", "cursor_at_next_occurrence", self.add_cursor_at_next_occurrence),
+            ("cursors_on_selected_lines", self.add_cursors_to_selected_lines),
+            ("clear_extra_cursors", self.clear_extra_cursors),
+            ("cursor_above", self.add_cursor_above),
+            ("cursor_below", self.add_cursor_below),
+            ("cursor_at_next_occurrence", self.add_cursor_at_next_occurrence),
         ))
 
     def add_cursors_to_selected_lines(self) -> int:
@@ -2502,15 +2657,59 @@ class CodeEditor(QPlainTextEdit):
         super().mouseReleaseEvent(event)
 
     def _paint_extra_cursors(self) -> None:
-        """畫出每個額外游標 / Draw each extra caret."""
+        """畫出每個額外游標與它選取的範圍 / Draw each extra caret and what it selects."""
         painter = QPainter(self.viewport())
-        painter.setPen(actually_color_dict.get("extra_cursor_color"))
+        colour = actually_color_dict.get("extra_cursor_color")
+        self._paint_extra_selections(painter, colour)
+        painter.setPen(colour)
         cursor = QTextCursor(self.document())
         for position in self.multi_cursor_manager.positions():
             cursor.setPosition(min(position, self.document().characterCount() - 1))
             rect = self.cursorRect(cursor)
             painter.drawLine(rect.left(), rect.top(), rect.left(), rect.bottom())
         painter.end()
+
+    def _paint_extra_selections(self, painter: QPainter, colour) -> None:
+        """
+        把每個額外游標選取的範圍畫成淡色底
+        Wash each extra caret's selection in a faint version of the caret colour.
+
+        逐行畫：一段選取可能跨好幾行，每一行的矩形都要各自算。
+        Line by line: a selection can span several, and each needs its own rect.
+        """
+        tint = QColor(colour)
+        tint.setAlpha(_EXTRA_SELECTION_ALPHA)
+        cursor = QTextCursor(self.document())
+        for start, end in self.multi_cursor_manager.selections():
+            for line_start, line_end in self._selection_rows(start, end):
+                cursor.setPosition(line_start)
+                left = self.cursorRect(cursor)
+                cursor.setPosition(line_end)
+                right = self.cursorRect(cursor)
+                painter.fillRect(
+                    left.left(), left.top(),
+                    max(right.left() - left.left(), _EMPTY_SELECTION_WIDTH),
+                    left.height(), tint)
+
+    def _selection_rows(self, start: int, end: int) -> list[tuple[int, int]]:
+        """
+        把一段選取切成每一行各自的範圍
+        Split a selection into one range per line it covers.
+
+        :param start: 選取的起點 / where the selection starts
+        :param end: 選取的終點 / where it ends
+        :return: 每一行的 ``(起, 訖)`` / the ``(start, end)`` of each line's part
+        """
+        document = self.document()
+        rows: list[tuple[int, int]] = []
+        block = document.findBlock(start)
+        while block.isValid() and block.position() < end:
+            row_start = max(start, block.position())
+            row_end = min(end, block.position() + len(block.text()))
+            if row_end >= row_start:
+                rows.append((row_start, row_end))
+            block = block.next()
+        return rows
 
     def _handle_multi_cursor_key(self, event: QKeyEvent) -> bool:
         """
@@ -2523,6 +2722,10 @@ class CodeEditor(QPlainTextEdit):
         if not self.multi_cursor_manager.active:
             return False
         key = event.key()
+        if event.modifiers() & Qt.KeyboardModifier.ShiftModifier:
+            extend = _MULTI_CURSOR_SHIFT_KEYS.get(key)
+            if extend is not None:
+                return extend(self.multi_cursor_manager)
         handler = _MULTI_CURSOR_KEYS.get(key)
         if handler is not None:
             return handler(self.multi_cursor_manager)
@@ -2662,11 +2865,19 @@ class CodeEditor(QPlainTextEdit):
             ("context_menu_go_to_definition", self.go_to_definition,
              self.lsp_client.running),
             ("context_menu_hover", self.request_hover, self.lsp_client.running),
+            ("context_menu_find_references", self.find_references,
+             self.lsp_client.running),
+            ("context_menu_quick_fix", self.request_quick_fixes,
+             self.lsp_client.running),
             ("context_menu_rename_symbol", self.rename_symbol, True),
             ("context_menu_format_document", self.format_with_language_server,
              self.lsp_client.running),
             ("context_menu_stage_hunk", self.stage_change_at_cursor,
              self.diff_marker_manager.has_baseline),
+            ("context_menu_unstage_file", self.unstage_current_file,
+             self.current_file is not None),
+            ("context_menu_commit_file", self.commit_current_file,
+             self.current_file is not None),
             ("context_menu_revert_hunk", self.revert_change_at_cursor,
              self.diff_marker_manager.has_baseline),
         ):
@@ -2800,6 +3011,94 @@ class CodeEditor(QPlainTextEdit):
         cursor = self.textCursor()
         return self.lsp_client.request_definition(
             cursor.blockNumber(), cursor.positionInBlock())
+
+    def request_signature_help(self) -> bool:
+        """
+        請語言伺服器說明正在輸入的呼叫
+        Ask the language server about the call being typed.
+
+        :return: 有送出請求時為 ``True`` / ``True`` when a request was sent
+        """
+        cursor = self.textCursor()
+        return self.lsp_client.request_signature_help(
+            cursor.blockNumber(), cursor.positionInBlock())
+
+    def show_signature_text(self, text: str) -> None:
+        """
+        顯示簽章說明
+        Show the signature the server described.
+
+        :param text: 簽章文字 / the signature
+        """
+        self.setToolTip(text)
+
+    def find_references(self) -> bool:
+        """
+        請語言伺服器找出游標所在符號的所有參照
+        Ask the language server where the symbol under the caret is referred to.
+
+        :return: 有送出請求時為 ``True`` / ``True`` when a request was sent
+        """
+        cursor = self.textCursor()
+        return self.lsp_client.request_references(
+            cursor.blockNumber(), cursor.positionInBlock())
+
+    def show_references(self, locations: list) -> bool:
+        """
+        列出參照位置，選一個就跳過去
+        List the references and jump to the chosen one.
+
+        :param locations: 參照位置 / the locations found
+        :return: 有跳轉時為 ``True`` / ``True`` when something was opened
+        """
+        if not locations:
+            return False
+        # 位置的行號已經是 1 起算的，與跳轉用的一致
+        # The locations already count lines from one, as the jump does
+        labels = [f"{Path(item['path']).name}:{item['line']}" for item in locations]
+        chosen, confirmed = QInputDialog.getItem(
+            self, language_wrapper.language_word_dict.get("lsp_references_title"),
+            language_wrapper.language_word_dict.get("lsp_references_prompt"),
+            labels, 0, False)
+        if not confirmed or not chosen:
+            return False
+        return self.go_to_definition_location(locations[labels.index(chosen)])
+
+    def request_quick_fixes(self) -> bool:
+        """
+        請語言伺服器提出游標所在位置的修正
+        Ask the language server what can be fixed at the caret.
+
+        把該行的診斷一併送過去，伺服器才知道要針對哪個問題提修正。
+        The line's diagnostics go with it, since that is what tells the server
+        which problem to offer a fix for.
+
+        :return: 有送出請求時為 ``True`` / ``True`` when a request was sent
+        """
+        cursor = self.textCursor()
+        line = cursor.blockNumber()
+        return self.lsp_client.request_code_actions(
+            line, cursor.positionInBlock(), self.lsp_client.diagnostics_on_line(line))
+
+    def show_quick_fixes(self, actions: list) -> bool:
+        """
+        列出可套用的修正，選一個就套用
+        List the available fixes and apply the chosen one.
+
+        :param actions: 伺服器提供的修正 / the fixes the server offered
+        :return: 有套用時為 ``True`` / ``True`` when a fix was applied
+        """
+        if not actions:
+            return False
+        titles = [action["title"] for action in actions]
+        chosen, confirmed = QInputDialog.getItem(
+            self, language_wrapper.language_word_dict.get("lsp_quick_fix_title"),
+            language_wrapper.language_word_dict.get("lsp_quick_fix_prompt"),
+            titles, 0, False)
+        if not confirmed or not chosen:
+            return False
+        self.apply_server_edits(actions[titles.index(chosen)]["edits"])
+        return True
 
     def closeEvent(self, event: QtGui.QCloseEvent) -> None:
         """

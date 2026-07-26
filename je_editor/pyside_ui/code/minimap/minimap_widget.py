@@ -82,24 +82,40 @@ class MinimapWidget(QWidget):
         取得要在縮圖上標記的行
         The lines the minimap should mark.
 
-        資料全部來自編輯器已經算好的東西——git 變更、診斷、游標所在字詞的其他
-        出現處——所以標記不需要自己再掃一次檔案。
-        Everything comes from what the editor has already worked out: git
-        changes, diagnostics, and the other occurrences of the word under the
-        caret. The markers never rescan the file themselves.
+        診斷與 git 變更來自編輯器已經算好的結果。中間那一排標的是「使用者正在找的
+        東西」：搜尋框有輸入時就是它的命中行，沒有時才退回游標所在字詞的其他出現處。
+        Diagnostics and git changes come from what the editor has already worked
+        out. The middle column marks what the user is looking for: the search
+        box's hits while something is being searched for, and otherwise the other
+        occurrences of the word under the caret.
 
         :return: 標記種類對應行號（0 起算）/ marker kind -> 0-based line numbers
         """
         editor = self._code_edit
         diagnostics = sorted({item.line - 1 for item in editor.lint_manager.diagnostics()})
         changes = sorted(editor.diff_marker_manager.statuses())
+        return {
+            "diagnostic": diagnostics,
+            "change": changes,
+            "occurrence": self._lines_being_looked_for(),
+        }
+
+    def _lines_being_looked_for(self) -> list[int]:
+        """
+        取得使用者正在找的行
+        The lines holding whatever the user is looking for.
+
+        :return: 行號（0 起算）/ the 0-based line numbers
+        """
+        editor = self._code_edit
+        if editor.search_term():
+            return editor.search_hit_lines()
         document = editor.document()
-        occurrences = sorted({
+        return sorted({
             document.findBlock(position).blockNumber()
             for position in editor.word_occurrences_under_cursor(
                 editor.toPlainText(), editor.textCursor().position())
         })
-        return {"diagnostic": diagnostics, "change": changes, "occurrence": occurrences}
 
     def _paint_markers(self, painter: QPainter, step: int) -> None:
         """在縮圖兩側畫出診斷、變更與出現處的標記 / Mark diagnostics, changes and hits."""

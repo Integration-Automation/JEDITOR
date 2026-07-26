@@ -4,11 +4,13 @@ from typing import TYPE_CHECKING
 
 # 匯入 Qt 動作
 # Import QAction
+from PySide6.QtCore import Qt
 from PySide6.QtGui import QAction
 from PySide6.QtWidgets import QApplication
 
 # 匯入使用者設定字典，用來保存 UI 樣式設定
 # Import user settings dictionary for saving UI style preferences
+from je_editor.pyside_ui.main_ui.save_settings.user_color_setting_file import apply_theme_colors
 from je_editor.pyside_ui.main_ui.save_settings.user_setting_file import user_setting_dict
 # 匯入日誌紀錄器
 # Import logger instance
@@ -60,6 +62,16 @@ def set_style_menu(ui_we_want_to_set: EditorMain) -> None:
     # 編輯器疊加顯示的開關 / Toggles for the editor's overlays
     ui_we_want_to_set.menu.style_menu.addSeparator()
     add_overlay_toggles(ui_we_want_to_set)
+
+    # 快捷鍵設定 / The keyboard shortcut settings
+    ui_we_want_to_set.menu.style_menu.addSeparator()
+    ui_we_want_to_set.menu.style_menu.shortcut_settings_action = QAction(
+        language_wrapper.language_word_dict.get("shortcut_settings_menu_label"),
+        parent=ui_we_want_to_set.menu.style_menu)
+    ui_we_want_to_set.menu.style_menu.shortcut_settings_action.triggered.connect(
+        lambda: open_shortcut_settings(ui_we_want_to_set))
+    ui_we_want_to_set.menu.style_menu.addAction(
+        ui_we_want_to_set.menu.style_menu.shortcut_settings_action)
 
 
 def add_overlay_toggles(ui_we_want_to_set: EditorMain) -> None:
@@ -121,3 +133,38 @@ def set_style(ui_we_want_to_set: EditorMain, action: QAction) -> None:
     # 更新使用者設定，保存目前選擇的樣式
     # Update user settings dictionary to persist the chosen style
     user_setting_dict.update({"ui_style": action.text()})
+
+    # 編輯器自己畫的顏色也要跟著換，否則淺色樣式配深色底調出來的標記會看不清楚
+    # The colours the editor paints itself follow along, or a light style would
+    # be left with markers tuned for a dark background
+    apply_theme_colors(action.text())
+    _repaint_editors(ui_we_want_to_set)
+
+
+def open_shortcut_settings(ui_we_want_to_set: EditorMain) -> None:
+    """
+    開啟快捷鍵設定對話框
+    Open the keyboard shortcut settings.
+
+    :param ui_we_want_to_set: 主編輯器視窗 / the main editor window
+    """
+    from je_editor.pyside_ui.dialog.shortcut_dialog.shortcut_settings_dialog import (
+        ShortcutSettingsDialog
+    )
+    dialog = ShortcutSettingsDialog(ui_we_want_to_set, parent=ui_we_want_to_set)
+    dialog.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
+    dialog.show()
+
+
+def _repaint_editors(ui_we_want_to_set: EditorMain) -> None:
+    """讓每個編輯分頁用新顏色重畫 / Repaint every editor tab in the new colours."""
+    from je_editor.pyside_ui.main_ui.editor.editor_widget import EditorWidget
+    tab_widget = getattr(ui_we_want_to_set, "tab_widget", None)
+    if tab_widget is None:
+        return
+    for index in range(tab_widget.count()):
+        widget = tab_widget.widget(index)
+        if isinstance(widget, EditorWidget):
+            widget.code_edit.highlight_current_line()
+            widget.code_edit.viewport().update()
+            widget.code_edit.line_number.update()
