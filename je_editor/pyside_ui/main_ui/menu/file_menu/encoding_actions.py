@@ -40,6 +40,20 @@ def _update_auto_save(widget) -> None:
         thread.line_ending = widget.line_ending
 
 
+def _refresh_status_bar(ui_we_want_to_set) -> None:
+    """
+    讓狀態列跟上剛剛的改動
+    Let the status bar follow the change just made.
+
+    狀態列顯示的是分頁記憶中的編碼與行尾，改完不通知它就會停在舊值上。
+    The status bar shows the tab's remembered encoding and line ending, and would
+    otherwise sit on the old values.
+    """
+    refresh = getattr(ui_we_want_to_set, "refresh_status_bar", None)
+    if callable(refresh):
+        refresh()
+
+
 def apply_encoding(ui_we_want_to_set, encoding: str) -> bool:
     """
     以指定編碼重新解讀目前檔案，並用它存檔
@@ -60,6 +74,7 @@ def apply_encoding(ui_we_want_to_set, encoding: str) -> bool:
         return False
     widget.file_encoding = encoding
     _update_auto_save(widget)
+    _refresh_status_bar(ui_we_want_to_set)
     if widget.current_file is None or getattr(widget, "_is_modified", False):
         return True
     try:
@@ -76,6 +91,7 @@ def apply_encoding(ui_we_want_to_set, encoding: str) -> bool:
         widget.file_encoding = used_encoding
         widget.line_ending = line_ending
         _update_auto_save(widget)
+        _refresh_status_bar(ui_we_want_to_set)
     return True
 
 
@@ -157,4 +173,5 @@ def apply_line_ending_choice(ui_we_want_to_set, line_ending: str = LINE_ENDING_L
         return False
     widget.line_ending = line_ending
     _update_auto_save(widget)
+    _refresh_status_bar(ui_we_want_to_set)
     return True
