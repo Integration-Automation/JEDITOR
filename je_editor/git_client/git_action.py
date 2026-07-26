@@ -1,8 +1,6 @@
 import os
 from datetime import datetime
-from typing import Any, Callable
 
-from PySide6.QtCore import QThread, Signal
 from git import Repo, GitCommandError, InvalidGitRepositoryError, NoSuchPathError
 
 from je_editor.utils.logging.loggin_instance import jeditor_logger
@@ -35,7 +33,25 @@ class GitService:
         self.repo: Repo | None = None
         self.repo_path: str | None = None
 
+    def close(self) -> None:
+        """
+        關掉目前的儲存庫
+        Close the repository currently open.
+
+        每個開著的 ``Repo`` 都帶著常駐的 ``git cat-file`` 子程序，不關掉就會一直
+        累積；開了幾十個之後，同一個程序裡連要開一條新執行緒都會變慢。
+        Every open ``Repo`` carries long-lived ``git cat-file`` child processes and
+        they pile up if it is never closed; after a few dozen, even starting a
+        thread in the same process gets slow.
+        """
+        repo, self.repo = self.repo, None
+        if repo is not None:
+            repo.close()
+
     def open_repo(self, path: str) -> None:
+        # 換儲存庫時先把上一個關掉，否則它的子程序會一直留著
+        # Close the previous one first, or its child processes stay behind
+        self.close()
         try:
             self.repo = Repo(path)
             self.repo_path = path
@@ -251,25 +267,3 @@ class GitService:
 
 # Null tree constant for initial commit diff
 NULL_TREE = "4b825dc642cb6eb9a060e54bf8d69288fbee4904"
-
-
-# Worker thread wrapper
-class GitWorker(QThread):
-    """
-    Runs a function in a separate thread to avoid blocking the UI.
-    Emits (result, error) when done.
-    """
-    done = Signal(object, object)
-
-    def __init__(self, fn: Callable, *args: Any, **kwargs: Any) -> None:
-        super().__init__()
-        self.fn = fn
-        self.args = args
-        self.kwargs = kwargs
-
-    def run(self) -> None:
-        try:
-            res = self.fn(*self.args, **self.kwargs)
-            self.done.emit(res, None)
-        except Exception as e:
-            self.done.emit(None, e)

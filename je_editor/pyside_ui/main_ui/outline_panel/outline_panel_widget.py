@@ -12,7 +12,9 @@ from PySide6.QtWidgets import (
 from je_editor.utils.logging.loggin_instance import jeditor_logger
 from je_editor.utils.multi_language.multi_language_wrapper import language_wrapper
 from je_editor.utils.symbols.outline_tree import OutlineNode, build_outline_tree
-from je_editor.utils.symbols.python_symbols import SymbolInfo, extract_python_symbols
+from je_editor.utils.symbols.python_symbols import (
+    SymbolInfo, extract_python_symbols, symbols_from_server
+)
 
 # 樹狀項目中儲存符號行號的資料角色 / Item data role holding a symbol's line number
 _LINE_ROLE = Qt.ItemDataRole.UserRole
@@ -35,6 +37,8 @@ class OutlinePanelWidget(QWidget):
         super().__init__()
         word = language_wrapper.language_word_dict
         self._main_window = main_window
+        # 目前正在聽哪個編輯器的語言伺服器 / Whose language server is being listened to
+        self._connected_client = None
 
         self.refresh_button = QPushButton(word.get("outline_panel_refresh"))
         self.refresh_button.clicked.connect(self.refresh)
@@ -88,13 +92,65 @@ class OutlinePanelWidget(QWidget):
                 language_wrapper.language_word_dict.get("outline_panel_no_editor"))
             return
         symbols = extract_python_symbols(code_edit.toPlainText())
-        roots = build_outline_tree(symbols)
-        for node in roots:
+        if not symbols and self._ask_the_language_server(code_edit):
+            return
+        self._show_symbols(symbols)
+
+    def _show_symbols(self, symbols: list[SymbolInfo]) -> None:
+        """把符號畫成大綱 / Draw the symbols as an outline."""
+        self.tree.clear()
+        for node in build_outline_tree(symbols):
             self.tree.addTopLevelItem(self._build_item(node))
         self.tree.expandAll()
         jeditor_logger.info(f"outline_panel_widget.py built outline of {len(symbols)} symbols")
         self.status_label.setText(
             language_wrapper.language_word_dict.get("outline_panel_found").format(count=len(symbols)))
+
+    def _ask_the_language_server(self, code_edit) -> bool:
+        """
+        向語言伺服器要這個檔案的符號
+        Ask the language server for this file's symbols.
+
+        大綱原本只靠 ``ast`` 解析 Python，其他語言一律是空的。有語言伺服器的話它
+        知道同一件事，問它就好。
+        The outline only ever parsed Python with ``ast``, leaving every other
+        language empty. A language server knows the same thing, so it is asked.
+
+        :param code_edit: 目前的編輯器 / the current editor
+        :return: 有送出請求時為 ``True`` / ``True`` when a request was sent
+        """
+        client = getattr(code_edit, "lsp_client", None)
+        if client is None or not client.running:
+            return False
+        if client is not self._connected_client:
+            self._disconnect_client()
+            client.symbols_ready.connect(self._on_server_symbols)
+            self._connected_client = client
+        if not code_edit.request_document_symbols():
+            return False
+        self.status_label.setText(
+            language_wrapper.language_word_dict.get("outline_panel_ready"))
+        return True
+
+    def _disconnect_client(self) -> None:
+        """不再聽上一個編輯器的回覆 / Stop listening to the previous editor's replies."""
+        client, self._connected_client = self._connected_client, None
+        if client is None:
+            return
+        try:
+            client.symbols_ready.disconnect(self._on_server_symbols)
+        except (RuntimeError, TypeError):
+            # 它已經跟著分頁一起消失了 / It went away with its tab
+            return
+
+    def _on_server_symbols(self, symbols: list) -> None:
+        """
+        把語言伺服器回報的符號畫成大綱
+        Draw the symbols a language server reported.
+
+        :param symbols: ``{"name", "kind", "line", "depth"}`` 的清單 / the symbols
+        """
+        self._show_symbols(symbols_from_server(symbols))
 
     def _build_item(self, node: OutlineNode) -> QTreeWidgetItem:
         """把大綱節點轉成樹狀項目 / Turn an outline node into a tree item."""

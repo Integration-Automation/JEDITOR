@@ -63,6 +63,16 @@ class TestClosingStopsScheduledWork:
         editor.close()
         assert editor.lint_manager._worker is None
 
+    def test_the_completion_thread_is_waited_for(self, editor):
+        # It is the editor's one thread without a manager, so closeEvent has to
+        # wait for it itself; Qt aborts the process if it outlives the editor.
+        editor.close()
+        assert editor._complete_thread is None
+
+    def test_waiting_for_a_completion_thread_that_never_started_is_safe(self, editor):
+        editor.stop_completion_thread()
+        assert editor._complete_thread is None
+
 
 class TestLintManagerState:
     def test_starts_empty(self, editor):

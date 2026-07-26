@@ -10,11 +10,38 @@ from PySide6.QtWidgets import (
 )
 from git import Repo, InvalidGitRepositoryError, NoSuchPathError, GitCommandError
 
+from je_editor.git_client.git_action import GitService
 from je_editor.utils.logging.loggin_instance import jeditor_logger
+from je_editor.utils.multi_language.multi_language_wrapper import language_wrapper
 
 # UI 常數 / UI constants
 _CLONE_REPO_LABEL = "Clone Repo"
 _REPO_STATUS_DEFAULT = "Status: -"
+
+
+def _text(key: str) -> str:
+    """
+    取得翻譯後的文字
+    The translated text for a key.
+
+    這個面板的字串原本是寫死的英文，但語言檔裡一直有對應的翻譯沒被用到。
+    This panel's strings used to be hard-coded English while the translations for
+    them sat unused in the language files.
+
+    :param key: 語言鍵 / the language key
+    :return: 翻譯後的文字 / the translated text
+    """
+    return language_wrapper.language_word_dict.get(key, key)
+
+
+def _word(key: str) -> QPushButton:
+    """建立一個帶翻譯文字的按鈕 / A button labelled with a translated key."""
+    return QPushButton(_text(key))
+
+
+def _label(key: str) -> QLabel:
+    """建立一個帶翻譯文字的標籤 / A label showing a translated key."""
+    return QLabel(_text(key))
 
 
 class _GitWorker(QObject):
@@ -49,6 +76,9 @@ class GitGui(QWidget):
     def __init__(self) -> None:
         super().__init__()
         self.current_repo: Repo | None = None
+        # stash 與衝突處理走的服務層，開啟儲存庫後才建立
+        # The service layer stashing and conflicts use, built once a repo is open
+        self._git_service: GitService | None = None
         self.last_opened_repo_path = None
         self._init_ui()  # 初始化 UI
         self._restore_last_opened_repository()  # 嘗試還原上次開啟的 repo
@@ -59,6 +89,10 @@ class GitGui(QWidget):
         Run Git operation in background thread to avoid blocking UI
         """
         thread = QThread(self)
+        # 具名執行緒：萬一它在執行中被銷毀，Qt 的中止訊息才說得出是哪一條
+        # A named thread, so Qt's abort message says which one if it is ever
+        # destroyed while still running
+        thread.setObjectName("GitGuiWorker")
         worker = _GitWorker(func)
         worker.moveToThread(thread)
         thread.started.connect(worker.run)
@@ -80,16 +114,16 @@ class GitGui(QWidget):
     def _init_ui(self) -> None:
         # === Top controls / 上方控制區 ===
         self.repo_path_label = QLabel("Repository: (none)")
-        self.open_repo_button = QPushButton("Open Repo")
+        self.open_repo_button = _word("btn_open_repo")
         self.branch_selector = QComboBox()
-        self.checkout_button = QPushButton("Checkout")
+        self.checkout_button = _word("btn_checkout")
         self.clone_repo_button = QPushButton(_CLONE_REPO_LABEL)
         self.repo_status_label = QLabel(_REPO_STATUS_DEFAULT)
         self.commit_status_label = QLabel("Unpushed commits: ...")
 
         top = QHBoxLayout()
         top.addWidget(self.repo_path_label, 1)
-        top.addWidget(QLabel("Branch:"))
+        top.addWidget(_label("label_branch"))
         top.addWidget(self.branch_selector, 1)
         top.addWidget(self.checkout_button)
         top.addWidget(self.open_repo_button)
@@ -126,17 +160,21 @@ class GitGui(QWidget):
 
         # === Bottom: staging and commit controls / 下方：stage 與 commit 控制 ===
         self.commit_message_input = QLineEdit()
-        self.commit_message_input.setPlaceholderText("Commit message...")
-        self.stage_selected_button = QPushButton("Stage Selected")
-        self.unstage_selected_button = QPushButton("Unstage Selected")
-        self.stage_all_button = QPushButton("Stage All")
-        self.commit_button = QPushButton("Commit")
-        self.unstage_all_button = QPushButton("Unstage All")
-        self.track_all_untracked_button = QPushButton("Track All Untracked")
-        self.git_push_button = QPushButton("Push")
+        self.commit_message_input.setPlaceholderText(_text("placeholder_commit_message"))
+        self.stage_selected_button = _word("btn_stage_selected")
+        self.unstage_selected_button = _word("btn_unstage_selected")
+        self.stage_all_button = _word("btn_stage_all")
+        self.commit_button = _word("btn_commit")
+        self.unstage_all_button = _word("btn_unstage_all")
+        self.track_all_untracked_button = _word("btn_track_all_untracked")
+        self.git_push_button = _word("btn_push")
+        # 收起手邊的修改與解決合併衝突 / Putting work down, and settling a merge
+        self.stash_button = _word("btn_stash")
+        self.stash_pop_button = _word("btn_stash_pop")
+        self.resolve_button = _word("btn_resolve_conflict")
 
         bottom = QHBoxLayout()
-        bottom.addWidget(QLabel("Message:"))
+        bottom.addWidget(_label("label_message"))
         bottom.addWidget(self.commit_message_input, 1)
         bottom.addWidget(self.stage_selected_button)
         bottom.addWidget(self.unstage_selected_button)
@@ -145,6 +183,9 @@ class GitGui(QWidget):
         bottom.addWidget(self.commit_button)
         bottom.addWidget(self.track_all_untracked_button)
         bottom.addWidget(self.git_push_button)
+        bottom.addWidget(self.stash_button)
+        bottom.addWidget(self.stash_pop_button)
+        bottom.addWidget(self.resolve_button)
 
         # === Main layout / 主版面配置 ===
         center_layout = QVBoxLayout()
@@ -168,6 +209,9 @@ class GitGui(QWidget):
         self.unstage_all_button.clicked.connect(self.on_unstage_all_changes)
         self.track_all_untracked_button.clicked.connect(self.on_track_all_untracked_files)
         self.git_push_button.clicked.connect(self.on_push_to_github)
+        self.stash_button.clicked.connect(self.on_stash_changes)
+        self.stash_pop_button.clicked.connect(self.on_pop_stash)
+        self.resolve_button.clicked.connect(self.on_resolve_conflict)
 
         self._update_ui_controls(enabled=False)
 
@@ -220,6 +264,10 @@ class GitGui(QWidget):
         Load a Git repository from a given folder.
         從指定資料夾載入 Git 儲存庫。
         """
+        # 換了儲存庫：先關掉上一個，它的常駐子程序才不會留著
+        # A different repository: close the previous one so its long-lived child
+        # processes do not stay behind
+        self._close_repositories()
         try:
             self.current_repo = Repo(selected_directory_path)
             if self.current_repo.bare:
@@ -641,9 +689,148 @@ class GitGui(QWidget):
                 self.branch_selector, self.checkout_button, self.changes_list_widget,
                 self.diff_viewer, self.commit_message_input, self.stage_selected_button,
                 self.unstage_selected_button, self.stage_all_button, self.commit_button,
-                self.unstage_all_button, self.track_all_untracked_button, self.git_push_button
+                self.unstage_all_button, self.track_all_untracked_button, self.git_push_button,
+                self.stash_button, self.stash_pop_button, self.resolve_button
         ):
             widget.setEnabled(enabled)
+
+    def closeEvent(self, event) -> None:
+        """
+        關閉前等背景的 git 操作結束
+        Wait for the background git operations before closing.
+
+        這些執行緒掛在這個面板底下，面板被銷毀時它們還在跑的話，Qt 會直接讓程序
+        中止；fetch 之類的網路操作要跑上一段時間。
+        They hang off this panel, and Qt aborts the process outright if one is
+        still running when the panel is destroyed -- and a network operation such
+        as fetch takes a while.
+        """
+        self.update_commit_status_timer.stop()
+        for thread, _worker in getattr(self, "_bg_threads", []):
+            try:
+                if thread.isRunning():
+                    thread.quit()
+                    thread.wait()
+            except RuntimeError:
+                # 它已經跑完並被刪除了 / It already finished and was deleted
+                continue
+        self._bg_threads = []
+        # 開著的儲存庫也要關：每一個都帶著常駐的 git 子程序
+        # Close the repository too: each keeps long-lived git child processes
+        self._close_repositories()
+        super().closeEvent(event)
+
+    def _close_repositories(self) -> None:
+        """關掉面板持有的儲存庫 / Close the repositories this panel holds."""
+        repo, self.current_repo = self.current_repo, None
+        if repo is not None:
+            repo.close()
+        service, self._git_service = self._git_service, None
+        if service is not None:
+            service.close()
+
+    # ---------- Stash and conflicts ----------
+    # ---------- 暫存修改與衝突 ----------
+
+    def _service(self) -> GitService | None:
+        """
+        取得綁在目前儲存庫上的 Git 服務
+        The git service bound to the repository currently open.
+
+        stash 與衝突處理走 ``GitService``，它已經有稽核紀錄與測試；這個面板其餘的
+        操作是直接呼叫 GitPython 的舊寫法，沒有必要為了新功能再複製一次。
+        Stashing and conflicts go through ``GitService``, which already has audit
+        logging and tests; the rest of this panel calls GitPython directly, and
+        there is no reason to copy that again for something new.
+
+        :return: 服務，沒有開啟儲存庫時為 ``None`` / the service, or ``None``
+        """
+        if self.current_repo is None:
+            return None
+        if self._git_service is None:
+            self._git_service = GitService()
+            self._git_service.open_repo(self.current_repo.working_tree_dir)
+        return self._git_service
+
+    def on_stash_changes(self) -> None:
+        """
+        把目前的修改收進 stash
+        Put the current changes away in a stash.
+        """
+        service = self._service()
+        if service is None:
+            return
+        message = self.commit_message_input.text().strip()
+        try:
+            service.stash_save(message)
+        except GitCommandError as error:
+            QMessageBox.critical(self, "Error", f"{_text('err_stash')}:\n{error}")
+            return
+        self.commit_message_input.clear()
+        self._refresh_change_list()
+
+    def on_pop_stash(self) -> None:
+        """
+        取回一個 stash
+        Take a stash back.
+
+        有好幾個時讓使用者挑，因為最上面那個未必是想要的那個。
+        With more than one the user picks, since the top of the pile is not
+        necessarily the one they want.
+        """
+        service = self._service()
+        if service is None:
+            return
+        stashes = service.stash_list()
+        if not stashes:
+            QMessageBox.information(
+                self, _text("btn_stash"), _text("info_no_stash"))
+            return
+        chosen, confirmed = QInputDialog.getItem(
+            self, _text("dialog_stash_pop_title"), _text("dialog_stash_pop_prompt"),
+            stashes, 0, False)
+        if not confirmed or not chosen:
+            return
+        try:
+            service.stash_pop(stashes.index(chosen))
+        except GitCommandError as error:
+            QMessageBox.critical(self, "Error", f"{_text('err_stash_pop')}:\n{error}")
+            return
+        self._refresh_change_list()
+
+    def on_resolve_conflict(self) -> None:
+        """
+        解決一個檔案的合併衝突
+        Settle one file's merge conflict.
+
+        由使用者決定保留哪一邊；兩邊都要留的話得自己編輯，這裡不猜。
+        The user decides which side stays; keeping parts of both means editing the
+        file, and this does not guess at that.
+        """
+        service = self._service()
+        if service is None:
+            return
+        conflicts = service.conflicted_files()
+        if not conflicts:
+            QMessageBox.information(
+                self, _text("dialog_resolve_title"), _text("info_no_conflicts"))
+            return
+        chosen, confirmed = QInputDialog.getItem(
+            self, _text("dialog_resolve_title"), _text("dialog_resolve_file_prompt"),
+            conflicts, 0, False)
+        if not confirmed or not chosen:
+            return
+        keep, confirmed = QInputDialog.getItem(
+            self, _text("dialog_resolve_title"),
+            _text("dialog_resolve_side_prompt").format(file=chosen),
+            ["ours", "theirs"], 0, False)
+        if not confirmed or not keep:
+            return
+        if not service.resolve_conflict(chosen, keep):
+            QMessageBox.critical(
+                self, "Error", _text("err_resolve").format(file=chosen))
+            return
+        self._refresh_change_list()
 
     def on_unstage_all_changes(self) -> None:
         """

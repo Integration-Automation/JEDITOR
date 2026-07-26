@@ -277,6 +277,10 @@ def _run_in_background(worker: QObject, thread_parent: QObject) -> QThread:
     """通用的背景執行緒啟動器 / Generic background thread runner"""
     global _bg_threads
     thread = QThread(thread_parent)
+    # 具名執行緒：萬一它在執行中被銷毀，Qt 的中止訊息才說得出是哪一條
+    # A named thread, so Qt's abort message says which one if it is ever
+    # destroyed while still running
+    thread.setObjectName(f"Toolbar{type(worker).__name__}")
     worker.moveToThread(thread)
     thread.started.connect(worker.run)
     worker.finished.connect(thread.quit)
@@ -287,6 +291,37 @@ def _run_in_background(worker: QObject, thread_parent: QObject) -> QThread:
     _bg_threads.append(thread)
     thread.start()
     return thread
+
+
+def stop_background_threads() -> int:
+    """
+    等所有工具列的背景執行緒結束
+    Wait for every toolbar background thread to finish.
+
+    這些執行緒掛在主視窗底下，視窗被銷毀時若還在跑，Qt 會直接讓程序中止
+    （``QThread: Destroyed while thread is still running``）。git 分支掃描在大的
+    或放在網路磁碟上的儲存庫要跑上一段時間，關閉時剛好還沒跑完並不罕見。
+    They hang off the main window, and Qt aborts the process outright
+    (``QThread: Destroyed while thread is still running``) if one is still going
+    when the window is destroyed. Scanning git branches takes a while on a large
+    repository or one on a network share, so still running at closing time is not
+    unusual.
+
+    :return: 等了幾條執行緒 / how many threads were waited for
+    """
+    global _bg_threads
+    threads, _bg_threads = _bg_threads, []
+    waited = 0
+    for thread in threads:
+        try:
+            if thread.isRunning():
+                thread.quit()
+                thread.wait()
+                waited += 1
+        except RuntimeError:
+            # 它已經跑完並被刪除了 / It already finished and was deleted
+            continue
+    return waited
 
 
 def _git_refresh_branches(main_window: EditorMain) -> None:

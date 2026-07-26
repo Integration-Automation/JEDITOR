@@ -553,6 +553,13 @@ class EditorMain(QMainWindow, QtStyleTools):
             widget = self.tab_widget.widget(i)
             if widget and isinstance(widget, EditorWidget):
                 widget.close()
+        # 工具列的背景工作也要收掉：視窗銷毀時它們還在跑的話 Qt 會中止整個程序
+        # The toolbar's background work goes too: Qt aborts the process if one of
+        # those is still running when the window is destroyed
+        from je_editor.pyside_ui.main_ui.toolbar.toolbar_builder import (
+            stop_background_threads
+        )
+        stop_background_threads()
         write_user_setting()
         write_user_color_setting()
         super().closeEvent(event)

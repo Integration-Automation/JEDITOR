@@ -34,6 +34,10 @@ class _SearchWorker(QThread):
 
     def __init__(self, root: str, pattern: str, case_sensitive: bool, use_regex: bool) -> None:
         super().__init__()
+        # 具名執行緒：萬一它在執行中被銷毀，Qt 的中止訊息才說得出是哪一條
+        # A named thread, so Qt's abort message says which one if it is ever
+        # destroyed while still running
+        self.setObjectName("SearchWorker")
         self.root = root
         self.pattern = pattern
         self.case_sensitive = case_sensitive
