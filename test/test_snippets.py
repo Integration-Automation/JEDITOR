@@ -14,7 +14,67 @@ from je_editor.utils.snippets.snippet_expand import (
     default_snippets,
     expand_snippet,
     merge_snippets,
+    positions_after_mirroring,
+    shift_mirrors,
 )
+
+
+class TestExpandingRepeatedStops:
+    def test_a_repeat_is_not_a_separate_stop(self):
+        _text, stops = expand_snippet("${1:name} = ${1:name}")
+        assert len(stops) == 1
+
+    def test_the_repeat_is_recorded_as_a_mirror(self):
+        # "name = name" -- the second copy starts at index 7.
+        _text, stops = expand_snippet("${1:name} = ${1:name}")
+        assert stops[0].mirrors == (7,)
+
+    def test_the_repeat_carries_the_first_default(self):
+        text, _stops = expand_snippet("${1:name} = $1")
+        assert text == "name = name"
+
+    def test_several_repeats_are_all_recorded(self):
+        _text, stops = expand_snippet("$1 $1 $1")
+        assert len(stops[0].mirrors) == 2
+
+    def test_a_stop_used_once_has_no_mirrors(self):
+        _text, stops = expand_snippet("${1:one} ${2:two}")
+        assert all(stop.mirrors == () for stop in stops)
+
+
+class TestShiftingMirrors:
+    def test_a_mirror_after_the_change_moves(self):
+        assert shift_mirrors([10], 4, 3) == [13]
+
+    def test_a_mirror_before_the_change_stays(self):
+        assert shift_mirrors([2], 4, 3) == [2]
+
+    def test_a_deletion_pulls_it_back(self):
+        assert shift_mirrors([10], 4, -2) == [8]
+
+    def test_a_mirror_exactly_at_the_change_moves(self):
+        assert shift_mirrors([4], 4, 3) == [7]
+
+
+class TestPositionsAfterMirroring:
+    def test_nothing_moves_when_the_length_is_unchanged(self):
+        assert positions_after_mirroring(0, [10], 0) == (0, [10])
+
+    def test_a_later_mirror_absorbs_every_earlier_rewrite(self):
+        _start, mirrors = positions_after_mirroring(0, [10, 20], 2)
+        assert mirrors == [10, 22]
+
+    def test_the_stop_moves_for_mirrors_ahead_of_it(self):
+        start, _mirrors = positions_after_mirroring(30, [10, 20], 2)
+        assert start == 34
+
+    def test_the_stop_ignores_mirrors_behind_it(self):
+        start, _mirrors = positions_after_mirroring(0, [10, 20], 2)
+        assert start == 0
+
+    def test_mirrors_are_handled_in_position_order(self):
+        _start, mirrors = positions_after_mirroring(0, [20, 10], 5)
+        assert mirrors == [10, 25]
 
 
 class TestExpandSnippet:
@@ -149,6 +209,57 @@ def _press_tab(editor) -> None:
     # Sent through QTest so Qt owns the event object; a QKeyEvent built here
     # could be collected while Qt still holds it.
     QTest.keyClick(editor, Qt.Key.Key_Tab)
+
+
+class TestMirroredStops:
+    """
+    A number used more than once in a snippet should only be typed once. The
+    repeats used to be plain text, so `${1:name}` twice meant typing it twice.
+    """
+
+    @staticmethod
+    def _expand(editor, body: str) -> None:
+        editor.snippet_manager._snippets["mirror"] = body
+        editor.setPlainText("mirror")
+        editor.moveCursor(editor.textCursor().MoveOperation.End)
+        _press_tab(editor)
+
+    def test_a_repeat_starts_with_the_same_default(self, editor):
+        self._expand(editor, "${1:name} = ${1:name}")
+        assert editor.toPlainText() == "name = name"
+
+    def test_typing_updates_the_repeat(self, editor):
+        self._expand(editor, "${1:name} = ${1:name}")
+        editor.textCursor().insertText("total")
+        assert editor.toPlainText() == "total = total"
+
+    def test_every_repeat_follows(self, editor):
+        self._expand(editor, "${1:x}, ${1:x}, ${1:x}")
+        editor.textCursor().insertText("ab")
+        assert editor.toPlainText() == "ab, ab, ab"
+
+    def test_a_repeat_after_other_text_follows(self, editor):
+        self._expand(editor, "def ${1:name}():\n    return ${1:name}")
+        editor.textCursor().insertText("run")
+        assert editor.toPlainText() == "def run():\n    return run"
+
+    def test_typing_elsewhere_leaves_the_repeat_alone(self, editor):
+        self._expand(editor, "${1:name} = ${1:name}")
+        cursor = editor.textCursor()
+        cursor.movePosition(cursor.MoveOperation.End)
+        cursor.insertText("  # note")
+        assert editor.toPlainText() == "name = name  # note"
+
+    def test_a_stop_without_repeats_still_works(self, editor):
+        self._expand(editor, "${1:one} ${2:two}")
+        editor.textCursor().insertText("first")
+        assert editor.toPlainText() == "first two"
+
+    def test_moving_on_stops_the_mirroring(self, editor):
+        self._expand(editor, "${1:name} = ${1:name}$0")
+        _press_tab(editor)
+        editor.textCursor().insertText("!")
+        assert editor.toPlainText() == "name = name!"
 
 
 class TestSnippetExpansionInEditor:

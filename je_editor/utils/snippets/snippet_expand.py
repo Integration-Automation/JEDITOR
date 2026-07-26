@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
+from typing import Sequence
 
 # 比對 $1 或 ${1:預設值} / Matches $1 or ${1:default}
 _STOP_PATTERN = re.compile(r"\$(\d+)|\$\{(\d+):([^}]*)\}")
@@ -32,10 +33,13 @@ class SnippetStop:
 
     :param position: 相對於片段起點的字元位置 / offset from the snippet's start
     :param length: 預設值的長度（沒有預設值時為 0）/ the default value's length
+    :param mirrors: 同編號其他出現處的位置，長度與 ``length`` 相同
+        / where the same number repeats, each the same length as ``length``
     """
 
     position: int
     length: int
+    mirrors: tuple[int, ...] = ()
 
 
 def expand_snippet(body: str) -> tuple[str, list[SnippetStop]]:
@@ -43,15 +47,19 @@ def expand_snippet(body: str) -> tuple[str, list[SnippetStop]]:
     展開片段內容，回傳文字與定位點
     Expand a snippet body into text and its tab stops.
 
-    定位點依編號排序，``$0`` 排在最後；同一個編號出現多次時只取第一次。
-    Stops come back in numeric order with ``$0`` last, and a number used more
-    than once keeps only its first appearance.
+    定位點依編號排序，``$0`` 排在最後。同一個編號出現多次時，第一次是使用者要編輯
+    的那一個，其餘記在 ``mirrors`` 裡跟著它一起改。
+    Stops come back in numeric order with ``$0`` last. Where a number repeats, the
+    first appearance is the one the user edits and the rest are recorded in
+    ``mirrors`` so they follow along.
 
     :param body: 片段內容 / the snippet body
     :return: ``(展開後的文字, 定位點清單)`` / ``(expanded text, stops)``
     """
     pieces: list[str] = []
     stops: dict[int, SnippetStop] = {}
+    defaults: dict[int, str] = {}
+    mirrors: dict[int, list[int]] = {}
     length = 0
     last_end = 0
     for match in _STOP_PATTERN.finditer(body):
@@ -59,8 +67,15 @@ def expand_snippet(body: str) -> tuple[str, list[SnippetStop]]:
         pieces.append(literal)
         length += len(literal)
         number = int(match.group(1) or match.group(2))
-        default = match.group(3) or ""
-        if number not in stops:
+        if number in stops:
+            # 重複出現：寫上第一次的預設值，並記下位置好跟著一起改
+            # A repeat: write the first appearance's default and note where it is
+            # so it can follow along
+            default = defaults[number]
+            mirrors.setdefault(number, []).append(length)
+        else:
+            default = match.group(3) or ""
+            defaults[number] = default
             stops[number] = SnippetStop(position=length, length=len(default))
         pieces.append(default)
         length += len(default)
@@ -68,7 +83,46 @@ def expand_snippet(body: str) -> tuple[str, list[SnippetStop]]:
     pieces.append(body[last_end:])
     text = "".join(pieces)
     ordered = sorted(stops.items(), key=lambda item: (item[0] == _FINAL_STOP, item[0]))
-    return text, [stop for _number, stop in ordered]
+    return text, [
+        SnippetStop(stop.position, stop.length, tuple(mirrors.get(number, ())))
+        for number, stop in ordered
+    ]
+
+
+def shift_mirrors(mirrors: Sequence[int], position: int, delta: int) -> list[int]:
+    """
+    使用者在某處增刪文字後，複本移到哪裡
+    Where the mirrors land after the user inserts or removes text somewhere.
+
+    :param mirrors: 複本目前的位置 / where the mirrors are now
+    :param position: 變更發生的位置 / where the change happened
+    :param delta: 字元數的增減 / how many characters were gained or lost
+    :return: 移動後的位置 / the positions afterwards
+    """
+    return [start + delta if start >= position else start for start in mirrors]
+
+
+def positions_after_mirroring(start: int, mirrors: Sequence[int],
+                              delta: int) -> tuple[int, list[int]]:
+    """
+    每個複本都改寫成新長度之後，定位點與複本各自落在哪裡
+    Where the stop and its mirrors land once every mirror is rewritten.
+
+    改寫一個複本會把它後面的所有東西往後推，因此排在越後面的複本累積的位移越多，
+    而定位點只受排在它前面的複本影響。
+    Rewriting a mirror pushes everything after it along, so a later mirror
+    accumulates more of the shift, and the stop itself only moves for the mirrors
+    that sit ahead of it.
+
+    :param start: 定位點的起點 / where the stop starts
+    :param mirrors: 複本的起點 / where the mirrors start
+    :param delta: 每個複本的長度變化 / how much each mirror's length changes
+    :return: ``(定位點起點, 複本起點)`` / ``(stop start, mirror starts)``
+    """
+    ordered = sorted(mirrors)
+    moved_start = start + delta * sum(1 for mirror in ordered if mirror < start)
+    moved = [mirror + delta * index for index, mirror in enumerate(ordered)]
+    return moved_start, moved
 
 
 def default_snippets() -> dict[str, str]:
