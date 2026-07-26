@@ -12,10 +12,36 @@ from git import Repo, InvalidGitRepositoryError, NoSuchPathError, GitCommandErro
 
 from je_editor.git_client.git_action import GitService
 from je_editor.utils.logging.loggin_instance import jeditor_logger
+from je_editor.utils.multi_language.multi_language_wrapper import language_wrapper
 
 # UI 常數 / UI constants
 _CLONE_REPO_LABEL = "Clone Repo"
 _REPO_STATUS_DEFAULT = "Status: -"
+
+
+def _text(key: str) -> str:
+    """
+    取得翻譯後的文字
+    The translated text for a key.
+
+    這個面板的字串原本是寫死的英文，但語言檔裡一直有對應的翻譯沒被用到。
+    This panel's strings used to be hard-coded English while the translations for
+    them sat unused in the language files.
+
+    :param key: 語言鍵 / the language key
+    :return: 翻譯後的文字 / the translated text
+    """
+    return language_wrapper.language_word_dict.get(key, key)
+
+
+def _word(key: str) -> QPushButton:
+    """建立一個帶翻譯文字的按鈕 / A button labelled with a translated key."""
+    return QPushButton(_text(key))
+
+
+def _label(key: str) -> QLabel:
+    """建立一個帶翻譯文字的標籤 / A label showing a translated key."""
+    return QLabel(_text(key))
 
 
 class _GitWorker(QObject):
@@ -88,16 +114,16 @@ class GitGui(QWidget):
     def _init_ui(self) -> None:
         # === Top controls / 上方控制區 ===
         self.repo_path_label = QLabel("Repository: (none)")
-        self.open_repo_button = QPushButton("Open Repo")
+        self.open_repo_button = _word("btn_open_repo")
         self.branch_selector = QComboBox()
-        self.checkout_button = QPushButton("Checkout")
+        self.checkout_button = _word("btn_checkout")
         self.clone_repo_button = QPushButton(_CLONE_REPO_LABEL)
         self.repo_status_label = QLabel(_REPO_STATUS_DEFAULT)
         self.commit_status_label = QLabel("Unpushed commits: ...")
 
         top = QHBoxLayout()
         top.addWidget(self.repo_path_label, 1)
-        top.addWidget(QLabel("Branch:"))
+        top.addWidget(_label("label_branch"))
         top.addWidget(self.branch_selector, 1)
         top.addWidget(self.checkout_button)
         top.addWidget(self.open_repo_button)
@@ -134,21 +160,21 @@ class GitGui(QWidget):
 
         # === Bottom: staging and commit controls / 下方：stage 與 commit 控制 ===
         self.commit_message_input = QLineEdit()
-        self.commit_message_input.setPlaceholderText("Commit message...")
-        self.stage_selected_button = QPushButton("Stage Selected")
-        self.unstage_selected_button = QPushButton("Unstage Selected")
-        self.stage_all_button = QPushButton("Stage All")
-        self.commit_button = QPushButton("Commit")
-        self.unstage_all_button = QPushButton("Unstage All")
-        self.track_all_untracked_button = QPushButton("Track All Untracked")
-        self.git_push_button = QPushButton("Push")
+        self.commit_message_input.setPlaceholderText(_text("placeholder_commit_message"))
+        self.stage_selected_button = _word("btn_stage_selected")
+        self.unstage_selected_button = _word("btn_unstage_selected")
+        self.stage_all_button = _word("btn_stage_all")
+        self.commit_button = _word("btn_commit")
+        self.unstage_all_button = _word("btn_unstage_all")
+        self.track_all_untracked_button = _word("btn_track_all_untracked")
+        self.git_push_button = _word("btn_push")
         # 收起手邊的修改與解決合併衝突 / Putting work down, and settling a merge
-        self.stash_button = QPushButton("Stash")
-        self.stash_pop_button = QPushButton("Pop Stash")
-        self.resolve_button = QPushButton("Resolve Conflict")
+        self.stash_button = _word("btn_stash")
+        self.stash_pop_button = _word("btn_stash_pop")
+        self.resolve_button = _word("btn_resolve_conflict")
 
         bottom = QHBoxLayout()
-        bottom.addWidget(QLabel("Message:"))
+        bottom.addWidget(_label("label_message"))
         bottom.addWidget(self.commit_message_input, 1)
         bottom.addWidget(self.stage_selected_button)
         bottom.addWidget(self.unstage_selected_button)
@@ -738,7 +764,7 @@ class GitGui(QWidget):
         try:
             service.stash_save(message)
         except GitCommandError as error:
-            QMessageBox.critical(self, "Error", f"Could not stash:\n{error}")
+            QMessageBox.critical(self, "Error", f"{_text('err_stash')}:\n{error}")
             return
         self.commit_message_input.clear()
         self._refresh_change_list()
@@ -757,16 +783,18 @@ class GitGui(QWidget):
             return
         stashes = service.stash_list()
         if not stashes:
-            QMessageBox.information(self, "Stash", "There is nothing stashed.")
+            QMessageBox.information(
+                self, _text("btn_stash"), _text("info_no_stash"))
             return
         chosen, confirmed = QInputDialog.getItem(
-            self, "Pop Stash", "Take back:", stashes, 0, False)
+            self, _text("dialog_stash_pop_title"), _text("dialog_stash_pop_prompt"),
+            stashes, 0, False)
         if not confirmed or not chosen:
             return
         try:
             service.stash_pop(stashes.index(chosen))
         except GitCommandError as error:
-            QMessageBox.critical(self, "Error", f"Could not pop the stash:\n{error}")
+            QMessageBox.critical(self, "Error", f"{_text('err_stash_pop')}:\n{error}")
             return
         self._refresh_change_list()
 
@@ -784,19 +812,23 @@ class GitGui(QWidget):
             return
         conflicts = service.conflicted_files()
         if not conflicts:
-            QMessageBox.information(self, "Conflicts", "Nothing is in conflict.")
+            QMessageBox.information(
+                self, _text("dialog_resolve_title"), _text("info_no_conflicts"))
             return
         chosen, confirmed = QInputDialog.getItem(
-            self, "Resolve Conflict", "File:", conflicts, 0, False)
+            self, _text("dialog_resolve_title"), _text("dialog_resolve_file_prompt"),
+            conflicts, 0, False)
         if not confirmed or not chosen:
             return
         keep, confirmed = QInputDialog.getItem(
-            self, "Resolve Conflict", f"Keep which side of {chosen}?",
+            self, _text("dialog_resolve_title"),
+            _text("dialog_resolve_side_prompt").format(file=chosen),
             ["ours", "theirs"], 0, False)
         if not confirmed or not keep:
             return
         if not service.resolve_conflict(chosen, keep):
-            QMessageBox.critical(self, "Error", f"Could not resolve {chosen}.")
+            QMessageBox.critical(
+                self, "Error", _text("err_resolve").format(file=chosen))
             return
         self._refresh_change_list()
 

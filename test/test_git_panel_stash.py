@@ -35,6 +35,29 @@ def panel(qapp, qtbot, repo):
     widget.close()
 
 
+class TestTheLabelsAreTranslated:
+    """
+    The panel's strings were hard-coded English while the translations for them
+    sat unused in the language files.
+    """
+
+    def test_a_button_shows_the_translated_text(self, panel):
+        from je_editor.utils.multi_language.multi_language_wrapper import language_wrapper
+        widget, _repo = panel
+        assert widget.commit_button.text() == \
+            language_wrapper.language_word_dict.get("btn_commit")
+
+    def test_the_new_buttons_are_translated_too(self, panel):
+        from je_editor.utils.multi_language.multi_language_wrapper import language_wrapper
+        widget, _repo = panel
+        assert widget.stash_button.text() == \
+            language_wrapper.language_word_dict.get("btn_stash")
+
+    def test_a_missing_key_falls_back_to_itself(self):
+        from je_editor.pyside_ui.git_ui.git_client.git_client_gui import _text
+        assert _text("no_such_key") == "no_such_key"
+
+
 class TestTheButtonsExist:
     """
     The operations had tests but no way to reach them: GitService had no UI
