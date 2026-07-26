@@ -85,6 +85,32 @@ def replace_whole_word(text: str, word: str, replacement: str) -> str:
     return pattern.sub(lambda _match: replacement, text)
 
 
+def lines_containing(text: str, term: str, case_sensitive: bool = False) -> list[int]:
+    """
+    找出含有指定字串的行
+    Find the lines that contain a piece of text.
+
+    這是「搜尋框正在找的東西」用的：比對的是使用者輸入的字串本身，不加字界也不
+    要求是識別字，因此 ``val`` 會在 ``value`` 裡命中——搜尋本來就該如此。
+    This backs what the search box is looking for: it matches the string the user
+    typed, with no word boundaries and no identifier requirement, so ``val`` does
+    hit inside ``value`` — which is what searching is meant to do.
+
+    :param text: 要搜尋的文字 / the text to search
+    :param term: 要尋找的字串 / the string to find
+    :param case_sensitive: 是否區分大小寫 / whether case matters
+    :return: 含有該字串的行號（0 起算，已排序去重）
+        / the 0-based line numbers holding it, sorted and unique
+    """
+    if not term:
+        return []
+    needle = term if case_sensitive else term.lower()
+    return [
+        number for number, line in enumerate(text.splitlines())
+        if needle in (line if case_sensitive else line.lower())
+    ]
+
+
 def find_occurrences(text: str, word: str) -> list[int]:
     """
     找出字詞在文字中所有以完整字界出現的位置

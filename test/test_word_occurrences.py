@@ -1,11 +1,41 @@
 """Tests for word-under-cursor detection and occurrence finding."""
 from __future__ import annotations
 
+
 from je_editor.utils.occurrence.word_occurrences import (
     find_occurrences,
     is_highlightable_word,
+    lines_containing,
     word_at,
 )
+
+
+class TestLinesContaining:
+    """Backs the search marks, so it matches the typed string, not whole words."""
+
+    def test_it_reports_the_line(self):
+        assert lines_containing("alpha\nbeta\ngamma\n", "beta") == [1]
+
+    def test_every_matching_line_is_reported(self):
+        assert lines_containing("a\nb\na\n", "a") == [0, 2]
+
+    def test_a_partial_word_matches(self):
+        assert lines_containing("value = 1\n", "val") == [0]
+
+    def test_case_is_ignored_by_default(self):
+        assert lines_containing("Total\n", "total") == [0]
+
+    def test_case_can_be_required(self):
+        assert lines_containing("Total\n", "total", case_sensitive=True) == []
+
+    def test_a_line_matching_twice_is_reported_once(self):
+        assert lines_containing("aa\n", "a") == [0]
+
+    def test_an_empty_term_matches_nothing(self):
+        assert lines_containing("anything\n", "") == []
+
+    def test_a_term_that_is_absent_matches_nothing(self):
+        assert lines_containing("alpha\n", "zzz") == []
 
 
 class TestWordAt:

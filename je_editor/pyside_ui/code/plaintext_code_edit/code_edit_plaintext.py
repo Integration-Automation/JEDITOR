@@ -52,7 +52,7 @@ from je_editor.utils.line_ops.line_operations import (
 from je_editor.utils.navigation.location_history import LocationHistory
 from je_editor.utils.number_ops.number_ops import adjust_number_at, to_base
 from je_editor.utils.occurrence.word_occurrences import (
-    find_occurrences, replace_whole_word, word_at
+    find_occurrences, lines_containing, replace_whole_word, word_at
 )
 from je_editor.utils.text_cleanup.text_cleanup import trim_trailing_whitespace
 from je_editor.pyside_ui.code.syntax.generic_syntax import highlighter_for
@@ -234,6 +234,9 @@ class CodeEditor(QPlainTextEdit):
 
         # 搜尋框 (延遲建立)
         self.search_box = None
+        # 目前搜尋框在找的字串；縮圖用它標出命中的行
+        # What the search box is looking for; the minimap marks the lines it hits
+        self._search_term = ""
 
         # 行號區域 (LineNumber 是另一個自訂類別)
         self.line_number: LineNumber = LineNumber(self)
@@ -538,6 +541,7 @@ class CodeEditor(QPlainTextEdit):
         jeditor_logger.info("CodeEditor find_next_text")
         if self.search_box.isVisible():
             text = self.search_box.search_input.text()
+            self.set_search_term(text)
             self.find(text)
 
     def find_back_text(self) -> None:
@@ -548,7 +552,54 @@ class CodeEditor(QPlainTextEdit):
         jeditor_logger.info("CodeEditor find_back_text")
         if self.search_box.isVisible():
             text = self.search_box.search_input.text()
+            self.set_search_term(text)
             self.find(text, QTextDocument.FindFlag.FindBackward)
+
+    def set_search_term(self, term: str) -> bool:
+        """
+        記下目前正在搜尋的字串
+        Remember what is currently being searched for.
+
+        縮圖用它來標出命中的行；搜尋框關掉或字串清空時就恢復標記游標所在的字詞。
+        The minimap marks the lines it hits; clearing it, or closing the search,
+        goes back to marking the word under the caret.
+
+        :param term: 搜尋字串 / the string being searched for
+        :return: 字串有變時為 ``True`` / ``True`` when it changed
+        """
+        term = term or ""
+        if term == self._search_term:
+            return False
+        self._search_term = term
+        minimap = getattr(self.main_window, "minimap", None)
+        if minimap is not None:
+            minimap.update()
+        return True
+
+    def search_term(self) -> str:
+        """
+        取得目前的搜尋字串
+        The string currently being searched for.
+
+        搜尋框關掉之後就不算還在搜尋了，因此標記會跟著消失。
+        A closed search box means nothing is being searched for any more, so the
+        marks go with it.
+
+        :return: 搜尋字串，沒在搜尋時為空字串 / the term, or an empty string
+        """
+        box = self.search_box
+        if box is not None and not box.isVisible():
+            return ""
+        return self._search_term
+
+    def search_hit_lines(self) -> list[int]:
+        """
+        取得含有目前搜尋字串的行
+        The lines holding the current search term.
+
+        :return: 行號（0 起算）/ the 0-based line numbers
+        """
+        return lines_containing(self.toPlainText(), self._search_term)
 
     # ── 快捷鍵註冊 / Shortcut registration ────────────────────────
 
