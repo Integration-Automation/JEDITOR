@@ -37,6 +37,33 @@ def editor(app):
     code_editor.deleteLater()
 
 
+class TestClosingStopsScheduledWork:
+    """
+    The debounce timers schedule work that spawns threads. One firing after the
+    close would start a thread nothing is left to wait for, and Qt aborts the
+    process outright when a running QThread is destroyed -- far from the cause.
+    """
+
+    def test_the_lint_timer_is_stopped(self, editor):
+        editor._lint_timer.start()
+        editor.close()
+        assert editor._lint_timer.isActive() is False
+
+    def test_the_diff_timer_is_stopped(self, editor):
+        editor._diff_timer.start()
+        editor.close()
+        assert editor._diff_timer.isActive() is False
+
+    def test_the_completion_timer_is_stopped(self, editor):
+        editor._complete_timer.start()
+        editor.close()
+        assert editor._complete_timer.isActive() is False
+
+    def test_no_lint_worker_is_left_running(self, editor):
+        editor.close()
+        assert editor.lint_manager._worker is None
+
+
 class TestLintManagerState:
     def test_starts_empty(self, editor):
         assert editor.lint_manager.diagnostics() == []

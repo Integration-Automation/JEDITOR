@@ -2807,13 +2807,22 @@ class CodeEditor(QPlainTextEdit):
         Stop every background worker before closing.
 
         lint、git 基準、blame 與語言伺服器都各自持有執行緒或子程序；編輯器被銷毀
-        時若它們還在跑，Qt 會在之後某個時間點刪掉仍在執行的物件而當掉，而當掉的
-        位置離真正的原因很遠。
+        時若它們還在跑，Qt 會直接讓程序中止（``QThread: Destroyed while thread is
+        still running``），而中止的位置離真正的原因很遠。
         The lint pass, the git baseline, blame and the language server each hold a
-        thread or a subprocess. If they are still running when the editor is
-        destroyed, Qt tears down a live object later and crashes far away from the
-        actual cause.
+        thread or a subprocess. If one is still running when the editor is
+        destroyed, Qt aborts the process outright (``QThread: Destroyed while
+        thread is still running``) somewhere far from the actual cause.
+
+        計時器要先停：它們是「等輸入停下來再做」的排程，若留著，關閉之後才觸發的
+        那一次會重新開一條執行緒，而那時已經沒有人會去等它結束了。
+        The timers go first: they schedule the work that waits for a pause in
+        typing, and one firing after the close would start a fresh thread that
+        nothing is left to wait for.
         """
+        self._lint_timer.stop()
+        self._diff_timer.stop()
+        self._complete_timer.stop()
         self.lint_manager.stop()
         self.diff_marker_manager.stop()
         self.blame_manager.stop()

@@ -527,11 +527,14 @@ class EditorWidget(QWidget):
         self.exec_shell = None
         self.exec_python_debugger = None
 
-        # 停止仍在執行的背景檢查 / Stop background checks still running
-        self.code_edit.diff_marker_manager.stop()
-        self.code_edit.lint_manager.stop()
-        self.code_edit.blame_manager.stop()
-        self.code_edit.lsp_client.stop()
+        # 讓編輯器自己收掉背景工作：它的 closeEvent 除了停掉各個管理器，也會停掉
+        # 那些「等輸入停下來再做」的計時器，否則關閉之後才觸發的那一次會重新開一
+        # 條執行緒，而那時已經沒有人會等它結束
+        # Let the editor stop its own background work: its closeEvent stops the
+        # managers and also the timers that schedule work after a pause in typing,
+        # one of which would otherwise fire after the close and start a fresh
+        # thread that nothing is left to wait for
+        self.code_edit.close()
 
         if self.current_file:
             file_is_open_manager_dict.pop(str(Path(self.current_file)), None)

@@ -31,6 +31,10 @@ class LintWorker(QThread):
         :param parent: Qt 父物件 / the Qt parent
         """
         super().__init__(parent)
+        # 具名執行緒：萬一它在執行中被銷毀，Qt 的中止訊息才說得出是哪一條
+        # A named thread, so Qt's abort message says which one if it is ever
+        # destroyed while still running
+        self.setObjectName("LintWorker")
         self._text = text
         self._file_path = file_path
 
