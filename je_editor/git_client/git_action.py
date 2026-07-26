@@ -148,6 +148,102 @@ class GitService:
         self._ensure_repo()
         return [r.name for r in self.repo.remotes]
 
+    def stash_save(self, message: str = "") -> str:
+        """
+        把目前的修改收進 stash
+        Put the current changes away in a stash.
+
+        要暫時放下手邊的東西去改別的地方時用這個；內容留在 stash 裡，之後可以取回。
+        This is for putting work down to deal with something else; the changes
+        stay in the stash and can be taken back afterwards.
+
+        :param message: 這次 stash 的說明 / a note describing the stash
+        :return: git 的輸出 / what git printed
+        """
+        self._ensure_repo()
+        arguments = ["push"] + (["-m", message] if message.strip() else [])
+        try:
+            result = self.repo.git.stash(*arguments)
+            audit_log(self.repo_path, "stash_save", message, True)
+            return result
+        except GitCommandError as error:
+            audit_log(self.repo_path, "stash_save", message, False, str(error))
+            raise
+
+    def stash_list(self) -> list[str]:
+        """
+        列出目前收著的 stash
+        The stashes currently put away.
+
+        :return: 每個 stash 的說明 / a description of each
+        """
+        self._ensure_repo()
+        output = self.repo.git.stash("list")
+        return [line for line in output.splitlines() if line.strip()]
+
+    def stash_pop(self, index: int = 0) -> str:
+        """
+        取回一個 stash，並把它從清單移除
+        Take a stash back, removing it from the list.
+
+        :param index: 要取回的 stash 編號 / which stash to take back
+        :return: git 的輸出 / what git printed
+        """
+        self._ensure_repo()
+        reference = f"stash@{{{max(0, index)}}}"
+        try:
+            result = self.repo.git.stash("pop", reference)
+            audit_log(self.repo_path, "stash_pop", reference, True)
+            return result
+        except GitCommandError as error:
+            audit_log(self.repo_path, "stash_pop", reference, False, str(error))
+            raise
+
+    def conflicted_files(self) -> list[str]:
+        """
+        列出目前處於衝突狀態的檔案
+        The files currently left in conflict.
+
+        合併或 pull 之後，這些檔案裡有需要人來決定的部分。
+        After a merge or a pull, these hold the parts someone has to decide about.
+
+        :return: 相對於儲存庫根目錄的路徑 / paths relative to the repository root
+        """
+        self._ensure_repo()
+        # 索引裡同一個路徑有多個 stage 就代表衝突：2 是我們的版本，3 是對方的
+        # A path with more than one stage in the index is in conflict: 2 is ours
+        # and 3 is theirs
+        return sorted({
+            path for path, stage in self.repo.index.entries.keys() if stage != 0
+        })
+
+    def resolve_conflict(self, file_path: str, keep: str = "ours") -> bool:
+        """
+        以某一邊的內容解決一個檔案的衝突
+        Resolve a file's conflict by keeping one side of it.
+
+        :param file_path: 相對於儲存庫根目錄的路徑 / the path, relative to the root
+        :param keep: ``ours`` 保留自己這邊，``theirs`` 保留對方 / which side to keep
+        :return: 有解決時為 ``True`` / ``True`` when it was resolved
+        """
+        self._ensure_repo()
+        if keep not in ("ours", "theirs"):
+            return False
+        # 沒有衝突的檔案也吃得下 ``checkout --ours``，但那只會把它默默加進索引——
+        # 呼叫端要的是解決衝突，不是暫存一個沒事的檔案
+        # ``checkout --ours`` is accepted for a file with no conflict too, but all
+        # that does is quietly stage it, which is not what resolving asks for
+        if file_path not in self.conflicted_files():
+            return False
+        try:
+            self.repo.git.checkout(f"--{keep}", "--", file_path)
+            self.repo.git.add(file_path)
+            audit_log(self.repo_path, "resolve_conflict", f"{file_path} {keep}", True)
+        except GitCommandError as error:
+            audit_log(self.repo_path, "resolve_conflict", file_path, False, str(error))
+            return False
+        return True
+
     def _ensure_repo(self) -> None:
         if self.repo is None:
             raise RuntimeError("Repository not opened.")

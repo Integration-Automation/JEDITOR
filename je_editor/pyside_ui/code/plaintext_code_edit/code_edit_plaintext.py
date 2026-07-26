@@ -34,7 +34,9 @@ from je_editor.utils.indentation.indent_convert import (
 from je_editor.utils.indentation.indent_guides import (
     guide_columns, trailing_whitespace_start
 )
-from je_editor.git_client.file_staging import stage_content, staged_text
+from je_editor.git_client.file_staging import (
+    commit_index, stage_content, staged_text, unstage_file
+)
 from je_editor.utils.debugger.pdb_commands import (
     breakpoint_commands, step_command, toggle_command
 )
@@ -882,6 +884,42 @@ class CodeEditor(QPlainTextEdit):
             return False
         staged = apply_hunk(baseline, self.toPlainText(), hunk)
         return stage_content(str(self.current_file), staged)
+
+    def unstage_current_file(self) -> bool:
+        """
+        取消這個檔案的暫存內容
+        Unstage this file.
+
+        索引回到已提交的版本，編輯中的內容完全不動——暫存錯一段之後只能這樣收回。
+        The index returns to the committed version and what is being edited is
+        untouched, which is the only way back from staging the wrong hunk.
+
+        :return: 索引有變時為 ``True`` / ``True`` when the index changed
+        """
+        if self.current_file is None:
+            return False
+        return unstage_file(str(self.current_file))
+
+    def commit_current_file(self) -> bool:
+        """
+        把已暫存的內容提交出去
+        Commit what is currently staged.
+
+        提交的是索引裡的內容，不是編輯器裡的：逐段暫存之後，這樣才能只提交挑好的
+        那幾段。
+        What is committed is the index, not the buffer: after staging hunk by
+        hunk, that is what makes committing only the chosen parts possible.
+
+        :return: 有提交時為 ``True`` / ``True`` when a commit was made
+        """
+        if self.current_file is None:
+            return False
+        message, confirmed = QInputDialog.getText(
+            self, language_wrapper.language_word_dict.get("git_commit_title"),
+            language_wrapper.language_word_dict.get("git_commit_prompt"))
+        if not confirmed or not message.strip():
+            return False
+        return commit_index(str(self.current_file), message)
 
     def staged_diff_text(self) -> str:
         """
@@ -2836,6 +2874,10 @@ class CodeEditor(QPlainTextEdit):
              self.lsp_client.running),
             ("context_menu_stage_hunk", self.stage_change_at_cursor,
              self.diff_marker_manager.has_baseline),
+            ("context_menu_unstage_file", self.unstage_current_file,
+             self.current_file is not None),
+            ("context_menu_commit_file", self.commit_current_file,
+             self.current_file is not None),
             ("context_menu_revert_hunk", self.revert_change_at_cursor,
              self.diff_marker_manager.has_baseline),
         ):
