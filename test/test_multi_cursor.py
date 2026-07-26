@@ -216,11 +216,9 @@ class TestMultiCursorEditing:
         editor.setPlainText("one!\ntwo!\nthree!")
         _select_all(editor)
         editor.add_cursors_to_selected_lines()
-        # Each caret sits at its line end, so Delete takes the newline after it.
+        # Each caret sits at its line end, so step back one to sit before the "!".
+        # move_all takes the primary caret with it, so no separate nudge is needed.
         editor.multi_cursor_manager.move_all(-1)
-        cursor = editor.textCursor()
-        cursor.setPosition(cursor.position() - 1)
-        editor.setTextCursor(cursor)
         _press(editor, Qt.Key.Key_Delete)
         assert editor.toPlainText() == "one\ntwo\nthree"
 
@@ -244,6 +242,68 @@ class TestMultiCursorEditing:
         assert editor.multi_cursor_manager.positions() == [6]
         _press(editor, Qt.Key.Key_Left)
         assert editor.multi_cursor_manager.positions() == [5]
+
+    def test_the_primary_caret_moves_along(self, editor):
+        # It used to stay behind, so one arrow press pulled the carets apart.
+        editor.setPlainText("hello world")
+        cursor = editor.textCursor()
+        cursor.setPosition(0)
+        editor.setTextCursor(cursor)
+        editor.multi_cursor_manager.toggle_at(5)
+        _press(editor, Qt.Key.Key_Right)
+        assert editor.textCursor().position() == 1
+
+    def test_down_moves_every_caret_a_line(self, editor):
+        editor.setPlainText("alpha\nbravo\ncharlie")
+        cursor = editor.textCursor()
+        cursor.setPosition(1)
+        editor.setTextCursor(cursor)
+        editor.multi_cursor_manager.toggle_at(3)
+        _press(editor, Qt.Key.Key_Down)
+        assert editor.multi_cursor_manager.positions() == [9]
+        assert editor.textCursor().position() == 7
+
+    def test_up_moves_every_caret_a_line(self, editor):
+        editor.setPlainText("alpha\nbravo")
+        editor.multi_cursor_manager.toggle_at(8)
+        _press(editor, Qt.Key.Key_Up)
+        assert editor.multi_cursor_manager.positions() == [2]
+
+    def test_a_caret_past_a_shorter_line_stops_at_its_end(self, editor):
+        editor.setPlainText("longer line\nab")
+        editor.multi_cursor_manager.toggle_at(9)
+        _press(editor, Qt.Key.Key_Down)
+        assert editor.multi_cursor_manager.positions() == [14]
+
+    def test_moving_past_the_last_line_drops_nothing(self, editor):
+        editor.setPlainText("only")
+        editor.multi_cursor_manager.toggle_at(2)
+        _press(editor, Qt.Key.Key_Down)
+        assert editor.multi_cursor_manager.positions() == [2]
+
+    def test_end_sends_every_caret_to_its_line_end(self, editor):
+        editor.setPlainText("alpha\nbravo")
+        editor.multi_cursor_manager.toggle_at(1)
+        cursor = editor.textCursor()
+        cursor.setPosition(7)
+        editor.setTextCursor(cursor)
+        _press(editor, Qt.Key.Key_End)
+        assert editor.multi_cursor_manager.positions() == [5]
+        assert editor.textCursor().position() == 11
+
+    def test_home_sends_every_caret_to_its_line_start(self, editor):
+        editor.setPlainText("alpha\nbravo")
+        editor.multi_cursor_manager.toggle_at(4)
+        cursor = editor.textCursor()
+        cursor.setPosition(9)
+        editor.setTextCursor(cursor)
+        _press(editor, Qt.Key.Key_Home)
+        assert editor.multi_cursor_manager.positions() == [0]
+        assert editor.textCursor().position() == 6
+
+    def test_vertical_movement_needs_extra_carets(self, editor):
+        editor.setPlainText("alpha\nbravo")
+        assert editor.multi_cursor_manager.move_all_vertically(1) is False
 
     def test_carets_never_move_outside_the_document(self, editor):
         editor.setPlainText("ab")

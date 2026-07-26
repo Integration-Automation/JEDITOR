@@ -128,6 +128,10 @@ _MULTI_CURSOR_KEYS = {
     Qt.Key.Key_Enter: lambda manager: manager.insert_newline(),
     Qt.Key.Key_Left: lambda manager: manager.move_all(-1),
     Qt.Key.Key_Right: lambda manager: manager.move_all(1),
+    Qt.Key.Key_Up: lambda manager: manager.move_all_vertically(-1),
+    Qt.Key.Key_Down: lambda manager: manager.move_all_vertically(1),
+    Qt.Key.Key_Home: lambda manager: manager.move_all_to_line_edge(False),
+    Qt.Key.Key_End: lambda manager: manager.move_all_to_line_edge(True),
 }
 
 
