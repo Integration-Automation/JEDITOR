@@ -409,6 +409,8 @@ please make sure that the current encoding is consistent with the default encodi
     "test_panel_run_selected": "Run Selected",
     "test_panel_rerun_failures": "Re-run Failures",
     "test_panel_filter_placeholder": "Filter tests...",
+    "test_panel_coverage": "With coverage",
+    "test_panel_traceback_placeholder": "Select a failing test to see why it failed",
     "test_panel_ready": "Ready",
     "test_panel_running": "Running tests...",
     "test_panel_no_results": "No tests were reported",

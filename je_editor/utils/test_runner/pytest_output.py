@@ -24,6 +24,20 @@ _FAILURE_PATTERN = re.compile(r"^(?P<path>.+?):(?P<line>\d+): (?P<message>.+)$")
 # Matches the summary line, e.g. ``3 failed, 5 passed in 0.42s``
 _SUMMARY_PATTERN = re.compile(r"^=+\s*(?P<summary>.*?(?:passed|failed|error|no tests ran).*?)\s*=+$")
 
+# 比對區段標題：pytest 用等號或連字號把標題包起來，覆蓋率報告與結尾統計都算
+# Matches a section banner: pytest fences its titles in equals signs or dashes,
+# which covers the coverage report and the closing summary as well
+_SECTION_BANNER = re.compile(r"^(?P<fence>[=-]){2,}\s*(?P<title>.*?)\s*(?P=fence){2,}$")
+# 比對追蹤訊息的標題，例如 ``____ TestThing.test_case ____``
+# Matches a traceback heading such as ``____ TestThing.test_case ____``
+_FAILURE_HEADER = re.compile(r"^_{2,}\s*(?P<name>.+?)\s*_{2,}$")
+# 比對覆蓋率報告的總計行，例如 ``TOTAL   1200   84   93%``
+# Matches a coverage report's total, e.g. ``TOTAL   1200   84   93%``
+_COVERAGE_TOTAL = re.compile(r"^TOTAL\s+\d+\s+\d+\s+(?P<percent>\d+)%")
+
+# 帶有追蹤訊息的區段 / The sections that carry tracebacks
+_FAILURE_SECTIONS = frozenset({"FAILURES", "ERRORS"})
+
 # 視為失敗的結果 / Outcomes that count as a failure
 FAILING_OUTCOMES = frozenset({"FAILED", "ERROR"})
 
@@ -122,6 +136,85 @@ def parse_failures(output: str) -> list[FailureLocation]:
         failures.append(
             FailureLocation(path=path, line=line_number, message=match.group("message")))
     return failures
+
+
+def parse_tracebacks(output: str) -> dict[str, str]:
+    """
+    解析每個失敗測試的追蹤訊息
+    Parse the traceback reported for each failing test.
+
+    pytest 會在 ``FAILURES`` 區段裡，以一行底線包住測試名稱作為每一段的開頭。
+    In its ``FAILURES`` section pytest starts each block with the test's name
+    fenced by underscores.
+
+    :param output: pytest 的輸出（需要 ``--tb=short`` 或更詳細）
+        pytest's output, with ``--tb=short`` or longer
+    :return: 測試名稱對應追蹤訊息 / test name -> its traceback
+    """
+    blocks: dict[str, list[str]] = {}
+    current: str | None = None
+    in_failures = False
+    for line in output.splitlines():
+        stripped = line.rstrip()
+        banner = _SECTION_BANNER.match(stripped.strip())
+        if banner is not None:
+            title = banner.group("title").strip().upper()
+            in_failures = title in _FAILURE_SECTIONS
+            current = None
+            continue
+        if not in_failures:
+            continue
+        header = _FAILURE_HEADER.match(stripped.strip())
+        if header is not None:
+            current = header.group("name").strip()
+            blocks.setdefault(current, [])
+            continue
+        if current is not None:
+            blocks[current].append(stripped)
+    return {name: "\n".join(lines).strip() for name, lines in blocks.items() if lines}
+
+
+def traceback_name(node_id: str) -> str:
+    """
+    把節點名稱換成 pytest 在追蹤訊息標題用的寫法
+    Turn a node id into the name pytest heads its traceback with.
+
+    ``test/x.py::TestThing::test_case`` 的標題是 ``TestThing.test_case``。
+    ``test/x.py::TestThing::test_case`` is headed ``TestThing.test_case``.
+
+    :param node_id: pytest 的節點名稱 / pytest's node id
+    :return: 追蹤訊息的標題 / the traceback's heading
+    """
+    parts = node_id.split("::")
+    return ".".join(parts[1:]) if len(parts) > 1 else node_id
+
+
+def traceback_for_result(result: PytestResult, tracebacks: dict[str, str]) -> str:
+    """
+    取得某個測試的追蹤訊息
+    The traceback belonging to one test.
+
+    :param result: 測試結果 / the test result
+    :param tracebacks: :func:`parse_tracebacks` 的結果 / what :func:`parse_tracebacks` returned
+    :return: 追蹤訊息，沒有時為空字串 / the traceback, or an empty string
+    """
+    return tracebacks.get(traceback_name(result.node_id), "")
+
+
+def parse_coverage(output: str) -> str:
+    """
+    取得覆蓋率報告的總計
+    The total from a coverage report.
+
+    :param output: pytest 的輸出 / pytest's output
+    :return: 總計百分比，例如 ``87%``；沒有報告時為空字串
+        the total percentage such as ``87%``, or an empty string
+    """
+    for line in reversed(output.splitlines()):
+        match = _COVERAGE_TOTAL.match(line.strip())
+        if match is not None:
+            return f"{match.group('percent')}%"
+    return ""
 
 
 def parse_summary(output: str) -> str:

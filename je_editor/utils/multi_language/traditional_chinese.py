@@ -399,6 +399,8 @@ traditional_chinese_word_dict = {
     "test_panel_run_selected": "只跑選取的",
     "test_panel_rerun_failures": "重跑失敗的",
     "test_panel_filter_placeholder": "篩選測試...",
+    "test_panel_coverage": "含覆蓋率",
+    "test_panel_traceback_placeholder": "選擇一個失敗的測試以查看原因",
     "test_panel_ready": "就緒",
     "test_panel_running": "測試執行中...",
     "test_panel_no_results": "沒有回報任何測試",

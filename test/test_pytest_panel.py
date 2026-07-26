@@ -9,10 +9,38 @@ from PySide6.QtWidgets import QApplication
 from je_editor.utils.test_runner.pytest_output import (
     PytestResult,
     failure_for_result,
+    parse_coverage,
     parse_failures,
     parse_results,
     parse_summary,
+    parse_tracebacks,
+    traceback_for_result,
+    traceback_name,
 )
+
+# What --tb=short actually looks like: a banner, then one block per failure
+# headed by the test's name between underscores.
+TRACEBACK_OUTPUT = """
+============================= test session starts =============================
+test/test_alpha.py::TestAlpha::test_two FAILED                           [ 50%]
+test/test_beta.py::test_three FAILED                                     [100%]
+
+=================================== FAILURES ==================================
+_________________________ TestAlpha.test_two __________________________________
+test/test_alpha.py:42: in test_two
+    assert total == 2
+E   AssertionError: assert 1 == 2
+______________________________ test_three _____________________________________
+test/test_beta.py:11: in test_three
+    raise ValueError("nope")
+E   ValueError: nope
+---------- coverage: platform win32, python 3.11.9 -----------
+Name                 Stmts   Miss  Cover
+----------------------------------------
+je_editor/thing.py      40      4    90%
+TOTAL                 1200     84    93%
+========================= 2 failed in 0.42s ===================================
+"""
 
 SAMPLE_OUTPUT = """
 ============================= test session starts =============================
@@ -27,6 +55,65 @@ D:\\project\\test\\test_alpha.py:42: AssertionError: expected 1 got 2
 =========================== short test summary info ===========================
 ========================= 1 failed, 1 passed, 1 skipped in 0.42s ==============
 """
+
+
+class TestParseTracebacks:
+    """The panel shows why a test failed, not only that it did."""
+
+    def test_each_failure_gets_its_own_block(self):
+        assert set(parse_tracebacks(TRACEBACK_OUTPUT)) == {"TestAlpha.test_two", "test_three"}
+
+    def test_the_block_holds_the_assertion(self):
+        blocks = parse_tracebacks(TRACEBACK_OUTPUT)
+        assert "assert 1 == 2" in blocks["TestAlpha.test_two"]
+
+    def test_a_block_stops_at_the_next_failure(self):
+        blocks = parse_tracebacks(TRACEBACK_OUTPUT)
+        assert "ValueError" not in blocks["TestAlpha.test_two"]
+
+    def test_the_section_ends_at_the_next_banner(self):
+        blocks = parse_tracebacks(TRACEBACK_OUTPUT)
+        assert "2 failed" not in blocks["test_three"]
+
+    def test_output_without_failures_has_no_blocks(self):
+        assert parse_tracebacks(SAMPLE_OUTPUT.replace("FAILURES", "warnings summary")) == {}
+
+    def test_empty_output_has_no_blocks(self):
+        assert parse_tracebacks("") == {}
+
+
+class TestTracebackNames:
+    def test_a_class_based_test_joins_with_a_dot(self):
+        assert traceback_name("test/test_a.py::TestThing::test_case") == "TestThing.test_case"
+
+    def test_a_plain_test_keeps_its_name(self):
+        assert traceback_name("test/test_a.py::test_case") == "test_case"
+
+    def test_something_without_a_node_separator_is_unchanged(self):
+        assert traceback_name("test_case") == "test_case"
+
+    def test_a_result_finds_its_traceback(self):
+        blocks = parse_tracebacks(TRACEBACK_OUTPUT)
+        result = PytestResult(node_id="test/test_alpha.py::TestAlpha::test_two",
+                              outcome="FAILED")
+        assert "assert 1 == 2" in traceback_for_result(result, blocks)
+
+    def test_a_passing_test_has_no_traceback(self):
+        blocks = parse_tracebacks(TRACEBACK_OUTPUT)
+        result = PytestResult(node_id="test/test_alpha.py::TestAlpha::test_one",
+                              outcome="PASSED")
+        assert traceback_for_result(result, blocks) == ""
+
+
+class TestParseCoverage:
+    def test_the_total_is_read(self):
+        assert parse_coverage(TRACEBACK_OUTPUT) == "93%"
+
+    def test_output_without_coverage_reports_nothing(self):
+        assert parse_coverage(SAMPLE_OUTPUT) == ""
+
+    def test_a_per_file_line_is_not_mistaken_for_the_total(self):
+        assert parse_coverage("je_editor/thing.py      40      4    90%") == ""
 
 
 class TestParseResults:
@@ -116,6 +203,59 @@ def panel(app, tmp_path):
     widget.deleteLater()
 
 
+class TestTracebackPane:
+    """Seeing why a test failed without leaving the panel."""
+
+    def test_it_starts_empty(self, panel):
+        assert panel.traceback_view.toPlainText() == ""
+
+    def test_selecting_a_failure_shows_its_traceback(self, panel):
+        panel.apply_output(TRACEBACK_OUTPUT)
+        panel.result_tree.setCurrentItem(panel.result_tree.topLevelItem(0))
+        assert "assert 1 == 2" in panel.traceback_view.toPlainText()
+
+    def test_each_failure_shows_its_own(self, panel):
+        panel.apply_output(TRACEBACK_OUTPUT)
+        panel.result_tree.setCurrentItem(panel.result_tree.topLevelItem(1))
+        assert "ValueError" in panel.traceback_view.toPlainText()
+
+    def test_a_passing_test_shows_nothing(self, panel):
+        panel.apply_output(SAMPLE_OUTPUT)
+        rows = [panel.result_tree.topLevelItem(index)
+                for index in range(panel.result_tree.topLevelItemCount())]
+        passing = next(row for row in rows if row.text(0) == "PASSED")
+        panel.result_tree.setCurrentItem(passing)
+        assert panel.traceback_view.toPlainText() == ""
+
+    def test_a_new_run_clears_the_previous_traceback(self, panel):
+        panel.apply_output(TRACEBACK_OUTPUT)
+        panel.result_tree.setCurrentItem(panel.result_tree.topLevelItem(0))
+        panel.apply_output(SAMPLE_OUTPUT)
+        assert panel.traceback_view.toPlainText() == ""
+
+
+class TestCoverageOption:
+    def test_it_is_off_by_default(self, panel):
+        assert panel.coverage_check.isChecked() is False
+
+    def test_the_command_leaves_coverage_out_by_default(self):
+        from je_editor.pyside_ui.main_ui.test_panel.test_panel_widget import pytest_command
+        assert not any(argument.startswith("--cov") for argument in pytest_command())
+
+    def test_asking_for_coverage_adds_the_flags(self):
+        from je_editor.pyside_ui.main_ui.test_panel.test_panel_widget import pytest_command
+        command = pytest_command(with_coverage=True)
+        assert "--cov=." in command and "--cov-report=term" in command
+
+    def test_the_total_reaches_the_status_label(self, panel):
+        panel.apply_output(TRACEBACK_OUTPUT)
+        assert "93%" in panel.status_label.text()
+
+    def test_a_run_without_coverage_leaves_the_summary_alone(self, panel):
+        panel.apply_output(SAMPLE_OUTPUT)
+        assert "%" not in panel.status_label.text()
+
+
 class TestTestPanel:
     def test_starts_empty(self, panel):
         assert panel.results() == []
@@ -159,7 +299,7 @@ class TestTestPanel:
         from je_editor.pyside_ui.main_ui.test_panel.test_panel_widget import pytest_command
         command = pytest_command()
         assert command[1:3] == ["-m", "pytest"]
-        assert "-v" in command and "--tb=line" in command
+        assert "-v" in command and "--tb=short" in command
 
     def test_command_can_target_specific_tests(self):
         from je_editor.pyside_ui.main_ui.test_panel.test_panel_widget import pytest_command
