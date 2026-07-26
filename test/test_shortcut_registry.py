@@ -143,6 +143,18 @@ class TestTheEditorHasNoClashes:
         }
         assert taken & reserved == set()
 
+    def test_shortcuts_are_scoped_to_the_focused_editor(self, editor):
+        # A split view shows two editors of the same document at once. With the
+        # window-level default every sequence would have two owners, and Qt fires
+        # neither of them.
+        from PySide6.QtCore import Qt
+        contexts = {
+            action.shortcutContext()
+            for action in editor.actions()
+            if action.shortcut().toString()
+        }
+        assert contexts == {Qt.ShortcutContext.WidgetWithChildrenShortcut}
+
     def test_duplicate_line_still_owns_control_d(self, editor):
         # Ctrl+D is handled in keyPressEvent; no action may shadow it.
         assert editor.shortcut_registry.owner_of("Ctrl+D") is None

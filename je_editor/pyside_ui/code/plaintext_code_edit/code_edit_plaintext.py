@@ -561,6 +561,16 @@ class CodeEditor(QPlainTextEdit):
         sequence is recorded here first: a clash is logged, and a test fails on it
         outright.
 
+        內容脈絡設為 ``WidgetWithChildrenShortcut``，動作只在這個編輯器有焦點時作用。
+        Qt 比對快捷鍵時會略過看不見的 widget，所以分頁之間本來就不會互相干擾；但分割
+        檢視是同一個視窗裡兩個**同時可見**的編輯器，用視窗層級的脈絡就會讓每一組編輯器
+        快捷鍵各有兩個擁有者，於是兩個都不執行。
+        The context is ``WidgetWithChildrenShortcut`` so an action only fires while
+        this editor has focus. Qt already skips invisible widgets when matching, so
+        tabs never collide; but a split view puts two editors on screen **at once**,
+        and with the window-level context every editor shortcut would have two
+        owners and none of them would fire.
+
         :param sequence: 按鍵組合 / the key sequence
         :param command: 指令名稱，用於衝突訊息 / the command name, used in clash messages
         :param handler: 觸發時呼叫的函式 / what to call when it fires
@@ -569,6 +579,7 @@ class CodeEditor(QPlainTextEdit):
         action = QAction(self)
         action.setObjectName(command)
         action.setShortcut(sequence)
+        action.setShortcutContext(Qt.ShortcutContext.WidgetWithChildrenShortcut)
         action.triggered.connect(handler)
         owner = self.shortcut_registry.register(sequence, command)
         if owner is not None:
