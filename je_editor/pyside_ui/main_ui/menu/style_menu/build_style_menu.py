@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING
 
 # 匯入 Qt 動作
 # Import QAction
+from PySide6.QtCore import Qt
 from PySide6.QtGui import QAction
 from PySide6.QtWidgets import QApplication
 
@@ -61,6 +62,16 @@ def set_style_menu(ui_we_want_to_set: EditorMain) -> None:
     # 編輯器疊加顯示的開關 / Toggles for the editor's overlays
     ui_we_want_to_set.menu.style_menu.addSeparator()
     add_overlay_toggles(ui_we_want_to_set)
+
+    # 快捷鍵設定 / The keyboard shortcut settings
+    ui_we_want_to_set.menu.style_menu.addSeparator()
+    ui_we_want_to_set.menu.style_menu.shortcut_settings_action = QAction(
+        language_wrapper.language_word_dict.get("shortcut_settings_menu_label"),
+        parent=ui_we_want_to_set.menu.style_menu)
+    ui_we_want_to_set.menu.style_menu.shortcut_settings_action.triggered.connect(
+        lambda: open_shortcut_settings(ui_we_want_to_set))
+    ui_we_want_to_set.menu.style_menu.addAction(
+        ui_we_want_to_set.menu.style_menu.shortcut_settings_action)
 
 
 def add_overlay_toggles(ui_we_want_to_set: EditorMain) -> None:
@@ -128,6 +139,21 @@ def set_style(ui_we_want_to_set: EditorMain, action: QAction) -> None:
     # be left with markers tuned for a dark background
     apply_theme_colors(action.text())
     _repaint_editors(ui_we_want_to_set)
+
+
+def open_shortcut_settings(ui_we_want_to_set: EditorMain) -> None:
+    """
+    開啟快捷鍵設定對話框
+    Open the keyboard shortcut settings.
+
+    :param ui_we_want_to_set: 主編輯器視窗 / the main editor window
+    """
+    from je_editor.pyside_ui.dialog.shortcut_dialog.shortcut_settings_dialog import (
+        ShortcutSettingsDialog
+    )
+    dialog = ShortcutSettingsDialog(ui_we_want_to_set, parent=ui_we_want_to_set)
+    dialog.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
+    dialog.show()
 
 
 def _repaint_editors(ui_we_want_to_set: EditorMain) -> None:

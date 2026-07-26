@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING
 
 # 匯入使用者設定字典，用來保存 UI 設定
 # Import user settings dictionary for saving UI preferences
+from je_editor.pyside_ui.main_ui.save_settings.shortcut_setting import shortcut_for
 from je_editor.pyside_ui.main_ui.save_settings.user_setting_file import user_setting_dict
 # 匯入 Python 編碼清單 (例如 utf-8, gbk 等)
 # Import list of Python encodings (e.g., utf-8, gbk, etc.)
@@ -59,7 +60,7 @@ def set_file_menu(ui_we_want_to_set: EditorMain) -> None:
     # New File action
     ui_we_want_to_set.file_menu.new_file_action = QAction(
         language_wrapper.language_word_dict.get("file_menu_new_file_label"))
-    ui_we_want_to_set.file_menu.new_file_action.setShortcut("Ctrl+n")
+    ui_we_want_to_set.file_menu.new_file_action.setShortcut(shortcut_for("new_file"))
     ui_we_want_to_set.file_menu.new_file_action.triggered.connect(
         lambda: show_create_file_dialog(ui_we_want_to_set)
     )
@@ -69,7 +70,7 @@ def set_file_menu(ui_we_want_to_set: EditorMain) -> None:
     # Open File action
     ui_we_want_to_set.file_menu.open_file_action = QAction(
         language_wrapper.language_word_dict.get("file_menu_open_file_label"))
-    ui_we_want_to_set.file_menu.open_file_action.setShortcut("Ctrl+o")
+    ui_we_want_to_set.file_menu.open_file_action.setShortcut(shortcut_for("open_file"))
     ui_we_want_to_set.file_menu.open_file_action.triggered.connect(
         lambda: choose_file_get_open_file_path(parent_qt_instance=ui_we_want_to_set)
     )
@@ -79,7 +80,7 @@ def set_file_menu(ui_we_want_to_set: EditorMain) -> None:
     # Open Folder action
     ui_we_want_to_set.file_menu.open_folder_action = QAction(
         language_wrapper.language_word_dict.get("file_menu_open_folder_label"))
-    ui_we_want_to_set.file_menu.open_folder_action.setShortcut("Ctrl+K")
+    ui_we_want_to_set.file_menu.open_folder_action.setShortcut(shortcut_for("open_folder"))
     ui_we_want_to_set.file_menu.open_folder_action.triggered.connect(
         lambda: choose_dir_get_dir_path(parent_qt_instance=ui_we_want_to_set)
     )
@@ -89,7 +90,7 @@ def set_file_menu(ui_we_want_to_set: EditorMain) -> None:
     # Save File action
     ui_we_want_to_set.file_menu.save_file_action = QAction(
         language_wrapper.language_word_dict.get("file_menu_save_file_label"))
-    ui_we_want_to_set.file_menu.save_file_action.setShortcut("Ctrl+s")
+    ui_we_want_to_set.file_menu.save_file_action.setShortcut(shortcut_for("save_file"))
     ui_we_want_to_set.file_menu.save_file_action.triggered.connect(
         lambda: choose_file_get_save_file_path(parent_qt_instance=ui_we_want_to_set)
     )
@@ -110,10 +111,7 @@ def set_file_menu(ui_we_want_to_set: EditorMain) -> None:
     # 儲存所有分頁 / Save every modified tab
     ui_we_want_to_set.file_menu.save_all_action = QAction(
         language_wrapper.language_word_dict.get("file_menu_save_all_label"))
-    # Ctrl+Alt+S 是編輯器的「排序選取的行」，因此這裡用慣例的 Ctrl+Shift+S
-    # Ctrl+Alt+S sorts the selected lines in the editor, so this uses the
-    # conventional Ctrl+Shift+S
-    ui_we_want_to_set.file_menu.save_all_action.setShortcut("Ctrl+Shift+S")
+    ui_we_want_to_set.file_menu.save_all_action.setShortcut(shortcut_for("save_all"))
     ui_we_want_to_set.file_menu.save_all_action.triggered.connect(
         lambda: save_all_tabs(ui_we_want_to_set))
     ui_we_want_to_set.file_menu.addAction(ui_we_want_to_set.file_menu.save_all_action)

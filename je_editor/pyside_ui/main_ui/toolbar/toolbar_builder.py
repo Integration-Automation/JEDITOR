@@ -8,6 +8,7 @@ from PySide6.QtWidgets import (
     QToolBar, QComboBox, QStyle, QLabel, QWidget, QMessageBox
 )
 
+from je_editor.pyside_ui.main_ui.save_settings.shortcut_setting import shortcut_for
 from je_editor.utils.logging.loggin_instance import jeditor_logger
 from je_editor.utils.multi_language.multi_language_wrapper import language_wrapper
 
@@ -61,21 +62,21 @@ def build_toolbar(main_window: EditorMain) -> None:
     act_run = QAction(_icon(main_window, QStyle.StandardPixmap.SP_MediaPlay),
                       lang("toolbar_run"), main_window)
     act_run.setToolTip(lang("toolbar_run"))
-    act_run.setShortcut("F5")
+    act_run.setShortcut(shortcut_for("run_program"))
     act_run.triggered.connect(lambda: _run_program(main_window))
     toolbar.addAction(act_run)
 
     act_debug = QAction(_icon(main_window, QStyle.StandardPixmap.SP_MediaSeekForward),
                         lang("toolbar_debug"), main_window)
     act_debug.setToolTip(lang("toolbar_debug"))
-    act_debug.setShortcut("F9")
+    act_debug.setShortcut(shortcut_for("run_debugger"))
     act_debug.triggered.connect(lambda: _run_debugger(main_window))
     toolbar.addAction(act_debug)
 
     act_stop = QAction(_icon(main_window, QStyle.StandardPixmap.SP_MediaStop),
                        lang("toolbar_stop"), main_window)
     act_stop.setToolTip(lang("toolbar_stop"))
-    act_stop.setShortcut("Shift+F5")
+    act_stop.setShortcut(shortcut_for("stop_program"))
     act_stop.triggered.connect(lambda: _stop_program(main_window))
     toolbar.addAction(act_stop)
 
@@ -110,7 +111,7 @@ def build_toolbar(main_window: EditorMain) -> None:
     act_search = QAction(_icon(main_window, QStyle.StandardPixmap.SP_FileDialogContentsView),
                          lang("toolbar_search"), main_window)
     act_search.setToolTip(lang("toolbar_search"))
-    act_search.setShortcut("Ctrl+Shift+F")
+    act_search.setShortcut(shortcut_for("search_in_files"))
     act_search.triggered.connect(lambda: _open_search(main_window))
     toolbar.addAction(act_search)
 
@@ -120,7 +121,7 @@ def build_toolbar(main_window: EditorMain) -> None:
     act_palette = QAction(_icon(main_window, QStyle.StandardPixmap.SP_FileDialogDetailedView),
                           lang("toolbar_command_palette"), main_window)
     act_palette.setToolTip(lang("toolbar_command_palette"))
-    act_palette.setShortcut("Ctrl+Shift+A")
+    act_palette.setShortcut(shortcut_for("command_palette"))
     act_palette.triggered.connect(lambda: _open_command_palette(main_window))
     toolbar.addAction(act_palette)
     main_window.command_palette_action = act_palette
@@ -128,7 +129,7 @@ def build_toolbar(main_window: EditorMain) -> None:
     act_quick_open = QAction(_icon(main_window, QStyle.StandardPixmap.SP_FileDialogListView),
                              lang("toolbar_quick_open"), main_window)
     act_quick_open.setToolTip(lang("toolbar_quick_open"))
-    act_quick_open.setShortcut("Ctrl+P")
+    act_quick_open.setShortcut(shortcut_for("quick_open"))
     act_quick_open.triggered.connect(lambda: _open_quick_open(main_window))
     toolbar.addAction(act_quick_open)
     main_window.quick_open_action = act_quick_open
@@ -136,7 +137,7 @@ def build_toolbar(main_window: EditorMain) -> None:
     act_go_to_symbol = QAction(_icon(main_window, QStyle.StandardPixmap.SP_FileDialogInfoView),
                                lang("toolbar_go_to_symbol"), main_window)
     act_go_to_symbol.setToolTip(lang("toolbar_go_to_symbol"))
-    act_go_to_symbol.setShortcut("Ctrl+Shift+O")
+    act_go_to_symbol.setShortcut(shortcut_for("go_to_symbol"))
     act_go_to_symbol.triggered.connect(lambda: _open_go_to_symbol(main_window))
     toolbar.addAction(act_go_to_symbol)
     main_window.go_to_symbol_action = act_go_to_symbol

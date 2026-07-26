@@ -69,7 +69,7 @@ class TestRegistry:
         assert registry.conflicts() == [("ctrl+d", "duplicate_line", "next_occurrence")]
 
     def test_reserved_sequences_are_already_taken(self):
-        registry = ShortcutRegistry({"Ctrl+Shift+P": "pip_install"})
+        registry = ShortcutRegistry({"pip_install": "Ctrl+Shift+P"})
         assert registry.register("Ctrl+Shift+P", "play_macro") == "pip_install"
 
     def test_register_all_reports_only_its_own_clashes(self):
@@ -94,12 +94,12 @@ class TestWindowShortcutTable:
     """
 
     def test_no_sequence_is_listed_twice(self):
-        normalised = [normalise_sequence(sequence) for sequence in WINDOW_SHORTCUTS]
+        normalised = [normalise_sequence(sequence) for sequence in WINDOW_SHORTCUTS.values()]
         assert len(normalised) == len(set(normalised))
 
     def test_save_all_moved_off_the_editors_sort_shortcut(self):
         assert normalise_sequence("Ctrl+Alt+S") not in {
-            normalise_sequence(sequence) for sequence in WINDOW_SHORTCUTS}
+            normalise_sequence(sequence) for sequence in WINDOW_SHORTCUTS.values()}
 
 
 @pytest.fixture()
@@ -135,7 +135,7 @@ class TestTheEditorHasNoClashes:
         assert len(sequences) == len(set(sequences))
 
     def test_no_action_takes_a_menu_sequence(self, editor):
-        reserved = {normalise_sequence(sequence) for sequence in WINDOW_SHORTCUTS}
+        reserved = {normalise_sequence(sequence) for sequence in WINDOW_SHORTCUTS.values()}
         taken = {
             normalise_sequence(action.shortcut().toString())
             for action in editor.actions()

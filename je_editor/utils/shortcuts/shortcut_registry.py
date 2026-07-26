@@ -78,12 +78,12 @@ class ShortcutRegistry:
 
     def __init__(self, reserved: Optional[Dict[str, str]] = None) -> None:
         """
-        :param reserved: 已經被外部（選單、工具列）佔用的按鍵，對應到指令名稱
-            / sequences already taken elsewhere (menus, toolbar), mapped to command names
+        :param reserved: 已經被外部（選單、工具列）佔用的指令，對應到它們的按鍵
+            / commands already spoken for elsewhere (menus, toolbar), mapped to their sequences
         """
         self._owners: Dict[str, str] = {}
         self._conflicts: List[Tuple[str, str, str]] = []
-        for sequence, command in (reserved or {}).items():
+        for command, sequence in (reserved or {}).items():
             key = normalise_sequence(sequence)
             if key:
                 self._owners[key] = command
@@ -155,37 +155,162 @@ class ShortcutRegistry:
         return dict(self._owners)
 
 
-# 選單與工具列佔用的按鍵：編輯器的動作不能重複使用這些組合，否則兩邊都不會作用。
-# 這裡列出的是「視窗層級」的指令，編輯器有焦點時它們仍然必須能用。
-# The sequences the menus and toolbar take. Editor actions must not reuse them or
+# 選單與工具列的指令：編輯器的動作不能重複使用這些組合，否則兩邊都不會作用。
+# 這些是「視窗層級」的指令，編輯器有焦點時它們仍然必須能用。
+# The menu and toolbar commands. Editor actions must not reuse their sequences or
 # neither side fires. These are window-level commands that have to keep working
 # while the editor has focus.
 WINDOW_SHORTCUTS: Dict[str, str] = {
     # 工具列 / Toolbar
-    "F5": "run_program",
-    "F9": "run_debugger",
-    "Shift+F5": "stop_program",
-    "Ctrl+Shift+F": "search_in_files",
-    "Ctrl+Shift+A": "command_palette",
-    "Ctrl+P": "quick_open",
-    "Ctrl+Shift+O": "go_to_symbol",
+    "run_program": "F5",
+    "run_debugger": "F9",
+    "stop_program": "Shift+F5",
+    "search_in_files": "Ctrl+Shift+F",
+    "command_palette": "Ctrl+Shift+A",
+    "quick_open": "Ctrl+P",
+    "go_to_symbol": "Ctrl+Shift+O",
     # 檔案選單 / File menu
-    "Ctrl+N": "new_file",
-    "Ctrl+O": "open_file",
-    "Ctrl+K": "open_folder",
-    "Ctrl+S": "save_file",
-    "Ctrl+Shift+S": "save_all",
+    "new_file": "Ctrl+N",
+    "open_file": "Ctrl+O",
+    "open_folder": "Ctrl+K",
+    "save_file": "Ctrl+S",
+    "save_all": "Ctrl+Shift+S",
     # 檢查與格式化選單 / Check and format menu
-    "Ctrl+Shift+Y": "yapf_reformat",
-    "Ctrl+J": "reformat_json",
-    "Ctrl+Alt+P": "check_python_format",
+    "yapf_reformat": "Ctrl+Shift+Y",
+    "reformat_json": "Ctrl+J",
+    "check_python_format": "Ctrl+Alt+P",
     # 文字選單 / Text menu
-    "Alt+W": "word_wrap",
+    "word_wrap": "Alt+W",
     # Python 環境選單 / Python environment menu
-    "Ctrl+Shift+V": "change_language",
-    "Ctrl+Shift+U": "pip_upgrade",
-    "Ctrl+Shift+P": "pip_install",
+    "change_language": "Ctrl+Shift+V",
+    "pip_upgrade": "Ctrl+Shift+U",
+    "pip_install": "Ctrl+Shift+P",
     # 分頁選單 / Tab menu
-    "Ctrl+Alt+\\": "toggle_split_view",
-    "Ctrl+Alt+M": "toggle_minimap",
+    "toggle_split_view": "Ctrl+Alt+\\",
+    "toggle_minimap": "Ctrl+Alt+M",
 }
+
+# 編輯器自己的指令 / The editor's own commands
+EDITOR_SHORTCUTS: Dict[str, str] = {
+    # 搜尋與跳轉 / Search and navigation
+    "search": "Ctrl+F",
+    "search_and_replace": "Ctrl+H",
+    "go_to_line": "Ctrl+G",
+    "navigate_back": "Alt+Left",
+    "navigate_forward": "Alt+Right",
+    "recent_locations": "Ctrl+Alt+E",
+    # 折疊與書籤 / Folding and bookmarks
+    "toggle_fold": "Ctrl+Shift+[",
+    "fold_all": "Ctrl+Alt+[",
+    "unfold_all": "Ctrl+Alt+]",
+    "toggle_bookmark": "Ctrl+Alt+K",
+    "next_bookmark": "Ctrl+Alt+L",
+    "previous_bookmark": "Ctrl+Alt+J",
+    # 行與選取 / Lines and selection
+    "delete_line": "Ctrl+Shift+D",
+    "join_lines": "Ctrl+Shift+J",
+    "sort_lines": "Ctrl+Alt+S",
+    "expand_selection": "Ctrl+Alt+Right",
+    "shrink_selection": "Ctrl+Alt+Left",
+    "increment_number": "Ctrl+Alt+Up",
+    "decrement_number": "Ctrl+Alt+Down",
+    "rename_occurrences": "F2",
+    # git
+    "next_change": "F7",
+    "previous_change": "Shift+F7",
+    "revert_change": "Ctrl+Alt+Z",
+    "toggle_blame": "Ctrl+Alt+B",
+    # 多重游標 / Multiple carets
+    "cursors_on_selected_lines": "Ctrl+Shift+L",
+    # Qt 自己把 Escape 印成 Esc；用同一種寫法，設定介面才不會把沒改過的項目
+    # 當成使用者的變更記下來
+    # Qt spells Escape as Esc; matching that keeps the settings dialog from
+    # recording an untouched command as a change
+    "clear_extra_cursors": "Ctrl+Shift+Esc",
+    "cursor_above": "Ctrl+Alt+Shift+Up",
+    "cursor_below": "Ctrl+Alt+Shift+Down",
+    "cursor_at_next_occurrence": "Ctrl+Alt+N",
+    # 巨集 / Macros
+    "record_macro": "Ctrl+Shift+R",
+    "play_macro": "Ctrl+Shift+G",
+    # 除錯 / Debugging
+    "toggle_breakpoint": "Ctrl+F9",
+    "debug_continue": "Ctrl+F5",
+    "debug_step_over": "F10",
+    "debug_step_into": "F11",
+    "debug_step_out": "Shift+F11",
+}
+
+# 全部指令的預設按鍵 / Every command's default sequence
+DEFAULT_SHORTCUTS: Dict[str, str] = {**WINDOW_SHORTCUTS, **EDITOR_SHORTCUTS}
+
+
+def sequence_for(command: str, overrides: Optional[Dict[str, str]] = None) -> str:
+    """
+    取得一個指令目前的按鍵
+    The sequence a command currently answers to.
+
+    使用者設定過就用設定的，否則用預設值；設定成空字串代表刻意取消這個快捷鍵。
+    A configured sequence wins over the default, and an empty one means the
+    shortcut was deliberately removed.
+
+    :param command: 指令名稱 / the command's name
+    :param overrides: 使用者設定的按鍵 / the sequences the user configured
+    :return: 按鍵組合，沒有指派時為空字串 / the sequence, or an empty string
+    """
+    if overrides is not None and command in overrides:
+        return str(overrides[command] or "")
+    return DEFAULT_SHORTCUTS.get(command, "")
+
+
+def effective_shortcuts(overrides: Optional[Dict[str, str]] = None) -> Dict[str, str]:
+    """
+    取得所有指令目前的按鍵
+    Every command's current sequence.
+
+    :param overrides: 使用者設定的按鍵 / the sequences the user configured
+    :return: 指令對應按鍵 / command mapped to sequence
+    """
+    return {
+        command: sequence_for(command, overrides)
+        for command in DEFAULT_SHORTCUTS
+    }
+
+
+def find_conflicts(shortcuts: Dict[str, str]) -> List[Tuple[str, List[str]]]:
+    """
+    找出被兩個以上指令共用的按鍵
+    Find the sequences claimed by more than one command.
+
+    :param shortcuts: 指令對應按鍵 / command mapped to sequence
+    :return: ``(按鍵, 指令清單)``，依按鍵排序 / ``(sequence, commands)``, sorted by sequence
+    """
+    owners: Dict[str, List[str]] = {}
+    for command, sequence in shortcuts.items():
+        key = normalise_sequence(sequence)
+        if key:
+            owners.setdefault(key, []).append(command)
+    return sorted(
+        (key, sorted(commands)) for key, commands in owners.items() if len(commands) > 1
+    )
+
+
+def clean_overrides(overrides: Dict[str, str]) -> Dict[str, str]:
+    """
+    整理使用者設定：丟掉不認得的指令與跟預設相同的項目
+    Tidy the configured sequences: drop unknown commands and anything still at its default.
+
+    設定檔可能被手動編輯，也可能來自舊版本，因此認不得的指令直接略過。
+    A settings file may be hand-edited or come from an older version, so a command
+    that is not recognised is simply skipped.
+
+    :param overrides: 讀進來的設定 / the sequences as loaded
+    :return: 只留下真正改過的項目 / only the ones that actually differ
+    """
+    cleaned: Dict[str, str] = {}
+    for command, sequence in (overrides or {}).items():
+        if command not in DEFAULT_SHORTCUTS or not isinstance(sequence, str):
+            continue
+        if normalise_sequence(sequence) != normalise_sequence(DEFAULT_SHORTCUTS[command]):
+            cleaned[command] = sequence
+    return cleaned
