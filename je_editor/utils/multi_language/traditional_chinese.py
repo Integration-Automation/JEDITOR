@@ -433,6 +433,8 @@ traditional_chinese_word_dict = {
     "lsp_quick_fix_title": "快速修正",
     "lsp_quick_fix_prompt": "套用：",
     "context_menu_find_references": "尋找參照",
+    "context_menu_signature_help": "函式簽章",
+    "tab_menu_diff_against_staged_name": "與已暫存的比較",
     "context_menu_quick_fix": "快速修正…",
     "context_menu_unstage_file": "取消暫存",
     "context_menu_commit_file": "提交已暫存的內容…",

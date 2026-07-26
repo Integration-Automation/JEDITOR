@@ -119,6 +119,11 @@ _DIFF_REFRESH_DELAY_MS = 400
 # markers because it spawns a subprocess
 _LINT_REFRESH_DELAY_MS = 900
 
+# 輸入這些字元時向語言伺服器要簽章說明；正是「開始打參數」的時機
+# Typing one of these asks the language server for a signature: it is exactly
+# when the arguments start being typed
+_SIGNATURE_TRIGGERS = ("(", ",")
+
 # 額外游標選取範圍的底色透明度；夠淡才不會蓋掉底下的文字
 # How solid an extra caret's selection wash is; faint enough to read through
 _EXTRA_SELECTION_ALPHA = 70
@@ -2837,10 +2842,12 @@ class CodeEditor(QPlainTextEdit):
 
         if key in self._BRACKET_PAIRS and not modifiers & Qt.KeyboardModifier.ControlModifier:
             self._handle_bracket_autoclose(event)
+            self._maybe_show_signature(event.text())
             return
 
         super().keyPressEvent(event)
         self.highlight_current_line()
+        self._maybe_show_signature(event.text())
 
         if key in self.need_complete_list and self.completer is not None:
             if self.completer.popup().isVisible():
@@ -2870,6 +2877,8 @@ class CodeEditor(QPlainTextEdit):
              self.lsp_client.running),
             ("context_menu_hover", self.request_hover, self.lsp_client.running),
             ("context_menu_find_references", self.find_references,
+             self.lsp_client.running),
+            ("context_menu_signature_help", self.request_signature_help,
              self.lsp_client.running),
             ("context_menu_quick_fix", self.request_quick_fixes,
              self.lsp_client.running),
@@ -3026,6 +3035,23 @@ class CodeEditor(QPlainTextEdit):
         cursor = self.textCursor()
         return self.lsp_client.request_signature_help(
             cursor.blockNumber(), cursor.positionInBlock())
+
+    def _maybe_show_signature(self, typed: str) -> bool:
+        """
+        輸入到呼叫的括號或逗號時，順手問一下簽章
+        Ask for the signature when an opening bracket or a comma is typed.
+
+        簽章說明要在「正在打參數」的當下出現才有用，因此由輸入本身觸發，而不是等
+        使用者想起有這個功能。
+        A signature is only useful while the arguments are being typed, so typing
+        is what asks for it rather than the user having to remember it exists.
+
+        :param typed: 剛輸入的文字 / the text just typed
+        :return: 有送出請求時為 ``True`` / ``True`` when a request was sent
+        """
+        if typed not in _SIGNATURE_TRIGGERS or not self.lsp_client.running:
+            return False
+        return self.request_signature_help()
 
     def show_signature_text(self, text: str) -> None:
         """

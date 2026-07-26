@@ -224,6 +224,52 @@ def editor(qapp, qtbot):
     return code_editor
 
 
+class TestReachingSignatureHelp:
+    """
+    A signature is only useful while the arguments are being typed, so typing is
+    what asks for it; nothing called it before, which made the whole feature
+    unreachable.
+    """
+
+    @staticmethod
+    def _with_a_server(editor):
+        """Stand a running client in for the real one, for this test only."""
+        client = MagicMock()
+        client.running = True
+        client.request_signature_help.return_value = True
+        return patch.object(editor, "lsp_client", client)
+
+    def test_an_opening_bracket_asks_for_one(self, editor):
+        with self._with_a_server(editor):
+            assert editor._maybe_show_signature("(") is True
+
+    def test_a_comma_asks_for_one(self, editor):
+        with self._with_a_server(editor):
+            assert editor._maybe_show_signature(",") is True
+
+    def test_an_ordinary_character_does_not(self, editor):
+        with self._with_a_server(editor):
+            assert editor._maybe_show_signature("x") is False
+
+    def test_nothing_is_asked_without_a_server(self, editor):
+        assert editor._maybe_show_signature("(") is False
+
+    def test_typing_a_bracket_reaches_the_server(self, editor):
+        from PySide6.QtTest import QTest
+        from PySide6.QtCore import Qt
+        with self._with_a_server(editor):
+            QTest.keyClick(editor, Qt.Key.Key_ParenLeft)
+            assert editor.lsp_client.request_signature_help.called
+
+    def test_the_context_menu_offers_it(self, editor):
+        from je_editor.utils.multi_language.multi_language_wrapper import language_wrapper
+        with self._with_a_server(editor):
+            menu = editor.build_context_menu()
+        labels = [action.text() for action in menu.actions()]
+        assert language_wrapper.language_word_dict.get("context_menu_signature_help") in labels
+        menu.deleteLater()
+
+
 class TestTheEditorUsesThem:
     def test_a_signature_is_shown(self, editor):
         editor.show_signature_text("join(sep: str)")
