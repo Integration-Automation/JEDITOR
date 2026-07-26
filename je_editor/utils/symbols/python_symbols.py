@@ -19,6 +19,15 @@ VARIABLE_KIND = "variable"
 # 限定名稱的分隔字元 / Separator used in qualified names
 QUALIFIED_SEPARATOR = "."
 
+# LSP 的 SymbolKind 編號對應的種類名稱；只列大綱看得到的那幾種
+# The kind name for each LSP SymbolKind number, for the ones an outline shows
+SERVER_SYMBOL_KINDS: dict[int, str] = {
+    5: CLASS_KIND, 6: METHOD_KIND, 9: METHOD_KIND, 11: CLASS_KIND,
+    12: FUNCTION_KIND, 13: VARIABLE_KIND, 14: VARIABLE_KIND, 23: CLASS_KIND,
+}
+# 認不得的種類 / What an unrecognised kind is called
+SERVER_SYMBOL_FALLBACK = VARIABLE_KIND
+
 
 @dataclass(frozen=True)
 class SymbolInfo:
@@ -36,6 +45,39 @@ class SymbolInfo:
     kind: str
     line: int
     qualified_name: str
+
+
+def symbols_from_server(entries: list) -> list[SymbolInfo]:
+    """
+    把語言伺服器回報的符號轉成大綱用的形式
+    Turn the symbols a language server reported into what the outline draws.
+
+    伺服器給的是「名稱、種類、行號、巢狀深度」，大綱靠限定名稱決定巢狀關係，因此
+    這裡依深度維護一個外層名稱的堆疊，把限定名稱組回來。
+    A server gives a name, a kind, a line and a nesting depth, while the outline
+    nests by qualified name, so this keeps a stack of enclosing names by depth and
+    rebuilds the qualified name from it.
+
+    :param entries: ``{"name", "kind", "line", "depth"}`` 的清單 / the reported symbols
+    :return: 大綱用的符號 / the symbols the outline draws
+    """
+    symbols: list[SymbolInfo] = []
+    enclosing: list[str] = []
+    for entry in entries or []:
+        name = str(entry.get("name", "")).strip()
+        if not name:
+            continue
+        depth = max(0, int(entry.get("depth", 0) or 0))
+        del enclosing[depth:]
+        qualified = QUALIFIED_SEPARATOR.join([*enclosing, name])
+        enclosing.append(name)
+        symbols.append(SymbolInfo(
+            name=name,
+            kind=SERVER_SYMBOL_KINDS.get(entry.get("kind"), SERVER_SYMBOL_FALLBACK),
+            line=max(1, int(entry.get("line", 1) or 1)),
+            qualified_name=qualified,
+        ))
+    return symbols
 
 
 class _SymbolCollector(ast.NodeVisitor):

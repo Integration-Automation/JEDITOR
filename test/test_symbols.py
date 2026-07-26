@@ -1,6 +1,7 @@
 """Tests for Python symbol extraction and the go-to-symbol picker."""
 from __future__ import annotations
 
+
 import textwrap
 
 import pytest
@@ -9,6 +10,7 @@ from je_editor.pyside_ui.main_ui.command_palette.go_to_symbol_dialog import (
     build_symbol_entries,
     make_symbol_jumper,
 )
+from je_editor.utils.symbols.outline_tree import build_outline_tree
 from je_editor.utils.symbols.python_symbols import (
     CLASS_KIND,
     FUNCTION_KIND,
@@ -16,7 +18,58 @@ from je_editor.utils.symbols.python_symbols import (
     VARIABLE_KIND,
     SymbolInfo,
     extract_python_symbols,
+    symbols_from_server,
 )
+
+
+class TestSymbolsFromServer:
+    """
+    The outline only ever parsed Python, so every other language showed nothing.
+    A language server reports the same thing for the languages it handles.
+    """
+
+    def test_a_symbol_keeps_its_name_and_line(self):
+        symbols = symbols_from_server([{"name": "main", "kind": 12, "line": 4, "depth": 0}])
+        assert (symbols[0].name, symbols[0].line) == ("main", 4)
+
+    def test_a_known_kind_is_named(self):
+        symbols = symbols_from_server([{"name": "Thing", "kind": 5, "line": 1, "depth": 0}])
+        assert symbols[0].kind == "class"
+
+    def test_an_unknown_kind_falls_back(self):
+        symbols = symbols_from_server([{"name": "x", "kind": 99, "line": 1, "depth": 0}])
+        assert symbols[0].kind == "variable"
+
+    def test_nesting_becomes_a_qualified_name(self):
+        symbols = symbols_from_server([
+            {"name": "Thing", "kind": 5, "line": 1, "depth": 0},
+            {"name": "method", "kind": 6, "line": 2, "depth": 1},
+        ])
+        assert symbols[1].qualified_name == "Thing.method"
+
+    def test_returning_to_the_top_level_drops_the_enclosing_name(self):
+        symbols = symbols_from_server([
+            {"name": "Thing", "kind": 5, "line": 1, "depth": 0},
+            {"name": "method", "kind": 6, "line": 2, "depth": 1},
+            {"name": "helper", "kind": 12, "line": 9, "depth": 0},
+        ])
+        assert symbols[2].qualified_name == "helper"
+
+    def test_the_outline_nests_them(self):
+        roots = build_outline_tree(symbols_from_server([
+            {"name": "Thing", "kind": 5, "line": 1, "depth": 0},
+            {"name": "method", "kind": 6, "line": 2, "depth": 1},
+        ]))
+        assert len(roots) == 1 and roots[0].children[0].symbol.name == "method"
+
+    def test_an_entry_without_a_name_is_skipped(self):
+        assert symbols_from_server([{"kind": 12, "line": 1, "depth": 0}]) == []
+
+    def test_nothing_reported_gives_nothing(self):
+        assert symbols_from_server([]) == []
+
+    def test_a_line_below_one_is_clamped(self):
+        assert symbols_from_server([{"name": "x", "line": 0, "depth": 0}])[0].line == 1
 
 
 def _symbols(source: str) -> list[SymbolInfo]:

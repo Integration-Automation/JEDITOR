@@ -482,6 +482,10 @@ class CodeEditor(QPlainTextEdit):
         column = self.textCursor().positionInBlock()
 
         self._complete_thread = QThread(self)
+        # 具名執行緒：萬一它在執行中被銷毀，Qt 的中止訊息才說得出是哪一條
+        # A named thread, so Qt's abort message says which one if it is ever
+        # destroyed while still running
+        self._complete_thread.setObjectName("JediCompleteThread")
         self._complete_worker = _JediCompleteWorker(code, line, column, self.env)
         self._complete_worker.moveToThread(self._complete_thread)
         self._complete_thread.started.connect(self._complete_worker.run)
@@ -3122,11 +3126,34 @@ class CodeEditor(QPlainTextEdit):
         self._lint_timer.stop()
         self._diff_timer.stop()
         self._complete_timer.stop()
+        self.stop_completion_thread()
         self.lint_manager.stop()
         self.diff_marker_manager.stop()
         self.blame_manager.stop()
         self.lsp_client.stop()
         super().closeEvent(event)
+
+    def stop_completion_thread(self) -> None:
+        """
+        等 jedi 補全的執行緒結束
+        Wait for the jedi completion thread to finish.
+
+        它是編輯器唯一一條沒有管理器代管的執行緒，因此要在這裡自己等；補全跑在
+        大檔上要一段時間，關閉時它還在跑的話 Qt 會直接讓程序中止。
+        It is the editor's one thread without a manager looking after it, so it is
+        waited for here: completion takes a while on a large file, and Qt aborts
+        the process outright if it is still running at the close.
+        """
+        thread, self._complete_thread = self._complete_thread, None
+        if thread is None:
+            return
+        try:
+            if thread.isRunning():
+                thread.quit()
+                thread.wait()
+        except RuntimeError:
+            # 它已經跑完並被刪除了 / It already finished and was deleted
+            return
 
     def mousePressEvent(self, event: QtGui.QMouseEvent) -> None:
         """

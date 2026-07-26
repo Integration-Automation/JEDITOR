@@ -60,6 +60,22 @@ class TestToolbarActions:
         for attribute, _shortcut in self.PICKER_ACTIONS:
             assert getattr(toolbar_window, attribute) in toolbar_actions
 
+    def test_background_work_can_be_waited_for(self, toolbar_window):
+        # Building the toolbar starts a git scan. Qt aborts the process if one is
+        # still running when the window it hangs off is destroyed, and scanning a
+        # large repository is not quick.
+        from je_editor.pyside_ui.main_ui.toolbar.toolbar_builder import (
+            stop_background_threads
+        )
+        assert stop_background_threads() >= 0
+
+    def test_waiting_twice_is_safe(self, toolbar_window):
+        from je_editor.pyside_ui.main_ui.toolbar.toolbar_builder import (
+            stop_background_threads
+        )
+        stop_background_threads()
+        assert stop_background_threads() == 0
+
     def test_every_toolbar_shortcut_is_reserved(self, toolbar_window):
         # The editor checks its own shortcuts against this table, so a sequence
         # the toolbar takes without listing it there could be claimed twice.
