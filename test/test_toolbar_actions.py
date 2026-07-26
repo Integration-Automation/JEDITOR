@@ -4,7 +4,9 @@ from __future__ import annotations
 import pytest
 from PySide6.QtWidgets import QMainWindow
 
-from je_editor.pyside_ui.main_ui.toolbar.toolbar_builder import build_toolbar
+from je_editor.pyside_ui.main_ui.toolbar.toolbar_builder import (
+    build_toolbar, stop_background_threads
+)
 from je_editor.utils.shortcuts.shortcut_registry import (
     WINDOW_SHORTCUTS, normalise_sequence
 )
@@ -17,6 +19,8 @@ def toolbar_window(qapp, qtbot):
     qtbot.addWidget(window)
     build_toolbar(window)
     yield window
+    # The git scan the toolbar starts fills a combo box that is about to go away.
+    stop_background_threads()
 
 
 @pytest.mark.usefixtures("qapp")

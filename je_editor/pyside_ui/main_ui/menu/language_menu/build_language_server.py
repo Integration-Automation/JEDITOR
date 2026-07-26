@@ -9,7 +9,6 @@ from typing import TYPE_CHECKING
 # 匯入 Qt 動作與訊息框
 # Import QAction and QMessageBox from PySide6
 from PySide6.QtGui import QAction
-from PySide6.QtWidgets import QMessageBox
 
 # 匯入使用者設定字典，用來保存語言設定
 # Import user settings dictionary for saving language preferences
@@ -78,6 +77,11 @@ def set_language(language: str, ui_we_want_to_set: EditorMain) -> None:
                         f"language: {language} "
                         f"ui_we_want_to_set: {ui_we_want_to_set}")
 
+    # 先留下舊字典：重新標示畫面時要靠它反查哪些字是翻譯來的
+    # Keep the old dictionary: relabelling needs it to tell which words on screen
+    # came from a translation and which are file names
+    previous_words = dict(language_wrapper.language_word_dict)
+
     # 重設語言 (更新多語言字典)
     # Reset language (update multi-language dictionary)
     language_wrapper.reset_language(language)
@@ -86,8 +90,7 @@ def set_language(language: str, ui_we_want_to_set: EditorMain) -> None:
     # Update user settings dictionary to persist language preference
     user_setting_dict.update({"language": language})
 
-    # 顯示提示訊息，提醒使用者需要重新啟動程式
-    # Show a message box to remind user to restart the application
-    message_box = QMessageBox(ui_we_want_to_set)
-    message_box.setText(language_wrapper.language_word_dict.get("language_menu_bar_please_restart_messagebox"))
-    message_box.show()
+    # 立即重新標示整個介面，不需要重新啟動
+    # Relabel the whole interface at once, with no restart
+    from je_editor.pyside_ui.main_ui.retranslate import retranslate_ui
+    retranslate_ui(ui_we_want_to_set, previous_words)

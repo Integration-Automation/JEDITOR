@@ -116,6 +116,30 @@ class ProblemsPanelWidget(QWidget):
         """取得面板目前顯示的診斷 / The diagnostics currently listed."""
         return list(self._diagnostics)
 
+    def retranslate(self) -> None:
+        """
+        換語言後重新標示自己
+        Relabel after the language changes.
+
+        面板記著目前的診斷，因此不能整個拆掉重建；改字之後重畫清單，狀態列的文字
+        也會跟著換成新語言。
+        The panel is holding the current diagnostics and so cannot be rebuilt from
+        scratch; relabelling and then redrawing the list also moves the status
+        text to the new language.
+        """
+        word = language_wrapper.language_word_dict
+        self.refresh_button.setText(word.get("problems_panel_refresh"))
+        self.project_check.setText(word.get("problems_panel_whole_project"))
+        self.fix_button.setText(word.get("problems_panel_fix"))
+        self.severity_filter.setItemText(0, word.get("problems_panel_all_severities"))
+        self.result_tree.setHeaderLabels([
+            word.get("problems_panel_col_code"),
+            word.get("problems_panel_col_message"),
+            word.get("problems_panel_col_line"),
+            word.get("problems_panel_col_file"),
+        ])
+        self._render_items()
+
     def refresh(self) -> None:
         """
         重新讀取診斷並重畫清單

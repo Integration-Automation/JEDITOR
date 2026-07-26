@@ -9,11 +9,20 @@ if TYPE_CHECKING:
 
 from PySide6.QtCore import QObject
 from PySide6.QtGui import QCloseEvent
-from PySide6.QtWebEngineCore import QWebEngineDownloadRequest
-from PySide6.QtWebEngineWidgets import QWebEngineView
 
-from je_editor.pyside_ui.browser.browser_download_window import BrowserDownloadWindow
-from je_editor.utils.logging.loggin_instance import jeditor_logger
+from je_editor.utils.browser.chromium_flags import quiet_chromium_logging
+
+# 必須在 QtWebEngine 初始化之前設定，因此排在匯入它之前
+# This has to be set before QtWebEngine initialises, so it comes before the import
+quiet_chromium_logging()
+
+from PySide6.QtWebEngineCore import QWebEngineDownloadRequest  # noqa: E402
+from PySide6.QtWebEngineWidgets import QWebEngineView  # noqa: E402
+
+from je_editor.pyside_ui.browser.browser_download_window import (  # noqa: E402
+    BrowserDownloadWindow
+)
+from je_editor.utils.logging.loggin_instance import jeditor_logger  # noqa: E402
 
 
 class BrowserView(QWebEngineView):

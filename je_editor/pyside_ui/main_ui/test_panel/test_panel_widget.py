@@ -187,6 +187,31 @@ class TestPanelWidget(QWidget):
         """取得目前顯示的結果 / The results currently listed."""
         return list(self._results)
 
+    def retranslate(self) -> None:
+        """
+        換語言後重新標示自己
+        Relabel after the language changes.
+
+        面板記著上一次的測試結果，因此只換文字再重畫清單，不重建整個面板。
+        The panel is holding the last run's results, so it relabels and redraws
+        rather than being rebuilt.
+        """
+        word = language_wrapper.language_word_dict
+        self.run_button.setText(word.get("test_panel_run"))
+        self.run_selected_button.setText(word.get("test_panel_run_selected"))
+        self.rerun_failures_button.setText(word.get("test_panel_rerun_failures"))
+        self.filter_edit.setPlaceholderText(word.get("test_panel_filter_placeholder"))
+        self.coverage_check.setText(word.get("test_panel_coverage"))
+        self.traceback_view.setPlaceholderText(word.get("test_panel_traceback_placeholder"))
+        self.result_tree.setHeaderLabels([
+            word.get("test_panel_col_outcome"),
+            word.get("test_panel_col_test"),
+            word.get("test_panel_col_file"),
+        ])
+        if not self._results:
+            self.status_label.setText(word.get("test_panel_ready"))
+        self._render_items()
+
     def start_run(self, node_ids: list[str] | None = None) -> bool:
         """
         啟動一次測試執行

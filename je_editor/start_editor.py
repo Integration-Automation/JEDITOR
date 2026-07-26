@@ -7,6 +7,7 @@ from qt_material import apply_stylesheet
 
 from je_editor.pyside_ui.main_ui.main_editor import EditorMain
 from je_editor.plugins.plugin_loader import load_external_plugins
+from je_editor.utils.browser.chromium_flags import quiet_chromium_logging
 
 
 def start_editor(debug_mode: bool = False) -> None:
@@ -17,6 +18,12 @@ def start_editor(debug_mode: bool = False) -> None:
 
     :param debug_mode: 是否啟用除錯模式 / whether to enable debug mode
     """
+
+    # 壓下內嵌 Chromium 的啟動雜訊；標準錯誤會被導進輸出面板，那些訊息會直接
+    # 出現在使用者眼前
+    # Quiet the embedded Chromium's startup noise: standard error is piped into
+    # the output pane, so its messages land in front of the user
+    quiet_chromium_logging()
 
     # 嘗試取得現有的 QCoreApplication 實例
     # Try to get an existing QCoreApplication instance

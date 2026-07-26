@@ -155,6 +155,28 @@ class TodoPanelWidget(QWidget):
         self.refresh_button.setEnabled(True)
         self._render_items()
 
+    def retranslate(self) -> None:
+        """
+        換語言後重新標示自己
+        Relabel after the language changes.
+
+        標籤篩選的第一項是「所有標籤」，其餘是掃到的標籤本身（TODO、FIXME），那些
+        不是翻譯來的，不能動。
+        The first entry in the tag filter is "all tags" and the rest are the tags
+        as found in the code (TODO, FIXME); those did not come from a translation
+        and are left alone.
+        """
+        word = language_wrapper.language_word_dict
+        self.refresh_button.setText(word.get("todo_panel_refresh"))
+        self.tag_filter.setItemText(0, word.get("todo_panel_all_tags"))
+        self.result_tree.setHeaderLabels([
+            word.get("todo_panel_col_tag"),
+            word.get("todo_panel_col_message"),
+            word.get("todo_panel_col_file"),
+            word.get("todo_panel_col_line"),
+        ])
+        self._render_items()
+
     def _render_items(self) -> None:
         """依篩選條件重建清單 / Rebuild the tree for the current filter."""
         visible = self.visible_items()
