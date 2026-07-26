@@ -38,7 +38,11 @@ class TestLanguageWrapper:
         lw = LanguageWrapper()
         lw.reset_language("Traditional_Chinese")
         assert lw.language == "Traditional_Chinese"
-        assert lw.language_word_dict is traditional_chinese_word_dict
+        # The dictionary is the translation laid over English, so a key nobody
+        # has translated yet still answers instead of coming back blank.
+        assert lw.language_word_dict["file_menu_label"] == \
+            traditional_chinese_word_dict["file_menu_label"]
+        assert set(lw.language_word_dict) >= set(traditional_chinese_word_dict)
 
     def test_switch_to_unknown_keeps_current(self):
         lw = LanguageWrapper()

@@ -50,7 +50,9 @@ from je_editor.utils.session.open_files_session import (
     restorable_files,
 )
 from je_editor.utils.logging.loggin_instance import jeditor_logger
-from je_editor.utils.multi_language.multi_language_wrapper import language_wrapper
+from je_editor.utils.multi_language.multi_language_wrapper import (
+    language_wrapper, resolve_startup_language
+)
 from je_editor.utils.redirect_manager.redirect_manager_class import redirect_manager_instance
 from je_editor.plugins.plugin_loader import load_external_plugins
 
@@ -99,9 +101,9 @@ class EditorMain(QMainWindow, QtStyleTools):
         # Read user settings
         read_user_setting()
 
-        # 設定語言 (多語系支援)
-        # Set language (multi-language support)
-        language_wrapper.reset_language(user_setting_dict.get("language", "English"))
+        # 設定語言 (多語系支援)；第一次啟動時照系統語系挑一個
+        # Set language (multi-language support), following the system on a first run
+        language_wrapper.reset_language(resolve_startup_language(user_setting_dict))
 
         # Jedi 設定：關閉快取解析器，避免執行緒問題
         # Jedi settings: disable fast parser for thread safety

@@ -117,6 +117,38 @@ class TestHeadDiffTab:
         from je_editor.pyside_ui.main_ui.menu.tab_menu.build_tab_git_menu import head_diff_text
         assert head_diff_text(_window_with(editor, monkey_editor_widget=False)) == ""
 
+
+class TestStagedDiffTab:
+    """
+    Staging hunk by hunk is only meaningful if what went into the index can be
+    seen; the diff against HEAD shows every change, staged or not. The comparison
+    existed but nothing opened it.
+    """
+
+    def test_a_staged_difference_opens_a_tab(self, editor):
+        from je_editor.pyside_ui.main_ui.menu.tab_menu.build_tab_git_menu import (
+            add_staged_diff_tab
+        )
+        editor.staged_diff_text = lambda: "--- a\n+++ b\n-old\n+new\n"
+        window = _window_with(editor)
+        assert add_staged_diff_tab(window) is True
+        assert len(window.tab_widget.added) == 1
+
+    def test_no_difference_opens_nothing(self, editor):
+        from je_editor.pyside_ui.main_ui.menu.tab_menu.build_tab_git_menu import (
+            add_staged_diff_tab
+        )
+        editor.staged_diff_text = lambda: ""
+        window = _window_with(editor)
+        assert add_staged_diff_tab(window) is False
+        assert window.tab_widget.added == []
+
+    def test_a_non_editor_tab_opens_nothing(self, editor):
+        from je_editor.pyside_ui.main_ui.menu.tab_menu.build_tab_git_menu import (
+            add_staged_diff_tab
+        )
+        assert add_staged_diff_tab(_window_with(editor, monkey_editor_widget=False)) is False
+
     def test_opening_the_tab_without_changes_does_nothing(self, editor):
         from je_editor.pyside_ui.main_ui.menu.tab_menu.build_tab_git_menu import add_head_diff_tab
         editor.setPlainText("a\n")

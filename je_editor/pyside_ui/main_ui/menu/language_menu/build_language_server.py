@@ -39,45 +39,36 @@ def set_language_menu(ui_we_want_to_set: EditorMain) -> None:
         language_wrapper.language_word_dict.get("language_menu_label")
     )
 
-    # 建立「切換到英文」動作
-    # Add "Switch to English" action
-    ui_we_want_to_set.language_menu.change_to_english_language_action = QAction(
-        language_wrapper.language_word_dict.get("language_menu_bar_english"),
-        ui_we_want_to_set.language_menu
-    )
-    ui_we_want_to_set.language_menu.change_to_english_language_action.triggered.connect(
-        lambda: set_language("English", ui_we_want_to_set)
-    )
-
-    # 建立「切換到繁體中文」動作
-    # Add "Switch to Traditional Chinese" action
-    ui_we_want_to_set.language_menu.change_to_traditional_chinese_language_action = QAction(
-        language_wrapper.language_word_dict.get("language_menu_bar_traditional_chinese"),
-        ui_we_want_to_set.language_menu
-    )
-    ui_we_want_to_set.language_menu.change_to_traditional_chinese_language_action.triggered.connect(
-        lambda: set_language("Traditional_Chinese", ui_we_want_to_set)
-    )
-
-    # 將動作加入選單
-    # Add actions to the menu
-    ui_we_want_to_set.language_menu.addAction(
-        ui_we_want_to_set.language_menu.change_to_english_language_action
-    )
-    ui_we_want_to_set.language_menu.addAction(
-        ui_we_want_to_set.language_menu.change_to_traditional_chinese_language_action
-    )
+    # 每個已註冊的語言各一個項目，名稱以該語言自己的寫法呈現——看不懂目前介面語言
+    # 的人才找得到自己的那一個
+    # One entry per registered language, each written the way that language writes
+    # its own name: someone who cannot read the current interface language still
+    # has to be able to find theirs
+    ui_we_want_to_set.language_menu.language_actions = {}
+    for language in language_wrapper.available_languages():
+        action = QAction(
+            language_wrapper.display_name(language), ui_we_want_to_set.language_menu)
+        action.setCheckable(True)
+        action.setChecked(language == language_wrapper.language)
+        action.triggered.connect(
+            lambda checked=False, name=language: set_language(name, ui_we_want_to_set)
+        )
+        ui_we_want_to_set.language_menu.addAction(action)
+        ui_we_want_to_set.language_menu.language_actions[language] = action
 
     # 動態加入插件註冊的語言
     # Dynamically add plugin-registered languages
     from je_editor.plugins import get_all_natural_languages
     for lang_key, lang_info in get_all_natural_languages().items():
+        if lang_key in ui_we_want_to_set.language_menu.language_actions:
+            continue
         display_name = lang_info.get("display_name", lang_key)
         action = QAction(display_name, ui_we_want_to_set.language_menu)
         action.triggered.connect(
             lambda checked=False, lk=lang_key: set_language(lk, ui_we_want_to_set)
         )
         ui_we_want_to_set.language_menu.addAction(action)
+        ui_we_want_to_set.language_menu.language_actions[lang_key] = action
 
 
 # 設定語言

@@ -443,6 +443,8 @@ please make sure that the current encoding is consistent with the default encodi
     "lsp_quick_fix_title": "Quick Fixes",
     "lsp_quick_fix_prompt": "Apply:",
     "context_menu_find_references": "Find References",
+    "context_menu_signature_help": "Signature Help",
+    "tab_menu_diff_against_staged_name": "Diff Against Staged",
     "context_menu_quick_fix": "Quick Fix...",
     "context_menu_unstage_file": "Unstage File",
     "context_menu_commit_file": "Commit Staged...",

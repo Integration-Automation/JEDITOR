@@ -60,6 +60,16 @@ def set_tab_git_menu(ui_we_want_to_set: EditorMain) -> None:
     )
     ui_we_want_to_set.tab_menu.git_menu.addAction(ui_we_want_to_set.tab_menu.git_menu.add_file_diff_action)
 
+    # === 目前檔案與索引的差異 ===
+    # === Diff the current file against what is staged ===
+    ui_we_want_to_set.tab_menu.git_menu.add_staged_diff_action = QAction(
+        language_wrapper.language_word_dict.get("tab_menu_diff_against_staged_name"))
+    ui_we_want_to_set.tab_menu.git_menu.add_staged_diff_action.triggered.connect(
+        lambda: add_staged_diff_tab(ui_we_want_to_set)
+    )
+    ui_we_want_to_set.tab_menu.git_menu.addAction(
+        ui_we_want_to_set.tab_menu.git_menu.add_staged_diff_action)
+
 
 def current_editor_widget(ui_we_want_to_set: EditorMain):
     """
@@ -98,6 +108,36 @@ def head_diff_text(ui_we_want_to_set: EditorMain) -> str:
         return ""
     name = Path(code_edit.current_file).name if code_edit.current_file else ""
     return unified_diff_text(baseline, code_edit.toPlainText(), name)
+
+
+def add_staged_diff_tab(ui_we_want_to_set: EditorMain) -> bool:
+    """
+    以並排比對開啟目前檔案與索引內容的差異
+    Open the current file's diff against the index in the side-by-side viewer.
+
+    逐段暫存之後，這是唯一能看出「已經放進索引的是哪些」的地方——與 HEAD 的差異
+    看到的是全部改動，分不出哪些已經暫存。
+    After staging hunk by hunk this is the only way to see what actually went into
+    the index: the diff against HEAD shows every change, staged or not.
+
+    :param ui_we_want_to_set: 主編輯器視窗 / the main editor window
+    :return: 有差異並開啟分頁時為 ``True`` / ``True`` when a tab was opened
+    """
+    jeditor_logger.info("build_tab_git_menu.py add staged diff tab")
+    editor_widget = current_editor_widget(ui_we_want_to_set)
+    if editor_widget is None:
+        return False
+    diff_text = editor_widget.code_edit.staged_diff_text()
+    if not diff_text:
+        return False
+    viewer = DiffViewerWidget()
+    viewer.viewer.set_diff_text(diff_text)
+    ui_we_want_to_set.tab_widget.addTab(
+        viewer,
+        f"{language_wrapper.language_word_dict.get('tab_menu_diff_against_staged_name')} "
+        f"{ui_we_want_to_set.tab_widget.count()}"
+    )
+    return True
 
 
 def add_head_diff_tab(ui_we_want_to_set: EditorMain) -> bool:
