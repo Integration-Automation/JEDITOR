@@ -407,7 +407,7 @@ traditional_chinese_word_dict = {
     "shortcut_settings_col_keys": "按鍵",
     "shortcut_settings_save": "儲存",
     "shortcut_settings_reset": "還原預設值",
-    "shortcut_settings_hint": "儲存後對之後開啟的分頁生效。",
+    "shortcut_settings_hint": "儲存後立即生效。",
     "shortcut_settings_conflict": "{keys} 同時被 {commands} 使用",
     # 語言伺服器 / Language server
     "lsp_references_title": "參照",

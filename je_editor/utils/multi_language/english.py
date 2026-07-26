@@ -417,7 +417,7 @@ please make sure that the current encoding is consistent with the default encodi
     "shortcut_settings_col_keys": "Keys",
     "shortcut_settings_save": "Save",
     "shortcut_settings_reset": "Restore defaults",
-    "shortcut_settings_hint": "Changes apply to tabs opened after saving.",
+    "shortcut_settings_hint": "Changes take effect as soon as they are saved.",
     "shortcut_settings_conflict": "{keys} is claimed by {commands}",
     # Language server
     "lsp_references_title": "References",

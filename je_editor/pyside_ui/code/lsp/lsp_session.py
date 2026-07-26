@@ -233,9 +233,9 @@ class LspSessionRegistry:
 
     def shutdown_all(self) -> None:
         """關掉每一個連線 / Shut every connection down."""
-        for session in list(self._sessions.values()):
+        sessions, self._sessions = self._sessions, {}
+        for session in sessions.values():
             session.shutdown()
-        self._sessions = {}
 
 
 # 整個應用程式共用的連線表 / The connections the whole application shares

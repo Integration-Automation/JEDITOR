@@ -123,9 +123,11 @@ class TestConflicts:
 
 class TestWithoutARepository:
     def test_stashing_needs_an_open_repository(self):
+        unopened = GitService()
         with pytest.raises(RuntimeError):
-            GitService().stash_save("wip")
+            unopened.stash_save("wip")
 
     def test_listing_conflicts_needs_an_open_repository(self):
+        unopened = GitService()
         with pytest.raises(RuntimeError):
-            GitService().conflicted_files()
+            unopened.conflicted_files()

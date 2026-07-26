@@ -17,7 +17,7 @@ from je_editor.pyside_ui.main_ui.save_settings.user_color_setting_file import ac
 from je_editor.pyside_ui.main_ui.save_settings.user_setting_file import user_setting_dict
 # 匯入日誌紀錄器
 # Import logger instance
-from je_editor.pyside_ui.main_ui.save_settings.shortcut_setting import shortcut_for
+from je_editor.pyside_ui.main_ui.save_settings.shortcut_setting import bind
 from je_editor.utils.logging.loggin_instance import jeditor_logger
 
 # 僅在型別檢查時匯入 EditorMain，避免循環依賴
@@ -53,7 +53,7 @@ def set_venv_menu(ui_we_want_to_set: EditorMain) -> None:
     # Create virtual environment
     ui_we_want_to_set.venv_menu.change_language_menu = QAction(
         language_wrapper.language_word_dict.get("python_env_menu_create_venv_label"))
-    ui_we_want_to_set.venv_menu.change_language_menu.setShortcut(shortcut_for("change_language"))
+    bind(ui_we_want_to_set.venv_menu.change_language_menu, "change_language")
     ui_we_want_to_set.venv_menu.change_language_menu.triggered.connect(
         lambda: create_venv(ui_we_want_to_set))
     ui_we_want_to_set.venv_menu.addAction(ui_we_want_to_set.venv_menu.change_language_menu)
@@ -62,7 +62,7 @@ def set_venv_menu(ui_we_want_to_set: EditorMain) -> None:
     # pip upgrade package
     ui_we_want_to_set.venv_menu.pip_upgrade_action = QAction(
         language_wrapper.language_word_dict.get("python_env_menu_pip_upgrade_label"))
-    ui_we_want_to_set.venv_menu.pip_upgrade_action.setShortcut(shortcut_for("pip_upgrade"))
+    bind(ui_we_want_to_set.venv_menu.pip_upgrade_action, "pip_upgrade")
     ui_we_want_to_set.venv_menu.pip_upgrade_action.triggered.connect(
         lambda: pip_install_package_update(ui_we_want_to_set))
     ui_we_want_to_set.venv_menu.addAction(ui_we_want_to_set.venv_menu.pip_upgrade_action)
@@ -71,7 +71,7 @@ def set_venv_menu(ui_we_want_to_set: EditorMain) -> None:
     # pip install package
     ui_we_want_to_set.venv_menu.pip_action = QAction(
         language_wrapper.language_word_dict.get("python_env_menu_pip_label"))
-    ui_we_want_to_set.venv_menu.pip_action.setShortcut(shortcut_for("pip_install"))
+    bind(ui_we_want_to_set.venv_menu.pip_action, "pip_install")
     ui_we_want_to_set.venv_menu.pip_action.triggered.connect(
         lambda: pip_install_package(ui_we_want_to_set))
     ui_we_want_to_set.venv_menu.addAction(ui_we_want_to_set.venv_menu.pip_action)

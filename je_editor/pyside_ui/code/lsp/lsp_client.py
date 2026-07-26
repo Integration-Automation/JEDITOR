@@ -335,62 +335,41 @@ class LspClient(QObject):
         :param message: 已解析的訊息 / the parsed message
         """
         if message.get("method") == "textDocument/publishDiagnostics":
-            params = message.get("params")
-            # 原樣留一份：要求修正時得把伺服器自己給的診斷送回去，而不是編輯器
-            # 轉換過的版本（行號起算方式都不同）
-            # Keep them as they came: asking for a fix means handing the server
-            # back its own diagnostics, not the editor's converted form, which
-            # does not even count lines the same way
-            raw = (params or {}).get("diagnostics")
-            self._raw_diagnostics = list(raw) if isinstance(raw, list) else []
-            self.diagnostics_ready.emit(diagnostic_entries(params))
+            self._handle_diagnostics(message.get("params"))
             return
-        if "result" not in message:
-            return
-        if message.get("id") == self._pending_completion_id:
-            self._pending_completion_id = None
-            self.completions_ready.emit(completion_labels(message.get("result")))
-            return
-        if message.get("id") == self._pending_definition_id:
-            self._pending_definition_id = None
-            location = definition_location(message.get("result"))
-            if location is not None:
-                self.definition_ready.emit(location)
-            return
-        if message.get("id") == self._pending_hover_id:
-            self._pending_hover_id = None
-            text = hover_text(message.get("result"))
-            if text:
-                self.hover_ready.emit(text)
-            return
-        if message.get("id") == self._pending_edit_id:
-            self._pending_edit_id = None
-            uri = file_uri(self._file_path) if self._file_path else ""
-            edits = text_edits(message.get("result"), uri)
-            if edits:
-                self.edits_ready.emit(edits)
-            return
-        self._handle_reply(message)
+        if "result" in message:
+            self._handle_reply(message)
+
+    def _handle_diagnostics(self, params: object) -> None:
+        """
+        處理伺服器主動送來的診斷
+        Handle the diagnostics the server pushes.
+
+        原樣留一份：要求修正時得把伺服器自己給的診斷送回去，而不是編輯器轉換過的
+        版本——連行號起算方式都不同。
+        Keep them as they came: asking for a fix means handing the server back its
+        own diagnostics, not the editor's converted form, which does not even
+        count lines the same way.
+
+        :param params: 通知的參數 / the notification's params
+        """
+        raw = (params or {}).get("diagnostics") if isinstance(params, dict) else None
+        self._raw_diagnostics = list(raw) if isinstance(raw, list) else []
+        self.diagnostics_ready.emit(diagnostic_entries(params))
 
     def _handle_reply(self, message: dict) -> None:
         """
-        處理其餘幾種回覆
-        Handle the remaining kinds of reply.
+        把回覆交給發問的那一個請求
+        Give a reply back to the request that asked for it.
 
-        每一種都是「編號對得上就解析結果並發出訊號」，因此用一張表處理，不必為每
-        一種各寫一段幾乎相同的判斷。
-        Each is the same shape — a matching id means parse the result and emit —
-        so one table handles them rather than a near-identical branch for each.
+        每一種回覆都是同一個形狀——編號對得上就解析結果並發出訊號——因此用一張表
+        處理，不必為每一種各寫一段幾乎相同的判斷。
+        Every reply has the same shape, a matching id means parse the result and
+        emit, so one table handles them rather than a near-identical branch each.
 
         :param message: 已解析的訊息 / the parsed message
         """
-        replies = (
-            ("_pending_signature_id", signature_text, self.signature_ready),
-            ("_pending_references_id", reference_locations, self.references_ready),
-            ("_pending_action_id", code_action_titles, self.code_actions_ready),
-            ("_pending_symbol_id", document_symbols, self.symbols_ready),
-        )
-        for attribute, parse, signal in replies:
+        for attribute, parse, signal in self._reply_handlers():
             if message.get("id") != getattr(self, attribute):
                 continue
             setattr(self, attribute, None)
@@ -398,6 +377,23 @@ class LspClient(QObject):
             if parsed:
                 signal.emit(parsed)
             return
+
+    def _reply_handlers(self) -> tuple:
+        """每種回覆的解析方式與去處 / How each kind of reply is parsed, and where it goes."""
+        return (
+            ("_pending_completion_id", completion_labels, self.completions_ready),
+            ("_pending_definition_id", definition_location, self.definition_ready),
+            ("_pending_hover_id", hover_text, self.hover_ready),
+            ("_pending_edit_id", self._edits_of, self.edits_ready),
+            ("_pending_signature_id", signature_text, self.signature_ready),
+            ("_pending_references_id", reference_locations, self.references_ready),
+            ("_pending_action_id", code_action_titles, self.code_actions_ready),
+            ("_pending_symbol_id", document_symbols, self.symbols_ready),
+        )
+
+    def _edits_of(self, result: object) -> list:
+        """取出要套用到這個檔案的編輯 / The edits to apply to this file."""
+        return text_edits(result, file_uri(self._file_path) if self._file_path else "")
 
     def stop(self) -> None:
         """

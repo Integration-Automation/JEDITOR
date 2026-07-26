@@ -9,7 +9,7 @@ from je_editor.pyside_ui.main_ui.console_widget.console_gui import ConsoleWidget
 from je_editor.pyside_ui.main_ui.editor.editor_widget import EditorWidget
 from je_editor.pyside_ui.main_ui.menu.tab_menu.build_tab_git_menu import set_tab_git_menu
 from je_editor.pyside_ui.main_ui.menu.tab_menu.build_tab_tools_menu import set_tab_tools_menu
-from je_editor.pyside_ui.main_ui.save_settings.shortcut_setting import shortcut_for
+from je_editor.pyside_ui.main_ui.save_settings.shortcut_setting import bind
 from je_editor.utils.logging.loggin_instance import jeditor_logger
 
 if TYPE_CHECKING:
@@ -64,7 +64,7 @@ def set_tab_menu(ui_we_want_to_set: EditorMain) -> None:
     # === Split view of the same file ===
     ui_we_want_to_set.tab_menu.toggle_split_view_action = QAction(
         language_wrapper.language_word_dict.get("tab_menu_split_view_label"))
-    ui_we_want_to_set.tab_menu.toggle_split_view_action.setShortcut(shortcut_for("toggle_split_view"))
+    bind(ui_we_want_to_set.tab_menu.toggle_split_view_action, "toggle_split_view")
     ui_we_want_to_set.tab_menu.toggle_split_view_action.triggered.connect(
         lambda: toggle_split_view(ui_we_want_to_set)
     )
@@ -74,7 +74,7 @@ def set_tab_menu(ui_we_want_to_set: EditorMain) -> None:
     # === Minimap ===
     ui_we_want_to_set.tab_menu.toggle_minimap_action = QAction(
         language_wrapper.language_word_dict.get("tab_menu_minimap_label"))
-    ui_we_want_to_set.tab_menu.toggle_minimap_action.setShortcut(shortcut_for("toggle_minimap"))
+    bind(ui_we_want_to_set.tab_menu.toggle_minimap_action, "toggle_minimap")
     ui_we_want_to_set.tab_menu.toggle_minimap_action.triggered.connect(
         lambda: toggle_minimap(ui_we_want_to_set)
     )

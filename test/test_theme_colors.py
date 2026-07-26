@@ -89,8 +89,8 @@ class TestApplyingToTheSettings:
                 LIGHT_COLORS["minimap_background_color"]
             # The QColor dictionary the painting reads has to move with it.
             colour = actually_color_dict["minimap_background_color"]
-            assert (colour.red(), colour.green(), colour.blue()) == \
-                tuple(LIGHT_COLORS["minimap_background_color"])
+            actual = [colour.red(), colour.green(), colour.blue()]
+            assert actual == LIGHT_COLORS["minimap_background_color"]
         finally:
             apply_theme_colors("dark_amber.xml")
 

@@ -19,6 +19,7 @@ from PySide6.QtWidgets import (
     QTreeWidgetItem, QVBoxLayout, QWidget
 )
 
+from je_editor.pyside_ui.main_ui.save_settings.shortcut_setting import reload_bound_shortcuts
 from je_editor.pyside_ui.main_ui.save_settings.user_setting_file import user_setting_dict
 from je_editor.utils.multi_language.multi_language_wrapper import language_wrapper
 from je_editor.utils.shortcuts.shortcut_registry import (
@@ -171,8 +172,8 @@ class ShortcutSettingsDialog(QDialog):
         if self.conflicts():
             return False
         user_setting_dict["shortcuts"] = clean_overrides(self.current_shortcuts())
-        notify = getattr(self._main_window, "reload_shortcuts", None)
-        if callable(notify):
-            notify()
+        # 立刻套用到已經建好的選單、工具列與分頁
+        # Reach the menus, toolbar and tabs that are already built
+        reload_bound_shortcuts()
         self.accept()
         return True

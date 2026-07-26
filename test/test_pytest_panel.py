@@ -57,6 +57,42 @@ D:\\project\\test\\test_alpha.py:42: AssertionError: expected 1 got 2
 """
 
 
+class TestFencedTitles:
+    """
+    Banners and headings are found by scanning rather than by a regex: the
+    pattern for them backtracks exponentially on a line of nothing but fence
+    characters, and pytest's output is full of those.
+    """
+
+    def test_a_banner_title_is_read(self):
+        from je_editor.utils.test_runner.pytest_output import fenced_title
+        assert fenced_title("===== FAILURES =====", "=-") == "FAILURES"
+
+    def test_a_dashed_banner_is_read(self):
+        from je_editor.utils.test_runner.pytest_output import fenced_title
+        assert fenced_title("--- coverage: win32 ---", "=-") == "coverage: win32"
+
+    def test_a_heading_is_read(self):
+        from je_editor.utils.test_runner.pytest_output import fenced_title
+        assert fenced_title("____ TestThing.test_case ____", "_") == "TestThing.test_case"
+
+    def test_a_line_of_only_fence_characters_has_an_empty_title(self):
+        from je_editor.utils.test_runner.pytest_output import fenced_title
+        assert fenced_title("=" * 200, "=-") == ""
+
+    def test_an_ordinary_line_is_not_fenced(self):
+        from je_editor.utils.test_runner.pytest_output import fenced_title
+        assert fenced_title("assert 1 == 2", "=-") is None
+
+    def test_one_fence_character_is_not_enough(self):
+        from je_editor.utils.test_runner.pytest_output import fenced_title
+        assert fenced_title("=title=", "=-") is None
+
+    def test_a_blank_line_is_not_fenced(self):
+        from je_editor.utils.test_runner.pytest_output import fenced_title
+        assert fenced_title("   ", "=-") is None
+
+
 class TestParseTracebacks:
     """The panel shows why a test failed, not only that it did."""
 

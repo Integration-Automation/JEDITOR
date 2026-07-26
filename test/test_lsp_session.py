@@ -73,7 +73,8 @@ class TestRoutingMessages:
 
     def test_request_ids_do_not_repeat(self):
         session = _FakeSession()
-        assert session.take_id() != session.take_id()
+        first = session.take_id()
+        assert session.take_id() != first
 
 
 class TestSharingASession:

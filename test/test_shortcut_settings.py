@@ -143,6 +143,18 @@ class TestTheSettingsDialog:
         dialog.save()
         assert set(user_setting_dict["shortcuts"]) == {"save_all"}
 
+    def test_saving_reaches_the_menus_already_built(self, dialog):
+        # The menus and the toolbar are built once at startup, so a saved change
+        # has to be pushed to them rather than waiting for the next launch.
+        from PySide6.QtGui import QAction, QKeySequence
+        from je_editor.pyside_ui.main_ui.save_settings.shortcut_setting import bind
+        action = QAction()
+        bind(action, "save_all")
+        dialog._editors["save_all"].setKeySequence(QKeySequence("Ctrl+Alt+W"))
+        dialog.save()
+        assert normalise_sequence(action.shortcut().toString()) == \
+            normalise_sequence("Ctrl+Alt+W")
+
     def test_restoring_defaults_clears_a_change(self, dialog):
         from PySide6.QtGui import QKeySequence
         dialog._editors["save_all"].setKeySequence(QKeySequence("Ctrl+Alt+W"))

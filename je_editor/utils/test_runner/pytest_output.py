@@ -24,19 +24,56 @@ _FAILURE_PATTERN = re.compile(r"^(?P<path>.+?):(?P<line>\d+): (?P<message>.+)$")
 # Matches the summary line, e.g. ``3 failed, 5 passed in 0.42s``
 _SUMMARY_PATTERN = re.compile(r"^=+\s*(?P<summary>.*?(?:passed|failed|error|no tests ran).*?)\s*=+$")
 
-# 比對區段標題：pytest 用等號或連字號把標題包起來，覆蓋率報告與結尾統計都算
-# Matches a section banner: pytest fences its titles in equals signs or dashes,
-# which covers the coverage report and the closing summary as well
-_SECTION_BANNER = re.compile(r"^(?P<fence>[=-]){2,}\s*(?P<title>.*?)\s*(?P=fence){2,}$")
-# 比對追蹤訊息的標題，例如 ``____ TestThing.test_case ____``
-# Matches a traceback heading such as ``____ TestThing.test_case ____``
-_FAILURE_HEADER = re.compile(r"^_{2,}\s*(?P<name>.+?)\s*_{2,}$")
+# 區段標題的圍籬字元：pytest 用等號或連字號把標題包起來，覆蓋率報告與結尾統計都算
+# What fences a section banner: pytest wraps its titles in equals signs or
+# dashes, which covers the coverage report and the closing summary as well
+_BANNER_FENCES = "=-"
+# 追蹤訊息標題的圍籬字元，例如 ``____ TestThing.test_case ____``
+# What fences a traceback heading, as in ``____ TestThing.test_case ____``
+_HEADER_FENCE = "_"
+# 兩側各至少要有幾個圍籬字元 / How many fence characters each side needs
+_MIN_FENCE = 2
 # 比對覆蓋率報告的總計行，例如 ``TOTAL   1200   84   93%``
 # Matches a coverage report's total, e.g. ``TOTAL   1200   84   93%``
 _COVERAGE_TOTAL = re.compile(r"^TOTAL\s+\d+\s+\d+\s+(?P<percent>\d+)%")
 
 # 帶有追蹤訊息的區段 / The sections that carry tracebacks
 _FAILURE_SECTIONS = frozenset({"FAILURES", "ERRORS"})
+
+
+def fenced_title(line: str, fences: str) -> str | None:
+    """
+    取出被圍籬字元包住的標題
+    Take the title out of a line fenced by repeated characters.
+
+    掃描而不是用正規表示式：``^(.){2,}(.*?)(\\1){2,}$`` 這種寫法在整行都是圍籬
+    字元時會退化成指數級的回溯，而 pytest 的輸出裡這種行到處都是。
+    This scans rather than matching ``^(.){2,}(.*?)(\\1){2,}$``, which backtracks
+    exponentially on a line made entirely of fence characters — and pytest's
+    output is full of those.
+
+    :param line: 一行文字 / the line to read
+    :param fences: 可以當圍籬的字元 / the characters that may fence it
+    :return: 標題（可能為空字串）；不是圍籬行時為 ``None``
+        the title, possibly empty, or ``None`` when the line is not fenced
+    """
+    stripped = line.strip()
+    if not stripped or stripped[0] not in fences:
+        return None
+    fence = stripped[0]
+    start = 0
+    while start < len(stripped) and stripped[start] == fence:
+        start += 1
+    if start == len(stripped):
+        # 整行都是圍籬字元：這是一條分隔線，標題是空的
+        # The whole line is fence characters: a plain separator, with no title
+        return "" if start >= _MIN_FENCE * 2 else None
+    end = len(stripped)
+    while end > start and stripped[end - 1] == fence:
+        end -= 1
+    if start < _MIN_FENCE or len(stripped) - end < _MIN_FENCE:
+        return None
+    return stripped[start:end].strip()
 
 # 視為失敗的結果 / Outcomes that count as a failure
 FAILING_OUTCOMES = frozenset({"FAILED", "ERROR"})
@@ -156,17 +193,16 @@ def parse_tracebacks(output: str) -> dict[str, str]:
     in_failures = False
     for line in output.splitlines():
         stripped = line.rstrip()
-        banner = _SECTION_BANNER.match(stripped.strip())
+        banner = fenced_title(stripped, _BANNER_FENCES)
         if banner is not None:
-            title = banner.group("title").strip().upper()
-            in_failures = title in _FAILURE_SECTIONS
+            in_failures = banner.upper() in _FAILURE_SECTIONS
             current = None
             continue
         if not in_failures:
             continue
-        header = _FAILURE_HEADER.match(stripped.strip())
-        if header is not None:
-            current = header.group("name").strip()
+        header = fenced_title(stripped, _HEADER_FENCE)
+        if header:
+            current = header
             blocks.setdefault(current, [])
             continue
         if current is not None:

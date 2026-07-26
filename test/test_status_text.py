@@ -93,7 +93,7 @@ def _status_window(tab_widget):
     """A bare main window with just the status-bar labels the refresh touches."""
     from PySide6.QtWidgets import QLabel
     from je_editor.pyside_ui.main_ui.main_editor import EditorMain
-    window = EditorMain.__new__(EditorMain)
+    window = EditorMain.__new__(EditorMain)  # pylint: disable=no-value-for-parameter
     window.tab_widget = tab_widget
     window._language_label = QLabel()
     window._line_ending_label = QLabel()

@@ -45,7 +45,7 @@ from je_editor.utils.file_diff.unified import unified_diff_text
 from je_editor.utils.lint.ruff_diagnostics import diagnostics_from_entries
 from je_editor.utils.macro.keystroke_macro import KeystrokeMacro
 from je_editor.utils.selection.surround import SURROUND_PAIRS, surround
-from je_editor.pyside_ui.main_ui.save_settings.shortcut_setting import shortcut_for
+from je_editor.pyside_ui.main_ui.save_settings.shortcut_setting import bind, shortcut_for
 from je_editor.utils.shortcuts.shortcut_registry import WINDOW_SHORTCUTS, ShortcutRegistry
 from je_editor.utils.line_ops.line_operations import (
     join_lines, natural_sort, remove_blank_lines, reverse_lines, sort_lines, unique_lines
@@ -659,7 +659,7 @@ class CodeEditor(QPlainTextEdit):
         sequence = shortcut_for(command)
         action = QAction(self)
         action.setObjectName(command)
-        action.setShortcut(sequence)
+        bind(action, command)
         action.setShortcutContext(Qt.ShortcutContext.WidgetWithChildrenShortcut)
         action.triggered.connect(handler)
         owner = self.shortcut_registry.register(sequence, command)
