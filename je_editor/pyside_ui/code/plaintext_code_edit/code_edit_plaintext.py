@@ -35,7 +35,9 @@ from je_editor.utils.indentation.indent_guides import (
     guide_columns, trailing_whitespace_start
 )
 from je_editor.git_client.file_staging import stage_content, staged_text
-from je_editor.utils.debugger.pdb_commands import breakpoint_commands, step_command
+from je_editor.utils.debugger.pdb_commands import (
+    breakpoint_commands, step_command, toggle_command
+)
 from je_editor.utils.file_diff.line_status import apply_hunk
 from je_editor.utils.file_diff.unified import unified_diff_text
 from je_editor.utils.lint.ruff_diagnostics import diagnostics_from_entries
@@ -2238,11 +2240,38 @@ class CodeEditor(QPlainTextEdit):
         切換游標所在行的中斷點
         Add or remove a breakpoint on the caret's line.
 
+        除錯器正在跑的話，這次改動也會送過去，中斷點因此在除錯途中也能加減，而不是
+        只能在啟動前決定好。
+        With the debugger running the change is sent across as well, so breakpoints
+        can be added and removed part-way through a session rather than only being
+        settled before it starts.
+
         :return: 切換後是否有中斷點 / whether the line now has one
         """
-        result = self.breakpoint_manager.toggle(self.textCursor().blockNumber())
+        line = self.textCursor().blockNumber()
+        result = self.breakpoint_manager.toggle(line)
         self.line_number.update()
+        self.send_breakpoint_change(line, result)
         return result
+
+    def send_breakpoint_change(self, line: int, is_set: bool) -> bool:
+        """
+        把一行的中斷點改動送給正在執行的除錯器
+        Send one line's breakpoint change to the running debugger.
+
+        pdb 只在提示符時讀指令，所以程式還在跑的話這個指令會等到下次停下來才生效
+        ——那正是它該生效的時機。
+        pdb only reads commands at its prompt, so while the program is running the
+        command waits for the next stop, which is exactly when it should apply.
+
+        :param line: 以 0 起算的行號 / the 0-based line number
+        :param is_set: 該行現在是否有中斷點 / whether the line now has one
+        :return: 有送出時為 ``True`` / ``True`` when the command was sent
+        """
+        if self.current_file is None:
+            return False
+        return self._write_debugger_line(
+            toggle_command(str(self.current_file), line + 1, is_set))
 
     def _debugger_process(self):
         """取得正在執行的除錯器程序 / The debugger process that is running, if any."""

@@ -13,7 +13,9 @@ from je_editor.utils.debugger.pdb_commands import (
     STEP_OVER,
     breakpoint_command,
     breakpoint_commands,
+    clear_command,
     step_command,
+    toggle_command,
 )
 
 
@@ -33,6 +35,18 @@ class TestPdbCommands:
 
     def test_invalid_lines_are_dropped(self):
         assert breakpoint_commands("app.py", [0, -2]) == []
+
+    def test_clearing_names_the_file_and_line(self):
+        assert clear_command("/project/app.py", 12) == "clear /project/app.py:12"
+
+    def test_clearing_uses_forward_slashes_too(self):
+        assert clear_command("D:\\project\\app.py", 3) == "clear D:/project/app.py:3"
+
+    def test_toggling_on_sets_a_breakpoint(self):
+        assert toggle_command("app.py", 4, True) == "break app.py:4"
+
+    def test_toggling_off_clears_it(self):
+        assert toggle_command("app.py", 4, False) == "clear app.py:4"
 
     @pytest.mark.parametrize("action,expected", [
         ("into", STEP_INTO), ("over", STEP_OVER),
@@ -144,6 +158,8 @@ class TestSendingToTheDebugger:
         editor.setPlainText("one\ntwo\nthree\n")
         _place_cursor(editor, 1)
         editor.toggle_breakpoint()
+        # Toggling sends its own change; this is about the full set going over.
+        stdin.write.reset_mock()
         assert editor.send_breakpoints_to_debugger() == 1
         stdin.write.assert_called_once_with(b"break app.py:2\n")
 
@@ -163,6 +179,7 @@ class TestSendingToTheDebugger:
         editor.setPlainText("one\ntwo\nthree\n")
         _place_cursor(editor, 2)
         editor.toggle_breakpoint()
+        stdin.write.reset_mock()
         widget = MagicMock()
         widget.code_edit = editor
         assert send_breakpoints(widget) == 1
@@ -175,6 +192,41 @@ class TestSendingToTheDebugger:
         widget = MagicMock()
         widget.code_edit = None
         assert send_breakpoints(widget) == 0
+
+    def test_toggling_during_a_run_sets_the_breakpoint(self, editor):
+        stdin = MagicMock()
+        editor.main_window.exec_python_debugger = MagicMock()
+        editor.main_window.exec_python_debugger.process.stdin = stdin
+        editor.current_file = "app.py"
+        editor.setPlainText("one\ntwo\nthree\n")
+        _place_cursor(editor, 1)
+        assert editor.toggle_breakpoint() is True
+        stdin.write.assert_called_once_with(b"break app.py:2\n")
+
+    def test_toggling_it_off_during_a_run_clears_it(self, editor):
+        stdin = MagicMock()
+        editor.main_window.exec_python_debugger = MagicMock()
+        editor.main_window.exec_python_debugger.process.stdin = stdin
+        editor.current_file = "app.py"
+        editor.setPlainText("one\ntwo\nthree\n")
+        _place_cursor(editor, 1)
+        editor.toggle_breakpoint()
+        stdin.write.reset_mock()
+        assert editor.toggle_breakpoint() is False
+        stdin.write.assert_called_once_with(b"clear app.py:2\n")
+
+    def test_an_unsaved_buffer_sends_nothing(self, editor):
+        editor.main_window.exec_python_debugger = MagicMock()
+        editor.current_file = None
+        assert editor.send_breakpoint_change(0, True) is False
+
+    def test_toggling_without_a_debugger_still_works(self, editor):
+        editor.main_window.exec_python_debugger = None
+        editor.current_file = "app.py"
+        editor.setPlainText("one\ntwo\n")
+        _place_cursor(editor, 0)
+        assert editor.toggle_breakpoint() is True
+        assert editor.breakpoint_manager.lines() == [0]
 
     def test_a_broken_pipe_is_reported_rather_than_raised(self, editor):
         stdin = MagicMock()
