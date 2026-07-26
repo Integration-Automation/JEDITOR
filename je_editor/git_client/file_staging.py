@@ -53,10 +53,12 @@ def staged_text(file_path: str | Path) -> str | None:
             entry = repo.index.entries[(relative, 0)]
             blob = Blob(repo, entry.binsha, entry.mode, relative)
             text = blob.data_stream.read().decode("utf-8")
-        except (KeyError, ValueError, TypeError, AttributeError, GitError, OSError):
-            return None
         except UnicodeDecodeError:
+            # 必須排在 ValueError 之前，否則永遠輪不到它
+            # Must come before ValueError, which is its base class
             jeditor_logger.debug(f"file_staging: {file_path} is not utf-8 text")
+            return None
+        except (KeyError, ValueError, TypeError, AttributeError, GitError, OSError):
             return None
         return text.replace("\r\n", "\n").replace("\r", "\n")
 

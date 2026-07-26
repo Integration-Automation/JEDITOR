@@ -61,10 +61,12 @@ def baseline_text(file_path: str | Path) -> str | None:
             blob = repo.head.commit.tree / relative.as_posix()
             text = blob.data_stream.read().decode("utf-8")
             return text.replace("\r\n", "\n").replace("\r", "\n")
+        except UnicodeDecodeError:
+            # 必須排在 ValueError 之前，否則永遠輪不到它
+            # Must come before ValueError, which is its base class
+            jeditor_logger.debug("file_baseline: %s is not utf-8 text", file_path)
+            return None
         except (KeyError, ValueError, TypeError, AttributeError, GitError, OSError):
             # 新檔案、尚無提交、或路徑不在工作區內
             # New file, no commit yet, or outside the tree
-            return None
-        except UnicodeDecodeError:
-            jeditor_logger.debug("file_baseline: %s is not utf-8 text", file_path)
             return None
