@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import threading
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -16,6 +17,10 @@ from je_editor.utils.lint.ruff_diagnostics import (
     parse_ruff_json,
     severity_for_code,
 )
+
+
+# Long enough that a slow machine still finishes; a hang fails rather than blocks.
+WORKER_TIMEOUT_MS = 10_000
 
 
 class TestSeverity:
@@ -149,13 +154,50 @@ class TestSeverityFilter:
 
 
 class TestProjectScope:
-    def test_project_mode_lints_the_root(self, panel, tmp_path):
+    """
+    The project check spawns ruff over every file, so it runs on a worker
+    thread: the panel gets its result through a signal rather than a return
+    value, and the window stays responsive while it runs.
+    """
+
+    def _run_project_check(self, panel, trigger=None):
+        """Start a project check and wait for it to report back."""
         with patch(
-            "je_editor.pyside_ui.main_ui.problems_panel.problems_panel_widget.lint_project",
+            "je_editor.pyside_ui.main_ui.problems_panel.project_lint_worker.lint_project",
             return_value=_diagnostics(),
         ) as mock_lint:
+            if trigger is None:
+                panel.project_check.setChecked(True)
+            else:
+                trigger()
+            worker = panel._project_worker
+            assert worker is not None, "no background check was started"
+            worker.wait(WORKER_TIMEOUT_MS)
+            QApplication.processEvents()
+        return mock_lint
+
+    def test_project_mode_lints_the_root(self, panel, tmp_path):
+        assert self._run_project_check(panel).called
+
+    def test_the_result_reaches_the_panel(self, panel):
+        self._run_project_check(panel)
+        assert len(panel.diagnostics()) == 3
+
+    def test_the_check_does_not_run_on_the_ui_thread(self, panel):
+        seen: list[int] = []
+        with patch(
+            "je_editor.pyside_ui.main_ui.problems_panel.project_lint_worker.lint_project",
+            side_effect=lambda root: seen.append(threading.get_ident()) or [],
+        ):
             panel.project_check.setChecked(True)
-        assert mock_lint.called
+            worker = panel._project_worker
+            assert worker is not None
+            worker.wait(WORKER_TIMEOUT_MS)
+        assert seen and seen[0] != threading.get_ident()
+
+    def test_rechecking_replaces_the_previous_run(self, panel):
+        self._run_project_check(panel)
+        self._run_project_check(panel, trigger=panel.refresh)
         assert len(panel.diagnostics()) == 3
 
     def test_fixing_without_a_file_does_nothing(self, panel):

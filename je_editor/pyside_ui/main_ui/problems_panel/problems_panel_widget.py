@@ -17,7 +17,10 @@ from PySide6.QtWidgets import (
     QTreeWidgetItem, QVBoxLayout, QWidget
 )
 
-from je_editor.code_scan.ruff_lint import apply_fixes, lint_project
+from je_editor.code_scan.ruff_lint import apply_fixes
+from je_editor.pyside_ui.main_ui.problems_panel.project_lint_worker import (
+    ProjectLintWorker
+)
 from je_editor.utils.file.open.open_file import read_file_with_encoding
 from je_editor.utils.lint.ruff_diagnostics import (
     SEVERITY_ERROR, SEVERITY_INFO, SEVERITY_WARNING, Diagnostic
@@ -65,6 +68,9 @@ class ProblemsPanelWidget(QWidget):
         word = language_wrapper.language_word_dict
         self._main_window = main_window
         self._diagnostics: list[Diagnostic] = []
+        # 專案檢查在工作執行緒進行，這裡持有進行中的那一個
+        # The project check runs on a worker thread; this holds the one in flight
+        self._project_worker: ProjectLintWorker | None = None
 
         self.refresh_button = QPushButton(word.get("problems_panel_refresh"))
         self.refresh_button.clicked.connect(self.refresh)
@@ -112,23 +118,87 @@ class ProblemsPanelWidget(QWidget):
 
     def refresh(self) -> None:
         """
-        重新讀取目前分頁的診斷並重畫清單
-        Re-read the current tab's diagnostics and rebuild the list.
+        重新讀取診斷並重畫清單
+        Re-read the diagnostics and rebuild the list.
 
-        編輯器持續在背景檢查，所以這裡只是取用最新結果。
-        The editor keeps checking in the background, so this only picks up its
-        latest result.
+        單一檔案的診斷是編輯器持續在背景產生的，這裡只是取用最新結果；整個專案的
+        檢查則要另外啟動，結果會晚一點才到。
+        A single file's diagnostics are produced in the background by the editor,
+        so those are just picked up; a project-wide check has to be started here
+        and its result arrives later.
         """
         if self.project_check.isChecked():
-            self._diagnostics = lint_project(self._project_root())
+            self.start_project_check()
+            return
+        self._stop_project_check()
+        code_edit = current_code_editor(self._main_window)
+        if code_edit is None:
+            self._diagnostics = []
         else:
-            code_edit = current_code_editor(self._main_window)
-            if code_edit is None:
-                self._diagnostics = []
-            else:
-                code_edit.request_lint()
-                self._diagnostics = code_edit.lint_manager.diagnostics()
+            code_edit.request_lint()
+            self._diagnostics = code_edit.lint_manager.diagnostics()
         self._render_items()
+
+    def start_project_check(self) -> bool:
+        """
+        在背景檢查整個專案
+        Start a project-wide check on a worker thread.
+
+        ruff 走遍整個專案要好幾秒，在 UI 執行緒做會讓視窗整段時間沒有反應。
+        Walking a whole project with ruff takes seconds, and doing it on the UI
+        thread would leave the window unresponsive for all of it.
+
+        :return: 是否啟動了檢查 / whether a check was started
+        """
+        self._stop_project_check()
+        worker = ProjectLintWorker(self._project_root(), self)
+        self._project_worker = worker
+        worker.linted.connect(self._on_project_linted)
+        # 先放掉參考再刪除，避免之後對已刪除的物件呼叫方法
+        # Drop the reference before deleting, so nothing calls a deleted object
+        worker.finished.connect(self._on_worker_finished)
+        worker.finished.connect(worker.deleteLater)
+        self.status_label.setText(
+            language_wrapper.language_word_dict.get("problems_panel_checking"))
+        worker.start()
+        return True
+
+    def _on_project_linted(self, diagnostics: list) -> None:
+        """
+        套用背景檢查的結果
+        Apply the diagnostics a background check produced.
+
+        只接受目前這個 worker 的結果：換過設定或再按一次重新檢查都會讓舊結果過期。
+        Only the current worker's result is accepted, since changing the scope or
+        rechecking makes an in-flight run stale.
+        """
+        if self.sender() is not self._project_worker:
+            return
+        self._diagnostics = list(diagnostics)
+        self._render_items()
+
+    def _on_worker_finished(self) -> None:
+        """檢查結束後放掉參考 / Let go of the worker once it has finished."""
+        if self.sender() is self._project_worker:
+            self._project_worker = None
+
+    def _stop_project_check(self) -> None:
+        """結束仍在執行的專案檢查 / Stop a project check that is still running."""
+        worker, self._project_worker = self._project_worker, None
+        if worker is None:
+            return
+        try:
+            if worker.isRunning():
+                worker.blockSignals(True)
+                worker.wait()
+        except RuntimeError:
+            # 它已經跑完並被刪除了 / It already finished and was deleted
+            return
+
+    def closeEvent(self, event) -> None:
+        """關閉前先收掉背景檢查 / Stop the background check before closing."""
+        self._stop_project_check()
+        super().closeEvent(event)
 
     def _project_root(self) -> str:
         """取得要檢查的專案根目錄 / The project root to check."""

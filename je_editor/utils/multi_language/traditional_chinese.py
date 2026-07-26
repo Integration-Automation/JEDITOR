@@ -409,6 +409,7 @@ traditional_chinese_word_dict = {
     "tab_menu_problems_panel_tab_name": "問題",
     "problems_panel_refresh": "重新檢查",
     "problems_panel_ready": "就緒",
+    "problems_panel_checking": "檢查專案中……",
     "problems_panel_clean": "沒有發現問題",
     "problems_panel_found": "{count} 個問題",
     "problems_panel_col_code": "規則",

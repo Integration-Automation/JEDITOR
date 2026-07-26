@@ -419,6 +419,7 @@ please make sure that the current encoding is consistent with the default encodi
     "tab_menu_problems_panel_tab_name": "Problems",
     "problems_panel_refresh": "Recheck",
     "problems_panel_ready": "Ready",
+    "problems_panel_checking": "Checking the project...",
     "problems_panel_clean": "No problems found",
     "problems_panel_found": "{count} problems",
     "problems_panel_col_code": "Rule",
