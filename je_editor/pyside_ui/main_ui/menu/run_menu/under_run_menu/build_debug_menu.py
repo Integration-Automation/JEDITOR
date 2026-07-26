@@ -67,6 +67,30 @@ def set_debug_menu(ui_we_want_to_set: EditorMain) -> None:
     ui_we_want_to_set.debug_menu.addAction(ui_we_want_to_set.debug_menu.show_shell_input)
 
 
+# 把編輯器上設定的中斷點交給剛啟動的除錯器
+# Hand the breakpoints set in the editor to the debugger that just started
+def send_breakpoints(widget: EditorWidget) -> int:
+    """
+    把這個分頁的中斷點送進 pdb
+    Send this tab's breakpoints into pdb.
+
+    pdb 啟動後會停在第一行等待輸入，因此這時送出的 ``break`` 指令會在程式真正開始
+    跑之前生效。少了這一步，在編輯器邊條設定的中斷點就只是畫面上的標記。
+    pdb stops on the first line waiting for input, so the ``break`` commands sent
+    now take effect before the program really starts. Without this step the
+    breakpoints set in the editor's gutter are only marks on the screen.
+
+    :param widget: 正在除錯的分頁 / the tab being debugged
+    :return: 送出的中斷點數量 / how many breakpoints were sent
+    """
+    code_edit = getattr(widget, "code_edit", None)
+    if code_edit is None:
+        return 0
+    sent = code_edit.send_breakpoints_to_debugger()
+    jeditor_logger.info(f"build_debug_menu.py send_breakpoints sent: {sent}")
+    return sent
+
+
 # 執行除錯器 (pdb)
 # Run debugger (pdb)
 def run_debugger(ui_we_want_to_set: EditorMain) -> None:
@@ -91,6 +115,7 @@ def run_debugger(ui_we_want_to_set: EditorMain) -> None:
                 # 綁定除錯器與輸入介面
                 # Bind debugger and input interface
                 widget.exec_python_debugger = code_exec
+                send_breakpoints(widget)
                 widget.debugger_input = ProcessInput(widget)
                 widget.debugger_input.show()
         else:

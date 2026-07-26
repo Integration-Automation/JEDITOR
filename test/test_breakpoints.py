@@ -151,6 +151,31 @@ class TestSendingToTheDebugger:
         editor.current_file = None
         assert editor.send_breakpoints_to_debugger() == 0
 
+    def test_starting_the_debugger_sends_them(self, editor):
+        # Without this the gutter marks never reach pdb and never stop anything.
+        from je_editor.pyside_ui.main_ui.menu.run_menu.under_run_menu.build_debug_menu import (
+            send_breakpoints
+        )
+        stdin = MagicMock()
+        editor.main_window.exec_python_debugger = MagicMock()
+        editor.main_window.exec_python_debugger.process.stdin = stdin
+        editor.current_file = "app.py"
+        editor.setPlainText("one\ntwo\nthree\n")
+        _place_cursor(editor, 2)
+        editor.toggle_breakpoint()
+        widget = MagicMock()
+        widget.code_edit = editor
+        assert send_breakpoints(widget) == 1
+        stdin.write.assert_called_once_with(b"break app.py:3\n")
+
+    def test_a_tab_without_an_editor_sends_nothing(self, editor):
+        from je_editor.pyside_ui.main_ui.menu.run_menu.under_run_menu.build_debug_menu import (
+            send_breakpoints
+        )
+        widget = MagicMock()
+        widget.code_edit = None
+        assert send_breakpoints(widget) == 0
+
     def test_a_broken_pipe_is_reported_rather_than_raised(self, editor):
         stdin = MagicMock()
         stdin.write.side_effect = OSError("broken pipe")
