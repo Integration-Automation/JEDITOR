@@ -39,6 +39,22 @@ def update_actually_color_dict() -> None:
             "bookmark_marker_color": _to_qcolor("bookmark_marker_color", [66, 165, 245]),
             "fold_marker_color": _to_qcolor("fold_marker_color", [120, 120, 120]),
             "occurrence_highlight_color": _to_qcolor("occurrence_highlight_color", [80, 90, 60]),
+            "diff_added_marker_color": _to_qcolor("diff_added_marker_color", [76, 175, 80]),
+            "diff_modified_marker_color": _to_qcolor("diff_modified_marker_color", [255, 167, 38]),
+            "diff_removed_marker_color": _to_qcolor("diff_removed_marker_color", [229, 57, 53]),
+            "lint_underline_color": _to_qcolor("lint_underline_color", [255, 138, 101]),
+            "blame_annotation_color": _to_qcolor("blame_annotation_color", [130, 130, 130]),
+            "indent_guide_color": _to_qcolor("indent_guide_color", [90, 90, 110]),
+            "minimap_background_color": _to_qcolor("minimap_background_color", [40, 40, 48]),
+            "minimap_line_color": _to_qcolor("minimap_line_color", [130, 130, 150]),
+            "minimap_viewport_color": _to_qcolor("minimap_viewport_color", [80, 80, 110]),
+            "extra_cursor_color": _to_qcolor("extra_cursor_color", [255, 215, 64]),
+            "breakpoint_marker_color": _to_qcolor("breakpoint_marker_color", [229, 57, 53]),
+            "syntax_keyword_color": _to_qcolor("syntax_keyword_color", [86, 156, 214]),
+            "syntax_string_color": _to_qcolor("syntax_string_color", [206, 145, 120]),
+            "syntax_comment_color": _to_qcolor("syntax_comment_color", [106, 153, 85]),
+            "syntax_number_color": _to_qcolor("syntax_number_color", [181, 206, 168]),
+            "trailing_whitespace_color": _to_qcolor("trailing_whitespace_color", [120, 70, 70]),
         }
     )
 
@@ -54,7 +70,23 @@ user_setting_color_dict: Dict[str, list] = {
     "warning_output_color": [204, 204, 0],
     "bookmark_marker_color": [66, 165, 245],
     "fold_marker_color": [120, 120, 120],
-    "occurrence_highlight_color": [80, 90, 60]
+    "occurrence_highlight_color": [80, 90, 60],
+    "diff_added_marker_color": [76, 175, 80],
+    "diff_modified_marker_color": [255, 167, 38],
+    "diff_removed_marker_color": [229, 57, 53],
+    "lint_underline_color": [255, 138, 101],
+    "blame_annotation_color": [130, 130, 130],
+    "indent_guide_color": [90, 90, 110],
+    "minimap_background_color": [40, 40, 48],
+    "minimap_line_color": [130, 130, 150],
+    "minimap_viewport_color": [80, 80, 110],
+    "extra_cursor_color": [255, 215, 64],
+    "breakpoint_marker_color": [229, 57, 53],
+    "syntax_keyword_color": [86, 156, 214],
+    "syntax_string_color": [206, 145, 120],
+    "syntax_comment_color": [106, 153, 85],
+    "syntax_number_color": [181, 206, 168],
+    "trailing_whitespace_color": [120, 70, 70]
 }
 
 # 實際使用的顏色字典 (以 QColor 表示)

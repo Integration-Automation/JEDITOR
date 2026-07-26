@@ -49,6 +49,9 @@ def init_new_auto_save_thread(file_path: str, widget: EditorWidget) -> None:
             file_to_save=widget.current_file, editor=widget.code_edit,
             before_write_callback=widget.mark_ignore_next_file_change,
         )
+        # 沿用該分頁偵測到的編碼與行尾 / Keep the tab's detected encoding and line ending
+        widget.code_save_thread.encoding = getattr(widget, "file_encoding", "utf-8")
+        widget.code_save_thread.line_ending = getattr(widget, "line_ending", "\n")
 
         # 更新管理字典，記錄該檔案對應的執行緒
         # Update manager dict with the new thread

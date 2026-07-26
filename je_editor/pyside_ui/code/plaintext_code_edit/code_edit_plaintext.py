@@ -5,19 +5,44 @@ from typing import TYPE_CHECKING, Union, List
 
 import jedi  # Python 自動補全與靜態分析工具
 from PySide6 import QtGui
-from PySide6.QtCore import Qt, QRect, QTimer, QThread, Signal, QObject
+from PySide6.QtCore import Qt, QEvent, QRect, QTimer, QThread, Signal, QObject
 from PySide6.QtGui import (
     QPainter, QTextCharFormat, QTextFormat, QKeyEvent, QAction,
     QTextDocument, QTextCursor, QTextOption, QColor, QWheelEvent
 )
-from PySide6.QtWidgets import QPlainTextEdit, QWidget, QTextEdit, QCompleter, QInputDialog
+from PySide6.QtWidgets import (
+    QPlainTextEdit, QWidget, QTextEdit, QCompleter, QInputDialog, QMenu
+)
 
 from je_editor.pyside_ui.code.bookmark.bookmark_manager import BookmarkManager
+from je_editor.pyside_ui.code.breakpoint.breakpoint_manager import BreakpointManager
 from je_editor.pyside_ui.code.folding.folding_manager import FoldingManager
+from je_editor.pyside_ui.code.git_diff.blame_manager import BlameManager
+from je_editor.pyside_ui.code.git_diff.diff_marker_manager import DiffMarkerManager
+from je_editor.pyside_ui.code.lint.lint_manager import LintManager
+from je_editor.pyside_ui.code.lsp.lsp_client import LspClient
+from je_editor.pyside_ui.code.multi_cursor.multi_cursor_manager import MultiCursorManager
 from je_editor.pyside_ui.code.selection.smart_selection_manager import SmartSelectionManager
+from je_editor.pyside_ui.code.snippets.snippet_manager import SnippetManager
+from je_editor.utils.file_diff.line_status import (
+    LINE_ADDED, LINE_MODIFIED, LINE_REMOVED_ABOVE
+)
 from je_editor.utils.indentation.indent_convert import (
     convert_leading_spaces_to_tabs, convert_leading_tabs_to_spaces,
     detect_indent_width, detect_indentation_uses_tabs
+)
+from je_editor.utils.indentation.indent_guides import (
+    guide_columns, trailing_whitespace_start
+)
+from je_editor.git_client.file_staging import stage_content, staged_text
+from je_editor.utils.debugger.pdb_commands import breakpoint_commands, step_command
+from je_editor.utils.file_diff.line_status import apply_hunk
+from je_editor.utils.file_diff.unified import unified_diff_text
+from je_editor.utils.lint.ruff_diagnostics import diagnostics_from_entries
+from je_editor.utils.macro.keystroke_macro import KeystrokeMacro
+from je_editor.utils.selection.surround import SURROUND_PAIRS, surround
+from je_editor.utils.shortcuts.shortcut_registry import (
+    WINDOW_SHORTCUTS, ShortcutRegistry
 )
 from je_editor.utils.line_ops.line_operations import (
     join_lines, natural_sort, remove_blank_lines, reverse_lines, sort_lines, unique_lines
@@ -28,10 +53,12 @@ from je_editor.utils.occurrence.word_occurrences import (
     find_occurrences, replace_whole_word, word_at
 )
 from je_editor.utils.text_cleanup.text_cleanup import trim_trailing_whitespace
+from je_editor.pyside_ui.code.syntax.generic_syntax import highlighter_for
 from je_editor.pyside_ui.code.syntax.python_syntax import PythonHighlighter
 from je_editor.pyside_ui.dialog.search_ui.search_text_box import SearchBox
 from je_editor.pyside_ui.dialog.search_ui.search_replace_widget import SearchReplaceDialog
 from je_editor.pyside_ui.main_ui.save_settings.user_color_setting_file import actually_color_dict
+from je_editor.pyside_ui.main_ui.save_settings.user_setting_file import user_setting_dict
 from je_editor.utils.align.align import align_by_delimiter
 from je_editor.utils.case_convert.case_convert import (
     to_camel_case, to_kebab_case, to_pascal_case, to_snake_case
@@ -74,10 +101,68 @@ class _JediCompleteWorker(QObject):
             self.finished.emit([])
 
 
-# 行號區域中書籤欄與折疊欄的寬度（像素）
-# Width in pixels of the bookmark and fold columns inside the gutter
+# 行號區域中書籤欄、折疊欄與 git 變更欄的寬度（像素）
+# Width in pixels of the bookmark, fold and git-change columns inside the gutter
 _BOOKMARK_MARKER_WIDTH = 14
 _FOLD_MARKER_WIDTH = 14
+_DIFF_MARKER_WIDTH = 4
+
+# 輸入停止多久之後才重算 git 變更標記（毫秒）
+# How long typing must pause before the git change markers are recomputed
+_DIFF_REFRESH_DELAY_MS = 400
+
+# 輸入停止多久之後才重新執行 lint（毫秒）；比變更標記長，因為要開子程序
+# How long typing must pause before ruff runs again; longer than the change
+# markers because it spawns a subprocess
+_LINT_REFRESH_DELAY_MS = 900
+
+# 多重游標啟用時，這些按鍵各自對應一個整批動作
+# With extra carets active, each of these keys drives one batched action
+_MULTI_CURSOR_KEYS = {
+    Qt.Key.Key_Escape: lambda manager: manager.clear(),
+    Qt.Key.Key_Backspace: lambda manager: manager.delete_before(),
+    Qt.Key.Key_Delete: lambda manager: manager.delete_after(),
+    Qt.Key.Key_Return: lambda manager: manager.insert_newline(),
+    Qt.Key.Key_Enter: lambda manager: manager.insert_newline(),
+    Qt.Key.Key_Left: lambda manager: manager.move_all(-1),
+    Qt.Key.Key_Right: lambda manager: manager.move_all(1),
+}
+
+
+def _document_position(document: QTextDocument, line: int, column: int) -> Union[int, None]:
+    """
+    把 1 起算的行列換成文件中的字元位置
+    Turn a 1-based line and column into a character position in the document.
+
+    :param document: 目標文件 / the document to look in
+    :param line: 1 起算的行號 / the 1-based line
+    :param column: 1 起算的欄位 / the 1-based column
+    :return: 字元位置，該行不存在時為 ``None`` / the position, or ``None``
+    """
+    block = document.findBlockByNumber(line - 1)
+    if not block.isValid():
+        return None
+    return block.position() + min(max(0, column - 1), len(block.text()))
+
+
+def _lint_underline_format() -> QTextCharFormat:
+    """診斷底線的樣式 / The format used to underline a diagnostic."""
+    formats = QTextCharFormat()
+    formats.setUnderlineStyle(QTextCharFormat.UnderlineStyle.WaveUnderline)
+    formats.setUnderlineColor(actually_color_dict.get("lint_underline_color"))
+    return formats
+
+
+# 行尾文字與 blame 標註之間的間隔（像素）
+# Gap in pixels between a line's text and its blame annotation
+_BLAME_TEXT_GAP = 24
+
+# 變更狀態對應的顏色設定鍵 / Colour setting key for each change status
+_DIFF_MARKER_COLOR_KEYS = {
+    LINE_ADDED: "diff_added_marker_color",
+    LINE_MODIFIED: "diff_modified_marker_color",
+    LINE_REMOVED_ABOVE: "diff_removed_marker_color",
+}
 
 # 游標移動幾行以上才視為「跳轉」並記入導覽歷史
 # How many lines the caret must move to count as a "jump" recorded in history
@@ -121,6 +206,15 @@ class CodeEditor(QPlainTextEdit):
         self.main_window = main_window
         self.current_file = main_window.current_file
 
+        # lint 診斷狀態；必須在第一次高亮之前建立，因為高亮會附加診斷底線
+        # Lint state, created before the first highlight because highlighting
+        # appends the diagnostic underlines
+        self.lint_manager = LintManager(self)
+        # 語言伺服器連線；lint 會問它是否正在提供診斷，所以要一起先建立
+        # The language server connection: the lint pass asks whether it is
+        # supplying diagnostics, so it has to exist by then too
+        self.lsp_client = LspClient(self)
+
         # 定義哪些按鍵不會觸發補全視窗
         self.skip_popup_behavior_list = [
             Qt.Key.Key_Enter, Qt.Key.Key_Return, Qt.Key.Key_Up, Qt.Key.Key_Down,
@@ -161,23 +255,20 @@ class CodeEditor(QPlainTextEdit):
         self.setLineWrapMode(self.LineWrapMode.NoWrap)
         self.setWordWrapMode(QTextOption.WrapMode.WrapAnywhere)
 
-        # 搜尋功能 (Ctrl+F)
-        self.search_action = QAction("Search")
-        self.search_action.setShortcut("Ctrl+f")
-        self.search_action.triggered.connect(self.start_search_dialog)
-        self.addAction(self.search_action)
+        # 這個編輯器已經指派出去的快捷鍵；以選單與工具列佔用的組合作為起點，
+        # 重複指派時會留下警告紀錄
+        # The sequences this editor has handed out, seeded with the ones the menus
+        # and toolbar already take; a clash is logged rather than passing silently
+        self.shortcut_registry = ShortcutRegistry(WINDOW_SHORTCUTS)
 
-        # 搜尋與取代 (Ctrl+Shift+F) / Search & Replace shortcut
-        self.search_replace_action = QAction("Search & Replace")
-        self.search_replace_action.setShortcut("Ctrl+Shift+f")
-        self.search_replace_action.triggered.connect(self.open_search_replace_dialog)
-        self.addAction(self.search_replace_action)
-
-        # 跳到指定行 (Ctrl+G) / Go to Line shortcut
-        self.goto_line_action = QAction("Go to Line")
-        self.goto_line_action.setShortcut("Ctrl+g")
-        self.goto_line_action.triggered.connect(self.go_to_line)
-        self.addAction(self.goto_line_action)
+        # 搜尋 (Ctrl+F)、搜尋與取代 (Ctrl+H)、跳到指定行 (Ctrl+G)
+        # Search (Ctrl+F), search & replace (Ctrl+H) and go to line (Ctrl+G)
+        self.search_action = self._add_shortcut_action(
+            "Ctrl+F", "search", self.start_search_dialog)
+        self.search_replace_action = self._add_shortcut_action(
+            "Ctrl+H", "search_and_replace", self.open_search_replace_dialog)
+        self.goto_line_action = self._add_shortcut_action(
+            "Ctrl+G", "go_to_line", self.go_to_line)
 
         # 自動補全初始化
         self.completer: Union[None, QCompleter] = None
@@ -227,10 +318,71 @@ class CodeEditor(QPlainTextEdit):
         # Per-file detected indent width (None means use the global setting)
         self._indent_size_override: Union[int, None] = None
 
+        # git 變更標記：基準在背景讀取，重算則在輸入停止後 debounce 執行
+        # git change markers: the baseline loads in the background, and the
+        # recompute is debounced so typing does not diff on every keystroke
+        self.diff_marker_manager = DiffMarkerManager(self)
+        self.blame_manager = BlameManager(self)
+        self._diff_timer = QTimer(self)
+        self._diff_timer.setSingleShot(True)
+        self._diff_timer.setInterval(_DIFF_REFRESH_DELAY_MS)
+        self._diff_timer.timeout.connect(self._refresh_diff_markers)
+        self._register_diff_marker_actions()
+        self.load_git_baseline()
+
+        # lint 檢查會開子程序，因此同樣等輸入停下來才跑（管理器已於前面建立）
+        # The lint check spawns a subprocess, so it too waits for a pause in
+        # typing; its manager was created earlier in __init__
+        self._lint_timer = QTimer(self)
+        self._lint_timer.setSingleShot(True)
+        self._lint_timer.setInterval(_LINT_REFRESH_DELAY_MS)
+        self._lint_timer.timeout.connect(self.request_lint)
+        self.request_lint()
+
+        # 片段展開與定位點 / Snippet expansion and its tab stops
+        self.snippet_manager = SnippetManager(self)
+
+        # 多重游標；欄選取拖曳的起點在按下 Alt 時記下
+        # Extra carets; a column drag records its anchor when Alt is pressed
+        self.multi_cursor_manager = MultiCursorManager(self)
+        self._column_anchor: Union[int, None] = None
+        self._column_dragged = False
+        self._register_multi_cursor_actions()
+
+        # 巨集錄製 / Macro recording
+        self.macro = KeystrokeMacro()
+        self._register_macro_actions()
+
+        # 中斷點 / Breakpoints
+        self.breakpoint_manager = BreakpointManager(self)
+        self._register_breakpoint_actions()
+
+        # 非 Python 檔的補全與診斷都交給語言伺服器；Python 仍走 jedi 與 ruff
+        # A non-Python file gets its completion and diagnostics from a language
+        # server; Python keeps jedi and ruff
+        self.lsp_client.completions_ready.connect(self.set_complete)
+        self.lsp_client.diagnostics_ready.connect(self.apply_server_diagnostics)
+        self.lsp_client.hover_ready.connect(self.show_hover_text)
+        self.lsp_client.edits_ready.connect(self.apply_server_edits)
+        self.lsp_client.definition_ready.connect(self.go_to_definition_location)
+        self.start_language_server()
+
     def reset_highlighter(self) -> None:
-        """重設語法高亮 / Reset syntax highlighter"""
+        """
+        依目前檔案的副檔名重設語法高亮
+        Reset the syntax highlighter to match the current file's suffix.
+
+        Python 用專屬的高亮器；其他有規則的語言用通用高亮器；都不符合時仍套用
+        Python 的（新檔案還沒有副檔名，多半就是要寫 Python）。
+        Python gets its own highlighter, another language with rules gets the
+        generic one, and anything else still gets Python's — a new file has no
+        suffix yet and is usually about to become Python.
+        """
         jeditor_logger.info("CodeEditor reset_highlighter")
-        self.highlighter = PythonHighlighter(self.document(), main_window=self)
+        suffix = Path(str(self.current_file)).suffix if self.current_file else ""
+        generic = highlighter_for(self.document(), suffix) if suffix else None
+        self.highlighter = generic if generic is not None else PythonHighlighter(
+            self.document(), main_window=self)
         self.highlight_current_line()
 
     def check_env(self) -> None:
@@ -287,6 +439,11 @@ class CodeEditor(QPlainTextEdit):
         使用 Jedi 在背景執行緒進行自動補全，避免阻塞 UI
         Run Jedi autocomplete in background thread to avoid blocking UI
         """
+        # 非 Python 檔改問語言伺服器，jedi 只懂 Python
+        # A non-Python file asks its language server instead; jedi only knows Python
+        if self.request_language_server_completion():
+            return
+
         # 如果上一次補全還在執行，跳過 / Skip if previous completion is still running
         if self._complete_thread is not None and self._complete_thread.isRunning():
             return
@@ -391,22 +548,58 @@ class CodeEditor(QPlainTextEdit):
             text = self.search_box.search_input.text()
             self.find(text, QTextDocument.FindFlag.FindBackward)
 
+    # ── 快捷鍵註冊 / Shortcut registration ────────────────────────
+
+    def _add_shortcut_action(self, sequence: str, command: str, handler) -> QAction:
+        """
+        建立一個綁定快捷鍵的動作，並登記到本編輯器的快捷鍵表
+        Create an action bound to a key sequence and record it in this editor's table.
+
+        兩個動作共用同一組按鍵時，Qt 不會挑一個執行而是兩個都不執行，因此每組按鍵
+        都要先登記；重複指派會留下警告紀錄，測試也會直接失敗。
+        Two actions sharing a sequence make Qt run neither of them, so every
+        sequence is recorded here first: a clash is logged, and a test fails on it
+        outright.
+
+        :param sequence: 按鍵組合 / the key sequence
+        :param command: 指令名稱，用於衝突訊息 / the command name, used in clash messages
+        :param handler: 觸發時呼叫的函式 / what to call when it fires
+        :return: 建立好的動作 / the action that was created
+        """
+        action = QAction(self)
+        action.setObjectName(command)
+        action.setShortcut(sequence)
+        action.triggered.connect(handler)
+        owner = self.shortcut_registry.register(sequence, command)
+        if owner is not None:
+            jeditor_logger.warning(
+                f"CodeEditor shortcut {sequence} for {command} is already taken by {owner}")
+        self.addAction(action)
+        return action
+
+    def _add_shortcut_actions(self, bindings) -> None:
+        """
+        一次註冊多組快捷鍵
+        Register several shortcuts at once.
+
+        :param bindings: ``(按鍵, 指令名稱, 處理函式)`` 的序列
+            / a sequence of ``(key sequence, command name, handler)``
+        """
+        for sequence, command, handler in bindings:
+            self._add_shortcut_action(sequence, command, handler)
+
     # ── 程式碼折疊與書籤 / Code folding and bookmarks ──────────────
 
     def _register_fold_bookmark_actions(self) -> None:
         """註冊折疊與書籤的快捷鍵 / Register folding and bookmark shortcuts."""
-        for shortcut, handler in (
-            ("Ctrl+Shift+[", self.toggle_fold_at_cursor),
-            ("Ctrl+Alt+[", self.fold_all),
-            ("Ctrl+Alt+]", self.unfold_all),
-            ("Ctrl+Alt+K", self.toggle_bookmark),
-            ("Ctrl+Alt+L", self.next_bookmark),
-            ("Ctrl+Alt+J", self.previous_bookmark),
-        ):
-            action = QAction(self)
-            action.setShortcut(shortcut)
-            action.triggered.connect(handler)
-            self.addAction(action)
+        self._add_shortcut_actions((
+            ("Ctrl+Shift+[", "toggle_fold", self.toggle_fold_at_cursor),
+            ("Ctrl+Alt+[", "fold_all", self.fold_all),
+            ("Ctrl+Alt+]", "unfold_all", self.unfold_all),
+            ("Ctrl+Alt+K", "toggle_bookmark", self.toggle_bookmark),
+            ("Ctrl+Alt+L", "next_bookmark", self.next_bookmark),
+            ("Ctrl+Alt+J", "previous_bookmark", self.previous_bookmark),
+        ))
 
     def _on_text_changed_for_features(self) -> None:
         """
@@ -420,6 +613,365 @@ class CodeEditor(QPlainTextEdit):
         # Only re-apply when something is folded, so unfolded editing has no cost
         if self.folding_manager.is_any_folded():
             self.folding_manager.refresh()
+        # 沒有基準時完全不需要排程重算
+        # With no baseline there is nothing to recompute
+        if self.diff_marker_manager.has_baseline:
+            self._diff_timer.start()
+        self._lint_timer.start()
+
+    def _refresh_diff_markers(self) -> None:
+        """重算 git 變更標記，有變化才重繪 / Recompute markers, repainting only on a change."""
+        if self.diff_marker_manager.refresh():
+            self.line_number.update()
+
+    def load_git_baseline(self) -> None:
+        """
+        重新讀取目前檔案在 HEAD 的內容作為比較基準
+        Reload the current file's committed content as the comparison baseline.
+
+        開檔或換檔後呼叫；讀取在背景執行緒進行。
+        Call this after opening or switching files; the read runs in a thread.
+        """
+        self.diff_marker_manager.load_baseline(self.current_file)
+
+    def _register_diff_marker_actions(self) -> None:
+        """
+        註冊變更跳轉快捷鍵
+        Register the change-navigation shortcuts.
+
+        用 F7／Shift+F7 而不是 Ctrl+Alt+Up／Down：後者是游標處數字加減的按鍵。
+        F7 and Shift+F7 rather than Ctrl+Alt+Up/Down, which increment and
+        decrement the number under the caret.
+        """
+        self._add_shortcut_actions((
+            ("F7", "next_change", self.next_change),
+            ("Shift+F7", "previous_change", self.previous_change),
+            ("Ctrl+Alt+Z", "revert_change", self.revert_change_at_cursor),
+            ("Ctrl+Alt+B", "toggle_blame", self.toggle_blame),
+        ))
+
+    def next_change(self) -> bool:
+        """
+        跳到下一個有變更的行
+        Jump to the next changed line.
+
+        :return: 是否有跳轉 / whether the caret moved
+        """
+        return self._go_to_change(
+            self.diff_marker_manager.next_change(self.textCursor().blockNumber()))
+
+    def previous_change(self) -> bool:
+        """
+        跳到上一個有變更的行
+        Jump to the previous changed line.
+
+        :return: 是否有跳轉 / whether the caret moved
+        """
+        return self._go_to_change(
+            self.diff_marker_manager.previous_change(self.textCursor().blockNumber()))
+
+    def _go_to_change(self, line: Union[int, None]) -> bool:
+        """移動游標到指定變更行 / Move the caret to a changed line."""
+        if line is None:
+            return False
+        return self.jump_to_line(line + 1)
+
+    def toggle_blame(self) -> bool:
+        """
+        切換行內 blame 顯示
+        Toggle the inline blame annotations.
+
+        :return: 切換後是否為開啟 / whether the annotations are now shown
+        """
+        enabled = self.blame_manager.toggle(self.current_file)
+        self.viewport().update()
+        return enabled
+
+    def paintEvent(self, event: QtGui.QPaintEvent) -> None:
+        """
+        繪製內容，並疊上縮排參考線、尾端空白與 blame 標註
+        Paint the text, then overlay indent guides, trailing whitespace and the
+        blame annotations.
+        """
+        # 參考線畫在文字之前，才不會蓋住字
+        # Guides are painted first so they sit behind the text
+        if user_setting_dict.get("show_indent_guides", True):
+            self._paint_indent_guides()
+        QPlainTextEdit.paintEvent(self, event)
+        if user_setting_dict.get("show_trailing_whitespace", True):
+            self._paint_trailing_whitespace()
+        if self.multi_cursor_manager.active:
+            self._paint_extra_cursors()
+        if self.blame_manager.enabled:
+            self._paint_blame_annotations()
+
+    def _visible_blocks(self):
+        """逐一產生可見的區塊與其頂端座標 / Yield each visible block and its top."""
+        block = self.firstVisibleBlock()
+        top = self.blockBoundingGeometry(block).translated(self.contentOffset()).top()
+        bottom_limit = self.viewport().rect().bottom()
+        while block.isValid() and top <= bottom_limit:
+            if block.isVisible():
+                yield block, top
+            top += self.blockBoundingRect(block).height()
+            block = block.next()
+
+    def _paint_indent_guides(self) -> None:
+        """在每一層縮排畫出垂直參考線 / Draw a vertical line at each indent level."""
+        painter = QPainter(self.viewport())
+        painter.setPen(actually_color_dict.get("indent_guide_color"))
+        metrics = self.fontMetrics()
+        space_width = metrics.horizontalAdvance(" ")
+        line_height = metrics.height()
+        indent_size = self.indent_size()
+        for block, top in self._visible_blocks():
+            for column in guide_columns(block.text(), indent_size):
+                position = int(column * space_width)
+                painter.drawLine(position, int(top), position, int(top) + line_height)
+        painter.end()
+
+    def _paint_trailing_whitespace(self) -> None:
+        """標出每一行尾端多餘的空白 / Mark the stray whitespace at each line's end."""
+        painter = QPainter(self.viewport())
+        colour = actually_color_dict.get("trailing_whitespace_color")
+        metrics = self.fontMetrics()
+        line_height = metrics.height()
+        for block, top in self._visible_blocks():
+            text = block.text()
+            start = trailing_whitespace_start(text)
+            if start is None:
+                continue
+            left = metrics.horizontalAdvance(text[:start])
+            width = metrics.horizontalAdvance(text[start:])
+            painter.fillRect(int(left), int(top), max(1, int(width)), line_height, colour)
+        painter.end()
+
+    def _paint_blame_annotations(self) -> None:
+        """在每個可見行的文字後面畫出 blame 標註 / Draw blame after each visible line."""
+        painter = QPainter(self.viewport())
+        painter.setPen(actually_color_dict.get("blame_annotation_color"))
+        metrics = self.fontMetrics()
+        line_height = metrics.height()
+        block = self.firstVisibleBlock()
+        block_number = block.blockNumber()
+        top = self.blockBoundingGeometry(block).translated(self.contentOffset()).top()
+        while block.isValid() and top <= self.viewport().rect().bottom():
+            if block.isVisible():
+                annotation = self.blame_manager.annotation(block_number)
+                if annotation:
+                    # 接在該行文字之後，中間留一段空白
+                    # Placed after the line's own text, with a gap between them
+                    text_width = metrics.horizontalAdvance(block.text())
+                    painter.drawText(
+                        int(text_width) + _BLAME_TEXT_GAP, int(top),
+                        self.viewport().width(), line_height,
+                        Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter,
+                        annotation)
+            top += self.blockBoundingRect(block).height()
+            block = block.next()
+            block_number += 1
+        painter.end()
+
+    def stage_change_at_cursor(self) -> bool:
+        """
+        只把游標所在的變更區塊加入索引
+        Stage just the change block under the caret.
+
+        索引拿到「基準加上這一段」的版本，其他變更維持已提交的樣子，磁碟上的檔案
+        完全不動。
+        The index receives the baseline with this one hunk applied, every other
+        change stays as committed, and the file on disk is untouched.
+
+        :return: 有暫存時為 ``True`` / ``True`` when the hunk was staged
+        """
+        baseline = self.diff_marker_manager.baseline()
+        if baseline is None or self.current_file is None:
+            return False
+        hunk = self.diff_marker_manager.hunk_at(self.textCursor().blockNumber())
+        if hunk is None:
+            return False
+        staged = apply_hunk(baseline, self.toPlainText(), hunk)
+        return stage_content(str(self.current_file), staged)
+
+    def staged_diff_text(self) -> str:
+        """
+        取得索引版本與編輯中內容的差異
+        The diff between what is staged and what is being edited.
+
+        :return: diff 文字；沒有差異或不在索引中時為空字串 / the diff, or an empty string
+        """
+        if self.current_file is None:
+            return ""
+        staged = staged_text(str(self.current_file))
+        if staged is None:
+            return ""
+        return unified_diff_text(
+            staged, self.toPlainText(), Path(str(self.current_file)).name)
+
+    def revert_change_at_cursor(self) -> bool:
+        """
+        把游標所在的變更區塊還原成已提交的內容
+        Restore the change block under the caret to its committed content.
+
+        還原是單一復原步驟，因此按一次 Ctrl+Z 就能取消。
+        The revert is one undo step, so a single Ctrl+Z takes it back.
+
+        :return: 有東西被還原時為 ``True`` / ``True`` when something was reverted
+        """
+        line = self.textCursor().blockNumber()
+        hunk = self.diff_marker_manager.hunk_at(line)
+        if hunk is None:
+            return False
+        original = self.diff_marker_manager.baseline_lines(hunk)
+        cursor = self.textCursor()
+        cursor.beginEditBlock()
+        try:
+            self._replace_lines_with(cursor, hunk, original)
+        finally:
+            cursor.endEditBlock()
+        self._refresh_diff_markers()
+        return True
+
+    def _replace_lines_with(self, cursor: QTextCursor, hunk, original: List[str]) -> None:
+        """
+        以基準內容取代一段變更的行
+        Replace a hunk's lines with the baseline content.
+
+        純刪除在目前內容中沒有範圍，因此改為在該位置插回原本的行；純新增在基準
+        中沒有內容，因此要連同換行整行移除，只清掉文字會留下一個空行。
+        A pure deletion spans no lines, so its content is inserted back instead;
+        a pure insertion has no baseline content, so the whole line is removed
+        including its line break — clearing only the text would leave a blank line.
+        """
+        document = self.document()
+        if hunk.is_pure_deletion:
+            block = document.findBlockByNumber(min(hunk.start, document.blockCount() - 1))
+            cursor.setPosition(block.position())
+            cursor.insertText("\n".join(original) + "\n")
+            return
+        if not original:
+            self._remove_blocks(cursor, hunk.start, hunk.end)
+            return
+        start_block = document.findBlockByNumber(hunk.start)
+        end_block = document.findBlockByNumber(hunk.end - 1)
+        cursor.setPosition(start_block.position())
+        cursor.setPosition(
+            end_block.position() + end_block.length() - 1, QTextCursor.MoveMode.KeepAnchor)
+        cursor.insertText("\n".join(original))
+
+    def _remove_blocks(self, cursor: QTextCursor, start: int, end: int) -> None:
+        """
+        移除整段行，包含行尾的換行
+        Remove whole lines, line breaks included.
+        """
+        document = self.document()
+        start_block = document.findBlockByNumber(start)
+        end_block = document.findBlockByNumber(end - 1)
+        start_position = start_block.position()
+        end_position = end_block.position() + end_block.length()
+        last_position = document.characterCount() - 1
+        if end_position > last_position:
+            # 刪到檔尾：改為往前吃掉上一行的換行，才不會留下空行
+            # Deleting to the end of the file: take the preceding line break
+            # instead, so no blank line is left behind
+            end_position = last_position
+            start_position = max(0, start_position - 1)
+        cursor.setPosition(start_position)
+        cursor.setPosition(end_position, QTextCursor.MoveMode.KeepAnchor)
+        cursor.removeSelectedText()
+
+    def _show_lint_message_for_caret(self) -> None:
+        """
+        把游標所在行的診斷顯示為提示文字
+        Show the caret line's diagnostics as the editor's tooltip.
+        """
+        message = self.lint_manager.message_for_line(self.textCursor().blockNumber() + 1)
+        self.setToolTip(message or "")
+
+    def request_lint(self) -> bool:
+        """
+        對目前內容排一次 lint 檢查
+        Start one lint check of the current text.
+
+        :return: 是否真的啟動了檢查（非 Python 檔不檢查）
+            whether a check started; non-Python files are not linted
+        """
+        started = self.lint_manager.request(self.current_file)
+        if started or self.lsp_client.running:
+            # 診斷由語言伺服器提供時不能清掉，否則每次輸入停下來就會被抹掉
+            # Diagnostics from a language server must survive: clearing them here
+            # would wipe them at every pause in typing
+            return started
+        if self.lint_manager.clear():
+            self.refresh_lint_display()
+        return False
+
+    def apply_server_diagnostics(self, entries: list) -> bool:
+        """
+        把語言伺服器回報的診斷顯示出來
+        Show the diagnostics a language server reported.
+
+        與 ruff 的診斷走同一條顯示路徑，因此非 Python 檔也有波浪底線與問題面板。
+        These take the same path as ruff's, so a non-Python file gets the same
+        underlines and the same problems panel.
+
+        :param entries: 伺服器回報的診斷 / the diagnostics the server reported
+        :return: 顯示內容有變時為 ``True`` / ``True`` when the display changed
+        """
+        if not self.lint_manager.set_diagnostics(diagnostics_from_entries(entries)):
+            return False
+        self.refresh_lint_display()
+        return True
+
+    def refresh_lint_display(self) -> None:
+        """重畫診斷底線 / Repaint the diagnostic underlines."""
+        self._highlight_matching_bracket()
+
+    def _append_lint_selections(self, selections: list) -> None:
+        """
+        把診斷位置加入波浪底線
+        Append a wavy underline for each diagnostic.
+
+        :param selections: 要附加的選取清單 / the selection list to append to
+        """
+        diagnostics = self.lint_manager.diagnostics()
+        if not diagnostics:
+            return
+        document = self.document()
+        for diagnostic in diagnostics:
+            cursor = self._diagnostic_cursor(document, diagnostic)
+            if cursor is None:
+                continue
+            selection = QTextEdit.ExtraSelection()
+            selection.cursor = cursor
+            selection.format = _lint_underline_format()
+            selections.append(selection)
+
+    @staticmethod
+    def _diagnostic_cursor(
+            document: QTextDocument, diagnostic) -> Union[QTextCursor, None]:
+        """
+        取得診斷範圍的游標，範圍不存在時回傳 ``None``
+        Return a cursor spanning a diagnostic, or ``None`` when it is out of range.
+        """
+        block = document.findBlockByNumber(diagnostic.line - 1)
+        if not block.isValid():
+            return None
+        start = block.position() + max(0, diagnostic.column - 1)
+        end_block = document.findBlockByNumber(diagnostic.end_line - 1)
+        if end_block.isValid():
+            end = end_block.position() + max(0, diagnostic.end_column - 1)
+        else:
+            end = block.position() + block.length() - 1
+        # 零寬度的範圍看不見，至少標一個字元
+        # A zero-width range is invisible, so mark at least one character
+        end = min(max(end, start + 1), document.characterCount() - 1)
+        if start >= end:
+            return None
+        cursor = QTextCursor(document)
+        cursor.setPosition(start)
+        cursor.setPosition(end, QTextCursor.MoveMode.KeepAnchor)
+        return cursor
 
     def _foldable_header_lines(self) -> set:
         """取得可折疊標頭行號（快取）/ Foldable header lines (cached)."""
@@ -459,14 +1011,10 @@ class CodeEditor(QPlainTextEdit):
 
     def _register_history_actions(self) -> None:
         """註冊上一步／下一步快捷鍵 / Register back/forward shortcuts."""
-        for shortcut, handler in (
-            ("Alt+Left", self.navigate_back),
-            ("Alt+Right", self.navigate_forward),
-        ):
-            action = QAction(self)
-            action.setShortcut(shortcut)
-            action.triggered.connect(handler)
-            self.addAction(action)
+        self._add_shortcut_actions((
+            ("Alt+Left", "navigate_back", self.navigate_back),
+            ("Alt+Right", "navigate_forward", self.navigate_forward),
+        ))
 
     def _record_cursor_jump(self) -> None:
         """
@@ -576,8 +1124,10 @@ class CodeEditor(QPlainTextEdit):
         painter.fillRect(event.rect(), actually_color_dict.get("line_number_background_color"))
 
         bookmarked = set(self.bookmark_manager.bookmarked_lines())
+        breakpoints = set(self.breakpoint_manager.lines())
         fold_headers = self._foldable_header_lines()
         folded_headers = self.folding_manager.folded_header_lines()
+        diff_statuses = self.diff_marker_manager.statuses()
         gutter_width = self.line_number.width()
         line_height = self.fontMetrics().height()
 
@@ -594,12 +1144,19 @@ class CodeEditor(QPlainTextEdit):
                 painter.drawText(
                     _BOOKMARK_MARKER_WIDTH,
                     int(top),
-                    gutter_width - _BOOKMARK_MARKER_WIDTH - _FOLD_MARKER_WIDTH,
+                    gutter_width - _BOOKMARK_MARKER_WIDTH - _FOLD_MARKER_WIDTH
+                    - _DIFF_MARKER_WIDTH,
                     line_height,
                     Qt.AlignmentFlag.AlignCenter,
                     str(block_number + 1),
                 )
-                if block_number in bookmarked:
+                diff_status = diff_statuses.get(block_number)
+                if diff_status is not None:
+                    self._paint_diff_marker(
+                        painter, top, line_height, gutter_width, diff_status)
+                if block_number in breakpoints:
+                    self._paint_breakpoint_marker(painter, top, line_height)
+                elif block_number in bookmarked:
                     self._paint_bookmark_marker(painter, top, line_height)
                 if block_number in fold_headers:
                     self._paint_fold_marker(
@@ -609,6 +1166,28 @@ class CodeEditor(QPlainTextEdit):
             top = bottom
             bottom = top + self.blockBoundingRect(block).height()
             block_number += 1
+
+    def _paint_breakpoint_marker(
+            self, painter: QPainter, top: float, line_height: int) -> None:
+        """
+        在行號左側繪製中斷點
+        Draw the breakpoint dot on the gutter's left.
+
+        與書籤共用同一欄，因此畫在同一個位置；顏色不同，且中斷點優先顯示，因為
+        它會影響執行。
+        It shares the bookmark column and so sits in the same place, but in a
+        different colour, and takes precedence because it changes what runs.
+        """
+        painter.save()
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing, True)
+        colour = actually_color_dict.get("breakpoint_marker_color")
+        painter.setBrush(colour)
+        painter.setPen(colour)
+        radius = max(3, line_height // 4)
+        center_y = int(top) + line_height // 2
+        painter.drawEllipse(
+            _BOOKMARK_MARKER_WIDTH // 2 - radius, center_y - radius, radius * 2, radius * 2)
+        painter.restore()
 
     def _paint_bookmark_marker(self, painter: QPainter, top: float, line_height: int) -> None:
         """在行號左側繪製書籤圓點 / Draw the bookmark dot on the gutter's left."""
@@ -640,13 +1219,36 @@ class CodeEditor(QPlainTextEdit):
         )
         painter.restore()
 
+    def _paint_diff_marker(
+            self, painter: QPainter, top: float, line_height: int,
+            gutter_width: int, status: str) -> None:
+        """
+        在折疊欄左側繪製 git 變更長條
+        Draw the git change bar just left of the fold column.
+        """
+        color = _DIFF_MARKER_COLOR_KEYS.get(status)
+        if color is None:
+            return
+        painter.save()
+        painter.fillRect(
+            gutter_width - _FOLD_MARKER_WIDTH - _DIFF_MARKER_WIDTH,
+            int(top),
+            _DIFF_MARKER_WIDTH,
+            # 刪除以細線表示，因為被刪的行已經不在畫面上
+            # A deletion is a thin line: the removed lines are no longer on screen
+            2 if status == LINE_REMOVED_ABOVE else line_height,
+            actually_color_dict.get(color),
+        )
+        painter.restore()
+
     def line_number_width(self) -> int:
         """
-        計算行號區域寬度（含書籤與折疊欄）
-        Calculate gutter width, including the bookmark and fold columns.
+        計算行號區域寬度（含書籤、git 變更與折疊欄）
+        Calculate gutter width, including the bookmark, git-change and fold columns.
         """
         digits = len(str(self.blockCount()))  # 根據總行數決定位數
-        return 12 * digits + _BOOKMARK_MARKER_WIDTH + _FOLD_MARKER_WIDTH
+        return (12 * digits + _BOOKMARK_MARKER_WIDTH + _FOLD_MARKER_WIDTH
+                + _DIFF_MARKER_WIDTH)
 
     def update_line_number_area_width(self, value: int) -> None:
         """
@@ -699,6 +1301,7 @@ class CodeEditor(QPlainTextEdit):
             selections.append(selection)
             selection.format.setBackground(color_of_the_line)
             selection.format.setProperty(QTextFormat.FullWidthSelection, True)
+        self._append_lint_selections(selections)
         self.setExtraSelections(selections)
 
     def _highlight_matching_bracket(self) -> None:
@@ -740,7 +1343,9 @@ class CodeEditor(QPlainTextEdit):
                     selections.append(sel)
 
         self._append_occurrence_selections(selections, text, pos)
+        self._append_lint_selections(selections)
         self.setExtraSelections(selections)
+        self._show_lint_message_for_caret()
 
     def word_occurrences_under_cursor(self, text: str, position: int) -> list[int]:
         """
@@ -862,14 +1467,10 @@ class CodeEditor(QPlainTextEdit):
 
     def _register_smart_selection_actions(self) -> None:
         """註冊智慧選取快捷鍵 / Register smart selection shortcuts."""
-        for shortcut, handler in (
-            ("Ctrl+Alt+Right", self.expand_selection),
-            ("Ctrl+Alt+Left", self.shrink_selection),
-        ):
-            action = QAction(self)
-            action.setShortcut(shortcut)
-            action.triggered.connect(handler)
-            self.addAction(action)
+        self._add_shortcut_actions((
+            ("Ctrl+Alt+Right", "expand_selection", self.expand_selection),
+            ("Ctrl+Alt+Left", "shrink_selection", self.shrink_selection),
+        ))
 
     def expand_selection(self) -> None:
         """把選取擴大到下一個更大的範圍 / Expand the selection to the next larger range."""
@@ -883,15 +1484,11 @@ class CodeEditor(QPlainTextEdit):
 
     def _register_number_actions(self) -> None:
         """註冊數字加減快捷鍵 / Register number increment/decrement shortcuts."""
-        for shortcut, delta in (("Ctrl+Alt+Up", 1), ("Ctrl+Alt+Down", -1)):
-            action = QAction(self)
-            action.setShortcut(shortcut)
-            action.triggered.connect(lambda checked=False, step=delta: self.adjust_number(step))
-            self.addAction(action)
-        rename_action = QAction(self)
-        rename_action.setShortcut("F2")
-        rename_action.triggered.connect(self.rename_word_under_cursor)
-        self.addAction(rename_action)
+        self._add_shortcut_actions((
+            ("Ctrl+Alt+Up", "increment_number", lambda: self.adjust_number(1)),
+            ("Ctrl+Alt+Down", "decrement_number", lambda: self.adjust_number(-1)),
+            ("F2", "rename_occurrences", self.rename_word_under_cursor),
+        ))
 
     def rename_word_under_cursor(self) -> bool:
         """
@@ -951,15 +1548,11 @@ class CodeEditor(QPlainTextEdit):
 
     def _register_line_operation_actions(self) -> None:
         """註冊行操作快捷鍵 / Register line-operation shortcuts."""
-        for shortcut, handler in (
-            ("Ctrl+Shift+D", self.delete_current_line),
-            ("Ctrl+Shift+J", self.join_selected_lines),
-            ("Ctrl+Alt+S", self.sort_selected_lines),
-        ):
-            action = QAction(self)
-            action.setShortcut(shortcut)
-            action.triggered.connect(handler)
-            self.addAction(action)
+        self._add_shortcut_actions((
+            ("Ctrl+Shift+D", "delete_line", self.delete_current_line),
+            ("Ctrl+Shift+J", "join_lines", self.join_selected_lines),
+            ("Ctrl+Alt+S", "sort_lines", self.sort_selected_lines),
+        ))
 
     def _selected_block_range(self, cursor: QTextCursor) -> tuple[int, int]:
         """取得選取（或游標所在）涵蓋的 block 區間 / The block range covered by the selection."""
@@ -1568,6 +2161,8 @@ class CodeEditor(QPlainTextEdit):
     def _handle_tab_indent(self, event: QKeyEvent) -> bool:
         """處理 Tab/Shift+Tab 區塊縮排 / Handle block indent; return True if consumed."""
         key = event.key()
+        if key == Qt.Key.Key_Tab and self._handle_snippet_tab():
+            return True
         if key == Qt.Key.Key_Tab and self.textCursor().hasSelection():
             self._indent_selection(indent=True)
             return True
@@ -1576,6 +2171,378 @@ class CodeEditor(QPlainTextEdit):
                 self._indent_selection(indent=False)
             return True
         return False
+
+    def start_language_server(self) -> bool:
+        """
+        為目前檔案啟動語言伺服器（如果有對應的）
+        Start the language server for the current file, when one applies.
+
+        Python 檔不啟動，因為補全已經由 jedi 負責。
+        Python files start none, since jedi already provides their completion.
+
+        :return: 有啟動時為 ``True`` / ``True`` when a server was started
+        """
+        if self.current_file is None or Path(str(self.current_file)).suffix.lower() == ".py":
+            self.lsp_client.stop()
+            return False
+        if not self.lsp_client.start_for(str(self.current_file)):
+            return False
+        self.lsp_client.did_open(self.toPlainText())
+        return True
+
+    def request_language_server_completion(self) -> bool:
+        """
+        向語言伺服器要求游標位置的補全
+        Ask the language server for completions at the caret.
+
+        :return: 有送出請求時為 ``True`` / ``True`` when a request was sent
+        """
+        if not self.lsp_client.running:
+            return False
+        cursor = self.textCursor()
+        self.lsp_client.did_change(self.toPlainText())
+        return self.lsp_client.request_completion(
+            cursor.blockNumber(), cursor.positionInBlock())
+
+    def _register_breakpoint_actions(self) -> None:
+        """
+        註冊中斷點與逐步執行的快捷鍵
+        Register breakpoint and stepping shortcuts.
+
+        F9 與 F5 是工具列的「執行除錯器」與「執行」，因此切換中斷點與繼續執行改用
+        Ctrl+F9 與 Ctrl+F5。
+        The toolbar runs the debugger on F9 and the program on F5, so toggling a
+        breakpoint and continuing use Ctrl+F9 and Ctrl+F5 instead.
+        """
+        self._add_shortcut_actions((
+            ("Ctrl+F9", "toggle_breakpoint", self.toggle_breakpoint),
+            ("Ctrl+F5", "debug_continue", lambda: self.send_debugger_command("continue")),
+            ("F10", "debug_step_over", lambda: self.send_debugger_command("over")),
+            ("F11", "debug_step_into", lambda: self.send_debugger_command("into")),
+            ("Shift+F11", "debug_step_out", lambda: self.send_debugger_command("out")),
+        ))
+
+    def toggle_breakpoint(self) -> bool:
+        """
+        切換游標所在行的中斷點
+        Add or remove a breakpoint on the caret's line.
+
+        :return: 切換後是否有中斷點 / whether the line now has one
+        """
+        result = self.breakpoint_manager.toggle(self.textCursor().blockNumber())
+        self.line_number.update()
+        return result
+
+    def _debugger_process(self):
+        """取得正在執行的除錯器程序 / The debugger process that is running, if any."""
+        manager = getattr(self.main_window, "exec_python_debugger", None)
+        return getattr(manager, "process", None) if manager is not None else None
+
+    def send_debugger_command(self, action: str) -> bool:
+        """
+        送出一個逐步執行指令給除錯器
+        Send one stepping command to the debugger.
+
+        除錯器沒在跑時什麼都不做，因為 pdb 的指令只有在它等待輸入時才有意義。
+        Nothing happens when the debugger is not running, since a pdb command
+        only means something while it is waiting for input.
+
+        :param action: 動作名稱（``into``／``over``／``out``／``continue``／``quit``）
+            the action's name
+        :return: 有送出時為 ``True`` / ``True`` when the command was sent
+        """
+        command = step_command(action)
+        if command is None:
+            return False
+        return self._write_debugger_line(command)
+
+    def send_breakpoints_to_debugger(self) -> int:
+        """
+        把目前的中斷點送給正在執行的除錯器
+        Send the current breakpoints to the running debugger.
+
+        :return: 送出的中斷點數量 / how many breakpoints were sent
+        """
+        if self.current_file is None:
+            return 0
+        sent = 0
+        for command in breakpoint_commands(
+                str(self.current_file), self.breakpoint_manager.pdb_lines()):
+            if self._write_debugger_line(command):
+                sent += 1
+        return sent
+
+    def _write_debugger_line(self, command: str) -> bool:
+        """把一行指令寫進除錯器的標準輸入 / Write one command to the debugger's stdin."""
+        process = self._debugger_process()
+        stdin = getattr(process, "stdin", None) if process is not None else None
+        if stdin is None:
+            return False
+        try:
+            stdin.write(command.encode() + b"\n")
+            stdin.flush()
+        except (OSError, ValueError) as error:
+            jeditor_logger.warning(f"CodeEditor debugger command failed: {error}")
+            return False
+        return True
+
+    def _register_macro_actions(self) -> None:
+        """
+        註冊巨集與最近位置的快捷鍵
+        Register the macro and recent-location shortcuts.
+
+        重播用 Ctrl+Shift+G，因為 Ctrl+Shift+P 是選單的 pip 安裝。
+        Playback uses Ctrl+Shift+G because Ctrl+Shift+P installs packages with pip.
+        """
+        self._add_shortcut_actions((
+            ("Ctrl+Shift+R", "record_macro", self.toggle_macro_recording),
+            ("Ctrl+Shift+G", "play_macro", self.play_macro),
+            ("Ctrl+Alt+E", "recent_locations", self.show_recent_locations),
+        ))
+
+    def recent_location_labels(self) -> list[str]:
+        """
+        取得最近去過的位置，最新的排在前面
+        The locations visited recently, most recent first.
+
+        :return: 每個位置的顯示文字 / a label for each location
+        """
+        document = self.document()
+        labels: list[str] = []
+        for line in reversed(self.location_history.entries):
+            block = document.findBlockByNumber(line)
+            text = block.text().strip() if block.isValid() else ""
+            labels.append(f"{line + 1}: {text}" if text else f"{line + 1}")
+        return labels
+
+    def show_recent_locations(self) -> bool:
+        """
+        列出最近去過的位置，選一個就跳過去
+        List the recently visited locations and jump to the chosen one.
+
+        :return: 有跳轉時為 ``True`` / ``True`` when the caret moved
+        """
+        labels = self.recent_location_labels()
+        if not labels:
+            return False
+        chosen, confirmed = QInputDialog.getItem(
+            self, language_wrapper.language_word_dict.get("recent_locations_title"),
+            language_wrapper.language_word_dict.get("recent_locations_prompt"),
+            labels, 0, False)
+        if not confirmed or not chosen:
+            return False
+        return self.jump_to_line(int(chosen.split(":", 1)[0]))
+
+    def toggle_macro_recording(self) -> bool:
+        """
+        開始或結束錄製巨集
+        Start recording a macro, or stop the one under way.
+
+        :return: 切換後是否正在錄製 / whether recording is now under way
+        """
+        return self.macro.toggle()
+
+    def play_macro(self) -> bool:
+        """
+        重播錄好的巨集
+        Play back the recorded macro.
+
+        重播用同步送出事件，而不是排入佇列，因此事件物件的生命週期完全在這次呼叫
+        之內。整段重播算一個復原步驟。
+        Playback sends each event synchronously rather than queuing it, so every
+        event object lives only for the duration of this call, and the whole run
+        is a single undo step.
+
+        :return: 有重播時為 ``True`` / ``True`` when anything was played back
+        """
+        if self.macro.recording or self.macro.is_empty:
+            return False
+        cursor = self.textCursor()
+        cursor.beginEditBlock()
+        try:
+            for stroke in list(self.macro.keystrokes):
+                event = QKeyEvent(
+                    QEvent.Type.KeyPress, stroke.key,
+                    Qt.KeyboardModifier(stroke.modifiers), stroke.text)
+                self.keyPressEvent(event)
+        finally:
+            cursor.endEditBlock()
+        return True
+
+    def surround_selection(self, opening: str) -> bool:
+        """
+        用成對字元包住選取的文字
+        Wrap the selection in a matching pair of characters.
+
+        :param opening: 開頭字元 / the opening character
+        :return: 有包住時為 ``True`` / ``True`` when the selection was wrapped
+        """
+        cursor = self.textCursor()
+        if not cursor.hasSelection():
+            return False
+        wrapped = surround(cursor.selectedText(), opening)
+        if wrapped is None:
+            return False
+        start = cursor.selectionStart()
+        cursor.insertText(wrapped)
+        # 重新選取原本的內容，方便接著再包一層
+        # Re-select the original text so it can be wrapped again straight away
+        caret = self.textCursor()
+        caret.setPosition(start + 1)
+        caret.setPosition(start + len(wrapped) - 1, QTextCursor.MoveMode.KeepAnchor)
+        self.setTextCursor(caret)
+        return True
+
+    def _register_multi_cursor_actions(self) -> None:
+        """
+        註冊多重游標的快捷鍵
+        Register the multi-caret shortcuts.
+
+        「在下一個出現處加游標」用 Ctrl+Alt+N：Ctrl+D 一直是複製目前行。
+        Adding a caret at the next occurrence uses Ctrl+Alt+N, because Ctrl+D has
+        always duplicated the current line.
+        """
+        self._add_shortcut_actions((
+            ("Ctrl+Shift+L", "cursors_on_selected_lines", self.add_cursors_to_selected_lines),
+            ("Ctrl+Shift+Escape", "clear_extra_cursors", self.clear_extra_cursors),
+            ("Ctrl+Alt+Shift+Up", "cursor_above", self.add_cursor_above),
+            ("Ctrl+Alt+Shift+Down", "cursor_below", self.add_cursor_below),
+            ("Ctrl+Alt+N", "cursor_at_next_occurrence", self.add_cursor_at_next_occurrence),
+        ))
+
+    def add_cursors_to_selected_lines(self) -> int:
+        """
+        在選取範圍的每一行行尾放一個游標
+        Put a caret at the end of every line in the selection.
+
+        :return: 額外游標的數量 / how many extra carets were added
+        """
+        return self.multi_cursor_manager.add_to_selected_lines()
+
+    def add_cursor_above(self) -> bool:
+        """
+        在上一行的同一欄加一個游標
+        Add a caret on the line above, at the same column.
+
+        :return: 有加入時為 ``True`` / ``True`` when a caret was added
+        """
+        return self.multi_cursor_manager.add_caret_on_neighbouring_line(-1)
+
+    def add_cursor_below(self) -> bool:
+        """
+        在下一行的同一欄加一個游標
+        Add a caret on the line below, at the same column.
+
+        :return: 有加入時為 ``True`` / ``True`` when a caret was added
+        """
+        return self.multi_cursor_manager.add_caret_on_neighbouring_line(1)
+
+    def add_cursor_at_next_occurrence(self) -> bool:
+        """
+        在游標所在字詞的下一個出現處加一個游標
+        Add a caret at the next occurrence of the word under the caret.
+
+        :return: 找到並加入時為 ``True`` / ``True`` when another occurrence was found
+        """
+        return self.multi_cursor_manager.add_caret_at_next_occurrence()
+
+    def clear_extra_cursors(self) -> bool:
+        """
+        清除所有額外游標
+        Drop every extra caret.
+
+        :return: 是否真的清掉了什麼 / whether anything was actually dropped
+        """
+        return self.multi_cursor_manager.clear()
+
+    def _handle_multi_cursor_click(self, event: QtGui.QMouseEvent) -> bool:
+        """
+        Alt+點按新增或移除一個游標；一般點按則收掉額外游標
+        Alt-click adds or removes a caret; a plain click drops the extra ones.
+
+        :param event: 滑鼠事件 / the mouse event
+        :return: 事件是否已被處理 / whether the event was handled here
+        """
+        if event.modifiers() & Qt.KeyboardModifier.AltModifier:
+            # 記下起點，之後拖曳就是欄選取；沒有拖曳就當作切換一個游標
+            # Remember the anchor: dragging from here is a column selection, and
+            # not dragging counts as toggling one caret
+            self._column_anchor = self.cursorForPosition(event.pos()).position()
+            self._column_dragged = False
+            return True
+        self._column_anchor = None
+        if self.multi_cursor_manager.active:
+            # 一般點按等於重新開始，因此先收掉額外游標
+            # A plain click starts over, so the extra carets go first
+            self.multi_cursor_manager.clear()
+        return False
+
+    def mouseMoveEvent(self, event: QtGui.QMouseEvent) -> None:
+        """
+        Alt+拖曳做欄選取，其餘照原本行為
+        Alt-drag makes a column selection; every other drag behaves as before.
+        """
+        if self._column_anchor is not None and event.buttons() & Qt.MouseButton.LeftButton:
+            self._column_dragged = True
+            self.multi_cursor_manager.select_column(
+                self._column_anchor, self.cursorForPosition(event.pos()).position())
+            return
+        super().mouseMoveEvent(event)
+
+    def mouseReleaseEvent(self, event: QtGui.QMouseEvent) -> None:
+        """
+        放開 Alt+點按時，若沒有拖曳就切換一個游標
+        On releasing an Alt-click that did not drag, toggle a single caret.
+        """
+        if self._column_anchor is not None:
+            if not self._column_dragged:
+                self.multi_cursor_manager.toggle_at(self._column_anchor)
+            self._column_anchor = None
+            return
+        super().mouseReleaseEvent(event)
+
+    def _paint_extra_cursors(self) -> None:
+        """畫出每個額外游標 / Draw each extra caret."""
+        painter = QPainter(self.viewport())
+        painter.setPen(actually_color_dict.get("extra_cursor_color"))
+        cursor = QTextCursor(self.document())
+        for position in self.multi_cursor_manager.positions():
+            cursor.setPosition(min(position, self.document().characterCount() - 1))
+            rect = self.cursorRect(cursor)
+            painter.drawLine(rect.left(), rect.top(), rect.left(), rect.bottom())
+        painter.end()
+
+    def _handle_multi_cursor_key(self, event: QKeyEvent) -> bool:
+        """
+        把輸入與退格套用到每個額外游標
+        Apply typing and Backspace at every extra caret.
+
+        :param event: 按鍵事件 / the key event
+        :return: 事件是否已被處理 / whether the event was handled here
+        """
+        if not self.multi_cursor_manager.active:
+            return False
+        key = event.key()
+        handler = _MULTI_CURSOR_KEYS.get(key)
+        if handler is not None:
+            return handler(self.multi_cursor_manager)
+        if event.text() and event.text().isprintable():
+            return self.multi_cursor_manager.insert_text(event.text())
+        return False
+
+    def _handle_snippet_tab(self) -> bool:
+        """
+        以 Tab 展開片段，或跳到片段的下一個定位點
+        Expand a snippet on Tab, or move to its next stop.
+
+        兩者都不適用時回傳 ``False``，Tab 就維持原本的縮排行為。
+        Returns ``False`` when neither applies, leaving Tab to indent as before.
+
+        :return: Tab 是否被片段處理掉 / whether Tab was consumed by a snippet
+        """
+        if self.snippet_manager.has_pending_stops:
+            return self.snippet_manager.next_stop()
+        return self.snippet_manager.expand_at_cursor()
 
     def _handle_enter_autoindent(self, event: QKeyEvent) -> None:
         """Enter 自動縮排 / Auto-indent on Enter."""
@@ -1623,6 +2590,20 @@ class CodeEditor(QPlainTextEdit):
         key = event.key()
         modifiers = event.modifiers()
 
+        # 錄製中就先記下這個按鍵，再照常處理
+        # While recording, note the keystroke before handling it as usual
+        self.macro.record(int(key), int(modifiers.value), event.text())
+
+        # 對選取範圍輸入成對字元時包住它，而不是取代掉
+        # Typing a pairing character over a selection wraps it instead of
+        # replacing it
+        if event.text() in SURROUND_PAIRS and self.textCursor().hasSelection():
+            if self.surround_selection(event.text()):
+                return
+
+        if self._handle_multi_cursor_key(event):
+            return
+
         if modifiers & Qt.KeyboardModifier.ControlModifier and self._handle_ctrl_shortcuts(event):
             return
 
@@ -1659,11 +2640,202 @@ class CodeEditor(QPlainTextEdit):
                 self.completer.popup().close()
             self._complete_timer.start()
 
+    def build_context_menu(self) -> QMenu:
+        """
+        建立右鍵選單
+        Build the right-click menu.
+
+        用 Qt 內建的編輯選單當底（剪下／複製／貼上／復原都在裡面，且啟用狀態由 Qt
+        自己維護），再接上編輯器自己的動作。
+        Qt's own edit menu is the base — cut, copy, paste and undo are already
+        there with Qt keeping their enabled state right — and the editor's own
+        actions are appended to it.
+
+        :return: 可直接顯示的選單 / a menu ready to show
+        """
+        word = language_wrapper.language_word_dict
+        menu = self.createStandardContextMenu()
+        menu.addSeparator()
+        for label_key, handler, enabled in (
+            ("context_menu_toggle_comment", self.toggle_comment, True),
+            ("context_menu_toggle_bookmark", self.toggle_bookmark, True),
+            ("context_menu_go_to_definition", self.go_to_definition,
+             self.lsp_client.running),
+            ("context_menu_hover", self.request_hover, self.lsp_client.running),
+            ("context_menu_rename_symbol", self.rename_symbol, True),
+            ("context_menu_format_document", self.format_with_language_server,
+             self.lsp_client.running),
+            ("context_menu_stage_hunk", self.stage_change_at_cursor,
+             self.diff_marker_manager.has_baseline),
+            ("context_menu_revert_hunk", self.revert_change_at_cursor,
+             self.diff_marker_manager.has_baseline),
+        ):
+            action = menu.addAction(word.get(label_key))
+            action.triggered.connect(handler)
+            action.setEnabled(enabled)
+        return menu
+
+    def contextMenuEvent(self, event: QtGui.QContextMenuEvent) -> None:
+        """顯示右鍵選單 / Show the right-click menu."""
+        menu = self.build_context_menu()
+        menu.exec(event.globalPos())
+        menu.deleteLater()
+
+    def go_to_definition_location(self, location: dict) -> bool:
+        """
+        跳到語言伺服器回報的定義位置
+        Jump to the definition a language server reported.
+
+        定義在別的檔案時交給主視窗開啟；在同一個檔案就直接跳行。
+        A definition in another file is opened by the main window; one in this
+        file is just a jump.
+
+        :param location: ``{"path", "line", "column"}``
+        :return: 有跳轉時為 ``True`` / ``True`` when the caret moved
+        """
+        path = location.get("path", "")
+        line = location.get("line", 1)
+        same_file = self.current_file is not None and Path(str(self.current_file)) == Path(path)
+        if not same_file and path:
+            window = getattr(self.main_window, "main_window", None)
+            if window is not None and hasattr(window, "go_to_new_tab"):
+                window.go_to_new_tab(Path(path))
+                return True
+            return False
+        return self.jump_to_line(line)
+
+    def apply_server_edits(self, edits: list) -> bool:
+        """
+        套用語言伺服器回傳的文字編輯
+        Apply the text edits a language server returned.
+
+        由後往前套用，前面的編輯位置就不會被前一次改動推移；整批算一個復原步驟。
+        The edits are applied from the end backwards so an earlier one is never
+        moved by a change already made after it, and the batch is one undo step.
+
+        :param edits: 編輯清單 / the edits to apply
+        :return: 有套用時為 ``True`` / ``True`` when anything was applied
+        """
+        if not edits:
+            return False
+        document = self.document()
+        ordered = sorted(
+            edits, key=lambda edit: (edit["start_line"], edit["start_column"]), reverse=True)
+        cursor = self.textCursor()
+        cursor.beginEditBlock()
+        try:
+            for edit in ordered:
+                start = _document_position(document, edit["start_line"], edit["start_column"])
+                end = _document_position(document, edit["end_line"], edit["end_column"])
+                if start is None or end is None:
+                    continue
+                cursor.setPosition(start)
+                cursor.setPosition(max(end, start), QTextCursor.MoveMode.KeepAnchor)
+                cursor.insertText(edit["new_text"])
+        finally:
+            cursor.endEditBlock()
+        return True
+
+    def show_hover_text(self, text: str) -> None:
+        """
+        顯示語言伺服器回傳的說明
+        Show the description a language server returned.
+
+        :param text: 說明文字 / the description
+        """
+        self.setToolTip(text)
+
+    def request_hover(self) -> bool:
+        """
+        向語言伺服器要求游標所在符號的說明
+        Ask the language server to describe the symbol under the caret.
+
+        :return: 有送出請求時為 ``True`` / ``True`` when a request was sent
+        """
+        cursor = self.textCursor()
+        return self.lsp_client.request_hover(
+            cursor.blockNumber(), cursor.positionInBlock())
+
+    def rename_symbol(self) -> bool:
+        """
+        透過語言伺服器重新命名游標所在的符號
+        Rename the symbol under the caret through the language server.
+
+        沒有伺服器時退回既有的整份檔案字詞取代，因此 Python 檔仍然可以改名。
+        Without a server this falls back to the existing whole-file word replace,
+        so renaming still works in a Python file.
+
+        :return: 有進行重新命名時為 ``True`` / ``True`` when a rename happened
+        """
+        if not self.lsp_client.running:
+            return self.rename_word_under_cursor()
+        cursor = self.textCursor()
+        current = self.textCursor()
+        current.select(QTextCursor.SelectionType.WordUnderCursor)
+        new_name, confirmed = QInputDialog.getText(
+            self, language_wrapper.language_word_dict.get("context_menu_rename_symbol"),
+            language_wrapper.language_word_dict.get("context_menu_rename_prompt"),
+            text=current.selectedText())
+        if not confirmed or not new_name:
+            return False
+        return self.lsp_client.request_rename(
+            cursor.blockNumber(), cursor.positionInBlock(), new_name)
+
+    def format_with_language_server(self) -> bool:
+        """
+        請語言伺服器格式化整份檔案
+        Ask the language server to format the whole file.
+
+        :return: 有送出請求時為 ``True`` / ``True`` when a request was sent
+        """
+        return self.lsp_client.request_formatting(self.indent_size())
+
+    def go_to_definition(self) -> bool:
+        """
+        請語言伺服器跳到游標所在符號的定義
+        Ask the language server to jump to the definition under the caret.
+
+        :return: 有送出請求時為 ``True`` / ``True`` when a request was sent
+        """
+        cursor = self.textCursor()
+        return self.lsp_client.request_definition(
+            cursor.blockNumber(), cursor.positionInBlock())
+
+    def closeEvent(self, event: QtGui.QCloseEvent) -> None:
+        """
+        關閉前停掉所有背景工作
+        Stop every background worker before closing.
+
+        lint、git 基準、blame 與語言伺服器都各自持有執行緒或子程序；編輯器被銷毀
+        時若它們還在跑，Qt 會直接讓程序中止（``QThread: Destroyed while thread is
+        still running``），而中止的位置離真正的原因很遠。
+        The lint pass, the git baseline, blame and the language server each hold a
+        thread or a subprocess. If one is still running when the editor is
+        destroyed, Qt aborts the process outright (``QThread: Destroyed while
+        thread is still running``) somewhere far from the actual cause.
+
+        計時器要先停：它們是「等輸入停下來再做」的排程，若留著，關閉之後才觸發的
+        那一次會重新開一條執行緒，而那時已經沒有人會去等它結束了。
+        The timers go first: they schedule the work that waits for a pause in
+        typing, and one firing after the close would start a fresh thread that
+        nothing is left to wait for.
+        """
+        self._lint_timer.stop()
+        self._diff_timer.stop()
+        self._complete_timer.stop()
+        self.lint_manager.stop()
+        self.diff_marker_manager.stop()
+        self.blame_manager.stop()
+        self.lsp_client.stop()
+        super().closeEvent(event)
+
     def mousePressEvent(self, event: QtGui.QMouseEvent) -> None:
         """
-        滑鼠點擊事件
-        Mouse press event
+        滑鼠點擊事件（Alt+點按用於多重游標）
+        Mouse press event; Alt-click drives the extra carets.
         """
+        if self._handle_multi_cursor_click(event):
+            return
         super().mousePressEvent(event)
         self.highlight_current_line()
 

@@ -37,9 +37,13 @@ from je_editor.pyside_ui.main_ui.save_settings.user_setting_file import (
 )
 from je_editor.pyside_ui.main_ui.system_tray.extend_system_tray import ExtendSystemTray
 from je_editor.utils.file.open.open_file import read_file
+from je_editor.utils.session.editor_state import editor_state, restore_editor_state
 from je_editor.utils.session.open_files_session import (
     SESSION_SETTING_KEY,
+    SESSION_STATE_KEY,
+    collect_file_states,
     collect_open_files,
+    restorable_file_state,
     restorable_files,
 )
 from je_editor.utils.logging.loggin_instance import jeditor_logger
@@ -393,20 +397,43 @@ class EditorMain(QMainWindow, QtStyleTools):
                 user_setting_dict.get(SESSION_SETTING_KEY),
                 already_open=[path for path in self._open_file_paths() if path],
             )
+            stored_states = user_setting_dict.get(SESSION_STATE_KEY)
             for file_path in to_restore:
                 self.go_to_new_tab(Path(file_path))
+                restore_editor_state(
+                    self.tab_widget.currentWidget(),
+                    restorable_file_state(stored_states, file_path))
         except Exception as error:
             jeditor_logger.warning(f"Restoring the open-file session failed: {error}")
 
     def _save_open_files_session(self) -> None:
         """
-        記錄目前開啟的分頁，供下次啟動還原
-        Record the currently open tabs so the next startup can restore them.
+        記錄目前開啟的分頁與其編輯狀態，供下次啟動還原
+        Record the open tabs and their editor state so the next startup can
+        restore both.
         """
         try:
             user_setting_dict[SESSION_SETTING_KEY] = collect_open_files(self._open_file_paths())
+            user_setting_dict[SESSION_STATE_KEY] = collect_file_states(
+                self._open_file_states())
         except Exception as error:
             jeditor_logger.warning(f"Saving the open-file session failed: {error}")
+
+    def _open_file_states(self) -> dict:
+        """
+        取得每個編輯分頁目前的游標、書籤與折疊狀態
+        Collect each editor tab's caret, bookmarks and folds.
+
+        :return: 路徑對應狀態 / path -> state
+        """
+        from je_editor.pyside_ui.main_ui.editor.editor_widget import EditorWidget
+        states: dict = {}
+        for index in range(self.tab_widget.count()):
+            widget = self.tab_widget.widget(index)
+            if not isinstance(widget, EditorWidget) or not widget.current_file:
+                continue
+            states[str(widget.current_file)] = editor_state(widget)
+        return states
 
     def go_to_new_tab(self, file_path: Path) -> None:
         """

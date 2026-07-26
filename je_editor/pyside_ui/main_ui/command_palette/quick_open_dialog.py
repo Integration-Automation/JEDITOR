@@ -39,6 +39,10 @@ class FileIndexThread(QThread):
         :param root: 要索引的專案根目錄 / The project root to index
         """
         super().__init__()
+        # 具名執行緒：萬一它在執行中被銷毀，Qt 的中止訊息才說得出是哪一條
+        # A named thread, so Qt's abort message says which one if it is ever
+        # destroyed while still running
+        self.setObjectName("FileIndexThread")
         self._root = root
         self._stop_requested = False
 

@@ -19,7 +19,7 @@ from typing import Union
 from PySide6.QtCore import Qt, QFileInfo, QDir, QFileSystemWatcher
 from PySide6.QtGui import QDragEnterEvent, QDropEvent
 from PySide6.QtWidgets import QWidget, QGridLayout, QSplitter, QScrollArea, QFileSystemModel, QTreeView, QTabWidget, \
-    QMessageBox
+    QMessageBox, QHBoxLayout
 
 from je_editor.pyside_ui.code.auto_save.auto_save_manager import auto_save_manager_dict, init_new_auto_save_thread, \
     file_is_open_manager_dict
@@ -29,10 +29,15 @@ from je_editor.pyside_ui.git_ui.git_client.git_client_gui import GitGui
 from je_editor.pyside_ui.code.auto_save.auto_save_thread import CodeEditSaveThread
 from je_editor.pyside_ui.code.code_format.pep8_format import PEP8FormatChecker
 from je_editor.pyside_ui.code.plaintext_code_edit.code_edit_plaintext import CodeEditor
+from je_editor.pyside_ui.code.minimap.minimap_widget import MinimapWidget
+from je_editor.pyside_ui.code.split_view.split_editor_view import SplitEditorView
 from je_editor.pyside_ui.code.textedit_code_result.code_record import CodeRecord
 from je_editor.pyside_ui.main_ui.save_settings.user_color_setting_file import actually_color_dict
 from je_editor.pyside_ui.main_ui.save_settings.user_setting_file import user_setting_dict
-from je_editor.utils.file.open.open_file import read_file
+from je_editor.utils.encodings.text_codec import (
+    DEFAULT_ENCODING, LINE_ENDING_LF
+)
+from je_editor.utils.file.open.open_file import read_file, read_file_with_encoding
 
 
 class EditorWidget(QWidget):
@@ -58,6 +63,11 @@ class EditorWidget(QWidget):
         # ---------------- Init variables 初始化變數 ----------------
         self.checker: Union[PEP8FormatChecker, None] = None
         self.current_file = None
+        # 目前檔案的編碼與行尾，開檔時偵測，存檔時照原樣寫回
+        # The current file's encoding and line ending, detected on open and
+        # written back unchanged on save
+        self.file_encoding: str = DEFAULT_ENCODING
+        self.line_ending: str = LINE_ENDING_LF
         self.tree_view_scroll_area = None
         self.project_treeview: Union[QTreeView, None] = None
         self.project_treeview_model = None
@@ -143,8 +153,19 @@ class EditorWidget(QWidget):
         self.code_difference_result.addTab(
             self.git_gui, language_wrapper.language_word_dict.get("tab_menu_git_client_tab_name"))
 
+        # 同檔分割檢視與縮圖，開啟時才建立
+        # The same-file split view and the minimap, both created on demand
+        self.split_view: Union[SplitEditorView, None] = None
+        self.minimap: Union[MinimapWidget, None] = None
+        # 編輯器與縮圖並排的容器 / Holds the editor and the minimap side by side
+        self.editor_row = QWidget()
+        self.editor_row_layout = QHBoxLayout(self.editor_row)
+        self.editor_row_layout.setContentsMargins(0, 0, 0, 0)
+        self.editor_row_layout.setSpacing(0)
+        self.editor_row_layout.addWidget(self.code_edit_scroll_area)
+
         # 加入分割器 / Add widgets to splitters
-        self.edit_splitter.addWidget(self.code_edit_scroll_area)
+        self.edit_splitter.addWidget(self.editor_row)
         self.edit_splitter.addWidget(self.code_difference_result)
         self.edit_splitter.setStretchFactor(0, 3)
         self.edit_splitter.setStretchFactor(1, 1)
@@ -243,11 +264,13 @@ class EditorWidget(QWidget):
         if self.code_save_thread:
             self.code_save_thread.skip_this_round = True
 
-        # 讀取檔案內容 / Read file content
-        result = read_file(str(path))
+        # 讀取檔案內容，同時記下編碼與行尾，存檔時照原樣寫回
+        # Read the content, remembering the encoding and line ending so a save
+        # writes the file back the way it was found
+        result = read_file_with_encoding(str(path))
         if result is None:
             return False
-        file, file_content = result
+        file, file_content, self.file_encoding, self.line_ending = result
         self.code_edit.setPlainText(file_content)
 
         # 依內容偵測縮排寬度；失敗不可影響開檔 / Detect indent; must not break opening
@@ -260,6 +283,10 @@ class EditorWidget(QWidget):
         self.current_file = file
         self.code_edit.current_file = file
         self.code_edit.reset_highlighter()
+        # 換檔後重新取得 git 比較基準與語言伺服器
+        # Reload the git baseline and the language server for the new file
+        self.code_edit.load_git_baseline()
+        self.code_edit.start_language_server()
 
         # 更新使用者設定中的最後開啟檔案 / Update last opened file in user settings
         user_setting_dict.update({"last_file": str(self.current_file)})
@@ -320,6 +347,47 @@ class EditorWidget(QWidget):
             title = self.tab_manager.tabText(idx)
             if title.endswith(" *"):
                 self.tab_manager.setTabText(idx, title[:-2])
+
+    def toggle_minimap(self) -> bool:
+        """
+        切換縮圖顯示
+        Toggle the minimap.
+
+        :return: 切換後是否為開啟 / whether the minimap is now shown
+        """
+        if self.minimap is not None:
+            self.editor_row_layout.removeWidget(self.minimap)
+            self.minimap.setParent(None)
+            self.minimap.deleteLater()
+            self.minimap = None
+            return False
+        self.minimap = MinimapWidget(self.code_edit)
+        self.editor_row_layout.addWidget(self.minimap)
+        return True
+
+    def toggle_split_view(self) -> bool:
+        """
+        切換同檔分割檢視
+        Toggle the split view of the same file.
+
+        兩個檢視共用同一份文件，因此任一邊的編輯會立刻出現在另一邊，而捲動與游標
+        各自獨立。
+        Both views share one document, so an edit in either appears in the other
+        at once, while scrolling and the caret stay independent.
+
+        :return: 切換後是否為開啟 / whether the split view is now shown
+        """
+        if self.split_view is not None:
+            self.split_view.close()
+            self.split_view.setParent(None)
+            self.split_view.deleteLater()
+            self.split_view = None
+            return False
+        self.split_view = SplitEditorView(self.code_edit)
+        # 插在主編輯器下方、輸出區上方 / Below the main editor, above the output
+        self.edit_splitter.insertWidget(1, self.split_view)
+        self.edit_splitter.setSizes([200, 200, 100])
+        return True
 
     def rename_self_tab(self) -> None:
         """
@@ -458,6 +526,15 @@ class EditorWidget(QWidget):
         self.exec_program = None
         self.exec_shell = None
         self.exec_python_debugger = None
+
+        # 讓編輯器自己收掉背景工作：它的 closeEvent 除了停掉各個管理器，也會停掉
+        # 那些「等輸入停下來再做」的計時器，否則關閉之後才觸發的那一次會重新開一
+        # 條執行緒，而那時已經沒有人會等它結束
+        # Let the editor stop its own background work: its closeEvent stops the
+        # managers and also the timers that schedule work after a pause in typing,
+        # one of which would otherwise fire after the close and start a fresh
+        # thread that nothing is left to wait for
+        self.code_edit.close()
 
         if self.current_file:
             file_is_open_manager_dict.pop(str(Path(self.current_file)), None)

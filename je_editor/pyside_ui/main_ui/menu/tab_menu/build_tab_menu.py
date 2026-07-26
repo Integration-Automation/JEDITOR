@@ -59,8 +59,90 @@ def set_tab_menu(ui_we_want_to_set: EditorMain) -> None:
     )
     ui_we_want_to_set.tab_menu.addAction(ui_we_want_to_set.tab_menu.add_console_widget_ui_action)
 
+    # === 同檔分割檢視 ===
+    # === Split view of the same file ===
+    ui_we_want_to_set.tab_menu.toggle_split_view_action = QAction(
+        language_wrapper.language_word_dict.get("tab_menu_split_view_label"))
+    ui_we_want_to_set.tab_menu.toggle_split_view_action.setShortcut("Ctrl+Alt+\\")
+    ui_we_want_to_set.tab_menu.toggle_split_view_action.triggered.connect(
+        lambda: toggle_split_view(ui_we_want_to_set)
+    )
+    ui_we_want_to_set.tab_menu.addAction(ui_we_want_to_set.tab_menu.toggle_split_view_action)
+
+    # === 縮圖 ===
+    # === Minimap ===
+    ui_we_want_to_set.tab_menu.toggle_minimap_action = QAction(
+        language_wrapper.language_word_dict.get("tab_menu_minimap_label"))
+    ui_we_want_to_set.tab_menu.toggle_minimap_action.setShortcut("Ctrl+Alt+M")
+    ui_we_want_to_set.tab_menu.toggle_minimap_action.triggered.connect(
+        lambda: toggle_minimap(ui_we_want_to_set)
+    )
+    ui_we_want_to_set.tab_menu.addAction(ui_we_want_to_set.tab_menu.toggle_minimap_action)
+
+    # === 片段編輯器 ===
+    # === Snippet editor ===
+    ui_we_want_to_set.tab_menu.edit_snippets_action = QAction(
+        language_wrapper.language_word_dict.get("snippet_editor_title"))
+    ui_we_want_to_set.tab_menu.edit_snippets_action.triggered.connect(
+        lambda: show_snippet_editor(ui_we_want_to_set)
+    )
+    ui_we_want_to_set.tab_menu.addAction(ui_we_want_to_set.tab_menu.edit_snippets_action)
+
     set_tab_tools_menu(ui_we_want_to_set=ui_we_want_to_set)
     set_tab_git_menu(ui_we_want_to_set=ui_we_want_to_set)
+
+
+def show_snippet_editor(ui_we_want_to_set: EditorMain):
+    """
+    開啟片段編輯器
+    Open the snippet editor.
+
+    :param ui_we_want_to_set: 主編輯器視窗 / the main editor window
+    :return: 開啟的對話框 / the dialog that was opened
+    """
+    jeditor_logger.info("build_tab_menu.py show_snippet_editor")
+    from je_editor.pyside_ui.dialog.snippet_dialog.snippet_editor_dialog import (
+        SnippetEditorDialog
+    )
+    dialog = SnippetEditorDialog(ui_we_want_to_set)
+    dialog.show()
+    return dialog
+
+
+def toggle_minimap(ui_we_want_to_set: EditorMain) -> bool:
+    """
+    切換目前分頁的縮圖
+    Toggle the current tab's minimap.
+
+    :param ui_we_want_to_set: 主編輯器視窗 / the main editor window
+    :return: 切換後是否為開啟 / whether the minimap is now shown
+    """
+    jeditor_logger.info("build_tab_menu.py toggle_minimap")
+    tab_widget = getattr(ui_we_want_to_set, "tab_widget", None)
+    if tab_widget is None:
+        return False
+    widget = tab_widget.currentWidget()
+    if not isinstance(widget, EditorWidget):
+        return False
+    return widget.toggle_minimap()
+
+
+def toggle_split_view(ui_we_want_to_set: EditorMain) -> bool:
+    """
+    切換目前分頁的同檔分割檢視
+    Toggle the split view of the current tab's file.
+
+    :param ui_we_want_to_set: 主編輯器視窗 / the main editor window
+    :return: 切換後是否為開啟 / whether the split view is now shown
+    """
+    jeditor_logger.info("build_tab_menu.py toggle_split_view")
+    tab_widget = getattr(ui_we_want_to_set, "tab_widget", None)
+    if tab_widget is None:
+        return False
+    widget = tab_widget.currentWidget()
+    if not isinstance(widget, EditorWidget):
+        return False
+    return widget.toggle_split_view()
 
 
 # === 以下為各分頁新增函式 ===

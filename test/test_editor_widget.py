@@ -38,6 +38,28 @@ def editor_widget(app):
     mock_main.tab_widget.deleteLater()
 
 
+class TestClosingTheTab:
+    """
+    Closing the tab has to stop the editor's scheduled work too. A debounce
+    timer firing afterwards starts a thread nothing is left to wait for, and Qt
+    aborts the process when a running QThread is destroyed.
+    """
+
+    def test_the_editors_lint_timer_is_stopped(self, editor_widget):
+        editor_widget.code_edit._lint_timer.start()
+        editor_widget.close()
+        assert editor_widget.code_edit._lint_timer.isActive() is False
+
+    def test_the_editors_diff_timer_is_stopped(self, editor_widget):
+        editor_widget.code_edit._diff_timer.start()
+        editor_widget.close()
+        assert editor_widget.code_edit._diff_timer.isActive() is False
+
+    def test_no_lint_worker_is_left_running(self, editor_widget):
+        editor_widget.close()
+        assert editor_widget.code_edit.lint_manager._worker is None
+
+
 class TestEditorWidgetModifiedTracking:
     def test_initial_not_modified(self, editor_widget):
         assert editor_widget._is_modified is False
