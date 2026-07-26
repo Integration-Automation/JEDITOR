@@ -23,7 +23,7 @@ def service(tmp_path):
     instance = GitService()
     instance.open_repo(str(tmp_path))
     yield instance, tmp_path
-    instance.repo.close()
+    instance.close()
 
 
 class TestStashing:
@@ -119,6 +119,32 @@ class TestConflicts:
     def test_resolving_a_file_that_is_not_in_conflict_reports_failure(self, service):
         instance, _root = service
         assert instance.resolve_conflict("tracked.txt", "ours") is False
+
+
+class TestClosing:
+    """
+    Every open Repo keeps long-lived git child processes, and dozens of them
+    slow the whole process down -- including starting an unrelated thread.
+    """
+
+    def test_closing_lets_go_of_the_repository(self, service):
+        instance, _root = service
+        instance.close()
+        assert instance.repo is None
+
+    def test_closing_twice_is_safe(self, service):
+        instance, _root = service
+        instance.close()
+        instance.close()
+        assert instance.repo is None
+
+    def test_opening_another_closes_the_first(self, service, tmp_path_factory):
+        instance, _root = service
+        first = instance.repo
+        another = tmp_path_factory.mktemp("second")
+        git.Repo.init(another).close()
+        instance.open_repo(str(another))
+        assert instance.repo is not first
 
 
 class TestWithoutARepository:
