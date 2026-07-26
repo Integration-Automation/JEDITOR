@@ -25,9 +25,9 @@ from je_editor.pyside_ui.code.auto_save.auto_save_manager import init_new_auto_s
 from je_editor.pyside_ui.main_ui.editor.editor_widget import EditorWidget
 from je_editor.pyside_ui.main_ui.menu.set_menu_bar import set_menu_bar
 from je_editor.pyside_ui.main_ui.save_settings.user_color_setting_file import (
+    apply_theme_colors,
     write_user_color_setting,
     read_user_color_setting,
-    update_actually_color_dict,
     actually_color_dict
 )
 from je_editor.pyside_ui.main_ui.save_settings.user_setting_file import (
@@ -368,9 +368,12 @@ class EditorMain(QMainWindow, QtStyleTools):
         self._restore_open_files_session()
 
         app = QApplication.instance()
+        style_name = user_setting_dict.get("ui_style", "dark_amber.xml")
         if app is not None:
-            self.apply_stylesheet(app, user_setting_dict.get("ui_style", "dark_amber.xml"))
-        update_actually_color_dict()
+            self.apply_stylesheet(app, style_name)
+        # 顏色跟著樣式走：淺色樣式要用淺色底調出來的那一組
+        # The colours follow the style: a light one needs the light set
+        apply_theme_colors(style_name)
 
     def _open_file_paths(self) -> list[str]:
         """取得所有分頁目前開啟的檔案 / Every tab's currently open file."""

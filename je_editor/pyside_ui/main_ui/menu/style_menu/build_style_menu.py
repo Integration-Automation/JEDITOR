@@ -9,6 +9,7 @@ from PySide6.QtWidgets import QApplication
 
 # 匯入使用者設定字典，用來保存 UI 樣式設定
 # Import user settings dictionary for saving UI style preferences
+from je_editor.pyside_ui.main_ui.save_settings.user_color_setting_file import apply_theme_colors
 from je_editor.pyside_ui.main_ui.save_settings.user_setting_file import user_setting_dict
 # 匯入日誌紀錄器
 # Import logger instance
@@ -121,3 +122,23 @@ def set_style(ui_we_want_to_set: EditorMain, action: QAction) -> None:
     # 更新使用者設定，保存目前選擇的樣式
     # Update user settings dictionary to persist the chosen style
     user_setting_dict.update({"ui_style": action.text()})
+
+    # 編輯器自己畫的顏色也要跟著換，否則淺色樣式配深色底調出來的標記會看不清楚
+    # The colours the editor paints itself follow along, or a light style would
+    # be left with markers tuned for a dark background
+    apply_theme_colors(action.text())
+    _repaint_editors(ui_we_want_to_set)
+
+
+def _repaint_editors(ui_we_want_to_set: EditorMain) -> None:
+    """讓每個編輯分頁用新顏色重畫 / Repaint every editor tab in the new colours."""
+    from je_editor.pyside_ui.main_ui.editor.editor_widget import EditorWidget
+    tab_widget = getattr(ui_we_want_to_set, "tab_widget", None)
+    if tab_widget is None:
+        return
+    for index in range(tab_widget.count()):
+        widget = tab_widget.widget(index)
+        if isinstance(widget, EditorWidget):
+            widget.code_edit.highlight_current_line()
+            widget.code_edit.viewport().update()
+            widget.code_edit.line_number.update()
