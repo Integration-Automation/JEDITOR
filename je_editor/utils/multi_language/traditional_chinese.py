@@ -221,7 +221,7 @@ traditional_chinese_word_dict = {
     "err_load_commits": "載入提交記錄失敗",
     "err_checkout": "切換分支失敗",
     "info_checkout_title": "切換分支",
-    "info_checkout_msg": "已切換至",
+    "info_checkout_msg": "已切換至 {branch}",
     "err_read_diff": "讀取差異失敗",
     "err_stage": "暫存失敗",
     "info_stage_title": "暫存",
@@ -237,7 +237,7 @@ traditional_chinese_word_dict = {
     "dialog_clone_prompt": "輸入 Git 儲存庫 URL：",
     "dialog_select_folder": "選擇本機資料夾",
     "info_clone_success_title": "複製成功",
-    "info_clone_success_msg": "儲存庫已複製至：\\n",
+    "info_clone_success_msg": "儲存庫已複製至：\\n{repo_path}",
     "err_clone_failed_title": "複製失敗",
     # Git 圖形
     "git_graph_title": "Git 分支檢視器",
