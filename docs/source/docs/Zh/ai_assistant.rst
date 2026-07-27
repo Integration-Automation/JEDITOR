@@ -27,9 +27,24 @@ AI 聊天助手。AI 面板讓您可以直接在編輯器內與大型語言模�
    * - **System Prompt**
      - 設定 AI 行為與上下文的範本
 
-設定會儲存到 ``.jeditor/ai_config.json``，在不同工作階段之間持續保留。
+在對話框中輸入的內容只套用於目前這次執行。若希望每次啟動都載入設定，請自行撰寫
+``.jeditor/ai_config.json``——編輯器只在啟動時讀取這個檔案，從不寫入它，因此您的金鑰
+只會存在您自己放的地方：
 
-您也可以透過環境變數設定 API 金鑰。
+.. code-block:: json
+
+   {
+     "AI_model": {
+       "ai_base_url": "https://api.openai.com/v1",
+       "ai_api_key": "...",
+       "chat_model": "gpt-4",
+       "prompt_template": ""
+     }
+   }
+
+建議把 ``.jeditor/`` 加進 ``.gitignore``，金鑰才不會被提交。設定好模型之後，編輯器會把
+``OPENAI_BASE_URL``、``OPENAI_API_KEY`` 與 ``CHAT_MODEL`` 匯出到環境變數，供 LangChain
+套件取用。
 
 聊天介面
 ---------

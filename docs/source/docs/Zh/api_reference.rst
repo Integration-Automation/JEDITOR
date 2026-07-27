@@ -139,22 +139,38 @@ user_setting_color_dict
 language_wrapper
 ^^^^^^^^^^^^^^^^^
 
-根據目前語言返回指定鍵值的翻譯字串。
+唯一的 ``LanguageWrapper`` 實例，持有目前的語言與其字典。
 
 .. code-block:: python
 
    from je_editor import language_wrapper
 
-   label = language_wrapper("file_menu_label")  # 返回 "File" 或對應的翻譯
+   label = language_wrapper.language_word_dict.get("file_menu_label")  # "File" 或其翻譯
+
+   language_wrapper.available_languages()          # ['English', 'Traditional_Chinese', ...]
+   language_wrapper.display_name("Japanese")       # '日本語'
+   language_wrapper.reset_language("Japanese")     # 換掉字典
+
+``reset_language`` 只負責換字典。**Language** 選單在其後會呼叫
+``retranslate_ui(main_window, previous_words)``，那才是真正重新標示執行中介面的部分——
+因此不需要重新啟動。
+
+某個語言尚未翻譯的鍵會退回英文而不是空白，因此可以先註冊語言、之後再補齊字典：
+
+.. code-block:: python
+
+   language_wrapper.register_language("Korean", {"file_menu_label": "파일"}, display_name="한국어")
 
 english_word_dict / traditional_chinese_word_dict
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-內建的翻譯字典。
+內建的翻譯字典。簡體中文與日文可從各自的模組取得。
 
 .. code-block:: python
 
    from je_editor import english_word_dict, traditional_chinese_word_dict
+   from je_editor.utils.multi_language.simplified_chinese import simplified_chinese_word_dict
+   from je_editor.utils.multi_language.japanese import japanese_word_dict
 
 插件 API
 ---------

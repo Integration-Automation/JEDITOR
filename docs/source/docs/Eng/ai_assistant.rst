@@ -28,9 +28,25 @@ Before using the AI assistant, you need to configure it:
    * - **System Prompt**
      - A template that sets the AI's behavior and context
 
-Configuration is saved to ``.jeditor/ai_config.json`` and persists between sessions.
+What you enter in the dialog applies to the current session. To have the settings loaded
+on every launch, write them to ``.jeditor/ai_config.json`` yourself — the editor reads
+that file at startup but never writes it, so your key is only ever stored where you put
+it:
 
-You can also configure the API key via environment variables.
+.. code-block:: json
+
+   {
+     "AI_model": {
+       "ai_base_url": "https://api.openai.com/v1",
+       "ai_api_key": "...",
+       "chat_model": "gpt-4",
+       "prompt_template": ""
+     }
+   }
+
+``.jeditor/`` is worth adding to ``.gitignore`` so the key is never committed. Once a
+model is configured, the editor exports ``OPENAI_BASE_URL``, ``OPENAI_API_KEY`` and
+``CHAT_MODEL`` into the environment for the LangChain packages to pick up.
 
 Chat Interface
 ---------------

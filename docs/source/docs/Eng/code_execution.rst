@@ -24,11 +24,37 @@ You can also manually select a Python interpreter from the **Python Env** menu.
 Debugging
 ----------
 
-Press **F9** to launch the current Python file in debug mode:
+Press **F9** to launch the current Python file in debug mode. The debugger is
+``python -m pdb``, driven from the editor rather than from a separate terminal.
 
-- Python debugger (pdb) integration
-- Variable inspection during execution (see Variable Inspector below)
-- Step-through debugging capabilities
+**Breakpoints**
+
+``Ctrl+F9`` toggles a breakpoint on the current line, and a red dot appears in the
+gutter. Breakpoints are anchored to the text, so they follow their code when lines are
+inserted or removed above them. Every breakpoint in the file is sent to pdb when the
+debug run starts, and toggling one during a run takes effect immediately.
+
+**Stepping**
+
+.. list-table::
+   :header-rows: 1
+   :widths: 30 70
+
+   * - Shortcut
+     - Action
+   * - ``Ctrl+F5``
+     - Continue to the next breakpoint
+   * - ``F10``
+     - Step over the current line
+   * - ``F11``
+     - Step into the call on the current line
+   * - ``Shift+F11``
+     - Step out of the current function
+
+The same commands are on the **Run > Debug** menu, and anything pdb understands can be
+typed directly into the debugger input.
+
+Variable inspection during execution is covered by the Variable Inspector below.
 
 Stop Execution
 ^^^^^^^^^^^^^^^

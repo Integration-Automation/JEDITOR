@@ -75,17 +75,17 @@ JEDITOR achieves up to **1000% faster performance** compared to the original JEd
 
 | Category | Features |
 |---|---|
-| **Editor** | Multi-tab editing, syntax highlighting, auto-completion (Jedi), line numbers, current line highlighting, search & replace (regex), code folding, bookmarks, occurrence highlighting, line operations |
+| **Editor** | Multi-tab editing, syntax highlighting for twelve languages, auto-completion (Jedi and language servers), multiple carets with selections, snippets with mirrored placeholders, split view, minimap, code folding (indentation and braces), bookmarks, occurrence highlighting, line operations |
 | **Navigation** | Command palette, quick open (go to file), go to symbol, document outline, navigation history (back/forward), TODO/FIXME task panel |
 | **Execution** | Run Python scripts (F5), debug mode (F9), shell commands, virtual environment detection |
-| **Code Quality** | YAPF formatting, PEP8 checking, Ruff linting, JSON reformatting |
-| **Git** | Branch management, commit history, side-by-side diff viewer, staging, audit logging |
+| **Code Quality** | YAPF formatting, format on save, PEP8 checking, Ruff linting with a problems panel, language-server diagnostics and quick fixes, pytest panel with tracebacks and coverage, JSON reformatting |
+| **Git** | Branch management, commit history, side-by-side diff viewer, gutter change markers, per-change staging and revert, inline blame, stash, conflict resolution, audit logging |
 | **AI** | OpenAI GPT integration via LangChain, interactive chat widget, configurable models & prompts |
 | **Console** | Interactive shell, Jupyter/IPython console, command history, multi-shell support |
 | **Browser** | Embedded web browser, URL navigation, in-page search |
 | **Plugins** | Custom syntax highlighting, UI translations, run configurations, auto-discovery |
-| **UI** | Dark/light themes (Qt Material), font customization, dockable panels, system tray, toolbar |
-| **i18n** | English, Traditional Chinese, extensible via plugins |
+| **UI** | Dark/light themes (Qt Material) with matching editor colours, configurable keyboard shortcuts, font customization, dockable panels, system tray, toolbar, status bar |
+| **i18n** | English, Traditional Chinese, Simplified Chinese, Japanese; follows the system language, switches without restarting, extensible via plugins |
 | **Files** | Auto-save, multi-encoding support (UTF-8, GBK, Latin-1, etc.), recent files, multi-file session restore |
 
 ---
@@ -174,19 +174,19 @@ The editor launches in a maximized window with a dark amber theme by default.
 - **Auto-completion** -- Context-aware code suggestions powered by Jedi.
 - **Line numbers** -- Displayed alongside the editor with current line highlighting.
 - **Search & Replace** -- Search within the current file, across folders, or project-wide with regex and case-sensitive options. Runs in background threads for large projects.
-- **Code Folding** -- Collapse and expand indented blocks (functions, classes, loops) from the gutter fold triangles or the keyboard. Folding is indentation-based and only toggles line visibility -- it never modifies the text, so saving always writes the complete file. Folds self-heal after edits: a fold whose header no longer exists simply reopens instead of hiding the wrong lines.
+- **Code Folding** -- Collapse and expand blocks from the gutter fold triangles or the keyboard. Python and other indented files fold on indentation; the C-family languages (JavaScript, TypeScript, Rust, Go, C/C++, Java, JSON) fold on brace pairs instead, so a brace on its own line still opens a region. Braces inside strings and comments are skipped, since one in a string would throw every pair after it out of step. Folding only toggles line visibility -- it never modifies the text, so saving always writes the complete file. Folds self-heal after edits: a fold whose header no longer exists simply reopens instead of hiding the wrong lines.
 - **Bookmarks** -- Mark lines and jump between them with the keyboard, or click the gutter to toggle. Bookmarks are anchored to the text (via `QTextCursor`), so they follow their code when lines are inserted or removed above them instead of drifting.
-- **Multiple Carets** -- `Ctrl+Shift+L` puts a caret at the end of every selected line, and `Alt`-click adds or removes one anywhere. Typing and Backspace then apply at all of them as a single undo step; `Esc` or a plain click returns to one caret.
+- **Multiple Carets** -- `Ctrl+Shift+L` puts a caret at the end of every selected line, `Ctrl+Alt+N` adds one at the next occurrence of the word under the caret, `Ctrl+Alt+Shift+Up` / `Down` adds one on the line above or below, and `Alt`-click adds or removes one anywhere. All of them move together with the arrow keys, Home and End, and `Shift` with any of those extends a selection at every caret. Typing, Backspace and Delete apply at all of them as a single undo step, replacing each selection where there is one; `Ctrl+Shift+Esc` or a plain click returns to one caret.
 - **Split View** (`Ctrl+Alt+\`) -- A second view of the same file, sharing one document: an edit in either side shows up in the other at once, while scrolling and the caret stay independent.
-- **Minimap** (`Ctrl+Alt+M`) -- An overview of the whole file drawn as bars following each line's length and indentation, with a band marking what is on screen. Click or drag to jump. Large files are sampled rather than drawn line by line.
-- **Snippets** -- Type a trigger word and press Tab to expand it, then Tab through the placeholders with each default value selected. Uses the usual `$1` / `${2:default}` / `$0` notation, so existing snippets drop straight into `snippets.json`; a missing or broken file falls back to the built-in Python set.
-- **Test Panel** -- Run pytest from a dock panel and read the results, failures first, with the summary as the status line. Double-click a row to open that test, jumping to the failing line.
-- **Language Server Support** -- Non-Python files complete through a language server over stdio (TypeScript, Rust, Go, C/C++, Lua, JSON and more, configurable per suffix), while Python keeps using jedi. A server that is not installed simply means no completions rather than an error.
+- **Minimap** (`Ctrl+Alt+M`) -- An overview of the whole file drawn as bars following each line's length and indentation, with a band marking what is on screen. Marks down the sides show lint diagnostics, git changes, and whatever you are currently looking for -- the search box's hits while a search is open, and otherwise the other occurrences of the word under the caret. Click or drag to jump. Large files are sampled rather than drawn line by line.
+- **Snippets** -- Type a trigger word and press Tab to expand it, then Tab through the placeholders with each default value selected. A placeholder used more than once only has to be typed once: the repeats follow as you type. Uses the usual `$1` / `${2:default}` / `$0` notation, so existing snippets drop straight into `snippets.json`, and there are per-language sets on top of the shared ones. Edit them from Tab > Edit Snippets rather than by hand; a missing or broken file falls back to the built-in Python set.
+- **Test Panel** -- Run pytest from a dock panel and read the results, failures first, with the summary as the status line. Selecting a failure shows its traceback in a pane below the list, and a coverage box adds the total beside the summary (which needs `pytest-cov` in the project being tested). Run everything, only the selection, or only what failed last time; double-click a row to open that test at the failing line.
+- **Language Server Support** -- Non-Python files get completion, hover, go-to-definition, rename, formatting, signature help, find-references, quick fixes and document symbols from a language server over stdio (TypeScript, Rust, Go, C/C++, Lua, JSON and more, configurable per suffix), while Python keeps using jedi. One server is shared by every tab that needs it, keyed by command and project root, rather than one process per open file. Diagnostics appear in the same underlines and Problems panel as ruff's. A server that is not installed simply means no completions rather than an error.
 - **Encoding & Line Endings** -- A file's encoding and line-ending style are detected when it opens and written back unchanged when it saves, so editing one line of a CRLF file no longer rewrites every line. Both can be changed from the File menu; changing the encoding re-reads an unmodified file so mojibake can be fixed in place, and never discards unsaved work.
 - **Format on Save** -- Optionally run yapf when a file is saved, keeping the caret on its line. Source that cannot be parsed is left alone rather than blocking the save.
 - **Indent Guides & Trailing Whitespace** -- A vertical guide at each indentation level and shading on stray end-of-line whitespace, both toggleable from the Style menu.
 - **Lint Diagnostics** -- Findings from `ruff` are underlined in the editor and listed in a Problems dock panel (rule, message, line), with double-click to jump. The **buffer** is checked, not the file on disk, so unsaved edits are covered; the run happens on a worker thread after typing pauses, and a stale result from a superseded run is discarded. If `ruff` is not installed, or a run fails, the editor simply shows no diagnostics rather than reporting an error.
-- **Git Change Markers** -- The gutter shows how the file differs from its last commit: a green bar for added lines, orange for modified, and a thin red line where lines were deleted. Jump between changes with `Ctrl+Alt+Down` / `Ctrl+Alt+Up`, revert the change under the caret back to its committed form with `Ctrl+Alt+Z` (one undo step), and open a side-by-side diff of the whole file against HEAD from the Git menu. `Ctrl+Alt+B` toggles inline blame, showing the commit, author and summary that last touched each line. The committed version is read on a background thread when the file opens, and the comparison itself is a pure in-memory diff, recomputed only after typing pauses -- so editing never waits on git. Files outside a repository, or not yet committed, simply show no markers.
+- **Git Change Markers** -- The gutter shows how the file differs from its last commit: a green bar for added lines, orange for modified, and a thin red line where lines were deleted. Jump between changes with `F7` / `Shift+F7`, revert the change under the caret back to its committed form with `Ctrl+Alt+Z` (one undo step), and stage just that change from the right-click menu. `Ctrl+Alt+B` toggles inline blame, showing the commit, author and summary that last touched each line. The Git menu opens a side-by-side diff of the whole file against HEAD, or against what is staged -- after staging change by change, that second one is what shows which parts actually went into the index. The right-click menu also unstages the file and commits what is staged. The committed version is read on a background thread when the file opens, and the comparison itself is a pure in-memory diff, recomputed only after typing pauses -- so editing never waits on git. Files outside a repository, or not yet committed, simply show no markers.
 - **Occurrence Highlighting** -- Placing the caret on an identifier highlights every other whole-word occurrence of it in the file. Keywords and single characters are ignored, and the scan is skipped on very large files to keep caret movement instant.
 - **Line Operations** -- Delete the current line or selection (`Ctrl+Shift+D`), sort selected lines (`Ctrl+Alt+S`), join selected lines into one (`Ctrl+Shift+J`), and (from the Text menu) natural sort, remove duplicate lines, remove blank lines, reverse line order, or align lines on a delimiter (e.g. `=`). Each is a single undo step.
 - **Duplicate** (`Ctrl+D`) -- Duplicates the selection when there is one (selecting the new copy), or the whole line when there isn't.
@@ -195,7 +195,8 @@ The editor launches in a maximized window with a dark amber theme by default.
 - **Increment / Decrement Number** -- Bump the integer under the caret up or down (`Ctrl+Alt+Up` / `Ctrl+Alt+Down`), handling negative signs and growing widths.
 - **Rename in File** (`F2`) -- Rename every whole-word occurrence of the identifier under the caret across the file as a single undo step. Word boundaries protect partial matches (renaming `val` never touches `value`).
 - **Navigation History** -- Jump back and forward through your cursor-jump history like a browser (`Alt+Left` / `Alt+Right`). A jump records both where you came from and where you went, so "back" returns to where you started.
-- **Document Outline** -- A dockable tree of the current file's classes, methods, functions and module variables (parsed with `ast`, so no code runs). Double-click to jump to a definition.
+- **Document Outline** -- A dockable tree of the current file's classes, methods, functions and module variables. Python is parsed with `ast`, so no code runs; other languages are asked of their language server, so a TypeScript or Rust file gets an outline too. Double-click to jump to a definition.
+- **Keyboard Shortcuts** (Style > Keyboard Shortcuts) -- Every command's keys in one list, editable. Two commands claiming the same keys cannot be saved, because Qt runs neither of them when that happens; a change takes effect immediately, and only what differs from a default is stored.
 - **Variable Inspector** -- Inspect and debug variables during code execution.
 
 ### Navigation
@@ -243,7 +244,9 @@ JEDITOR includes a full-featured Git client:
 - **Commit history** -- View commit metadata (author, date, message) in a table view.
 - **Side-by-side diff viewer** -- Color-highlighted code comparison with line numbers.
 - **Multi-file diff** -- Compare changes across multiple files.
-- **Staging** -- Stage and unstage individual file changes.
+- **Staging** -- Stage and unstage individual file changes, or one change at a time from the editor's gutter.
+- **Stash** -- Put the current changes away, list what is stashed, and take one back.
+- **Conflict resolution** -- List the files left in conflict after a merge and settle one by keeping either side.
 - **Audit logging** -- All Git operations are logged for tracking and compliance.
 
 ### AI Assistant
@@ -292,9 +295,11 @@ Plugins are automatically discovered from the `jeditor_plugins/` directory. See 
 
 ### Multi-Language UI
 
-- **English** -- Full English interface (default).
-- **Traditional Chinese** (繁體中文) -- Complete Traditional Chinese translation.
-- **Extensible** -- Add new languages via the plugin system.
+- **English**, **Traditional Chinese** (繁體中文), **Simplified Chinese** (简体中文) and **Japanese** (日本語) -- each complete. Simplified Chinese is written in mainland vocabulary rather than converted from the traditional text, where 檔案/文件, 資料夾/文件夹 and 程式/程序 all differ.
+- **Follows the system on a first run** -- the language is taken from the system locale rather than defaulting to English, with Chinese resolved by script: `zh-Hant` and the Taiwan, Hong Kong and Macau regions get traditional characters, and anything else simplified. What is detected is recorded, so from then on it is simply the chosen language.
+- **Changes without restarting** -- picking a language relabels the menus, toolbar, panels, tabs and status bar at once. File and branch names on tabs are left alone.
+- **Falls back to English** -- a key a language has not translated shows the English text rather than a blank label, so a language can be added before it is finished.
+- **Extensible** -- add new languages via the plugin system. Locale rules for Korean, Spanish, French, German, Russian and Portuguese are already in place; each needs only its dictionary.
 
 ---
 
@@ -326,12 +331,9 @@ Plugins are automatically discovered from the `jeditor_plugins/` directory. See 
 | `Ctrl+Alt+Up` | Increment number under caret |
 | `Ctrl+Alt+Down` | Decrement number under caret |
 | `F2` | Rename occurrences in file |
-| `Ctrl+D` | Duplicate line / selection |
-| `Alt+Up` / `Alt+Down` | Move line up / down |
-| `Ctrl+/` | Toggle comment |
 | `Ctrl+Shift+L` | Caret at the end of every selected line |
 | `Ctrl+Alt+N` | Add caret at next occurrence |
-| `Ctrl+Alt+Shift+Up` / `Down` | Add caret above / below |
+| `Ctrl+Alt+Shift+Up` / `Ctrl+Alt+Shift+Down` | Add caret above / below |
 | `Ctrl+Shift+Esc` | Back to a single caret |
 | `Ctrl+Shift+R` | Start / stop macro recording |
 | `Ctrl+Shift+G` | Play macro |
@@ -345,6 +347,11 @@ Plugins are automatically discovered from the `jeditor_plugins/` directory. See 
 | `Ctrl+Shift+Y` | YAPF Python format |
 | `Ctrl+Alt+P` | PEP8 format checker |
 | `Ctrl+F` | Find text (editor, browser) |
+| `Ctrl+Shift+F` | Search across files |
+| `Alt+W` | Word wrap |
+| `Ctrl+Shift+P` | Install a package with pip |
+| `Ctrl+Shift+U` | Upgrade and install packages |
+| `Ctrl+Shift+V` | Change the Python interpreter |
 | `Ctrl+H` | Find and replace |
 | `Ctrl+G` | Go to line |
 | `F5` | Run program |
@@ -354,6 +361,19 @@ Plugins are automatically discovered from the `jeditor_plugins/` directory. See 
 | `Ctrl+F5` | Debugger: continue |
 | `F10` / `F11` / `Shift+F11` | Debugger: step over / into / out |
 | `Up/Down` | Command history (console) |
+
+Every shortcut above can be reassigned from **Style > Keyboard Shortcuts**. The keys
+below are handled by the editing area itself, so they are fixed:
+
+| Shortcut | Action |
+|---|---|
+| `Ctrl+D` | Duplicate line / selection |
+| `Ctrl+/` | Toggle comment |
+| `Alt+Up` / `Alt+Down` | Move line up / down |
+| `Ctrl+B` | Jump to the definition under the caret |
+| `Ctrl+Shift+\` | Jump to the matching bracket |
+| `Ctrl++` / `Ctrl+-` | Zoom the editor font in / out |
+| `Tab` / `Shift+Tab` | Indent / unindent the line or selection |
 
 ---
 
@@ -367,8 +387,15 @@ je_editor/
 │   │   ├── auto_save/            # Automatic file saving
 │   │   ├── bookmark/            # Bookmark manager (QTextCursor-anchored)
 │   │   ├── code_format/          # YAPF & PEP8 formatting
+│   │   ├── breakpoint/          # Breakpoint markers
 │   │   ├── code_process/         # Program execution (ExecManager)
 │   │   ├── folding/             # Code folding manager
+│   │   ├── git_diff/            # Gutter change markers and inline blame
+│   │   ├── lint/                # Lint diagnostics for one editor
+│   │   ├── lsp/                 # Language server client and shared sessions
+│   │   ├── minimap/             # Minimap widget
+│   │   ├── multi_cursor/        # Extra caret management
+│   │   ├── snippets/            # Snippet expansion
 │   │   ├── shell_process/        # Shell execution (ShellManager)
 │   │   ├── syntax/               # Syntax highlighting engine
 │   │   ├── plaintext_code_edit/  # Plain text editor widget
@@ -391,8 +418,11 @@ je_editor/
 │       ├── menu/                 # Menu bar system
 │       ├── outline_panel/       # Document outline (symbol tree)
 │       ├── plugin_browser/       # Plugin management UI
-│       ├── save_settings/        # Settings persistence
+│       ├── problems_panel/      # Lint diagnostics panel
+│       ├── retranslate.py       # Relabels the interface when the language changes
+│       ├── save_settings/        # Settings persistence, shortcuts and colours
 │       ├── system_tray/          # System tray integration
+│       ├── test_panel/          # pytest results, tracebacks and coverage
 │       ├── todo_panel/           # TODO/FIXME task panel
 │       └── toolbar/              # Toolbar actions
 ├── code_scan/                    # Code scanning
@@ -408,28 +438,44 @@ je_editor/
 ├── utils/                        # Utilities
 │   ├── align/                   # Align lines on a delimiter (Qt-free)
 │   ├── bookmark/                # Bookmark navigation logic (Qt-free)
+│   ├── browser/                 # Embedded Chromium flags (Qt-free)
 │   ├── case_convert/            # Naming-style conversion (Qt-free)
-│   ├── code_folding/            # Fold region computation (Qt-free)
+│   ├── code_folding/            # Fold regions, by indentation and by braces (Qt-free)
 │   ├── command_palette/          # Fuzzy matching & ranking (Qt-free)
+│   ├── debugger/                # pdb command building (Qt-free)
 │   ├── encode_decode/           # Base64/URL/HTML/JSON transforms (Qt-free)
 │   ├── encodings/                # Encoding detection
 │   ├── exception/                # Custom exceptions
 │   ├── file/                     # File I/O (open/save)
+│   ├── file_diff/               # Line status, hunks and unified diff (Qt-free)
 │   ├── file_scan/                # Shared ignore rules, file indexer, TODO scanner
+│   ├── format_code/             # yapf formatting (Qt-free)
 │   ├── indentation/             # Tab/space conversion + indent detection (Qt-free)
 │   ├── json_format/              # JSON formatting
 │   ├── line_ops/                # Line operation transforms (Qt-free)
+│   ├── lint/                    # Ruff diagnostic parsing (Qt-free)
 │   ├── logging/                  # Logging setup
-│   ├── multi_language/           # i18n (English, Traditional Chinese)
+│   ├── lsp/                     # LSP framing, protocol and server registry (Qt-free)
+│   ├── macro/                   # Keystroke macro recording (Qt-free)
+│   ├── minimap/                 # Minimap geometry and sampling (Qt-free)
+│   ├── multi_cursor/            # Extra caret positions and edit shifting (Qt-free)
+│   ├── multi_language/           # i18n: English, Traditional and Simplified Chinese,
+│   │                            #   Japanese, locale matching, live relabelling
 │   ├── navigation/              # Cursor jump history (Qt-free)
 │   ├── number_ops/              # Number-under-caret adjustment (Qt-free)
 │   ├── occurrence/              # Word occurrence finding + whole-word rename (Qt-free)
 │   ├── redirect_manager/         # Output stream redirection
-│   ├── selection/               # Smart selection ranges (Qt-free)
+│   ├── selection/               # Smart selection ranges + surround (Qt-free)
 │   ├── session/                 # Multi-file session restore (Qt-free)
-│   ├── symbols/                  # Python symbol extraction + outline tree (ast-based)
+│   ├── shortcuts/               # The keyboard shortcut table (Qt-free)
+│   ├── snippets/                # Snippet expansion and tab stops (Qt-free)
+│   ├── status/                  # Status bar text (Qt-free)
+│   ├── symbols/                  # Symbol extraction: ast for Python, the server elsewhere
+│   ├── syntax/                  # Per-language highlighting rules (Qt-free)
+│   ├── test_runner/             # pytest output parsing (Qt-free)
 │   ├── text_cleanup/            # Trailing whitespace / newline cleanup (Qt-free)
 │   ├── text_stats/              # Line/word/char statistics (Qt-free)
+│   ├── theme/                   # Dark and light editor colours (Qt-free)
 │   └── venv_check/               # Virtual environment detection
 ├── __init__.py                   # Public API
 ├── __main__.py                   # CLI entry point
@@ -493,8 +539,9 @@ JEDITOR stores user settings in the `.jeditor/` directory:
 
 | File | Content |
 |---|---|
-| `user_setting.json` | General preferences (font, theme, recent files) |
-| `user_color_setting.json` | Syntax highlighting color scheme |
+| `user_setting.json` | General preferences (font, theme, language, recent files, open tabs, reassigned shortcuts) |
+| `user_color_setting.json` | Editor and output colors, including syntax highlighting |
+| `ai_config.json` | AI assistant settings — read at startup, never written; create it yourself |
 
 ---
 

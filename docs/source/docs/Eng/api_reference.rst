@@ -140,22 +140,40 @@ Multi-Language
 language_wrapper
 ^^^^^^^^^^^^^^^^^
 
-A function that returns the translated string for a given key, based on the current language.
+The single ``LanguageWrapper`` instance holding the current language and its dictionary.
 
 .. code-block:: python
 
    from je_editor import language_wrapper
 
-   label = language_wrapper("file_menu_label")  # Returns "File" or translated equivalent
+   label = language_wrapper.language_word_dict.get("file_menu_label")  # "File", or its translation
+
+   language_wrapper.available_languages()          # ['English', 'Traditional_Chinese', ...]
+   language_wrapper.display_name("Japanese")       # '日本語'
+   language_wrapper.reset_language("Japanese")     # swap the dictionary
+
+``reset_language`` only swaps the dictionary. The **Language** menu follows it with
+``retranslate_ui(main_window, previous_words)``, which is what relabels the live
+interface — no restart is needed.
+
+A key a language has not translated falls back to English rather than to a blank, so a
+language can be registered before its dictionary is complete:
+
+.. code-block:: python
+
+   language_wrapper.register_language("Korean", {"file_menu_label": "파일"}, display_name="한국어")
 
 english_word_dict / traditional_chinese_word_dict
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Built-in translation dictionaries.
+Built-in translation dictionaries. Simplified Chinese and Japanese are available from
+their own modules.
 
 .. code-block:: python
 
    from je_editor import english_word_dict, traditional_chinese_word_dict
+   from je_editor.utils.multi_language.simplified_chinese import simplified_chinese_word_dict
+   from je_editor.utils.multi_language.japanese import japanese_word_dict
 
 Plugin API
 -----------

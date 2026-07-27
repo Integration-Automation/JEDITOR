@@ -58,7 +58,7 @@ JEditor 基於 PySide6（Qt for Python）打造，您可以透過自訂的 Qt �
 提示
 ^^^^^
 
-- 您的元件類別必須繼承自 ``QWidget``（或其子類別）
+- 您的元件類別必須繼承自 ``QWidget``\ （或其子類別）
 - 使用佈局（``QGridLayout``、``QVBoxLayout`` 等）實現響應式設計
 - 您可以透過公開 API 存取 JEditor 的內部元件
 - 可以多次呼叫 ``update()`` 或傳入包含多個項目的字典來註冊多個自訂分頁
