@@ -17,9 +17,24 @@ if TYPE_CHECKING:
     from je_editor.pyside_ui.main_ui.main_editor import EditorMain
 
 
+# 分支標籤的名字，換語言時用它找回那個標籤
+# The branch label's name, which a language change uses to find it again
+GIT_BRANCH_LABEL_NAME = "toolbar_git_branch_label"
+
+
 def _icon(widget: QWidget, std: QStyle.StandardPixmap) -> QIcon:
     """從 QStyle 取得內建圖示 / Get built-in icon from QStyle"""
     return widget.style().standardIcon(std)
+
+
+def git_branch_label_text() -> str:
+    """
+    分支標籤上的文字，含左右間距
+    The branch label's text, spacing and all.
+
+    :return: 標籤文字 / the label's text
+    """
+    return f"  {language_wrapper.language_word_dict.get('toolbar_git_branch')} "
 
 
 def build_toolbar(main_window: EditorMain) -> None:
@@ -83,7 +98,11 @@ def build_toolbar(main_window: EditorMain) -> None:
     toolbar.addSeparator()
 
     # ── Git branch ────────────────────────────────────────────
-    git_label = QLabel(f"  {lang('toolbar_git_branch')} ")
+    git_label = QLabel(git_branch_label_text())
+    # 換語言時要找回這個標籤：它的文字帶著間距，不是字典裡的原字
+    # Naming it lets a language change find it again: its text carries spacing
+    # and so is not the dictionary's own string
+    git_label.setObjectName(GIT_BRANCH_LABEL_NAME)
     toolbar.addWidget(git_label)
 
     branch_combo = QComboBox()

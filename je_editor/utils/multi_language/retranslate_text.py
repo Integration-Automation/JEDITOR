@@ -50,6 +50,63 @@ TITLE_KEYS = (
 )
 
 
+def menu_candidates(words: Dict[str, str]) -> tuple:
+    """
+    看起來像選單用的鍵
+    The keys that read as a menu's own wording.
+
+    選單的鍵多半帶著 ``_menu`` 或以 ``_label`` 結尾，欄位名稱、按鈕文字則不是。
+    同一個英文字常被好幾個鍵用到——``Run`` 同時是選單標題、主控台按鈕與工具列提
+    示，三者在中文並不同字——先看這一批，就不會被別處的鍵搶走。
+    A menu's keys mostly carry ``_menu`` or end in ``_label``, while column
+    headings and button captions do not. One English word is often used by
+    several keys -- ``Run`` is a menu title, a console button and a toolbar tip
+    at once, and the three differ in Chinese -- and looking here first keeps an
+    unrelated key from claiming it.
+
+    :param words: 目前的字典 / the dictionary in use
+    :return: 候選的鍵 / the candidate keys
+    """
+    return tuple(
+        key for key in words if "_menu" in key or key.endswith("_label"))
+
+
+def keys_in_family(words: Dict[str, str], family: str) -> tuple:
+    """
+    某個家族底下的鍵
+    The keys belonging to one family.
+
+    :param words: 目前的字典 / the dictionary in use
+    :param family: 家族名稱，例如 ``tab``；空字串代表不限 / the family, e.g.
+        ``tab``; an empty string means every key
+    :return: 該家族的鍵 / that family's keys
+    """
+    if not family:
+        return tuple(words)
+    return tuple(key for key in words if key.startswith(f"{family}_"))
+
+
+def family_of(key: Optional[str]) -> str:
+    """
+    取一個鍵的家族，也就是第一段
+    A key's family, which is its first segment.
+
+    子選單的項目與它所屬的選單同一個家族（``tab_menu_label`` 底下都是 ``tab_``），
+    因此知道上層是誰，就能把「分頁選單裡的 Editor」和「浮動視窗選單裡的 Editor」
+    分開——這兩個英文一樣，中文一個是「編輯器」一個不翻。
+    A submenu's items share the family of the menu holding them: everything under
+    ``tab_menu_label`` starts with ``tab_``. Knowing the parent therefore tells
+    the Tab menu's "Editor" from the Dock menu's, which read alike in English and
+    differ in Chinese, one being translated and the other not.
+
+    :param key: 鍵，可以是 ``None`` / the key, which may be ``None``
+    :return: 家族名稱，取不到時為空字串 / the family, or an empty string
+    """
+    if not key:
+        return ""
+    return key.split("_", 1)[0]
+
+
 def key_for_text(text: str, words: Dict[str, str],
                  candidates: Optional[Iterable[str]] = None) -> Optional[str]:
     """
