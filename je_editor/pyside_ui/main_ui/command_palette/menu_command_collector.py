@@ -6,6 +6,7 @@ from __future__ import annotations
 
 from PySide6.QtWidgets import QMenu, QMenuBar
 
+from je_editor.pyside_ui.main_ui.menu.submenu_map import submenus_of
 from je_editor.utils.command_palette.fuzzy_matcher import CommandEntry
 from je_editor.utils.logging.loggin_instance import jeditor_logger
 
@@ -46,19 +47,21 @@ def collect_menu_commands(menu_bar: QMenuBar | None) -> list[CommandEntry]:
         return []
     commands: list[CommandEntry] = []
     seen_menus: set[int] = set()
+    submenus = submenus_of(menu_bar)
     for action in menu_bar.actions():
-        submenu = action.menu()
+        submenu = submenus.get(action)
         if submenu is None:
             _append_action(commands, action, "")
             continue
-        _collect_from_menu(submenu, clean_action_text(action.text()), commands, seen_menus, 1)
+        _collect_from_menu(
+            submenu, clean_action_text(action.text()), commands, seen_menus, 1, submenus)
     jeditor_logger.info(f"menu_command_collector.py collect_menu_commands count: {len(commands)}")
     return commands
 
 
 def _collect_from_menu(
         menu: QMenu, prefix: str, commands: list[CommandEntry],
-        seen_menus: set[int], depth: int) -> None:
+        seen_menus: set[int], depth: int, submenus: dict) -> None:
     """遞迴蒐集單一選單下的動作 / Recursively collect actions under one menu."""
     if depth > MAX_MENU_DEPTH or len(commands) >= MAX_COMMANDS:
         return
@@ -75,11 +78,11 @@ def _collect_from_menu(
         title = clean_action_text(action.text())
         if not title:
             continue
-        submenu = action.menu()
+        submenu = submenus.get(action)
         if submenu is not None:
             _collect_from_menu(
                 submenu, f"{prefix}{PATH_SEPARATOR}{title}" if prefix else title,
-                commands, seen_menus, depth + 1)
+                commands, seen_menus, depth + 1, submenus)
             continue
         _append_action(commands, action, prefix)
         if len(commands) >= MAX_COMMANDS:
