@@ -97,8 +97,9 @@ Project Structure
 
 When JEditor starts, it creates a ``.jeditor/`` directory in the current working directory to store:
 
-- ``user_setting.json`` — UI preferences, font, language, recent files
+- ``user_setting.json`` — UI preferences, font, language, recent files, open tabs and any
+  reassigned shortcuts
 - ``user_color_setting.json`` — Color scheme for editor and output
-- ``ai_config.json`` — AI assistant configuration (if enabled)
 
-These files are created automatically on first launch.
+Both are created automatically on first launch. A third file, ``ai_config.json``, is read
+if you write it yourself; see :doc:`ai_assistant`.

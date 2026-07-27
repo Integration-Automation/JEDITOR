@@ -96,8 +96,9 @@ JEditor 會自動安裝以下依賴套件：
 
 JEditor 啟動時會在目前工作目錄下建立 ``.jeditor/`` 資料夾，用於儲存：
 
-- ``user_setting.json`` — UI 偏好設定、字型、語言、最近開啟的檔案
+- ``user_setting.json`` — UI 偏好設定、字型、語言、最近開啟的檔案、開啟中的分頁，以及
+  重新指派過的快捷鍵
 - ``user_color_setting.json`` — 編輯器與輸出的色彩配置
-- ``ai_config.json`` — AI 助手設定（如有啟用）
 
-這些檔案會在首次啟動時自動建立。
+這兩個檔案會在首次啟動時自動建立。第三個檔案 ``ai_config.json`` 需要您自行撰寫，編輯器
+只會讀取它；詳見 :doc:`ai_assistant`。
