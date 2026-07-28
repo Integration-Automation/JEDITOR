@@ -156,6 +156,22 @@ class TestCollectMenuCommands:
         assert "File > Open File" in paths
         assert "File > Recent > project.py" in paths
 
+    def test_the_menus_it_walked_are_still_usable_afterwards(self):
+        # Asking a QAction for its menu hands that menu to Python to reclaim, so
+        # collecting used to leave the caller's own menu references pointing at
+        # dead objects -- the window opens its command palette once and then
+        # cannot touch its File menu again.
+        menu_bar = QMenuBar()
+        file_menu = menu_bar.addMenu("File")
+        recent = file_menu.addMenu("Recent")
+        recent.addAction(QAction("project.py", menu_bar))
+
+        collect_menu_commands(menu_bar)
+
+        assert file_menu.title() == "File"
+        assert recent.title() == "Recent"
+        assert [action.text() for action in recent.actions()] == ["project.py"]
+
     def test_submenu_itself_is_not_a_command(self):
         menu_bar = QMenuBar()
         file_menu = menu_bar.addMenu("File")
