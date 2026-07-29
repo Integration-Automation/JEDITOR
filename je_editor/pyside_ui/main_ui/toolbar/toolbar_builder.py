@@ -276,7 +276,7 @@ def _git_output(*arguments: str) -> str:
     # A fixed "git" binary plus an argument list, with no shell involved. Finding
     # git on PATH is deliberate -- where it is installed is the user's business --
     # and it is how git_cli.py calls it too.
-    result = subprocess.run(  # nosemgrep  # noqa: S603,S607  # nosec B603,B607
+    result = subprocess.run(  # nosemgrep  # noqa: S603,S607  # nosec B603 B607
         ["git", *arguments],
         cwd=os.getcwd(),
         stdout=subprocess.PIPE,
