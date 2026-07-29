@@ -187,11 +187,13 @@ class TestTheBranchScan:
 
     def test_a_detached_head_reports_a_sha(self, repository):
         import subprocess
-        sha = subprocess.run(
+        # Fixed arguments against the throw-away repository above; no shell.
+        sha = subprocess.run(  # nosemgrep  # noqa: S603,S607  # nosec B603,B607
             ["git", "rev-parse", "--short=8", "HEAD"], cwd=repository,
             capture_output=True, text=True, check=True).stdout.strip()
-        subprocess.run(["git", "checkout", "--detach", "HEAD"], cwd=repository,
-                       capture_output=True, check=True)
+        subprocess.run(  # nosemgrep  # noqa: S603,S607  # nosec B603,B607
+            ["git", "checkout", "--detach", "HEAD"], cwd=repository,
+            capture_output=True, check=True)
         _heads, current = _scan_result()
         assert current == sha
 

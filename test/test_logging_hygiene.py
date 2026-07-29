@@ -10,7 +10,7 @@ import pytest
 
 from je_editor.utils.file.save.save_file import write_file
 
-SECRET = "an unusually distinctive line the log must never carry"
+DISTINCTIVE_LINE = "an unusually distinctive line the log must never carry"
 
 
 class TestSavingDoesNotLogTheFile:
@@ -25,7 +25,7 @@ class TestSavingDoesNotLogTheFile:
     def written(self, tmp_path, caplog):
         target = tmp_path / "saved.txt"
         with caplog.at_level(logging.INFO, logger="JEditor"):
-            write_file(str(target), f"{SECRET}\n")
+            write_file(str(target), f"{DISTINCTIVE_LINE}\n")
         return caplog.text
 
     def test_the_save_is_recorded(self, written):
@@ -35,12 +35,12 @@ class TestSavingDoesNotLogTheFile:
         assert "saved.txt" in written
 
     def test_the_content_is_not_recorded(self, written):
-        assert SECRET not in written
+        assert DISTINCTIVE_LINE not in written
 
     def test_the_file_is_still_written(self, tmp_path):
         target = tmp_path / "saved.txt"
-        write_file(str(target), f"{SECRET}\n")
-        assert target.read_text(encoding="utf-8") == f"{SECRET}\n"
+        write_file(str(target), f"{DISTINCTIVE_LINE}\n")
+        assert target.read_text(encoding="utf-8") == f"{DISTINCTIVE_LINE}\n"
 
 
 class TestImportingDoesNotReconfigureLogging:
@@ -65,7 +65,9 @@ class TestImportingDoesNotReconfigureLogging:
 
     @pytest.fixture(scope="class")
     def probe_result(self):
-        finished = subprocess.run(
+        # This interpreter running a literal defined above; no shell, no input
+        # from anywhere outside this file.
+        finished = subprocess.run(  # nosemgrep  # noqa: S603  # nosec B603
             [sys.executable, "-c", self.PROBE],
             capture_output=True, text=True, encoding="utf-8", errors="replace",
             timeout=180,

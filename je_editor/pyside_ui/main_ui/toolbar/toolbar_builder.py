@@ -271,9 +271,12 @@ def _git_output(*arguments: str) -> str:
     :return: git 的標準輸出 / what git wrote to stdout
     :raises RuntimeError: git 回傳非零時 / when git exits non-zero
     """
-    # 固定可執行檔 "git" 加引數清單，沒有經過 shell
-    # A fixed "git" binary plus an argument list; no shell involved
-    result = subprocess.run(  # nosemgrep  # noqa: S603  # nosec B603
+    # 固定可執行檔 "git" 加引數清單，沒有經過 shell；依 PATH 找 git 是刻意的，使用者
+    # 裝在哪裡由他自己決定，git_cli.py 也是這樣叫的
+    # A fixed "git" binary plus an argument list, with no shell involved. Finding
+    # git on PATH is deliberate -- where it is installed is the user's business --
+    # and it is how git_cli.py calls it too.
+    result = subprocess.run(  # nosemgrep  # noqa: S603,S607  # nosec B603,B607
         ["git", *arguments],
         cwd=os.getcwd(),
         stdout=subprocess.PIPE,
