@@ -98,14 +98,25 @@ class GitService:
         return data
 
     def show_diff_of_commit(self, commit_sha: str) -> str:
+        """
+        取得一個 commit 改了什麼
+        What a commit changed.
+
+        ``a.diff(b)`` 是「從 a 走到 b」，所以要拿 commit 做了什麼，得從它的上一個
+        commit diff 過來；反過來寫會把新增印成刪除。第一個 commit 沒有上一個，改
+        跟空樹比。
+        ``a.diff(b)`` reads as going from a to b, so what a commit did comes from
+        diffing its parent to it; the other way round prints additions as
+        deletions. The first commit has no parent, so it is compared to the empty
+        tree instead.
+
+        :param commit_sha: 要看的 commit / the commit to look at
+        :return: 這個 commit 的 patch / the commit's patch
+        """
         self._ensure_repo()
         commit = self.repo.commit(commit_sha)
-        parent = commit.parents[0] if commit.parents else None
-        if parent is None:
-            null_tree = self.repo.tree(NULL_TREE)
-            diffs = commit.diff(null_tree, create_patch=True)
-        else:
-            diffs = commit.diff(parent, create_patch=True)
+        before = commit.parents[0] if commit.parents else self.repo.tree(NULL_TREE)
+        diffs = before.diff(commit, create_patch=True)
         text = []
         for d in diffs:
             try:
