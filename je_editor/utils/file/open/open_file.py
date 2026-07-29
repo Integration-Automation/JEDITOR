@@ -92,7 +92,7 @@ def read_file(file_path: Optional[str]) -> list[Path | str] | None:
         # 捕捉檔案 IO 與編碼例外
         # Catch file IO and encoding exceptions
         jeditor_logger.error(f"Failed to read file {file_path}: {e}")
-        raise JEditorOpenFileException
+        raise JEditorOpenFileException from e
     finally:
         # 確保鎖一定會被釋放
         # Ensure the lock is always released

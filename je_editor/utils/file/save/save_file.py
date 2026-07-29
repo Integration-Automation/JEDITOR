@@ -69,13 +69,15 @@ def write_file(file_path: str, content: str) -> None:
        Finally, release the lock.
     """
 
-    # 記錄日誌，方便除錯與追蹤
-    # Log the file path and content for debugging and tracking
+    content = str(content)  # 確保內容為字串 / Ensure content is a string
+
+    # 只記路徑與長度。內容曾經整份寫進日誌，等於把使用者編輯的每個檔案都抄一份到
+    # JEditor.log 裡。
+    # The path and a length, nothing more. This used to log the content itself,
+    # which copied every file the user edited into JEditor.log.
     jeditor_logger.info("save_file.py write_file "
                         f"file_path: {file_path} "
-                        f"content: {content}")
-
-    content = str(content)  # 確保內容為字串 / Ensure content is a string
+                        f"length: {len(content)}")
 
     try:
         _file_write_lock.acquire()  # 嘗試鎖定資源 / Acquire the lock
@@ -88,7 +90,7 @@ def write_file(file_path: str, content: str) -> None:
         # 捕捉檔案 IO 例外
         # Catch file IO exceptions
         jeditor_logger.error(f"Failed to write file {file_path}: {e}")
-        raise JEditorSaveFileException
+        raise JEditorSaveFileException from e
     finally:
         # 確保鎖一定會被釋放
         # Ensure the lock is always released

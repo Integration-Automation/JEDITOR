@@ -1,9 +1,13 @@
 import logging
 from logging.handlers import RotatingFileHandler
 
-# 設定 root logger 的最低層級為 DEBUG
-# Set the root logger level to DEBUG
-logging.root.setLevel(logging.DEBUG)
+# root logger 不動。JEditor 會被別的程式嵌進去用，把 root 調成 DEBUG 等於替整個宿主
+# 程序決定了日誌層級；而這對自己也沒有用——下面的 logger 有自己的層級，記錄往上傳
+# 時只看各個 handler 的層級，不看 root 的。
+# The root logger is left alone. JEditor is embedded in other applications, so
+# putting root at DEBUG would decide the log level for the whole host process --
+# and it gains nothing here anyway: the logger below sets its own level, and
+# records travelling up are filtered by each handler's level, never by root's.
 
 # 建立一個名為 "JEditor" 的 logger
 # Create a logger named "JEditor"
