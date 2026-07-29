@@ -100,7 +100,13 @@ class _JediCompleteWorker(QObject):
             completions = script.complete(self._line, self._column)
             names = [c.name for c in completions]
             self.finished.emit(names)
-        except Exception:
+        except Exception as error:
+            # jedi 對半寫完的程式碼本來就常拋例外，補全給不出來就算了，不該打斷打字；
+            # 但一直補不出來的時候，日誌裡要有東西可看。
+            # jedi raises readily on half-written code. No completions is an
+            # acceptable answer and must not interrupt typing, but when they never
+            # arrive there has to be something in the log to look at.
+            jeditor_logger.debug(f"jedi completion failed: {error}")
             self.finished.emit([])
 
 

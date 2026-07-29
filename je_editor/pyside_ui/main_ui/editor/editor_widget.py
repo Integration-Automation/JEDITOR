@@ -428,7 +428,7 @@ class EditorWidget(QWidget):
                 message_box = QMessageBox(self)
                 message_box.setText(
                     language_wrapper.language_word_dict.get("python_format_checker_only_support_python_message"))
-                message_box.exec_()
+                message_box.exec()
 
     def dragEnterEvent(self, event: QDragEnterEvent) -> None:
         """

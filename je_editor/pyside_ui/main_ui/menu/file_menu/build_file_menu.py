@@ -227,7 +227,9 @@ def add_font_menu(ui_we_want_to_set: EditorMain) -> None:
                         f"ui_we_want_to_set: {ui_we_want_to_set}")
     ui_we_want_to_set.file_menu.font_menu = ui_we_want_to_set.file_menu.addMenu(
         language_wrapper.language_word_dict.get("file_menu_font_label"))
-    for family in QFontDatabase().families():
+    # Qt6 的 QFontDatabase 全是靜態方法，建立實體已標為淘汰
+    # Every QFontDatabase member is static in Qt6; constructing one is deprecated
+    for family in QFontDatabase.families():
         font_action = QAction(family, parent=ui_we_want_to_set.file_menu.font_menu)
         font_action.triggered.connect(lambda checked=False, action=font_action: set_font(ui_we_want_to_set, action))
         ui_we_want_to_set.file_menu.font_menu.addAction(font_action)

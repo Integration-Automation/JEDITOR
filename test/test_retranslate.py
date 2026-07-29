@@ -114,11 +114,9 @@ class TestNarrowingTheLookupToMenus:
 @pytest.fixture()
 def window(qapp, qtbot):
     """A window with the pieces retranslating touches."""
-    from PySide6.QtGui import QFontDatabase
     main_window = QMainWindow()
     qtbot.addWidget(main_window)
     main_window.menu = QMenuBar()
-    main_window.font_database = QFontDatabase()
     main_window.tab_widget = QTabWidget()
     main_window.setCentralWidget(main_window.tab_widget)
     main_window.encoding = "utf-8"
@@ -173,13 +171,11 @@ def full_window(window, english):
 @pytest.fixture()
 def window_factory(qtbot):
     """Make further bare windows, for comparing against a fresh build."""
-    from PySide6.QtGui import QFontDatabase
 
     def make() -> QMainWindow:
         main_window = QMainWindow()
         qtbot.addWidget(main_window)
         main_window.menu = QMenuBar()
-        main_window.font_database = QFontDatabase()
         main_window.tab_widget = QTabWidget()
         main_window.setCentralWidget(main_window.tab_widget)
         main_window.encoding = "utf-8"

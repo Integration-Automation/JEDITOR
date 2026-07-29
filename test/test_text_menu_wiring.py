@@ -4,7 +4,6 @@ from __future__ import annotations
 from unittest.mock import MagicMock, patch
 
 import pytest
-from PySide6.QtGui import QFontDatabase
 from PySide6.QtWidgets import QMainWindow, QMenuBar, QTabWidget
 
 # Every code_edit method name the Text menu dispatches to via _run_on_editor,
@@ -74,7 +73,6 @@ class TestTextMenuBuilds:
         from je_editor.pyside_ui.main_ui.menu.text_menu.build_text_menu import set_text_menu
         window = QMainWindow()
         window.menu = QMenuBar()
-        window.font_database = QFontDatabase()
         window.tab_widget = QTabWidget()
         set_text_menu(window)
         assert window.text_menu is not None

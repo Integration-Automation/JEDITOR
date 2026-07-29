@@ -349,7 +349,10 @@ class GitGui(QWidget):
             with open(abs_path, 'rb') as f:
                 chunk = f.read(sniff_bytes)
                 return b'\x00' in chunk
-        except Exception:
+        except OSError as error:
+            # 讀不到就當它不是二進位，讓後面的流程照常走
+            # Unreadable is treated as not binary, so the rest carries on as usual
+            jeditor_logger.debug(f"binary sniff skipped for {abs_path}: {error}")
             return False
 
     def _safe_set_diff_text(self, text: str) -> None:
