@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+import os
+import subprocess  # nosec B404 - 呼叫 git 子命令皆以引數清單送入，未使用 shell
 from typing import TYPE_CHECKING
 
-from PySide6.QtCore import Qt, QThread, QObject, Signal
+from PySide6.QtCore import Qt, QThread, Signal
 from PySide6.QtGui import QAction, QIcon
 from PySide6.QtWidgets import (
     QToolBar, QComboBox, QStyle, QLabel, QWidget, QMessageBox
@@ -245,68 +247,141 @@ def _open_go_to_symbol(main_window: EditorMain) -> None:
     open_go_to_symbol(main_window)
 
 
-class _GitBranchWorker(QObject):
-    """背景取得 Git 分支清單 / Fetch git branches in background"""
-    finished = Signal(list, str)  # (branch_names, current_branch_or_sha)
-    error = Signal(str)
+# git 子命令的等待上限（秒）；掛在無回應的網路磁碟上時不要跟著卡住
+# Seconds to wait for a git subcommand, so an unresponsive network share does
+# not take the thread with it
+_GIT_TIMEOUT_SECONDS = 20
+
+
+def _git_output(*arguments: str) -> str:
+    """
+    在工作目錄執行一個 git 子命令並取得輸出
+    Run one git subcommand in the working directory and return its output.
+
+    這裡直接叫 git，而不是用 GitPython。``Repo`` 會帶起常駐的 ``git cat-file`` 子程
+    序與執行緒區域狀態，在背景執行緒裡反覆開關並不安穩；工具列只要兩行文字，一次
+    問完就結束的子程序剛好夠用，也是 ``git_cli.py`` 的做法。
+    This calls git directly rather than going through GitPython. A ``Repo``
+    brings up long-lived ``git cat-file`` children and thread-local state, and
+    opening and closing that repeatedly from a background thread is not steady.
+    The toolbar needs two pieces of text, so a subprocess that answers once and
+    exits is enough -- and it is what ``git_cli.py`` already does.
+
+    :param arguments: git 的引數 / the arguments to give git
+    :return: git 的標準輸出 / what git wrote to stdout
+    :raises RuntimeError: git 回傳非零時 / when git exits non-zero
+    """
+    # 固定可執行檔 "git" 加引數清單，沒有經過 shell；依 PATH 找 git 是刻意的，使用者
+    # 裝在哪裡由他自己決定，git_cli.py 也是這樣叫的
+    # A fixed "git" binary plus an argument list, with no shell involved. Finding
+    # git on PATH is deliberate -- where it is installed is the user's business --
+    # and it is how git_cli.py calls it too.
+    result = subprocess.run(  # nosemgrep  # noqa: S603,S607  # nosec B603 B607
+        ["git", *arguments],
+        cwd=os.getcwd(),
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+        timeout=_GIT_TIMEOUT_SECONDS,
+        check=False,
+    )
+    if result.returncode != 0:
+        raise RuntimeError(result.stderr.strip() or f"git {' '.join(arguments)} failed")
+    return result.stdout
+
+
+class _GitBranchScan(QThread):
+    """
+    背景取得 Git 分支清單
+    Fetch the git branch list in the background.
+
+    這裡是 ``QThread`` 的子類，而不是搬到執行緒上的 worker。編輯器其他地方的背景工
+    作都是這樣寫的，而且執行的物件就是執行緒本身——不會有「worker 被回收了但執行緒
+    還在」或是從別的執行緒銷毀它的問題。
+    A ``QThread`` subclass rather than a worker moved onto a thread. Every other
+    background job in the editor is written this way, and the object doing the
+    work is the thread itself -- so there is no worker to be collected out from
+    under a running thread, or destroyed from the wrong one.
+    """
+
+    # 名字不能叫 finished：那是 QThread 自己的訊號
+    # Not named finished: QThread has a signal by that name of its own
+    scanned = Signal(list, str)  # (branch_names, current_branch_or_sha)
+
+    def __init__(self) -> None:
+        super().__init__()
+        # 具名執行緒：萬一它在執行中被銷毀，Qt 的中止訊息才說得出是哪一條
+        # A named thread, so Qt's abort message says which one if it is ever
+        # destroyed while still running
+        self.setObjectName("ToolbarGitBranchScan")
 
     def run(self) -> None:
         try:
-            from git import Repo
-            import os
-            repo = Repo(os.getcwd(), search_parent_directories=True)
-            if repo.bare:
-                self.finished.emit([], "")
-                return
-            heads = [h.name for h in repo.heads]
-            try:
-                current = repo.active_branch.name
-            except TypeError:
-                current = repo.head.commit.hexsha[:8]
-            self.finished.emit(heads, current)
-        except Exception:
-            self.finished.emit([], "")
+            heads = [
+                line.strip() for line in
+                _git_output("branch", "--format=%(refname:short)").splitlines()
+                if line.strip()
+            ]
+            # detached HEAD 時 --abbrev-ref 回的是字面上的 "HEAD"，這時改顯示 sha
+            # On a detached HEAD --abbrev-ref answers the literal "HEAD", so the
+            # short sha is shown instead
+            current = _git_output("rev-parse", "--abbrev-ref", "HEAD").strip()
+            if current == "HEAD":
+                current = _git_output("rev-parse", "--short=8", "HEAD").strip()
+        except (OSError, RuntimeError, subprocess.SubprocessError) as error:
+            # 沒有 repo、壞掉的 repo、讀不到的磁碟都會走到這裡。分支欄空著就好，不
+            # 需要打斷使用者，但完全不留紀錄的話就查不出來了。
+            # No repository, a broken one, an unreadable drive: all land here. An
+            # empty branch box is a fine outcome and not worth interrupting anyone
+            # over, but leaving no trace at all makes it impossible to look into.
+            jeditor_logger.warning(f"Toolbar git branch scan failed: {error}")
+            self.scanned.emit([], "")
+            return
+        self.scanned.emit(heads, current)
 
 
-class _GitCheckoutWorker(QObject):
-    """背景執行 Git checkout / Run git checkout in background"""
-    finished = Signal()
-    error = Signal(str)
+class _GitCheckout(QThread):
+    """背景執行 Git checkout / Run git checkout in the background"""
+
+    checked_out = Signal()
+    failed = Signal(str)
 
     def __init__(self, target: str) -> None:
         super().__init__()
+        self.setObjectName("ToolbarGitCheckout")
         self._target = target
 
     def run(self) -> None:
         try:
-            from git import Repo
-            import os
-            repo = Repo(os.getcwd(), search_parent_directories=True)
-            repo.git.checkout(self._target)
-            self.finished.emit()
-        except Exception as e:
-            self.error.emit(str(e))
+            _git_output("checkout", self._target)
+        except (OSError, RuntimeError, subprocess.SubprocessError) as error:
+            self.failed.emit(str(error))
+            return
+        self.checked_out.emit()
 
 
 # 保持背景執行緒的引用，避免垃圾回收 / Keep thread references to prevent GC
-_bg_threads = []
+_bg_threads: list[QThread] = []
 
 
-def _run_in_background(worker: QObject, thread_parent: QObject) -> QThread:
-    """通用的背景執行緒啟動器 / Generic background thread runner"""
+def _run_in_background(thread: QThread) -> QThread:
+    """
+    記住一條背景執行緒並啟動它
+    Remember a background thread and start it.
+
+    引用一定要留著。沒有人抓著的話，Python 會在它還在跑的時候就回收掉，而銷毀一條
+    still-running 的 QThread 會讓 Qt 直接中止整個程序。
+    The reference has to be kept. With nobody holding it, Python collects it
+    while it is still running, and destroying a running QThread makes Qt abort
+    the process outright.
+
+    :param thread: 還沒啟動的執行緒 / the thread, not yet started
+    :return: 同一條執行緒 / that same thread
+    """
     global _bg_threads
-    thread = QThread(thread_parent)
-    # 具名執行緒：萬一它在執行中被銷毀，Qt 的中止訊息才說得出是哪一條
-    # A named thread, so Qt's abort message says which one if it is ever
-    # destroyed while still running
-    thread.setObjectName(f"Toolbar{type(worker).__name__}")
-    worker.moveToThread(thread)
-    thread.started.connect(worker.run)
-    worker.finished.connect(thread.quit)
-    if hasattr(worker, 'error'):
-        worker.error.connect(thread.quit)
-    thread.finished.connect(thread.deleteLater)
-    _bg_threads = [t for t in _bg_threads if t.isRunning()]
+    _bg_threads = [running for running in _bg_threads if running.isRunning()]
     _bg_threads.append(thread)
     thread.start()
     return thread
@@ -317,14 +392,13 @@ def stop_background_threads() -> int:
     等所有工具列的背景執行緒結束
     Wait for every toolbar background thread to finish.
 
-    這些執行緒掛在主視窗底下，視窗被銷毀時若還在跑，Qt 會直接讓程序中止
-    （``QThread: Destroyed while thread is still running``）。git 分支掃描在大的
-    或放在網路磁碟上的儲存庫要跑上一段時間，關閉時剛好還沒跑完並不罕見。
-    They hang off the main window, and Qt aborts the process outright
-    (``QThread: Destroyed while thread is still running``) if one is still going
-    when the window is destroyed. Scanning git branches takes a while on a large
-    repository or one on a network share, so still running at closing time is not
-    unusual.
+    還在跑的時候被銷毀，Qt 會直接讓程序中止（``QThread: Destroyed while thread is
+    still running``）。git 分支掃描在大的或放在網路磁碟上的儲存庫要跑上一段時間，
+    關閉時剛好還沒跑完並不罕見。
+    Destroyed while still running, they make Qt abort the process outright
+    (``QThread: Destroyed while thread is still running``). Scanning git branches
+    takes a while on a large repository or one on a network share, so still
+    running at closing time is not unusual.
 
     :return: 等了幾條執行緒 / how many threads were waited for
     """
@@ -343,11 +417,32 @@ def stop_background_threads() -> int:
     return waited
 
 
+def _a_branch_scan_is_running() -> bool:
+    """是否已經有一次分支掃描在跑 / Whether a branch scan is already going."""
+    return any(
+        isinstance(thread, _GitBranchScan) and thread.isRunning()
+        for thread in _bg_threads
+    )
+
+
 def _git_refresh_branches(main_window: EditorMain) -> None:
-    """重新載入 Git 分支清單 (背景執行) / Refresh git branch list in background"""
+    """
+    重新載入 Git 分支清單 (背景執行)
+    Refresh the git branch list in the background.
+
+    已經有一次在跑就跳過。這個函式在建立工具列時、切換分支之後、以及每次換語言
+    重建工具列時都會被呼叫，不擋的話一個大的儲存庫上會疊出好幾條同時掃描的執行緒，
+    而它們要的答案是一樣的。
+    A scan already going means this one is skipped. This runs when the toolbar is
+    built, after a checkout, and every time a language change rebuilds the
+    toolbar; unchecked, a large repository ends up with several scans at once, all
+    after the same answer.
+    """
+    if _a_branch_scan_is_running():
+        return
     combo: QComboBox = main_window.toolbar_branch_combo
 
-    worker = _GitBranchWorker()
+    scan = _GitBranchScan()
 
     def on_done(heads: list[str], current: str) -> None:
         combo.clear()
@@ -360,8 +455,8 @@ def _git_refresh_branches(main_window: EditorMain) -> None:
                 combo.setEditable(True)
                 combo.setEditText(current)
 
-    worker.finished.connect(on_done)
-    _run_in_background(worker, main_window)
+    scan.scanned.connect(on_done)
+    _run_in_background(scan)
 
 
 def _git_checkout(main_window: EditorMain) -> None:
@@ -371,7 +466,7 @@ def _git_checkout(main_window: EditorMain) -> None:
     if not target:
         return
 
-    worker = _GitCheckoutWorker(target)
+    checkout = _GitCheckout(target)
 
     def on_done() -> None:
         _git_refresh_branches(main_window)
@@ -385,6 +480,6 @@ def _git_checkout(main_window: EditorMain) -> None:
     def on_error(err: str) -> None:
         QMessageBox.critical(main_window, "Checkout Error", err)
 
-    worker.finished.connect(on_done)
-    worker.error.connect(on_error)
-    _run_in_background(worker, main_window)
+    checkout.checked_out.connect(on_done)
+    checkout.failed.connect(on_error)
+    _run_in_background(checkout)

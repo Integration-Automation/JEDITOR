@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from PySide6.QtGui import QAction
+from PySide6.QtGui import QAction, QFontDatabase
 from PySide6.QtWidgets import QMessageBox, QPlainTextEdit
 
 from je_editor.pyside_ui.main_ui.editor.editor_widget import EditorWidget
@@ -54,9 +54,11 @@ def set_text_menu(ui_we_want_to_set: EditorMain) -> None:
     ui_we_want_to_set.text_menu.font_menu = ui_we_want_to_set.text_menu.addMenu(
         language_wrapper.language_word_dict.get("text_menu_label_font"))
 
-    # 將系統支援的字型加入選單
-    # Add available system fonts into the menu
-    for family in ui_we_want_to_set.font_database.families():
+    # 將系統支援的字型加入選單。Qt6 的 QFontDatabase 全是靜態方法，建立實體已標為
+    # 淘汰，直接用類別呼叫即可。
+    # Add available system fonts into the menu. Every QFontDatabase member is
+    # static in Qt6 and constructing one is deprecated, so call it on the class.
+    for family in QFontDatabase.families():
         font_action = QAction(family, parent=ui_we_want_to_set.text_menu.font_menu)
         font_action.triggered.connect(
             lambda checked=False, action=font_action: set_font(ui_we_want_to_set, action))

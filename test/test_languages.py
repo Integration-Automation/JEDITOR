@@ -161,7 +161,6 @@ class TestChoosingAtStartup:
 
 class TestTheLanguageMenu:
     def test_it_lists_every_shipped_language(self, qapp, qtbot):
-        from PySide6.QtGui import QFontDatabase
         from PySide6.QtWidgets import QMainWindow, QMenuBar, QTabWidget
         from je_editor.pyside_ui.main_ui.menu.language_menu.build_language_server import (
             set_language_menu
@@ -169,7 +168,6 @@ class TestTheLanguageMenu:
         window = QMainWindow()
         qtbot.addWidget(window)
         window.menu = QMenuBar()
-        window.font_database = QFontDatabase()
         window.tab_widget = QTabWidget()
         set_language_menu(window)
         assert set(window.language_menu.language_actions) >= set(SHIPPED)

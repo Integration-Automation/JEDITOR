@@ -1,4 +1,3 @@
-import logging
 from pathlib import Path
 
 from PySide6.QtCore import QItemSelection, QTimer, QFileSystemWatcher, Qt
@@ -13,10 +12,6 @@ from je_editor.git_client.git_cli import GitCLI
 from je_editor.pyside_ui.git_ui.git_client.commit_table import CommitTable
 from je_editor.pyside_ui.git_ui.git_client.graph_view import CommitGraphView
 from je_editor.utils.multi_language.multi_language_wrapper import language_wrapper
-
-logging.basicConfig(level=logging.INFO)
-log = logging.getLogger(__name__)
-
 
 class GitTreeViewGUI(QWidget):
     """

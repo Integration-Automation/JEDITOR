@@ -11,7 +11,7 @@ import jedi.settings
 # 匯入 PySide6 (Qt for Python) 的核心模組
 # Import PySide6 core modules
 from PySide6.QtCore import QTimer, QEvent
-from PySide6.QtGui import QCloseEvent, QFontDatabase, QIcon, Qt, QTextCharFormat
+from PySide6.QtGui import QCloseEvent, QIcon, Qt, QTextCharFormat
 from PySide6.QtWidgets import QApplication, QMainWindow, QWidget, QTabWidget, QLabel, QMessageBox
 # 匯入 Qt Material 主題工具
 # Import Qt Material style tools
@@ -141,10 +141,6 @@ class EditorMain(QMainWindow, QtStyleTools):
         # 讀取使用者顏色設定
         # Read user color settings
         read_user_color_setting()
-
-        # 字型資料庫
-        # Font database
-        self.font_database = QFontDatabase()
 
         # 建立 TabWidget (多分頁編輯器)
         # Create TabWidget (multi-tab editor)
