@@ -2803,6 +2803,57 @@ class CodeEditor(QPlainTextEdit):
             self.setTextCursor(cursor)
         self.highlight_current_line()
 
+    def _handled_by_editing_keys(self, event: QKeyEvent, modifiers) -> bool:
+        """選取包夾、多重游標與修飾鍵動作 / Surround, extra carets and modifier actions."""
+        # 對選取範圍輸入成對字元時包住它，而不是取代掉
+        # Typing a pairing character over a selection wraps it instead of
+        # replacing it
+        if event.text() in SURROUND_PAIRS and self.textCursor().hasSelection():
+            if self.surround_selection(event.text()):
+                return True
+
+        if self._handle_multi_cursor_key(event):
+            return True
+
+        if modifiers & Qt.KeyboardModifier.ControlModifier and self._handle_ctrl_shortcuts(event):
+            return True
+
+        if modifiers & Qt.KeyboardModifier.AltModifier and self._handle_alt_shortcuts(event):
+            return True
+
+        return self._handle_tab_indent(event)
+
+    def _handled_by_popup_or_newline(self, event: QKeyEvent, key: int, modifiers) -> bool:
+        """補全視窗、Enter 與括號自動關閉 / The popup, Enter and bracket autoclose."""
+        # 補全視窗開啟時，攔截不該觸發的按鍵 / Intercept keys that should close completion popup
+        if self.completer.popup().isVisible() and key in self.skip_popup_behavior_list:
+            self.completer.popup().close()
+            event.ignore()
+            return True
+
+        # Shift+Enter → 忽略 (避免軟換行影響行號)
+        if modifiers & Qt.KeyboardModifier.ShiftModifier and key in (Qt.Key.Key_Enter, Qt.Key.Key_Return):
+            event.ignore()
+            return True
+
+        if key in (Qt.Key.Key_Enter, Qt.Key.Key_Return) and not modifiers:
+            self._handle_enter_autoindent(event)
+            return True
+
+        if key in self._BRACKET_PAIRS and not modifiers & Qt.KeyboardModifier.ControlModifier:
+            self._handle_bracket_autoclose(event)
+            self._maybe_show_signature(event.text())
+            return True
+
+        return False
+
+    def _maybe_start_completion(self, key: int) -> None:
+        """該補全的按鍵就重新排一次補全 / Queue completion when the key calls for it."""
+        if key in self.need_complete_list and self.completer is not None:
+            if self.completer.popup().isVisible():
+                self.completer.popup().close()
+            self._complete_timer.start()
+
     def keyPressEvent(self, event: QKeyEvent) -> None:
         """鍵盤事件處理 / Handle key press events (dispatches to helpers)."""
         key = event.key()
@@ -2812,53 +2863,16 @@ class CodeEditor(QPlainTextEdit):
         # While recording, note the keystroke before handling it as usual
         self.macro.record(int(key), int(modifiers.value), event.text())
 
-        # 對選取範圍輸入成對字元時包住它，而不是取代掉
-        # Typing a pairing character over a selection wraps it instead of
-        # replacing it
-        if event.text() in SURROUND_PAIRS and self.textCursor().hasSelection():
-            if self.surround_selection(event.text()):
-                return
-
-        if self._handle_multi_cursor_key(event):
+        if self._handled_by_editing_keys(event, modifiers):
             return
 
-        if modifiers & Qt.KeyboardModifier.ControlModifier and self._handle_ctrl_shortcuts(event):
-            return
-
-        if modifiers & Qt.KeyboardModifier.AltModifier and self._handle_alt_shortcuts(event):
-            return
-
-        if self._handle_tab_indent(event):
-            return
-
-        # 補全視窗開啟時，攔截不該觸發的按鍵 / Intercept keys that should close completion popup
-        if self.completer.popup().isVisible() and key in self.skip_popup_behavior_list:
-            self.completer.popup().close()
-            event.ignore()
-            return
-
-        # Shift+Enter → 忽略 (避免軟換行影響行號)
-        if modifiers & Qt.KeyboardModifier.ShiftModifier and key in (Qt.Key.Key_Enter, Qt.Key.Key_Return):
-            event.ignore()
-            return
-
-        if key in (Qt.Key.Key_Enter, Qt.Key.Key_Return) and not modifiers:
-            self._handle_enter_autoindent(event)
-            return
-
-        if key in self._BRACKET_PAIRS and not modifiers & Qt.KeyboardModifier.ControlModifier:
-            self._handle_bracket_autoclose(event)
-            self._maybe_show_signature(event.text())
+        if self._handled_by_popup_or_newline(event, key, modifiers):
             return
 
         super().keyPressEvent(event)
         self.highlight_current_line()
         self._maybe_show_signature(event.text())
-
-        if key in self.need_complete_list and self.completer is not None:
-            if self.completer.popup().isVisible():
-                self.completer.popup().close()
-            self._complete_timer.start()
+        self._maybe_start_completion(key)
 
     def build_context_menu(self) -> QMenu:
         """
