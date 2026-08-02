@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import TYPE_CHECKING, Union, List
+from typing import TYPE_CHECKING, List
 
 import jedi  # Python 自動補全與靜態分析工具
 from PySide6 import QtGui
@@ -165,7 +165,7 @@ _MULTI_CURSOR_SHIFT_KEYS = {
 }
 
 
-def _document_position(document: QTextDocument, line: int, column: int) -> Union[int, None]:
+def _document_position(document: QTextDocument, line: int, column: int) -> int | None:
     """
     把 1 起算的行列換成文件中的字元位置
     Turn a 1-based line and column into a character position in the document.
@@ -230,7 +230,7 @@ class CodeEditor(QPlainTextEdit):
     - 自動補全 (Autocomplete with Jedi)
     """
 
-    def __init__(self, main_window: Union[EditorWidget, FullEditorWidget]) -> None:
+    def __init__(self, main_window: EditorWidget | FullEditorWidget) -> None:
         jeditor_logger.info(f"Init CodeEditor main_window: {main_window}")
         super().__init__()
 
@@ -308,7 +308,7 @@ class CodeEditor(QPlainTextEdit):
         self.goto_line_action = self._add_shortcut_action("go_to_line", self.go_to_line)
 
         # 自動補全初始化
-        self.completer: Union[None, QCompleter] = None
+        self.completer: QCompleter | None = None
         self.set_complete([])
 
         # 自動補全 debounce 計時器 (300ms) / Autocomplete debounce timer
@@ -318,8 +318,8 @@ class CodeEditor(QPlainTextEdit):
         self._complete_timer.timeout.connect(self.complete)
 
         # 背景補全執行緒與 worker / Background completion thread and worker
-        self._complete_thread: Union[QThread, None] = None
-        self._complete_worker: Union[_JediCompleteWorker, None] = None
+        self._complete_thread: QThread | None = None
+        self._complete_worker: _JediCompleteWorker | None = None
 
         # 匹配括號高亮 / Matching bracket highlight
         self._bracket_pairs_chars = {'(': ')', ')': '(', '[': ']', ']': '[', '{': '}', '}': '{'}
@@ -332,7 +332,7 @@ class CodeEditor(QPlainTextEdit):
         # 可折疊標頭快取，捲動重繪時免去重複計算；文字變更時失效
         # Cache of foldable header lines so scroll repaints skip recomputation;
         # invalidated whenever the text changes
-        self._fold_header_cache: Union[set, None] = None
+        self._fold_header_cache: set | None = None
         self.textChanged.connect(self._on_text_changed_for_features)
         self._register_fold_bookmark_actions()
 
@@ -353,7 +353,7 @@ class CodeEditor(QPlainTextEdit):
 
         # 由檔案內容偵測的每檔縮排寬度（None 代表用全域設定）
         # Per-file detected indent width (None means use the global setting)
-        self._indent_size_override: Union[int, None] = None
+        self._indent_size_override: int | None = None
 
         # git 變更標記：基準在背景讀取，重算則在輸入停止後 debounce 執行
         # git change markers: the baseline loads in the background, and the
@@ -382,7 +382,7 @@ class CodeEditor(QPlainTextEdit):
         # 多重游標；欄選取拖曳的起點在按下 Alt 時記下
         # Extra carets; a column drag records its anchor when Alt is pressed
         self.multi_cursor_manager = MultiCursorManager(self)
-        self._column_anchor: Union[int, None] = None
+        self._column_anchor: int | None = None
         self._column_dragged = False
         self._register_multi_cursor_actions()
 
@@ -777,7 +777,7 @@ class CodeEditor(QPlainTextEdit):
         return self._go_to_change(
             self.diff_marker_manager.previous_change(self.textCursor().blockNumber()))
 
-    def _go_to_change(self, line: Union[int, None]) -> bool:
+    def _go_to_change(self, line: int | None) -> bool:
         """移動游標到指定變更行 / Move the caret to a changed line."""
         if line is None:
             return False
@@ -1092,7 +1092,7 @@ class CodeEditor(QPlainTextEdit):
 
     @staticmethod
     def _diagnostic_cursor(
-            document: QTextDocument, diagnostic) -> Union[QTextCursor, None]:
+            document: QTextDocument, diagnostic) -> QTextCursor | None:
         """
         取得診斷範圍的游標，範圍不存在時回傳 ``None``
         Return a cursor spanning a diagnostic, or ``None`` when it is out of range.
@@ -1196,7 +1196,7 @@ class CodeEditor(QPlainTextEdit):
         """
         return self._go_to_history_line(self.location_history.forward())
 
-    def _go_to_history_line(self, line: Union[int, None]) -> bool:
+    def _go_to_history_line(self, line: int | None) -> bool:
         """移動游標到歷史中的行，過程中暫停記錄 / Move to a history line without recording."""
         if line is None:
             return False
@@ -1534,7 +1534,7 @@ class CodeEditor(QPlainTextEdit):
             selection.format = occurrence_fmt
             selections.append(selection)
 
-    def _find_matching_bracket(self, text: str, pos: int, char: str) -> Union[int, None]:
+    def _find_matching_bracket(self, text: str, pos: int, char: str) -> int | None:
         """
         找到匹配的括號位置
         Find position of matching bracket

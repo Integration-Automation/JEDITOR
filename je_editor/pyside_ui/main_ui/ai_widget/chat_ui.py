@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import TYPE_CHECKING, Union
+from typing import TYPE_CHECKING
 
 from PySide6.QtCore import Qt, QTimer
 from PySide6.QtGui import QFontDatabase
@@ -71,7 +71,7 @@ class ChatUI(QWidget):
 
         # ---------------- Variables 變數 ----------------
         self.ai_config: AIConfig = ai_config  # AI 設定物件 / AI config object
-        self.lang_chain_interface: Union[LangChainInterface, None] = None  # LangChain 介面 / LangChain interface
+        self.lang_chain_interface: LangChainInterface | None = None  # LangChain 介面 / LangChain interface
         self.set_ai_config_dialog = None  # 設定對話框 / Config dialog
 
         # ---------------- Timer 計時器 ----------------

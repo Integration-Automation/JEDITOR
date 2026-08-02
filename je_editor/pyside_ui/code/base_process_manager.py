@@ -3,7 +3,6 @@ from __future__ import annotations
 import queue
 import subprocess  # nosec B404 - 管理器僅持有外部子程序物件，呼叫端以引數清單啟動
 from threading import Thread
-from typing import Union
 
 from PySide6.QtCore import QTimer
 from PySide6.QtGui import QTextCharFormat
@@ -22,17 +21,17 @@ class BaseProcessManager:
 
     def __init__(
             self,
-            main_window: Union[QWidget, None] = None,
+            main_window: QWidget | None = None,
             encoding: str = "utf-8",
             buffer_size: int = 1024,
     ) -> None:
-        self.read_program_error_output_from_thread: Union[Thread, None] = None
-        self.read_program_output_from_thread: Union[Thread, None] = None
+        self.read_program_error_output_from_thread: Thread | None = None
+        self.read_program_output_from_thread: Thread | None = None
         self.main_window = main_window
-        self.code_result: Union[QTextEdit, None] = None
-        self.timer: Union[QTimer, None] = None
+        self.code_result: QTextEdit | None = None
+        self.timer: QTimer | None = None
         self._still_running: bool = True
-        self.process: Union[subprocess.Popen, None] = None
+        self.process: subprocess.Popen | None = None
         self.run_output_queue: queue.Queue = queue.Queue()
         self.run_error_queue: queue.Queue = queue.Queue()
         self.program_encoding: str = encoding

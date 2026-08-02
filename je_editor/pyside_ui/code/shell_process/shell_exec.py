@@ -4,7 +4,7 @@ import os
 import subprocess  # nosec B404 - 以引數清單呼叫，且 shell=True 僅用於使用者自行輸入的 shell 指令
 import sys
 from pathlib import Path
-from typing import Union, Callable
+from typing import Callable
 
 from PySide6.QtGui import QTextCharFormat
 from PySide6.QtWidgets import QTextEdit
@@ -22,10 +22,10 @@ from je_editor.utils.venv_check.check_venv import check_and_choose_venv
 class ShellManager(BaseProcessManager):
     def __init__(
             self,
-            main_window: Union[EditorWidget, None] = None,
+            main_window: EditorWidget | None = None,
             shell_encoding: str = "utf-8",
             program_buffer: int = 1024,
-            after_done_function: Union[None, Callable] = None
+            after_done_function: Callable | None = None
     ) -> None:
         jeditor_logger.info(f"Init ShellManager "
                             f"main_window: {main_window} "
@@ -69,7 +69,7 @@ class ShellManager(BaseProcessManager):
         else:
             raise JEditorException(je_editor_init_error)
 
-    def exec_shell(self, shell_command: Union[str, list]) -> None:
+    def exec_shell(self, shell_command: str | list) -> None:
         """
         執行 shell 指令
         Execute shell command
