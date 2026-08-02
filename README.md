@@ -1,7 +1,7 @@
 # JEDITOR
 
 <p align="center">
-  <img src="docs/source/docs/Eng/image/JEditor.png" alt="JEDITOR Logo" width="200"/>
+  <img src="image/JEditor.png" alt="JEDITOR Logo" width="180"/>
 </p>
 
 <p align="center">
@@ -31,28 +31,31 @@
   <a href="README/README_zh-CN.md">简体中文</a>
 </p>
 
+<p align="center">
+  <img src="image/screenshot-main-window.png" alt="JEDITOR main window"/>
+</p>
+
 ---
 
 ## Table of Contents
 
 - [Introduction](#introduction)
+- [Feature Tour](#feature-tour)
+  - [Run your code and read the output](#run-your-code-and-read-the-output)
+  - [Find anything without leaving the keyboard](#find-anything-without-leaving-the-keyboard)
+  - [Linting as you type](#linting-as-you-type)
+  - [Navigate the file you are in](#navigate-the-file-you-are-in)
+  - [Run the tests and land on the failure](#run-the-tests-and-land-on-the-failure)
+  - [Git, from the gutter to the whole repository](#git-from-the-gutter-to-the-whole-repository)
+  - [Search and replace across the project](#search-and-replace-across-the-project)
+  - [Read more of the file at once](#read-more-of-the-file-at-once)
+  - [A terminal and a browser in the same window](#a-terminal-and-a-browser-in-the-same-window)
+  - [Make it yours](#make-it-yours)
 - [Key Features](#key-features)
-- [Screenshots](#screenshots)
 - [System Requirements](#system-requirements)
 - [Installation](#installation)
 - [Quick Start](#quick-start)
 - [Feature Details](#feature-details)
-  - [Code Editing](#code-editing)
-  - [Code Execution & Debugging](#code-execution--debugging)
-  - [Code Quality & Formatting](#code-quality--formatting)
-  - [File Operations](#file-operations)
-  - [Git Integration](#git-integration)
-  - [AI Assistant](#ai-assistant)
-  - [Console & REPL](#console--repl)
-  - [Embedded Browser](#embedded-browser)
-  - [Plugin System](#plugin-system)
-  - [Theming & Customization](#theming--customization)
-  - [Multi-Language UI](#multi-language-ui)
 - [Keyboard Shortcuts](#keyboard-shortcuts)
 - [Project Architecture](#project-architecture)
 - [Plugin Development](#plugin-development)
@@ -65,9 +68,171 @@
 
 ## Introduction
 
-JEDITOR is a complete rewrite of the original JEditor project, rebuilt from the ground up with a focus on **speed**, **usability**, and **extensibility**. Powered by **PySide6** (Qt for Python), it delivers a modern desktop editing experience with rich features including syntax highlighting, auto-completion, integrated Git client, AI assistant, embedded browser, IPython console, and a powerful plugin system.
+JEDITOR is a complete rewrite of the original JEditor project, rebuilt from the ground up with a
+focus on **speed**, **usability**, and **extensibility**. Powered by **PySide6** (Qt for Python), it
+delivers a modern desktop editing experience with syntax highlighting, auto-completion, an integrated
+Git client, an AI assistant, an embedded browser, an IPython console, and a plugin system.
 
-JEDITOR achieves up to **1000% faster performance** compared to the original JEditor while providing a significantly richer feature set.
+JEDITOR achieves up to **1000% faster performance** compared to the original JEditor while providing
+a significantly richer feature set.
+
+> Every screenshot below is a capture of the running application, not a mockup.
+
+---
+
+## Feature Tour
+
+### Run your code and read the output
+
+Press `F5` and the current file runs with the interpreter you selected; stdout and stderr stream back
+into the **Code Result** pane as they arrive, with errors in red. `Shift+F5` stops it, and the
+Debugger, Terminal, Variable Inspector and Git panes sit beside it as tabs.
+
+<p align="center">
+  <img src="image/screenshot-run-output.png" alt="Running a Python file with live output"/>
+</p>
+
+### Find anything without leaving the keyboard
+
+`Ctrl+Shift+A` fuzzy-searches every menu command by name or menu path, ranked by word boundaries,
+consecutive characters and prefixes, and shows each command's own shortcut on the right.
+
+<p align="center">
+  <img src="image/screenshot-command-palette.png" alt="Command palette" width="760"/>
+</p>
+
+`Ctrl+P` does the same for files. Indexing runs on a background thread, skipping VCS, cache,
+virtualenv and build directories along with binary file types; typing `>` at the start switches the
+same picker back into command mode.
+
+<p align="center">
+  <img src="image/screenshot-quick-open.png" alt="Quick open file picker" width="760"/>
+</p>
+
+### Linting as you type
+
+`ruff` runs on the **buffer** rather than the file on disk, on a worker thread once typing pauses, so
+unsaved edits are covered and a stale result from a superseded run is discarded. Findings are
+underlined in place and listed in the Problems panel, where **Apply Fixes** applies everything ruff
+can fix by itself.
+
+<p align="center">
+  <img src="image/screenshot-problems-panel.png" alt="Problems panel listing ruff diagnostics"/>
+</p>
+
+<p align="center">
+  <img src="image/screenshot-lint-inline.png" alt="Diagnostics underlined in the editor"/>
+</p>
+
+### Navigate the file you are in
+
+The Outline panel lists the current file's classes, methods, functions and module variables. Python
+is parsed with `ast`, so no code runs; other languages are asked of their language server, which
+means a TypeScript or Rust file gets an outline too.
+
+<p align="center">
+  <img src="image/screenshot-outline-panel.png" alt="Document outline panel" width="520"/>
+</p>
+
+The TODO panel scans the whole project for `TODO`, `FIXME`, `HACK`, `XXX`, `BUG`, `NOTE` and
+`OPTIMIZE` comments across Python, C-like, HTML, SQL and other comment styles. Tags are only reported
+when they follow a comment marker, so ordinary strings are never misreported.
+
+<p align="center">
+  <img src="image/screenshot-todo-panel.png" alt="TODO panel"/>
+</p>
+
+### Run the tests and land on the failure
+
+Run pytest from a panel and read the results with failures first. Selecting a failing test shows its
+traceback below the list, double-clicking opens that test at the failing line, and you can re-run
+everything, only the selection, or only what failed last time. Ticking **With coverage** adds the
+total beside the summary.
+
+<p align="center">
+  <img src="image/screenshot-test-panel.png" alt="Test panel showing a failing test and its traceback"/>
+</p>
+
+### Git, from the gutter to the whole repository
+
+The gutter shows how the file differs from its last commit — green for added lines, orange for
+modified, a thin red line where lines were deleted. `F7` / `Shift+F7` jump between changes,
+`Ctrl+Alt+Z` reverts the one under the caret in a single undo step, and the right-click menu stages
+just that change. `Ctrl+Alt+B` toggles inline blame. The committed version is read on a background
+thread and the comparison is a pure in-memory diff, so editing never waits on git.
+
+The full client handles branches, staging, commits, stash, conflicts, clone and push:
+
+<p align="center">
+  <img src="image/screenshot-git-panel.png" alt="Git client panel"/>
+</p>
+
+Any change can be opened as a side-by-side comparison, against `HEAD` or against what is staged:
+
+<p align="center">
+  <img src="image/screenshot-diff-side-by-side.png" alt="Side-by-side diff viewer"/>
+</p>
+
+### Search and replace across the project
+
+Search the current file, a folder, or the whole project, with regex and case options. Long searches
+run on a worker thread so the window stays responsive, and double-clicking a hit opens that file at
+that line.
+
+<p align="center">
+  <img src="image/screenshot-search-replace.png" alt="Search and replace dialog" width="900"/>
+</p>
+
+### Read more of the file at once
+
+`Ctrl+Alt+M` opens a minimap of the whole file, drawn as bars following each line's length and
+indentation, with marks for lint diagnostics, git changes and search hits. `Ctrl+Alt+\` splits the
+view: both halves share one document, so an edit on either side appears in the other at once, while
+scrolling and the caret stay independent.
+
+<p align="center">
+  <img src="image/screenshot-minimap-split-view.png" alt="Minimap and split view"/>
+</p>
+
+### A terminal and a browser in the same window
+
+The Terminal tab is a real interactive shell (cmd, PowerShell, bash or sh) with command history and
+its own working directory.
+
+<p align="center">
+  <img src="image/screenshot-terminal.png" alt="Embedded terminal"/>
+</p>
+
+The browser tab keeps documentation and Stack Overflow one click away, with tabs, an address bar and
+in-page search.
+
+<p align="center">
+  <img src="image/screenshot-browser.png" alt="Embedded web browser"/>
+</p>
+
+### Make it yours
+
+Every command's keys are listed in one editable table. Two commands claiming the same keys cannot be
+saved, because Qt runs neither of them when that happens; a change takes effect immediately, and only
+what differs from a default is stored.
+
+<p align="center">
+  <img src="image/screenshot-shortcut-settings.png" alt="Keyboard shortcut settings" width="760"/>
+</p>
+
+Snippets use the usual `$1` / `${2:default}` / `$0` notation, with per-language sets on top of the
+shared ones, edited from **Tab > Edit Snippets** rather than by hand.
+
+<p align="center">
+  <img src="image/screenshot-snippet-editor.png" alt="Snippet editor" width="760"/>
+</p>
+
+Themes come from Qt Material, and the editor's own colours follow whichever one you pick — a light
+window never leaves you with dark-theme syntax colours.
+
+<p align="center">
+  <img src="image/screenshot-light-theme.png" alt="JEDITOR with a light theme"/>
+</p>
 
 ---
 
@@ -87,14 +252,6 @@ JEDITOR achieves up to **1000% faster performance** compared to the original JEd
 | **UI** | Dark/light themes (Qt Material) with matching editor colours, configurable keyboard shortcuts, font customization, dockable panels, system tray, toolbar, status bar |
 | **i18n** | English, Traditional Chinese, Simplified Chinese, Japanese; follows the system language, switches without restarting, extensible via plugins |
 | **Files** | Auto-save, multi-encoding support (UTF-8, GBK, Latin-1, etc.), recent files, multi-file session restore |
-
----
-
-## Screenshots
-
-<p align="center">
-  <img src="docs/source/docs/Eng/image/JEditor.png" alt="JEDITOR Screenshot"/>
-</p>
 
 ---
 
@@ -128,7 +285,7 @@ pip install .
 
 ### Dependencies
 
-Core dependencies are automatically installed:
+Core dependencies are installed automatically:
 
 | Package | Purpose |
 |---|---|
@@ -161,7 +318,7 @@ from je_editor import start_editor
 start_editor()
 ```
 
-The editor launches in a maximized window with a dark amber theme by default.
+The editor launches maximized with a dark amber theme by default.
 
 ---
 
@@ -190,7 +347,6 @@ The editor launches in a maximized window with a dark amber theme by default.
 - **Occurrence Highlighting** -- Placing the caret on an identifier highlights every other whole-word occurrence of it in the file. Keywords and single characters are ignored, and the scan is skipped on very large files to keep caret movement instant.
 - **Line Operations** -- Delete the current line or selection (`Ctrl+Shift+D`), sort selected lines (`Ctrl+Alt+S`), join selected lines into one (`Ctrl+Shift+J`), and (from the Text menu) natural sort, remove duplicate lines, remove blank lines, reverse line order, or align lines on a delimiter (e.g. `=`). Each is a single undo step.
 - **Duplicate** (`Ctrl+D`) -- Duplicates the selection when there is one (selecting the new copy), or the whole line when there isn't.
-- **Case Conversion** (Text menu) -- Uppercase or lowercase the current selection, keeping it selected.
 - **Smart Selection** -- Expand the selection outward through word → line → enclosing indented blocks → whole file (`Ctrl+Alt+Right`), and shrink it back (`Ctrl+Alt+Left`). Shrinking only retraces expansions, and a manual selection change resets the history.
 - **Increment / Decrement Number** -- Bump the integer under the caret up or down (`Ctrl+Alt+Up` / `Ctrl+Alt+Down`), handling negative signs and growing widths.
 - **Rename in File** (`F2`) -- Rename every whole-word occurrence of the identifier under the caret across the file as a single undo step. Word boundaries protect partial matches (renaming `val` never touches `value`).
@@ -209,7 +365,7 @@ The editor launches in a maximized window with a dark amber theme by default.
 ### Code Execution & Debugging
 
 - **Run Python scripts** (F5) -- Execute the current file with real-time output streaming.
-- **Debug mode** (F9) -- Launch the Python debugger for step-through debugging.
+- **Debug mode** (F9) -- Launch the Python debugger for step-through debugging, with breakpoints toggled from the gutter (`Ctrl+F9`).
 - **Shell commands** -- Execute arbitrary shell/terminal commands from within the editor.
 - **Virtual environment detection** -- Automatically detects and activates Python virtual environments.
 - **Process management** -- Stop individual or all running processes.
@@ -238,22 +394,18 @@ The editor launches in a maximized window with a dark amber theme by default.
 
 ### Git Integration
 
-JEDITOR includes a full-featured Git client:
-
 - **Branch management** -- List, switch, and checkout branches from the toolbar.
-- **Commit history** -- View commit metadata (author, date, message) in a table view.
-- **Side-by-side diff viewer** -- Color-highlighted code comparison with line numbers.
-- **Multi-file diff** -- Compare changes across multiple files.
-- **Staging** -- Stage and unstage individual file changes, or one change at a time from the editor's gutter.
+- **Commit history** -- View commit metadata (author, date, message) in a table, with a lane-coloured commit graph.
+- **Side-by-side diff viewer** -- Colour-highlighted comparison with line numbers, against `HEAD` or the index.
+- **Multi-file diff** -- Compare changes across multiple files, one tab per file.
+- **Staging** -- Stage and unstage whole files, or one change at a time from the editor's gutter.
 - **Stash** -- Put the current changes away, list what is stashed, and take one back.
 - **Conflict resolution** -- List the files left in conflict after a merge and settle one by keeping either side.
-- **Audit logging** -- All Git operations are logged for tracking and compliance.
+- **Audit logging** -- Git operations are logged for tracking and compliance.
 
 ### AI Assistant
 
-Integrated AI assistant powered by OpenAI and LangChain:
-
-- **GPT-3.5 / GPT-4 support** -- Connect to OpenAI's language models.
+- **OpenAI models via LangChain** -- Connect to OpenAI's language models.
 - **Interactive chat widget** -- Conversational AI panel within the editor.
 - **Configurable models** -- Set custom API keys, endpoints, model names, and system prompts.
 - **Async messaging** -- Non-blocking AI interaction using a message queue.
@@ -274,8 +426,6 @@ Integrated AI assistant powered by OpenAI and LangChain:
 
 ### Plugin System
 
-JEDITOR supports a modular plugin architecture with four plugin types:
-
 | Type | Purpose |
 |---|---|
 | Programming Language | Add syntax highlighting for new languages |
@@ -283,15 +433,16 @@ JEDITOR supports a modular plugin architecture with four plugin types:
 | Run Configuration | Define custom execution environments |
 | Plugin Metadata | Provide plugin version and author info |
 
-Plugins are automatically discovered from the `jeditor_plugins/` directory. See the [Plugin Development](#plugin-development) section for details.
+Plugins are discovered automatically from the `jeditor_plugins/` directory, and can also be browsed
+and installed from within the editor. See [Plugin Development](#plugin-development).
 
 ### Theming & Customization
 
-- **Dark/Light themes** -- Qt Material themes with amber color scheme.
-- **Font customization** -- Change font family and size for the editor and UI.
+- **Dark/Light themes** -- Qt Material themes; the editor's own colours follow the window style.
+- **Font customization** -- Change font family and size for the editor and UI independently.
 - **Dockable panels** -- Rearrange the UI layout by docking/undocking panels.
 - **System tray** -- Minimize the editor to the system tray.
-- **Toolbar** -- JetBrains-style quick action buttons for common operations.
+- **Toolbar** -- JetBrains-style quick action buttons, including the current Git branch.
 
 ### Multi-Language UI
 
@@ -362,8 +513,8 @@ Plugins are automatically discovered from the `jeditor_plugins/` directory. See 
 | `F10` / `F11` / `Shift+F11` | Debugger: step over / into / out |
 | `Up/Down` | Command history (console) |
 
-Every shortcut above can be reassigned from **Style > Keyboard Shortcuts**. The keys
-below are handled by the editing area itself, so they are fixed:
+Every shortcut above can be reassigned from **Style > Keyboard Shortcuts**. The keys below are
+handled by the editing area itself, so they are fixed:
 
 | Shortcut | Action |
 |---|---|
@@ -381,112 +532,34 @@ below are handled by the editing area itself, so they are fixed:
 
 ```
 je_editor/
-├── pyside_ui/                    # GUI components (PySide6)
-│   ├── browser/                  # Embedded web browser
-│   ├── code/                     # Core code editing
-│   │   ├── auto_save/            # Automatic file saving
-│   │   ├── bookmark/            # Bookmark manager (QTextCursor-anchored)
-│   │   ├── code_format/          # YAPF & PEP8 formatting
-│   │   ├── breakpoint/          # Breakpoint markers
-│   │   ├── code_process/         # Program execution (ExecManager)
-│   │   ├── folding/             # Code folding manager
-│   │   ├── git_diff/            # Gutter change markers and inline blame
-│   │   ├── lint/                # Lint diagnostics for one editor
-│   │   ├── lsp/                 # Language server client and shared sessions
-│   │   ├── minimap/             # Minimap widget
-│   │   ├── multi_cursor/        # Extra caret management
-│   │   ├── snippets/            # Snippet expansion
-│   │   ├── shell_process/        # Shell execution (ShellManager)
-│   │   ├── syntax/               # Syntax highlighting engine
-│   │   ├── plaintext_code_edit/  # Plain text editor widget
-│   │   ├── textedit_code_result/ # Output display widget
-│   │   └── variable_inspector/   # Variable debugging
-│   ├── dialog/                   # Dialog windows
-│   │   ├── ai_dialog/            # AI configuration dialog
-│   │   ├── file_dialog/          # File operation dialogs
-│   │   └── search_ui/            # Search & replace dialogs
-│   ├── git_ui/                   # Git interface
-│   │   ├── code_diff_compare/    # Side-by-side diff viewer
-│   │   └── git_client/           # Branch & commit UI
-│   └── main_ui/                  # Main editor window
-│       ├── ai_widget/            # AI chat panel
-│       ├── command_palette/      # Command palette, quick open, go to symbol
-│       ├── console_widget/       # Interactive console
-│       ├── dock/                 # Dockable widget management
-│       ├── editor/               # Tab-based editor
-│       ├── ipython_widget/       # Jupyter/IPython console
-│       ├── menu/                 # Menu bar system
-│       ├── outline_panel/       # Document outline (symbol tree)
-│       ├── plugin_browser/       # Plugin management UI
-│       ├── problems_panel/      # Lint diagnostics panel
-│       ├── retranslate.py       # Relabels the interface when the language changes
-│       ├── save_settings/        # Settings persistence, shortcuts and colours
-│       ├── system_tray/          # System tray integration
-│       ├── test_panel/          # pytest results, tracebacks and coverage
-│       ├── todo_panel/           # TODO/FIXME task panel
-│       └── toolbar/              # Toolbar actions
-├── code_scan/                    # Code scanning
-│   ├── ruff_thread.py            # Ruff linter (threaded)
-│   ├── watchdog_implement.py     # File system monitoring
-│   └── watchdog_thread.py        # Watchdog threading
-├── git_client/                   # Git backend
-│   ├── git_action.py             # Git operations with audit logging
-│   ├── git_cli.py                # Git CLI wrapper
-│   └── commit_graph.py           # Commit graph visualization
-├── plugins/                      # Plugin system
-│   └── plugin_loader.py          # Dynamic plugin loading
-├── utils/                        # Utilities
-│   ├── align/                   # Align lines on a delimiter (Qt-free)
-│   ├── bookmark/                # Bookmark navigation logic (Qt-free)
-│   ├── browser/                 # Embedded Chromium flags (Qt-free)
-│   ├── case_convert/            # Naming-style conversion (Qt-free)
-│   ├── code_folding/            # Fold regions, by indentation and by braces (Qt-free)
-│   ├── command_palette/          # Fuzzy matching & ranking (Qt-free)
-│   ├── debugger/                # pdb command building (Qt-free)
-│   ├── encode_decode/           # Base64/URL/HTML/JSON transforms (Qt-free)
-│   ├── encodings/                # Encoding detection
-│   ├── exception/                # Custom exceptions
-│   ├── file/                     # File I/O (open/save)
-│   ├── file_diff/               # Line status, hunks and unified diff (Qt-free)
-│   ├── file_scan/                # Shared ignore rules, file indexer, TODO scanner
-│   ├── format_code/             # yapf formatting (Qt-free)
-│   ├── indentation/             # Tab/space conversion + indent detection (Qt-free)
-│   ├── json_format/              # JSON formatting
-│   ├── line_ops/                # Line operation transforms (Qt-free)
-│   ├── lint/                    # Ruff diagnostic parsing (Qt-free)
-│   ├── logging/                  # Logging setup
-│   ├── lsp/                     # LSP framing, protocol and server registry (Qt-free)
-│   ├── macro/                   # Keystroke macro recording (Qt-free)
-│   ├── minimap/                 # Minimap geometry and sampling (Qt-free)
-│   ├── multi_cursor/            # Extra caret positions and edit shifting (Qt-free)
-│   ├── multi_language/           # i18n: English, Traditional and Simplified Chinese,
-│   │                            #   Japanese, locale matching, live relabelling
-│   ├── navigation/              # Cursor jump history (Qt-free)
-│   ├── number_ops/              # Number-under-caret adjustment (Qt-free)
-│   ├── occurrence/              # Word occurrence finding + whole-word rename (Qt-free)
-│   ├── redirect_manager/         # Output stream redirection
-│   ├── selection/               # Smart selection ranges + surround (Qt-free)
-│   ├── session/                 # Multi-file session restore (Qt-free)
-│   ├── shortcuts/               # The keyboard shortcut table (Qt-free)
-│   ├── snippets/                # Snippet expansion and tab stops (Qt-free)
-│   ├── status/                  # Status bar text (Qt-free)
-│   ├── symbols/                  # Symbol extraction: ast for Python, the server elsewhere
-│   ├── syntax/                  # Per-language highlighting rules (Qt-free)
-│   ├── test_runner/             # pytest output parsing (Qt-free)
-│   ├── text_cleanup/            # Trailing whitespace / newline cleanup (Qt-free)
-│   ├── text_stats/              # Line/word/char statistics (Qt-free)
-│   ├── theme/                   # Dark and light editor colours (Qt-free)
-│   └── venv_check/               # Virtual environment detection
-├── __init__.py                   # Public API
-├── __main__.py                   # CLI entry point
-└── start_editor.py               # Application launcher
+├── pyside_ui/          GUI layer (PySide6)
+│   ├── browser/        Embedded web browser
+│   ├── code/           The editor itself: syntax, folding, lint, LSP, git markers,
+│   │                   multiple carets, snippets, minimap, process execution
+│   ├── dialog/         Search & replace, shortcuts, snippets, file dialogs
+│   ├── git_ui/         Git client, commit graph, diff viewers
+│   └── main_ui/        Main window, menus, toolbar, panels, settings, AI, console
+├── code_scan/          Ruff execution and watchdog file monitoring
+├── git_client/         Git operations (GitPython + git CLI)
+├── plugins/            Plugin registry and loader
+└── utils/              Pure logic, no Qt: diffing, folding, fuzzy matching, symbols,
+                        LSP protocol, encodings, shortcuts, translations
 ```
+
+Features are built in two halves: the algorithm lives in `utils/` with no Qt import, and a thin
+manager in `pyside_ui/` wires it to widgets. Folding, for example, is `utils/code_folding/` plus
+`pyside_ui/code/folding/`. That is why most of the behaviour above can be tested without opening a
+window.
+
+A module-by-module reference — what every file does, the threading model, the global singletons and
+the settings layout — is kept in **[`architecture_explore.md`](architecture_explore.md)**.
 
 ---
 
 ## Plugin Development
 
-Create plugins in the `jeditor_plugins/` directory within your working directory. JEDITOR supports three types of plugins:
+Create plugins in a `jeditor_plugins/` directory inside your working directory. Each plugin is a
+Python module that registers what it provides on import.
 
 ### 1. Programming Language Plugin
 
@@ -498,7 +571,7 @@ from je_editor.plugins import register_programming_language
 register_programming_language(
     suffix=".rs",
     syntax_words={"keywords": ["fn", "let", "mut", "struct", "impl", "enum"]},
-    syntax_rules={"keyword_color": "#FF6600"}
+    syntax_rules={"keyword_color": "#FF6600"},
 )
 ```
 
@@ -512,49 +585,72 @@ from je_editor.plugins import register_natural_language
 register_natural_language(
     language_key="ja",
     display_name="Japanese",
-    word_dict={"file": "ファイル", "edit": "編集", "run": "実行"}
+    word_dict={"file": "ファイル", "edit": "編集", "run": "実行"},
 )
 ```
 
 ### 3. Run Configuration Plugin
 
-Define custom execution environments:
+Teach the **Run with...** menu how to run another language. Interpreted languages just need a
+compiler and its arguments:
 
 ```python
 from je_editor.plugins import register_plugin_run_config
 
-register_plugin_run_config(
-    name="Node.js",
-    run_config={"command": "node", "suffix": ".js"}
-)
+register_plugin_run_config({
+    "name": "Go",             # shown in the menu
+    "suffixes": (".go",),     # file types this applies to
+    "compiler": "go",         # executable
+    "args": ("run",),         # arguments before the file path
+})
+# runs: go run file.go
 ```
 
-For a comprehensive guide, see `PLUGIN_GUIDE.md`.
+Compiled languages add `compile_then_run` and the flag that names the output binary:
+
+```python
+register_plugin_run_config({
+    "name": "C (GCC)",
+    "suffixes": (".c",),
+    "compiler": "gcc",
+    "args": (),
+    "compile_then_run": True,
+    "output_flag": "-o",
+})
+# compiles: gcc file.c -o file    then runs the result
+```
+
+For the full guide, including plugin metadata and packaging, see
+[`PLUGIN_GUIDE.md`](PLUGIN_GUIDE.md).
 
 ---
 
 ## Configuration
 
-JEDITOR stores user settings in the `.jeditor/` directory:
+JEDITOR stores user settings in a `.jeditor/` directory inside the working directory:
 
 | File | Content |
 |---|---|
 | `user_setting.json` | General preferences (font, theme, language, recent files, open tabs, reassigned shortcuts) |
-| `user_color_setting.json` | Editor and output colors, including syntax highlighting |
+| `user_color_setting.json` | Editor and output colours, including syntax highlighting |
+| `snippets.json` | Your own snippets, merged over the built-in sets |
 | `ai_config.json` | AI assistant settings — read at startup, never written; create it yourself |
+
+Each file is backed up to `<name>.bak` before it is rewritten.
 
 ---
 
 ## Documentation
 
-Full documentation is available at:
-**[https://je-editor.readthedocs.io/en/latest/](https://je-editor.readthedocs.io/en/latest/)**
+Full documentation is available at
+**[https://je-editor.readthedocs.io/en/latest/](https://je-editor.readthedocs.io/en/latest/)**.
 
 ---
 
 ## Contributing
 
-Contributions are welcome! Please feel free to submit issues and pull requests on [GitHub](https://github.com/JE-Chen/je_editor).
+Contributions are welcome. Please feel free to submit issues and pull requests on
+[GitHub](https://github.com/JE-Chen/je_editor).
 
 ---
 
