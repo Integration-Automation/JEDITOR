@@ -45,5 +45,6 @@ class TestReadJson:
     def test_read_invalid_json_raises(self, tmp_path):
         path = tmp_path / "bad.json"
         path.write_text("{invalid json", encoding="utf-8")
+        target = str(path)
         with pytest.raises(JEditorJsonException):
-            read_json(str(path))
+            read_json(target)

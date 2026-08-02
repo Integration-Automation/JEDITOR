@@ -88,8 +88,9 @@ class TestDecodeBytes:
         assert isinstance(text, str) and encoding in {"utf-8", "latin-1"}
 
     def test_explicit_encoding_that_cannot_decode_raises(self):
+        encoded = "中文".encode("big5")
         with pytest.raises(UnicodeDecodeError):
-            decode_bytes("中文".encode("big5"), "ascii")
+            decode_bytes(encoded, "ascii")
 
     def test_bom_detection_without_a_bom(self):
         assert encoding_from_bom(b"plain") is None
