@@ -46,7 +46,9 @@ python -m build                        # build (swap pyproject.toml <-> dev.toml
 ```
 
 - **Run tooling through the project venv** (`.venv/Scripts/python.exe` on Windows). Git Bash here has
-  no `python` on PATH, so drive ruff and pytest from PowerShell.
+  no `python` on PATH, so drive ruff and pytest from PowerShell. Machine-specific interpreter paths
+  are set as `$JEDITOR_VENV_PYTHON` and `$PYBREEZE_VENV_PYTHON` in the untracked
+  `.claude/settings.local.json`, so they stay out of version control.
 - **Every round of verification**: `ruff check` clean, `pytest` green, and — when the change touches
   translations — PyBreeze's language parity test (`test_language_parity.py`) green.
 - Before pushing anything that touches Qt, also run what CI runs:
