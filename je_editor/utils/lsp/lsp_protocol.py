@@ -88,7 +88,7 @@ class MessageReader:
             self._buffer = self._buffer[body_start + length:]
             try:
                 messages.append(json.loads(body.decode("utf-8")))
-            except (ValueError, UnicodeDecodeError):
+            except ValueError:  # UnicodeDecodeError 也是 ValueError / it subclasses ValueError
                 continue
         return messages
 
@@ -190,7 +190,10 @@ def definition_location(result: object) -> dict | None:
     :return: ``{"path", "line", "column"}``，無法辨識時為 ``None``
         the location, or ``None`` when it cannot be read
     """
-    first = result[0] if isinstance(result, list) and result else result
+    if isinstance(result, list):
+        first = result[0] if result else None
+    else:
+        first = result
     if not isinstance(first, dict):
         return None
     uri = first.get("uri") or first.get("targetUri")

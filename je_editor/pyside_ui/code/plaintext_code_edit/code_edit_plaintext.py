@@ -2530,7 +2530,7 @@ class CodeEditor(QPlainTextEdit):
         cursor = self.textCursor()
         cursor.beginEditBlock()
         try:
-            for stroke in list(self.macro.keystrokes):
+            for stroke in self.macro.keystrokes:
                 event = QKeyEvent(
                     QEvent.Type.KeyPress, stroke.key,
                     Qt.KeyboardModifier(stroke.modifiers), stroke.text)

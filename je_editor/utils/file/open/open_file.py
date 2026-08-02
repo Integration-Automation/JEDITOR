@@ -16,7 +16,7 @@ _file_read_lock = Lock()
 
 
 def read_file_with_encoding(
-        file_path: Optional[str], encoding: Optional[str] = None) -> tuple:
+        file_path: Optional[str], encoding: Optional[str] = None) -> tuple | None:
     """
     讀取檔案，並回報使用的編碼與原本的行尾
     Read a file, reporting the encoding used and the line ending it had.

@@ -70,7 +70,7 @@ def _collect_plugin_entries(directory: Path, entries: list[tuple[str, Path]]) ->
         return
 
     for item in sorted(directory.iterdir()):
-        if item.name.startswith("_") or item.name.startswith("."):
+        if item.name.startswith(("_", ".")):
             continue
 
         if item.is_file() and item.suffix == ".py":
