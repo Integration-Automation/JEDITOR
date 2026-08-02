@@ -16,13 +16,21 @@ from dataclasses import dataclass
 # 比對 ``path::test_name PASSED [ 50%]`` 這類結果行
 # Matches a result line such as ``path::test_name PASSED [ 50%]``
 _RESULT_PATTERN = re.compile(
-    r"^(?P<node>\S+::\S+)\s+(?P<outcome>PASSED|FAILED|ERROR|SKIPPED|XFAIL|XPASS)\b")
-# 比對 ``--tb=line`` 的失敗位置，例如 ``D:\p\test_x.py:42: AssertionError``
-# Matches a ``--tb=line`` failure location, e.g. ``D:\p\test_x.py:42: AssertionError``
-_FAILURE_PATTERN = re.compile(r"^(?P<path>.+?):(?P<line>\d+): (?P<message>.+)$")
-# 比對結尾統計行，例如 ``3 failed, 5 passed in 0.42s``
-# Matches the summary line, e.g. ``3 failed, 5 passed in 0.42s``
-_SUMMARY_PATTERN = re.compile(r"^=+\s*(?P<summary>.*?(?:passed|failed|error|no tests ran).*?)\s*=+$")
+    r"^(?P<node>\S+)\s+(?P<outcome>PASSED|FAILED|ERROR|SKIPPED|XFAIL|XPASS)\b")
+# 節點名稱一定含有 ``::``，改在程式裡檢查；寫進上面的式子會讓兩個 ``\S+`` 互相
+# 回溯，長行就變成平方時間
+# A node id always contains ``::``, checked in code: expressing it as two
+# ``\S+`` parts above makes them backtrack against each other, which turns a
+# long line into quadratic work
+_NODE_SEPARATOR = "::"
+# 比對 ``--tb=line`` 失敗位置裡的 ``:行號:`` 分隔，例如 ``D:\p\test_x.py:42: AssertionError``
+# Matches the ``:line:`` separator of a ``--tb=line`` location, as in
+# ``D:\p\test_x.py:42: AssertionError``
+_FAILURE_SEPARATOR = re.compile(r":(?P<line>\d+): ")
+# 結尾統計行的關鍵字，例如 ``3 failed, 5 passed in 0.42s``
+# The words a summary line contains, e.g. ``3 failed, 5 passed in 0.42s``
+_SUMMARY_KEYWORDS = ("passed", "failed", "error", "no tests ran")
+_SUMMARY_FENCE = "="
 
 # 區段標題的圍籬字元：pytest 用等號或連字號把標題包起來，覆蓋率報告與結尾統計都算
 # What fences a section banner: pytest wraps its titles in equals signs or
@@ -135,7 +143,7 @@ def parse_results(output: str) -> list[PytestResult]:
     results: list[PytestResult] = []
     for line in output.splitlines():
         match = _RESULT_PATTERN.match(line.strip())
-        if match is not None:
+        if match is not None and _NODE_SEPARATOR in match.group("node"):
             results.append(
                 PytestResult(node_id=match.group("node"), outcome=match.group("outcome")))
     return results
@@ -153,14 +161,14 @@ def parse_failures(output: str) -> list[FailureLocation]:
     seen: set[tuple[str, int]] = set()
     for line in output.splitlines():
         stripped = line.strip()
-        match = _FAILURE_PATTERN.match(stripped)
-        if match is None:
+        match = _FAILURE_SEPARATOR.search(stripped)
+        if match is None or match.start() == 0 or match.end() == len(stripped):
             continue
         try:
             line_number = int(match.group("line"))
         except ValueError:
             continue
-        path = match.group("path").strip()
+        path = stripped[:match.start()].strip()
         # 結果行本身也含有冒號，排除掉才不會被誤認成失敗位置
         # A result line also contains a colon; skipping those avoids reading one
         # as a failure location
@@ -171,7 +179,7 @@ def parse_failures(output: str) -> list[FailureLocation]:
             continue
         seen.add(key)
         failures.append(
-            FailureLocation(path=path, line=line_number, message=match.group("message")))
+            FailureLocation(path=path, line=line_number, message=stripped[match.end():]))
     return failures
 
 
@@ -262,9 +270,12 @@ def parse_summary(output: str) -> str:
     :return: 統計文字，找不到時為空字串 / the summary, or an empty string
     """
     for line in reversed(output.splitlines()):
-        match = _SUMMARY_PATTERN.match(line.strip())
-        if match is not None:
-            return match.group("summary").strip()
+        stripped = line.strip()
+        if not stripped.startswith(_SUMMARY_FENCE) or not stripped.endswith(_SUMMARY_FENCE):
+            continue
+        summary = stripped.strip(_SUMMARY_FENCE).strip()
+        if any(keyword in summary for keyword in _SUMMARY_KEYWORDS):
+            return summary
     return ""
 
 
