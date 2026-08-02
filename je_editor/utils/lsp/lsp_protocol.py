@@ -88,7 +88,7 @@ class MessageReader:
             self._buffer = self._buffer[body_start + length:]
             try:
                 messages.append(json.loads(body.decode("utf-8")))
-            except (ValueError, UnicodeDecodeError):
+            except ValueError:  # UnicodeDecodeError 也是 ValueError / it subclasses ValueError
                 continue
         return messages
 
@@ -190,7 +190,10 @@ def definition_location(result: object) -> dict | None:
     :return: ``{"path", "line", "column"}``，無法辨識時為 ``None``
         the location, or ``None`` when it cannot be read
     """
-    first = result[0] if isinstance(result, list) and result else result
+    if isinstance(result, list):
+        first = result[0] if result else None
+    else:
+        first = result
     if not isinstance(first, dict):
         return None
     uri = first.get("uri") or first.get("targetUri")
@@ -329,27 +332,36 @@ def document_symbols(result: object) -> list[dict]:
     return _flatten_symbols(result, depth=0)
 
 
+def _symbol_entry(item: object, depth: int) -> dict | None:
+    """把一筆符號轉成大綱用的形式，無法辨識時回傳 ``None`` / Convert one symbol."""
+    if not isinstance(item, dict):
+        return None
+    name = item.get("name")
+    if not isinstance(name, str) or not name.strip():
+        return None
+    span = item.get("selectionRange") or item.get("range")
+    if span is None:
+        span = (item.get("location") or {}).get("range")
+    line, _column = _position(span.get("start") if isinstance(span, dict) else None)
+    kind = item.get("kind")
+    return {
+        "name": name.strip(),
+        "kind": kind if isinstance(kind, int) else 0,
+        "line": line,
+        "depth": depth,
+    }
+
+
 def _flatten_symbols(result: object, depth: int) -> list[dict]:
     """把符號樹攤成一層，並記下每個符號的深度 / Flatten the symbol tree, noting each depth."""
     if not isinstance(result, list):
         return []
     symbols: list[dict] = []
     for item in result:
-        if not isinstance(item, dict):
+        entry = _symbol_entry(item, depth)
+        if entry is None:
             continue
-        name = item.get("name")
-        if not isinstance(name, str) or not name.strip():
-            continue
-        span = item.get("selectionRange") or item.get("range")
-        if span is None:
-            span = (item.get("location") or {}).get("range")
-        line, _column = _position(span.get("start") if isinstance(span, dict) else None)
-        symbols.append({
-            "name": name.strip(),
-            "kind": item.get("kind") if isinstance(item.get("kind"), int) else 0,
-            "line": line,
-            "depth": depth,
-        })
+        symbols.append(entry)
         symbols.extend(_flatten_symbols(item.get("children"), depth + 1))
     return symbols
 

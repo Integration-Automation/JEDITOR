@@ -1,169 +1,162 @@
 # CLAUDE.md - JEditor Project Guidelines
 
-## Session Start: Check the Progress Record
+## Session Start
 
-At the start of every session, check for `PROGRESS.md` in the repo root (a local,
-untracked working-progress record — it is in `.gitignore`).
+1. **`PROGRESS.md`** (repo root, untracked, gitignored) — the outstanding-work list, and *only* that.
+   Read it first to resume unfinished work, keep it updated as you go, and **clear it to just the
+   heading when everything is done**. Items may span the JEditor and PyBreeze repos, so each item
+   names its repo. Create it when multi-step or cross-session work is worth tracking. Rules and
+   standing knowledge belong in this file, never in `PROGRESS.md`, which gets emptied.
+2. **`architecture_explore.md`** (repo root) — the module-by-module architecture record.
 
-- If it exists and lists outstanding items, read it first to resume in-progress work.
-- Keep it updated as work progresses; items may span both the JEditor and PyBreeze repos (each item names its repo).
-- **When every item is done, clear it** — reset the file to just its heading and usage note, leaving no stale tasks.
-- If it does not exist and there is multi-step or cross-session work worth tracking, create it.
+## Keeping `architecture_explore.md` Current (mandatory)
+
+**Every change must leave `architecture_explore.md` accurate, in the same commit as the code.**
+Update it whenever you add, remove, rename, split, or repurpose a module; change how packages depend
+on each other; add or remove a global singleton, settings key, thread, or config file; or change the
+startup flow. Keep the line counts and module tables in step with the code. Pure bug fixes inside an
+existing module that change nothing structural need no update.
 
 ## Project Overview
 
-JEditor is a Python-based code editor built with PySide6 (Qt), featuring syntax highlighting, code formatting, plugin system, Git integration, and LangChain-powered AI assistance.
+JEditor is a Python code editor built with PySide6 (Qt), featuring syntax highlighting, code
+formatting, a plugin system, Git integration, and LangChain-powered AI assistance.
 
-- **Language**: Python 3.10+
-- **UI Framework**: PySide6 6.11.0
-- **Package Manager**: pip / setuptools
-- **Testing**: pytest + pytest-qt
-- **Linting**: ruff, pycodestyle
-- **Formatting**: yapf
-
-## Project Structure
+- **Language**: Python 3.10+ · **UI**: PySide6 6.11.0 · **Packaging**: pip / setuptools
+- **Testing**: pytest + pytest-qt · **Lint**: ruff, pycodestyle · **Format**: yapf
 
 ```
-je_editor/           # Main package
-  pyside_ui/         # UI layer (Qt widgets)
-    browser/         # Built-in browser
-    code/            # Code editor components (syntax, formatting, process management)
-    dialog/          # Dialog windows
-    git_ui/          # Git UI components
-    main_ui/         # Main window and layout
-  code_scan/         # Ruff linting & watchdog file monitoring
-  git_client/        # Git operations (GitPython)
-  plugins/           # Plugin loader system
-  utils/             # Shared utilities
-test/                # Unit tests (pytest)
-docs/                # Sphinx documentation
+je_editor/
+  pyside_ui/     UI layer (browser/, code/, dialog/, git_ui/, main_ui/)
+  code_scan/     Ruff linting & watchdog file monitoring
+  git_client/    Git operations (GitPython + git CLI)
+  plugins/       Plugin registry and loader
+  utils/         Shared pure-logic helpers
+test/            pytest suites
+docs/            Sphinx documentation
 ```
 
-## Build & Test Commands
+## Build, Test & Verify
 
 ```bash
-# Install dependencies
-pip install -r requirements.txt
-
-# Install dev dependencies
-pip install -r dev_requirements.txt
-
-# Run tests (excludes Qt UI tests by default)
-pytest
-
-# Build package (stable)
-python -m build
-
-# Build dev package (rename pyproject.toml <-> dev.toml first)
-python -m build
+pip install -r requirements.txt        # runtime deps
+pip install -r dev_requirements.txt    # dev deps
+pytest                                 # tests (Qt UI scripts excluded)
+python -m build                        # build (swap pyproject.toml <-> dev.toml for the dev package)
 ```
+
+- **Run tooling through the project venv** (`.venv/Scripts/python.exe` on Windows). Git Bash here has
+  no `python` on PATH, so drive ruff and pytest from PowerShell. Machine-specific interpreter paths
+  are set as `$JEDITOR_VENV_PYTHON` and `$PYBREEZE_VENV_PYTHON` in the untracked
+  `.claude/settings.local.json`, so they stay out of version control.
+- **Every round of verification**: `ruff check` clean, `pytest` green, and — when the change touches
+  translations — PyBreeze's language parity test (`test_language_parity.py`) green.
+- Before pushing anything that touches Qt, also run what CI runs:
+  `python ./test/qt_ui/unit_test/start_qt_ui.py` and `.../extend_test.py` with
+  `QT_QPA_PLATFORM=offscreen`.
+
+## Testing
+
+- `QT_QPA_PLATFORM=offscreen` is needed to run GUI/Qt tests locally, **but CI's unit-test step does
+  not set it** and uses the real Windows platform plugin. Do not set it when reproducing CI.
+- **A Qt test crash (`0xC0000409`) is almost always Qt's `qFatal`**, typically
+  `QThread: Destroyed while thread is still running`. pytest swallows the message — use `pytest -s`
+  to see it, and give every `QThread` subclass a `setObjectName(...)` so the message names the
+  culprit. The crash site drifts, so judge by the crash rate over three runs rather than one, and
+  confirm the baseline (a clean worktree at HEAD) is stable first.
+- **Never construct a `QKeyEvent` and hand it to a handler in a test.** Qt keeps the object while
+  Python may collect it first, and the next turn of the event loop takes the whole interpreter down.
+  Use `QTest.keyClick(s)`.
+- No empty (S1186) or duplicated (S4144) tests.
+- Public classes and functions get docstrings covering purpose, args, returns and raises.
+
+## CI
+
+- The matrix is **Python 3.10 / 3.11 / 3.12** on Windows. To reproduce a 3.10-only failure locally,
+  use `uv python install 3.10` plus `uv venv`.
+- Watch a run with `gh run watch <run-id> --exit-status`, or `gh pr checks <PR> --watch` for a PR.
+- For analyser detail, the tokens live in the environment:
+  - Codacy — header `project-token: $CODACY_PROJECT_TOKEN` against
+    `https://app.codacy.com/api/v3/analysis/organizations/gh/Integration-Automation/repositories/<repo>/pull-requests/<PR>/issues`
+    lists file:line and rule id directly.
+  - SonarCloud — `$SonarCloudToken` against
+    `https://sonarcloud.io/api/issues/search?componentKeys=<key>&pullRequest=<PR>`.
+- Treat an analyser finding as a claim to verify, not an order. Where a finding is wrong (a
+  bilingual comment read as commented-out code) or where following it would make the code more
+  fragile, leave the code correct and record why.
 
 ## Design Principles
 
-### Design Patterns
-
-- **MVC separation**: UI widgets (View) in `pyside_ui/`, business logic (Model/Controller) in `code_scan/`, `git_client/`, `utils/`
-- **Plugin architecture**: Extend functionality via `plugins/plugin_loader.py` without modifying core code
-- **Observer pattern**: Use Qt signals/slots for decoupled event communication between components
-- **Strategy pattern**: Code formatting and syntax highlighting are interchangeable strategies
-- **Single Responsibility**: Each module handles one concern; avoid god classes
-
-### Software Engineering
-
-- **DRY**: Extract shared logic into `utils/`; never duplicate code across modules
-- **SOLID principles**: Favor composition over inheritance; depend on abstractions
-- **Fail fast**: Validate inputs at boundaries; raise clear exceptions early
-- **Minimal public API**: Keep internal methods private (`_prefix`); expose only what consumers need
-- **Type hints**: All function signatures must include type annotations
-
-### Performance
-
-- **Lazy loading**: Defer heavy imports and widget initialization until needed
-- **Thread safety**: Run file I/O, Git operations, linting, and process execution in `QThread` or background threads — never block the UI thread
-- **Efficient string handling**: Use `QTextCursor` batch operations for bulk text edits; avoid repeated `setText()` calls
-- **Resource cleanup**: Always release file handles, threads, and subprocesses in `closeEvent` or `deleteLater`
-- **Debounce**: Throttle expensive operations triggered by rapid user input (typing, resizing)
-
-### Security (Mandatory)
-
-- **No shell injection**: Never pass unsanitized user input to `subprocess.Popen(shell=True)` or `os.system()`. Use `subprocess.run()` with argument lists
-- **Path traversal prevention**: Validate and sanitize all file paths from user input; reject paths containing `..` when operating within a project directory
-- **No eval/exec on user data**: Never use `eval()`, `exec()`, or `compile()` on untrusted input
-- **Sensitive data**: Never hardcode API keys, tokens, or credentials. Load from environment variables or config files excluded via `.gitignore`
-- **Dependency awareness**: Pin dependency versions; review before upgrading
-- **Input validation**: Sanitize all external input (file content, plugin data, user dialog input) at system boundaries
+- **MVC separation**: widgets in `pyside_ui/`; logic in `code_scan/`, `git_client/`, `utils/`.
+  Pair every feature as pure logic (`utils/`) + a thin Qt integration layer.
+- **Patterns**: plugins extend via `plugins/plugin_loader.py` without touching core; Qt signals/slots
+  for decoupling; interchangeable formatting/highlighting strategies; single responsibility, no god
+  classes.
+- **SOLID / DRY**: compose over inherit, depend on abstractions, share code through `utils/`. Never
+  restate a table of keys and defaults that another module already owns — derive it.
+- **Fail fast**: validate at boundaries and raise clear exceptions early.
+- **Minimal API**: keep internals `_prefixed`; type-hint every signature.
+- **Performance**: lazy imports and deferred widget setup; never block the UI thread — file I/O, Git,
+  linting and subprocesses belong in `QThread` or a worker thread; batch bulk edits through
+  `QTextCursor`; debounce anything driven by typing or resizing.
+- **Cleanup**: release file handles, threads and subprocesses in `closeEvent` or via `deleteLater`.
 
 ## Code Style
 
-- Follow PEP 8; enforced by ruff
-- Use `snake_case` for functions/variables, `PascalCase` for classes
-- Keep functions short and focused (< 50 lines preferred)
-- Remove dead code — do not comment out unused blocks or leave `# TODO` stubs without tracking
+- PEP 8, enforced by ruff. `snake_case` functions/variables, `PascalCase` classes.
+- Functions under 50 lines (hard limit 80), max 7 parameters, max 4 nesting levels.
+- Cognitive complexity < 15 (S3776); cyclomatic complexity < 10.
+- No duplicated blocks of 3+ lines; extract any string literal used 3+ times (S1192).
+- No magic numbers except `0`, `1`, `-1`, `2` (S109). Identifiers 3+ chars, except loop counters.
+- No commented-out code, dead code, unused imports/variables/parameters, or untracked `# TODO` stubs.
+- `is None` / `is not None`; `if x:` not `if x == True:`; consistent return types; no assignment in
+  complex conditions.
+- Union type expressions (`X | None`), not `typing.Union`.
+- f-strings everywhere except `logging`, which uses lazy `%` formatting.
+- Comments are bilingual (Chinese then English) and explain *why*, not *what*.
 
-## Static Analysis Compliance (SonarQube / Codacy)
+## Exceptions & Resources
 
-All code must pass SonarQube and Codacy quality gates. Adhere to the following rules:
+- Never `except:` or `except Exception: pass` — name the type, and log or re-raise.
+- Do not list an exception a sibling in the same clause already covers (`IndentationError` under
+  `SyntaxError`, `UnicodeDecodeError` under `ValueError`).
+- Chain with `raise NewError(...) from original_error`.
+- Use `logging` (not `print`) for diagnostics in production code.
+- Always use context managers (`with open(...)`, `with QMutexLocker(...)`); pass `encoding='utf-8'`
+  to every `open()`.
+- Dispose Qt resources with `deleteLater()` or `Qt.WA_DeleteOnClose` for modal dialogs.
 
-### Complexity & Maintainability
+## Security (mandatory)
 
-- **Cognitive complexity**: Keep functions below 15 (SonarQube S3776). Break deeply nested logic into helper functions
-- **Cyclomatic complexity**: Functions should stay under 10 branches; extract conditionals into smaller functions
-- **Function length**: Soft limit 50 lines, hard limit 80 lines of executable code
-- **Parameter count**: Max 7 parameters per function (SonarQube S107); use dataclasses or `**kwargs` for larger sets
-- **Nesting depth**: Max 4 levels of nested control flow (SonarQube S134)
-- **No duplicate code**: Extract 3+ line repeated blocks into shared utilities (SonarQube copy-paste detector)
-- **String literal duplication**: Extract any string literal used 3+ times into a module-level constant (SonarQube S1192)
-- **No magic numbers**: Replace unnamed numeric literals with named constants (SonarQube S109); exceptions: `0`, `1`, `-1`, `2`
+- **No shell injection**: `subprocess.run()` with an argument list; never `shell=True` or
+  `os.system()` on user input.
+- **No `eval`/`exec`/`compile`** on untrusted input; no `pickle`/`marshal` on untrusted data
+  (B301/B302).
+- **Path traversal**: validate user-supplied paths; reject `..` inside a project directory.
+- **No hardcoded credentials** (S2068, B105/B106) — load from environment or gitignored config.
+- **Crypto**: `secrets`, not `random`, for tokens and IDs (B311); MD5/SHA1 only for non-security uses
+  with an explicit comment (S4790, B303).
+- **Parsing**: `yaml.SafeLoader` only (B506); `defusedxml` for XML (B313-B320).
+- **Files**: `NamedTemporaryFile`/`mkstemp`, never `tempfile.mktemp` (B306).
+- **TLS**: never `verify=False`. **Asserts**: none in production logic (B101).
+- Pin dependency versions and review before upgrading; sanitize all external input at boundaries.
+- A dependency nothing imports is not worth patching — remove it.
+- **Regular expressions** must not backtrack super-linearly (S8786): no two greedy quantifiers that
+  can trade against each other, and no lazy quantifier driven across a whole line.
 
-### Exception Handling
+## Git & Commits
 
-- **No bare `except:`**: Always specify exception types (SonarQube S5754, Codacy PyLint W0702)
-- **No silent swallowing**: Never `except: pass` without logging or re-raising (SonarQube S2737)
-- **No overly broad `except Exception`** unless logged and re-raised at boundaries
-- **Chain exceptions**: Use `raise NewError(...) from original_error` to preserve context
-- **Use `logging` over `print`** for diagnostics in library/production code (SonarQube S4792)
+- English, imperative, one logical change per commit (e.g. "Add plugin hot-reload support").
+  Stage deliberately — `git add -u` bundles unrelated work into the wrong commit.
+- `main` = stable, `dev` = active development.
+- **Merge PRs with a merge commit** (`gh pr merge <PR> --merge`), never squash. This holds for both
+  this repo and PyBreeze.
+- After a merge, `dev`'s `pyproject.toml` version lags `main`. That is the existing flow, not a bug.
+- **No AI attribution anywhere** — commit messages, trailers, branch names, PR titles/descriptions,
+  issues, code comments and documentation must never mention an AI tool, assistant, agent, model or
+  vendor. No `Co-Authored-By:` or "Generated with ..." footers. PRs describe *what changed and why*.
 
-### Code Quality
+## Cross-repo (PyBreeze)
 
-- **No commented-out code**: Delete it — rely on git history (SonarQube S125)
-- **No unused imports/variables/parameters**: Remove them (SonarQube S1128, S1854)
-- **Explicit `None` checks**: Use `is None` / `is not None`, never `== None` (SonarQube S2197)
-- **No redundant boolean**: `if x:` not `if x == True:`; `if not x:` not `if x == False:`
-- **Consistent return types**: A function should always return the same type (or always `None`); avoid `return None` in numeric functions
-- **No assignment in conditions**: Avoid `if (x := func()):` in complex expressions (SonarQube S1121)
-- **Identifier naming**: Min 3 characters except loop counters (`i`, `j`, `k`); no single-letter names for non-trivial scope
-- **String formatting**: Prefer f-strings over `%` or `.format()` unless logging (logging uses `%` lazy formatting)
-
-### Security (SonarQube / Codacy Bandit rules)
-
-- **No hardcoded credentials** (SonarQube S2068, Bandit B105/B106): passwords, tokens, keys
-- **No weak hashing** for security contexts (SonarQube S4790, Bandit B303): MD5/SHA1 only allowed for non-security uses (e.g., cache keys) with explicit comment
-- **No `random` for security** (Bandit B311): use `secrets` module for tokens, IDs, crypto
-- **No `pickle`/`marshal` on untrusted data** (Bandit B301/B302)
-- **No `yaml.load` without `SafeLoader`** (Bandit B506)
-- **No `tempfile.mktemp`** (Bandit B306): use `NamedTemporaryFile` / `mkstemp`
-- **No `assert` in production logic** (Bandit B101): asserts are stripped with `-O`; use explicit `raise`
-- **No XML parsers vulnerable to XXE** (Bandit B313-B320): use `defusedxml`
-- **TLS verification**: Never `verify=False` in `requests` or urllib calls
-
-### Resource Management
-
-- **Always use context managers**: `with open(...)`, `with lock`, `with QMutexLocker(...)` — never manual `.close()` without `try/finally`
-- **Close Qt resources**: call `deleteLater()` or use `setAttribute(Qt.WA_DeleteOnClose)` for modal dialogs
-- **Encoding explicit**: always pass `encoding='utf-8'` to `open()` (SonarQube S5122 / Ruff PLW1514)
-
-### Testing & Documentation
-
-- **No empty test functions** (SonarQube S1186)
-- **No identical test cases** (SonarQube S4144)
-- **Public API docstrings**: all public classes/functions should have docstrings describing purpose, args, returns, raises
-
-## Git & Commit Rules
-
-- **Commit messages**: Write in English, concise, imperative mood (e.g., "Add plugin hot-reload support")
-- **No AI attribution (mandatory)**: Never mention any AI tool, assistant, agent, model name, or vendor in commit messages, commit trailers, branch names, PR titles, PR descriptions, issue text, code comments, or documentation
-  - No `Co-Authored-By:` trailers referencing an AI tool or model
-  - No "Generated with ...", "Created by ...", or similar footers in commits or PR bodies
-  - PR titles and bodies describe **what changed and why** — nothing about how the change was authored
-- **Branch strategy**: `main` = stable release, `dev` = active development
-- **Clean commits**: Each commit should be a single logical change; no unrelated changes bundled together
+- Run PyBreeze's tests as `pytest test/test_utils`. A bare `pytest` or `pytest test` also collects
+  `test/unit_test/start_automation`, which launches the app and ends in "no output, exit 0".

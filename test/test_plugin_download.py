@@ -28,8 +28,9 @@ class TestTheDownloadDestination:
 
     @pytest.mark.parametrize("name", ESCAPING_NAMES)
     def test_a_name_that_escapes_is_rejected(self, tmp_path, name):
+        directory = str(tmp_path)
         with pytest.raises(ValueError):
-            _safe_destination(str(tmp_path), name)
+            _safe_destination(directory, name)
 
 
 class TestDownloadingAPlugin:
@@ -47,8 +48,9 @@ class TestDownloadingAPlugin:
     def test_an_escaping_name_writes_nothing(self, tmp_path, name):
         destination = tmp_path / "plugins"
         destination.mkdir()
+        directory = str(destination)
         with pytest.raises(ValueError):
-            download_plugin_file("https://example.invalid/x.py", str(destination), name)
+            download_plugin_file("https://example.invalid/x.py", directory, name)
         assert list(tmp_path.rglob("*.py")) == []
 
 

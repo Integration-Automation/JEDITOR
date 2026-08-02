@@ -40,7 +40,9 @@ def format_python_source(source: str, style: str = DEFAULT_STYLE) -> str:
         return source
     try:
         formatted, _changed = FormatCode(unformatted_source=source, style_config=style)
-    except (YapfError, SyntaxError, ValueError, IndentationError, UnicodeDecodeError) as error:
+    # IndentationError 是 SyntaxError 的子類，UnicodeDecodeError 是 ValueError 的子類
+    # IndentationError subclasses SyntaxError, UnicodeDecodeError subclasses ValueError
+    except (YapfError, SyntaxError, ValueError) as error:
         jeditor_logger.debug(f"yapf_format: source was not formatted: {error!r}")
         return source
     return formatted if isinstance(formatted, str) else source

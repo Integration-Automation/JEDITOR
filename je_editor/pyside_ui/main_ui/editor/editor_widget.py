@@ -14,7 +14,6 @@ if TYPE_CHECKING:
 
 import pathlib
 from pathlib import Path
-from typing import Union
 
 from PySide6.QtCore import Qt, QFileInfo, QDir, QFileSystemWatcher
 from PySide6.QtGui import QDragEnterEvent, QDropEvent
@@ -61,7 +60,7 @@ class EditorWidget(QWidget):
         # 啟用拖放功能 / Enable drag and drop
         self.setAcceptDrops(True)
         # ---------------- Init variables 初始化變數 ----------------
-        self.checker: Union[PEP8FormatChecker, None] = None
+        self.checker: PEP8FormatChecker | None = None
         self.current_file = None
         # 目前檔案的編碼與行尾，開檔時偵測，存檔時照原樣寫回
         # The current file's encoding and line ending, detected on open and
@@ -69,19 +68,19 @@ class EditorWidget(QWidget):
         self.file_encoding: str = DEFAULT_ENCODING
         self.line_ending: str = LINE_ENDING_LF
         self.tree_view_scroll_area = None
-        self.project_treeview: Union[QTreeView, None] = None
+        self.project_treeview: QTreeView | None = None
         self.project_treeview_model = None
         self.python_compiler = None
         self.main_window = main_window
         self.tab_manager = self.main_window.tab_widget
 
         # 執行相關物件 / Execution related objects
-        self.exec_program: Union[None, ExecManager] = None
-        self.exec_shell: Union[None, ShellManager] = None
-        self.exec_python_debugger: Union[None, ExecManager] = None
+        self.exec_program: ExecManager | None = None
+        self.exec_shell: ShellManager | None = None
+        self.exec_python_debugger: ExecManager | None = None
 
         # 自動儲存執行緒 / Auto-save thread
-        self.code_save_thread: Union[CodeEditSaveThread, None] = None
+        self.code_save_thread: CodeEditSaveThread | None = None
 
         # ---------------- UI 初始化 ----------------
         self.grid_layout = QGridLayout(self)
@@ -155,8 +154,8 @@ class EditorWidget(QWidget):
 
         # 同檔分割檢視與縮圖，開啟時才建立
         # The same-file split view and the minimap, both created on demand
-        self.split_view: Union[SplitEditorView, None] = None
-        self.minimap: Union[MinimapWidget, None] = None
+        self.split_view: SplitEditorView | None = None
+        self.minimap: MinimapWidget | None = None
         # 編輯器與縮圖並排的容器 / Holds the editor and the minimap side by side
         self.editor_row = QWidget()
         self.editor_row_layout = QHBoxLayout(self.editor_row)

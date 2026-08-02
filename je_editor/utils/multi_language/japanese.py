@@ -1,8 +1,12 @@
+_EDITOR_LABEL = "エディター"
+_FONT_SIZE_LABEL = "フォントサイズ"
+_CHECKOUT_LABEL = "チェックアウト"
+
 japanese_word_dict = {
     # Main
     "application_name": "JEditor",
     # Tab
-    "tab_name_editor": "エディター",
+    "tab_name_editor": _EDITOR_LABEL,
     "tab_name_web_browser": "ウェブブラウザー",
     "tab_name_frontengine": "FrontEngine",
     # Browser
@@ -67,7 +71,7 @@ japanese_word_dict = {
     "dock_editor_label": "新しいエディタードック",
     "dock_frontengine_label": "新しい FrontEngine ドック",
     "dock_ipython_label": "New Ipython(Jupyter)",
-    "dock_editor_title": "エディター",
+    "dock_editor_title": _EDITOR_LABEL,
     "dock_frontengine_title": "FrontEngine",
     "dock_browser_title": "ブラウザー",
     "dock_ipython_title": "IPython(Jupyter)",
@@ -90,7 +94,7 @@ japanese_word_dict = {
     "style_menu_indent_guides_label": "インデントガイドを表示",
     "style_menu_trailing_whitespace_label": "行末の空白を表示",
     "file_menu_font_label": "フォント",
-    "file_menu_font_size_label": "フォントサイズ",
+    "file_menu_font_size_label": _FONT_SIZE_LABEL,
     # Help Menu
     "help_menu_label": "ヘルプ",
     "help_menu_open_github_label": "GitHub",
@@ -141,7 +145,7 @@ japanese_word_dict = {
     "tab_menu_add_frontengine_label": "FrontEngine タブを追加",
     "tab_menu_add_web_label": "ブラウザータブを追加",
     "tab_menu_add_stackoverflow_label": "Stackoverflow タブを追加",
-    "tab_menu_editor_tab_name": "エディター",
+    "tab_menu_editor_tab_name": _EDITOR_LABEL,
     "tab_menu_frontengine_tab_name": "FrontEngine",
     "tab_menu_web_tab_name": "ブラウザー",
     "tab_menu_stackoverflow_tab_name": "Stackoverflow",
@@ -155,7 +159,7 @@ japanese_word_dict = {
     # Text Menu
     "text_menu_label": "テキスト",
     "text_menu_label_font": "フォント",
-    "text_menu_label_font_size": "フォントサイズ",
+    "text_menu_label_font_size": _FONT_SIZE_LABEL,
     # System tray
     "system_tray_hide": "隠す",
     "system_tray_maximized": "最大化",
@@ -169,7 +173,7 @@ japanese_word_dict = {
     # Qtconsole
     "please_install_qtcontsole_label": "先に python -m pip install qtconsole を実行してください",
     # Chat UI
-    "font_size": "フォントサイズ",
+    "font_size": _FONT_SIZE_LABEL,
     "set_ai_model_waring_title": "AI モデルを設定できません",
     "set_ai_model_waring_text": "[ai_base_url, ai_api_key, chat_model] を確認してください",
     "call_ai_model_error_title": "AI モデルに接続できません",
@@ -195,7 +199,7 @@ japanese_word_dict = {
     "placeholder_commit_message": "コミットメッセージ...",
     "btn_stage_all": "すべてステージ",
     "btn_commit": "コミット",
-    "btn_checkout": "チェックアウト",
+    "btn_checkout": _CHECKOUT_LABEL,
     "btn_stage_selected": "選択をステージ",
     "btn_unstage_selected": "選択のステージを解除",
     "btn_unstage_all": "すべてのステージを解除",
@@ -220,7 +224,7 @@ japanese_word_dict = {
     "err_load_branches": "ブランチを読み込めませんでした",
     "err_load_commits": "コミットを読み込めませんでした",
     "err_checkout": "チェックアウトに失敗しました",
-    "info_checkout_title": "チェックアウト",
+    "info_checkout_title": _CHECKOUT_LABEL,
     "info_checkout_msg": "{branch} に切り替えました",
     "err_read_diff": "差分を読み込めませんでした",
     "err_stage": "ステージに失敗しました",
@@ -304,7 +308,7 @@ japanese_word_dict = {
     "toolbar_debug": "デバッグ",
     "toolbar_stop": "停止",
     "toolbar_git_branch": "ブランチ",
-    "toolbar_git_checkout": "チェックアウト",
+    "toolbar_git_checkout": _CHECKOUT_LABEL,
     "toolbar_git_refresh": "ブランチを更新",
     "toolbar_search": "検索",
     # Recent Files

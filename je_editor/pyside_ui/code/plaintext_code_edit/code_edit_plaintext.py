@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import TYPE_CHECKING, Union, List
+from typing import TYPE_CHECKING, List
 
 import jedi  # Python 自動補全與靜態分析工具
 from PySide6 import QtGui
@@ -165,7 +165,7 @@ _MULTI_CURSOR_SHIFT_KEYS = {
 }
 
 
-def _document_position(document: QTextDocument, line: int, column: int) -> Union[int, None]:
+def _document_position(document: QTextDocument, line: int, column: int) -> int | None:
     """
     把 1 起算的行列換成文件中的字元位置
     Turn a 1-based line and column into a character position in the document.
@@ -230,7 +230,7 @@ class CodeEditor(QPlainTextEdit):
     - 自動補全 (Autocomplete with Jedi)
     """
 
-    def __init__(self, main_window: Union[EditorWidget, FullEditorWidget]) -> None:
+    def __init__(self, main_window: EditorWidget | FullEditorWidget) -> None:
         jeditor_logger.info(f"Init CodeEditor main_window: {main_window}")
         super().__init__()
 
@@ -308,7 +308,7 @@ class CodeEditor(QPlainTextEdit):
         self.goto_line_action = self._add_shortcut_action("go_to_line", self.go_to_line)
 
         # 自動補全初始化
-        self.completer: Union[None, QCompleter] = None
+        self.completer: QCompleter | None = None
         self.set_complete([])
 
         # 自動補全 debounce 計時器 (300ms) / Autocomplete debounce timer
@@ -318,8 +318,8 @@ class CodeEditor(QPlainTextEdit):
         self._complete_timer.timeout.connect(self.complete)
 
         # 背景補全執行緒與 worker / Background completion thread and worker
-        self._complete_thread: Union[QThread, None] = None
-        self._complete_worker: Union[_JediCompleteWorker, None] = None
+        self._complete_thread: QThread | None = None
+        self._complete_worker: _JediCompleteWorker | None = None
 
         # 匹配括號高亮 / Matching bracket highlight
         self._bracket_pairs_chars = {'(': ')', ')': '(', '[': ']', ']': '[', '{': '}', '}': '{'}
@@ -332,7 +332,7 @@ class CodeEditor(QPlainTextEdit):
         # 可折疊標頭快取，捲動重繪時免去重複計算；文字變更時失效
         # Cache of foldable header lines so scroll repaints skip recomputation;
         # invalidated whenever the text changes
-        self._fold_header_cache: Union[set, None] = None
+        self._fold_header_cache: set | None = None
         self.textChanged.connect(self._on_text_changed_for_features)
         self._register_fold_bookmark_actions()
 
@@ -353,7 +353,7 @@ class CodeEditor(QPlainTextEdit):
 
         # 由檔案內容偵測的每檔縮排寬度（None 代表用全域設定）
         # Per-file detected indent width (None means use the global setting)
-        self._indent_size_override: Union[int, None] = None
+        self._indent_size_override: int | None = None
 
         # git 變更標記：基準在背景讀取，重算則在輸入停止後 debounce 執行
         # git change markers: the baseline loads in the background, and the
@@ -382,7 +382,7 @@ class CodeEditor(QPlainTextEdit):
         # 多重游標；欄選取拖曳的起點在按下 Alt 時記下
         # Extra carets; a column drag records its anchor when Alt is pressed
         self.multi_cursor_manager = MultiCursorManager(self)
-        self._column_anchor: Union[int, None] = None
+        self._column_anchor: int | None = None
         self._column_dragged = False
         self._register_multi_cursor_actions()
 
@@ -777,7 +777,7 @@ class CodeEditor(QPlainTextEdit):
         return self._go_to_change(
             self.diff_marker_manager.previous_change(self.textCursor().blockNumber()))
 
-    def _go_to_change(self, line: Union[int, None]) -> bool:
+    def _go_to_change(self, line: int | None) -> bool:
         """移動游標到指定變更行 / Move the caret to a changed line."""
         if line is None:
             return False
@@ -1092,7 +1092,7 @@ class CodeEditor(QPlainTextEdit):
 
     @staticmethod
     def _diagnostic_cursor(
-            document: QTextDocument, diagnostic) -> Union[QTextCursor, None]:
+            document: QTextDocument, diagnostic) -> QTextCursor | None:
         """
         取得診斷範圍的游標，範圍不存在時回傳 ``None``
         Return a cursor spanning a diagnostic, or ``None`` when it is out of range.
@@ -1196,7 +1196,7 @@ class CodeEditor(QPlainTextEdit):
         """
         return self._go_to_history_line(self.location_history.forward())
 
-    def _go_to_history_line(self, line: Union[int, None]) -> bool:
+    def _go_to_history_line(self, line: int | None) -> bool:
         """移動游標到歷史中的行，過程中暫停記錄 / Move to a history line without recording."""
         if line is None:
             return False
@@ -1534,7 +1534,7 @@ class CodeEditor(QPlainTextEdit):
             selection.format = occurrence_fmt
             selections.append(selection)
 
-    def _find_matching_bracket(self, text: str, pos: int, char: str) -> Union[int, None]:
+    def _find_matching_bracket(self, text: str, pos: int, char: str) -> int | None:
         """
         找到匹配的括號位置
         Find position of matching bracket
@@ -2530,7 +2530,7 @@ class CodeEditor(QPlainTextEdit):
         cursor = self.textCursor()
         cursor.beginEditBlock()
         try:
-            for stroke in list(self.macro.keystrokes):
+            for stroke in self.macro.keystrokes:
                 event = QKeyEvent(
                     QEvent.Type.KeyPress, stroke.key,
                     Qt.KeyboardModifier(stroke.modifiers), stroke.text)
@@ -2803,6 +2803,57 @@ class CodeEditor(QPlainTextEdit):
             self.setTextCursor(cursor)
         self.highlight_current_line()
 
+    def _handled_by_editing_keys(self, event: QKeyEvent, modifiers) -> bool:
+        """選取包夾、多重游標與修飾鍵動作 / Surround, extra carets and modifier actions."""
+        # 對選取範圍輸入成對字元時包住它，而不是取代掉
+        # Typing a pairing character over a selection wraps it instead of
+        # replacing it
+        if event.text() in SURROUND_PAIRS and self.textCursor().hasSelection():
+            if self.surround_selection(event.text()):
+                return True
+
+        if self._handle_multi_cursor_key(event):
+            return True
+
+        if modifiers & Qt.KeyboardModifier.ControlModifier and self._handle_ctrl_shortcuts(event):
+            return True
+
+        if modifiers & Qt.KeyboardModifier.AltModifier and self._handle_alt_shortcuts(event):
+            return True
+
+        return self._handle_tab_indent(event)
+
+    def _handled_by_popup_or_newline(self, event: QKeyEvent, key: int, modifiers) -> bool:
+        """補全視窗、Enter 與括號自動關閉 / The popup, Enter and bracket autoclose."""
+        # 補全視窗開啟時，攔截不該觸發的按鍵 / Intercept keys that should close completion popup
+        if self.completer.popup().isVisible() and key in self.skip_popup_behavior_list:
+            self.completer.popup().close()
+            event.ignore()
+            return True
+
+        # Shift+Enter → 忽略 (避免軟換行影響行號)
+        if modifiers & Qt.KeyboardModifier.ShiftModifier and key in (Qt.Key.Key_Enter, Qt.Key.Key_Return):
+            event.ignore()
+            return True
+
+        if key in (Qt.Key.Key_Enter, Qt.Key.Key_Return) and not modifiers:
+            self._handle_enter_autoindent(event)
+            return True
+
+        if key in self._BRACKET_PAIRS and not modifiers & Qt.KeyboardModifier.ControlModifier:
+            self._handle_bracket_autoclose(event)
+            self._maybe_show_signature(event.text())
+            return True
+
+        return False
+
+    def _maybe_start_completion(self, key: int) -> None:
+        """該補全的按鍵就重新排一次補全 / Queue completion when the key calls for it."""
+        if key in self.need_complete_list and self.completer is not None:
+            if self.completer.popup().isVisible():
+                self.completer.popup().close()
+            self._complete_timer.start()
+
     def keyPressEvent(self, event: QKeyEvent) -> None:
         """鍵盤事件處理 / Handle key press events (dispatches to helpers)."""
         key = event.key()
@@ -2812,53 +2863,16 @@ class CodeEditor(QPlainTextEdit):
         # While recording, note the keystroke before handling it as usual
         self.macro.record(int(key), int(modifiers.value), event.text())
 
-        # 對選取範圍輸入成對字元時包住它，而不是取代掉
-        # Typing a pairing character over a selection wraps it instead of
-        # replacing it
-        if event.text() in SURROUND_PAIRS and self.textCursor().hasSelection():
-            if self.surround_selection(event.text()):
-                return
-
-        if self._handle_multi_cursor_key(event):
+        if self._handled_by_editing_keys(event, modifiers):
             return
 
-        if modifiers & Qt.KeyboardModifier.ControlModifier and self._handle_ctrl_shortcuts(event):
-            return
-
-        if modifiers & Qt.KeyboardModifier.AltModifier and self._handle_alt_shortcuts(event):
-            return
-
-        if self._handle_tab_indent(event):
-            return
-
-        # 補全視窗開啟時，攔截不該觸發的按鍵 / Intercept keys that should close completion popup
-        if self.completer.popup().isVisible() and key in self.skip_popup_behavior_list:
-            self.completer.popup().close()
-            event.ignore()
-            return
-
-        # Shift+Enter → 忽略 (避免軟換行影響行號)
-        if modifiers & Qt.KeyboardModifier.ShiftModifier and key in (Qt.Key.Key_Enter, Qt.Key.Key_Return):
-            event.ignore()
-            return
-
-        if key in (Qt.Key.Key_Enter, Qt.Key.Key_Return) and not modifiers:
-            self._handle_enter_autoindent(event)
-            return
-
-        if key in self._BRACKET_PAIRS and not modifiers & Qt.KeyboardModifier.ControlModifier:
-            self._handle_bracket_autoclose(event)
-            self._maybe_show_signature(event.text())
+        if self._handled_by_popup_or_newline(event, key, modifiers):
             return
 
         super().keyPressEvent(event)
         self.highlight_current_line()
         self._maybe_show_signature(event.text())
-
-        if key in self.need_complete_list and self.completer is not None:
-            if self.completer.popup().isVisible():
-                self.completer.popup().close()
-            self._complete_timer.start()
+        self._maybe_start_completion(key)
 
     def build_context_menu(self) -> QMenu:
         """

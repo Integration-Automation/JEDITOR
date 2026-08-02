@@ -10,7 +10,7 @@ if TYPE_CHECKING:
     from je_editor.pyside_ui.code.code_process.code_exec import ExecManager
     from je_editor.pyside_ui.code.shell_process.shell_exec import ShellManager
 
-from typing import List, Union
+from typing import List
 
 
 class RunInstanceManager(object):
@@ -23,9 +23,9 @@ class RunInstanceManager(object):
         # 初始化，建立一個空的實例清單
         # Initialize with an empty instance list
         jeditor_logger.info("Init RunInstanceManager")
-        self.instance_list: List[Union[ExecManager, ShellManager]] = []
+        self.instance_list: List[ExecManager | ShellManager] = []
 
-    def remove_instance(self, instance: Union[ExecManager, ShellManager]) -> None:
+    def remove_instance(self, instance: ExecManager | ShellManager) -> None:
         """
         從清單中移除已結束的實例
         Remove a finished instance from the list

@@ -54,10 +54,11 @@ class BreakpointManager:
         :param line: 以 0 起算的行號 / the 0-based line number
         :return: 切換後是否有中斷點 / whether the line now has one
         """
-        for cursor in list(self._cursors):
-            if cursor.blockNumber() == line:
-                self._cursors.remove(cursor)
-                return False
+        existing = next(
+            (cursor for cursor in self._cursors if cursor.blockNumber() == line), None)
+        if existing is not None:
+            self._cursors.remove(existing)
+            return False
         block = self._code_edit.document().findBlockByNumber(line)
         if not block.isValid():
             return False

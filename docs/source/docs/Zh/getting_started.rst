@@ -61,7 +61,7 @@ JEditor 會自動安裝以下依賴套件：
      - 快速 Python 靜態分析工具
    * - gitpython
      - Git 操作
-   * - langchain / langchain_openai
+   * - langchain_openai / langchain_core
      - AI 助手（LLM 整合）
    * - watchdog
      - 檔案系統監控

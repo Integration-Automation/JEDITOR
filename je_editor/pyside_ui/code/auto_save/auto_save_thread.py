@@ -1,7 +1,7 @@
 import time
 from pathlib import Path
 from threading import Thread, Event
-from typing import Callable, Union
+from typing import Callable
 
 from PySide6.QtCore import QObject, Qt, Signal, Slot
 
@@ -22,7 +22,7 @@ class _TextFetcher(QObject):
     def __init__(self, editor: CodeEditor, parent: QObject | None = None) -> None:
         super().__init__(parent)
         self._editor = editor
-        self._pending_text: Union[str, None] = None
+        self._pending_text: str | None = None
         self._ready = Event()
         self.fetch_requested.connect(self._do_fetch, type=Qt.ConnectionType.QueuedConnection)
 
@@ -38,7 +38,7 @@ class _TextFetcher(QObject):
         finally:
             self._ready.set()
 
-    def fetch(self) -> Union[str, None]:
+    def fetch(self) -> str | None:
         """從背景執行緒呼叫，安全取得文字 / Call from background thread to safely get text"""
         self._pending_text = None
         self._ready.clear()
@@ -55,14 +55,14 @@ class CodeEditSaveThread(Thread):
     """
 
     def __init__(
-            self, file_to_save: Union[str, None] = None, editor: Union[None, CodeEditor] = None,
+            self, file_to_save: str | None = None, editor: CodeEditor | None = None,
             before_write_callback: Callable | None = None) -> None:
         jeditor_logger.info(f"Init CodeEditSaveThread "
                             f"file_to_save: {file_to_save} "
                             f"editor: {editor}")
         super().__init__()
         self.file: str = file_to_save
-        self.editor: Union[None, CodeEditor] = editor
+        self.editor: CodeEditor | None = editor
         self.still_run: bool = True
         self.daemon = True
         self.skip_this_round: bool = False
@@ -73,11 +73,11 @@ class CodeEditSaveThread(Thread):
         self.encoding: str = DEFAULT_ENCODING
         self.line_ending: str = LINE_ENDING_LF
         # 建立主執行緒上的文字提取器 / Create text fetcher on main thread
-        self._text_fetcher: Union[_TextFetcher, None] = None
+        self._text_fetcher: _TextFetcher | None = None
         if editor is not None:
             self._text_fetcher = _TextFetcher(editor)
 
-    def _get_editor_text(self) -> Union[str, None]:
+    def _get_editor_text(self) -> str | None:
         """
         透過 Qt 主執行緒安全取得編輯器文字
         Safely get editor text via Qt main thread

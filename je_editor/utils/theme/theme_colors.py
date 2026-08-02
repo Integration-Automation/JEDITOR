@@ -23,7 +23,11 @@ Palette = Dict[str, List[int]]
 DARK_COLORS: Palette = {
     "line_number_color": [255, 255, 255],
     "line_number_background_color": [179, 179, 179],
-    "current_line_color": [148, 148, 184],
+    # 深色底的目前行只需要比底色亮一點；原本這個值接近白色，壓在上面的文字反而
+    # 看不清楚
+    # On a dark background the current line only needs to lift slightly; this
+    # used to be near-white, which buried the text sitting on it
+    "current_line_color": [58, 58, 74],
     "normal_output_color": [255, 255, 255],
     "error_output_color": [255, 0, 0],
     "warning_output_color": [204, 204, 0],
@@ -45,6 +49,8 @@ DARK_COLORS: Palette = {
     "syntax_string_color": [206, 145, 120],
     "syntax_comment_color": [106, 153, 85],
     "syntax_number_color": [181, 206, 168],
+    "syntax_builtin_color": [78, 201, 176],
+    "syntax_self_color": [197, 134, 192],
     "trailing_whitespace_color": [120, 70, 70],
 }
 
@@ -74,6 +80,8 @@ LIGHT_COLORS: Palette = {
     "syntax_string_color": [163, 21, 21],
     "syntax_comment_color": [0, 128, 0],
     "syntax_number_color": [9, 134, 88],
+    "syntax_builtin_color": [38, 127, 153],
+    "syntax_self_color": [154, 0, 154],
     "trailing_whitespace_color": [255, 205, 205],
 }
 

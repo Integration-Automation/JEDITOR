@@ -1,7 +1,7 @@
 import json
 from pathlib import Path
 from threading import Lock
-from typing import Union, Any
+from typing import Any
 
 # 匯入自訂錯誤訊息與例外類別
 # Import custom error messages and exception class
@@ -43,7 +43,7 @@ def read_json(json_file_path: str) -> Any | None:
         _lock.release()  # 確保鎖一定會被釋放 / Ensure the lock is always released
 
 
-def write_json(json_save_path: str, data_to_output: Union[list, dict]) -> None:
+def write_json(json_save_path: str, data_to_output: list | dict) -> None:
     """
     功能說明 (Function Description):
     將資料寫入 JSON 檔案。

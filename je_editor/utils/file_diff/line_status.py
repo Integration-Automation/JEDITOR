@@ -68,9 +68,9 @@ def line_statuses(baseline: str, current: str) -> dict[int, str]:
     matcher = SequenceMatcher(None, baseline_lines, current_lines, autojunk=False)
     for tag, _base_start, _base_end, start, end in matcher.get_opcodes():
         if tag == "replace":
-            statuses.update({line: LINE_MODIFIED for line in range(start, end)})
+            statuses.update(dict.fromkeys(range(start, end), LINE_MODIFIED))
         elif tag == "insert":
-            statuses.update({line: LINE_ADDED for line in range(start, end)})
+            statuses.update(dict.fromkeys(range(start, end), LINE_ADDED))
         elif tag == "delete":
             _mark_removal(statuses, start, len(current_lines))
     return statuses

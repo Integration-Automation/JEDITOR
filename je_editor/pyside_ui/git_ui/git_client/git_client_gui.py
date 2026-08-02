@@ -1065,8 +1065,6 @@ class GitDiffHighlighter(QSyntaxHighlighter):
         elif line_text.startswith("@@"):
             # Hunk header
             self.setFormat(0, len(line_text), self.header_format)
-        elif line_text.startswith("diff ") or line_text.startswith("index ") or line_text.startswith(
-                "---") or line_text.startswith(
-                "+++"):
+        elif line_text.startswith(("diff ", "index ", "---", "+++")):
             # Meta 資訊（檔案路徑、index、diff header）
             self.setFormat(0, len(line_text), self.meta_format)

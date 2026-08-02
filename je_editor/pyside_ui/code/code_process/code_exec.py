@@ -3,7 +3,6 @@ from __future__ import annotations
 import subprocess  # nosec B404 - 以引數清單呼叫編譯器/直譯器，shell=False
 import sys
 from pathlib import Path
-from typing import Union
 
 from PySide6.QtCore import QTimer
 from PySide6.QtGui import QTextCharFormat
@@ -27,7 +26,7 @@ class ExecManager(BaseProcessManager):
 
     def __init__(
             self,
-            main_window: Union[EditorWidget, None] = None,
+            main_window: EditorWidget | None = None,
             program_language: str = "python",
             program_encoding: str = "utf-8",
             program_buffer: int = 1024,
@@ -43,7 +42,7 @@ class ExecManager(BaseProcessManager):
             buffer_size=program_buffer,
         )
         self.compiler_path = None
-        self.code_result_cursor: Union[QTextEdit.textCursor, None] = None
+        self.code_result_cursor: QTextEdit.textCursor | None = None
         self.program_language = program_language
         self.renew_path()
 
@@ -72,7 +71,7 @@ class ExecManager(BaseProcessManager):
         else:
             raise JEditorException(je_editor_init_error)
 
-    def exec_code(self, exec_file_name: str, exec_prefix: Union[str, list] = None) -> None:
+    def exec_code(self, exec_file_name: str, exec_prefix: str | list = None) -> None:
         """
         執行指定檔案
         Execute given file

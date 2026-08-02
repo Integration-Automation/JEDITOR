@@ -157,7 +157,15 @@ def open_shortcut_settings(ui_we_want_to_set: EditorMain) -> None:
 
 
 def _repaint_editors(ui_we_want_to_set: EditorMain) -> None:
-    """讓每個編輯分頁用新顏色重畫 / Repaint every editor tab in the new colours."""
+    """
+    讓每個編輯分頁用新顏色重畫
+    Repaint every editor tab in the new colours.
+
+    高亮器是在建立時就把顏色取走的，所以要重新建一次，否則語法顏色會停在上一個
+    主題的那一組。
+    A highlighter takes its colours when it is built, so it has to be rebuilt or
+    the syntax colours stay on the previous theme's set.
+    """
     from je_editor.pyside_ui.main_ui.editor.editor_widget import EditorWidget
     tab_widget = getattr(ui_we_want_to_set, "tab_widget", None)
     if tab_widget is None:
@@ -165,6 +173,7 @@ def _repaint_editors(ui_we_want_to_set: EditorMain) -> None:
     for index in range(tab_widget.count()):
         widget = tab_widget.widget(index)
         if isinstance(widget, EditorWidget):
+            widget.code_edit.reset_highlighter()
             widget.code_edit.highlight_current_line()
             widget.code_edit.viewport().update()
             widget.code_edit.line_number.update()
