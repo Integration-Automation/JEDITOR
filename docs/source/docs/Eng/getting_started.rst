@@ -61,7 +61,7 @@ JEditor will automatically install the following dependencies:
      - Fast Python linter
    * - gitpython
      - Git operations
-   * - langchain / langchain_openai
+   * - langchain_openai / langchain_core
      - AI assistant (LLM integration)
    * - watchdog
      - File system monitoring

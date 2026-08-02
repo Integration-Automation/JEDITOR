@@ -295,7 +295,7 @@ Core dependencies are installed automatically:
 | jedi | Python auto-completion & analysis |
 | ruff | Fast Python linter |
 | gitpython | Git repository operations |
-| langchain + langchain_openai | AI/LLM integration |
+| langchain_openai + langchain_core | AI/LLM integration |
 | watchdog | File system monitoring |
 | pycodestyle | PEP8 style checking |
 | qtconsole | Jupyter/IPython console widget |

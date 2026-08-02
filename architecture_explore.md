@@ -15,7 +15,7 @@ JEditor 是以 PySide6（Qt for Python）寫成的程式碼編輯器，功能涵
 | --- | --- |
 | 語言 / 版本 | Python 3.10+（CI 測 3.10 / 3.11 / 3.12） |
 | UI 框架 | PySide6 6.11.0 + qt-material 主題 |
-| 主要相依 | `jedi`（Python 補全）、`ruff`（診斷）、`yapf` / `pycodestyle`（格式化與檢查）、`gitpython`、`watchdog`、`qtconsole` + `IPython`、`langchain` / `langchain_openai`、`frontengine` |
+| 主要相依 | `jedi`（Python 補全）、`ruff`（診斷）、`yapf` / `pycodestyle`（格式化與檢查）、`gitpython`、`watchdog`、`qtconsole` + `IPython`、`langchain_openai` + `langchain_core`、`frontengine` |
 | 測試 | pytest + pytest-qt，88 個測試檔、約 13,400 行 |
 | 靜態分析 | ruff、SonarCloud（`sonar.sources=je_editor`）、Codacy、bandit |
 
