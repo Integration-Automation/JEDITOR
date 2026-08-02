@@ -1,4 +1,8 @@
-from PySide6.QtGui import QColor
+# 顏色以「主題顏色的鍵」表示，而不是寫死的 QColor：這樣淺色樣式才拿得到淺色底
+# 讀得清楚的顏色。插件仍然可以直接給 QColor，兩種寫法都支援。
+# Colours are named by their theme key rather than a fixed QColor, so a light
+# style gets colours legible on a light background. A plugin may still give a
+# QColor directly; both forms are accepted.
 
 # -----------------------------
 # 基本語法規則設定 (數字、註解、字串)
@@ -13,13 +17,13 @@ syntax_rule_setting_dict: dict = {
             r"\b[+-]?0[xX][0-9A-Fa-f]+[lL]?\b",  # 十六進位 hex
             r"\b[+-]?[0-9]+(?:\.[0-9]+)?(?:[eE][+-]?[0-9]+)?\b"  # 浮點數/科學記號 float/scientific
         ),
-        "color": QColor(0, 128, 255)  # 藍色 Blue
+        "color": "syntax_number_color"
     },
     "comment_rule": {
         # 註解規則 (以 # 開頭直到換行)
         # Comment rule (starts with # until newline)
         "rules": (r"#[^\n]*",),
-        "color": QColor(0, 230, 0)  # 綠色 Green
+        "color": "syntax_comment_color"
     },
     "string_rule": {
         # 字串規則 (單引號與雙引號)
@@ -28,7 +32,7 @@ syntax_rule_setting_dict: dict = {
             r"'[^'\\]*(\\.[^'\\]*)*'",  # 單引號字串 single-quoted string
             r'"[^"\\]*(\\.[^"\\]*)*"',  # 雙引號字串 double-quoted string
         ),
-        "color": QColor(0, 153, 0)  # 深綠色 Dark green
+        "color": "syntax_string_color"
     }
 }
 
@@ -47,7 +51,7 @@ syntax_word_setting_dict: dict = {
             "global", "if", "import", "in", "is", "lambda", "nonlocal",
             "not", "or", "pass", "raise", "return", "try", "while", "with", "yield"
         ),
-        "color": QColor(255, 212, 102)  # 黃色 Yellow
+        "color": "syntax_keyword_color"
     },
     "builtins_keyword": {
         # Python 內建函式與型別
@@ -75,13 +79,13 @@ syntax_word_setting_dict: dict = {
             "zip",
             "__import__"
         ),
-        "color": QColor(0, 255, 255)  # 青色 Cyan
+        "color": "syntax_builtin_color"
     },
     "self": {
         # Python 類別中的 self 關鍵字
         # "self" keyword in Python classes
         "words": ("self",),
-        "color": QColor(204, 0, 204)  # 紫色 Purple
+        "color": "syntax_self_color"
     }
 }
 

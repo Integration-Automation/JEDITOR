@@ -19,6 +19,7 @@ from je_editor.pyside_ui.code.syntax.syntax_setting import (
     syntax_rule_setting_dict,
     syntax_extend_setting_dict
 )
+from je_editor.pyside_ui.main_ui.save_settings.user_color_setting_file import actually_color_dict
 from je_editor.utils.logging.loggin_instance import jeditor_logger
 
 
@@ -30,8 +31,21 @@ class PythonHighlighter(QSyntaxHighlighter):
 
     @staticmethod
     def _make_format(color: object) -> QTextCharFormat:
-        """建立含前景色的 QTextCharFormat / Build a QTextCharFormat with the given foreground."""
+        """
+        建立含前景色的 QTextCharFormat
+        Build a QTextCharFormat with the given foreground.
+
+        顏色可以是主題顏色的鍵（內建規則都是這種），也可以是直接給的 QColor
+        （插件沿用的寫法）。
+        The colour may be a theme colour key, as every built-in rule uses, or a
+        QColor given directly, which is what plugins do.
+        """
         fmt = QTextCharFormat()
+        if isinstance(color, str):
+            themed = actually_color_dict.get(color)
+            if themed is not None:
+                fmt.setForeground(themed)
+            return fmt
         fmt.setForeground(color)
         return fmt
 

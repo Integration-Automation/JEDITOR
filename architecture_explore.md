@@ -448,9 +448,14 @@ UI 執行緒不做 I/O 是硬性規則，重活分成三類：
 
 ### 6.5 主題顏色
 
-qt-material 負責視窗樣式；編輯器自身的顏色（高亮、diff 標記、診斷底線、輸出顏色）由
+qt-material 負責視窗樣式；編輯器自身的顏色（語法高亮、diff 標記、診斷底線、輸出顏色）由
 `utils/theme/theme_colors.py` 提供深 / 淺兩組預設，換樣式時 `apply_theme_colors` 會換掉預設色但保留使用者挑過的顏色，
 換算結果放在 `actually_color_dict`。
+
+`update_actually_color_dict` 的鍵與備用值直接取自 `DARK_COLORS`，所以調色盤加新顏色不必動它。
+兩個高亮器都只認顏色鍵：`syntax_setting.py` 的內建規則存的是鍵名而非寫死的 `QColor`（插件仍可直接給 `QColor`），
+`generic_syntax.py` 亦然。高亮器在建立時就把顏色取走，因此 `build_style_menu._repaint_editors` 換主題時會呼叫
+`reset_highlighter()` 重建，否則語法顏色會停在上一個主題。
 
 ### 6.6 插件系統
 
