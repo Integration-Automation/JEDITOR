@@ -62,8 +62,10 @@ class LangChainInterface(object):
         """
         message = None
         try:
-            # 呼叫 AI 並取得回覆 / Invoke AI and get response
-            message = self.chat_ai.invoke(prompt).text()
+            # 呼叫 AI 並取得回覆；``text`` 是屬性，當成方法呼叫已被 langchain 標為棄用
+            # Invoke AI and get response. ``text`` is a property: calling it as a
+            # method is deprecated in langchain and will stop working.
+            message = self.chat_ai.invoke(prompt).text
 
             # 嘗試過濾掉 <think> 標籤前的內容，只保留主要回覆
             # Try to filter out content before </think>, keep only main response
