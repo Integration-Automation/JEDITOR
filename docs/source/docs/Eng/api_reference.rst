@@ -256,7 +256,11 @@ Logging
 
    jeditor_logger.info("Custom log message")
 
-The ``jeditor_logger`` is a standard Python logger that writes to ``JEditor.log``.
+The ``jeditor_logger`` is a standard Python logger that writes to
+``~/.je_editor/logs/JEditor.log``; set the ``JE_EDITOR_LOG_FILE`` environment variable to
+write somewhere else (``os.devnull`` turns the file off). The file is opened on the first
+record, so importing JEditor writes nothing, and it is shared and appended to by every
+process, each line carrying the process id.
 
 Exceptions
 -----------

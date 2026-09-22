@@ -23,14 +23,14 @@ JEditor 是以 PySide6（Qt for Python）寫成的程式碼編輯器，功能涵
 
 | 套件 | 模組數 | 行數 | 定位 |
 | --- | ---: | ---: | --- |
-| `pyside_ui/` | 98 | 20,311 | View / Controller：所有 Qt 元件與選單 |
-| `utils/` | 59 | 8,544 | 純邏輯層（絕大多數不 import Qt，可單獨測試） |
+| `pyside_ui/` | 98 | 20,330 | View / Controller：所有 Qt 元件與選單 |
+| `utils/` | 59 | 8,668 | 純邏輯層（絕大多數不 import Qt，可單獨測試） |
 | `git_client/` | 6 | 777 | Git 操作（GitPython + git CLI 兩條路） |
 | `code_scan/` | 4 | 365 | ruff 執行與 watchdog 檔案監看 |
 | `plugins/` | 1 | 337 | 插件註冊表與外部插件載入器 |
 | 頂層 | 2 | 131 | `__main__.py`、`start_editor.py`（另有 `__init__.py` 匯出公開 API） |
 
-（行數含各層 `__init__.py`，合計 30,465 行。）
+（行數含各層 `__init__.py`，合計 30,608 行。）
 
 ---
 
@@ -222,7 +222,7 @@ start_editor(debug_mode)                       je_editor/start_editor.py
 
 | 模組 | 行 | 功用 |
 | --- | ---: | --- |
-| `logging/loggin_instance.py` | 61 | `jeditor_logger` 與 `JEditorLoggingHandler`（RotatingFileHandler 子類） |
+| `logging/loggin_instance.py` | 148 | `jeditor_logger` 與 `JEditorLoggingHandler`（RotatingFileHandler 子類）；日誌檔在 `$JE_EDITOR_LOG_FILE` 或 `~/.je_editor/logs/JEditor.log`，第一筆紀錄才開檔、附加、UTF-8 |
 | `redirect_manager/redirect_manager_class.py` | 130 | 把 stdout / stderr 導入兩個 Queue，同時也是 logging Handler |
 | `exception/exceptions.py` | 30 | 8 個 `JEditorException` 家族的例外類別 |
 | `exception/exception_tags.py` | 28 | 例外訊息字串常數 |

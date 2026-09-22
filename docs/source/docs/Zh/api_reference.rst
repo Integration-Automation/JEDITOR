@@ -253,7 +253,10 @@ english_word_dict / traditional_chinese_word_dict
 
    jeditor_logger.info("自訂日誌訊息")
 
-``jeditor_logger`` 是標準的 Python 日誌器，寫入 ``JEditor.log``。
+``jeditor_logger`` 是標準的 Python 日誌器，寫入 ``~/.je_editor/logs/JEditor.log``；
+設定環境變數 ``JE_EDITOR_LOG_FILE`` 可以改寫到別處（設成 ``os.devnull`` 就不寫檔）。
+第一筆紀錄才開檔，所以 import JEditor 不會寫任何檔案；所有行程共用這個檔、以附加模式寫入，
+每行都帶行程編號。
 
 例外處理
 ---------
