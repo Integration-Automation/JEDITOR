@@ -34,7 +34,7 @@
 
 .. code-block:: bash
 
-   git clone https://github.com/JE-Chen/je_editor.git
+   git clone https://github.com/Integration-Automation/JEDITOR.git
    cd je_editor
    pip install .
 

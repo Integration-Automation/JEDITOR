@@ -28,9 +28,9 @@ classifiers = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/JE-Chen/je_editor"
+Homepage = "https://github.com/Integration-Automation/JEDITOR"
 Documentation = "https://je-editor.readthedocs.io/en/latest/"
-Code = "https://github.com/JE-Chen/je_editor"
+Code = "https://github.com/Integration-Automation/JEDITOR"
 
 [project.readme]
 file = "README.md"
