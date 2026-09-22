@@ -58,6 +58,7 @@ In the same commit: delete the item from `progress.md`, add a `#done` entry here
 
 | ID | Date | Title | Tags | Batch |
 |---|---|---|---|---|
+| U-20260923-02 | 2026-09-23 | langchain_openai 1.6.2; Dependabot targets dev | #done #deps #ci | [2026-09](2026-09.md) |
 | U-20260923-01 | 2026-09-23 | JEditor.log moves out of the working directory | #done #logging | [2026-09](2026-09.md) |
 | U-20260922-04 | 2026-09-22 | PLUGIN_GUIDE.md becomes the single plugin guide | #done #docs | [2026-09](2026-09.md) |
 | U-20260922-03 | 2026-09-22 | Point project URLs at the current repository | #done #metadata | [2026-09](2026-09.md) |
@@ -68,4 +69,4 @@ In the same commit: delete the item from `progress.md`, add a `#done` entry here
 
 | File | Period | Entries |
 |---|---|---:|
-| [2026-09.md](2026-09.md) | 2026-09 | 5 |
+| [2026-09.md](2026-09.md) | 2026-09 | 6 |
