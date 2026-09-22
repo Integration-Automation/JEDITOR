@@ -14,8 +14,8 @@ description = "JEditor is basic but powerful editor include GPT"
 requires-python = ">=3.10"
 license-files = ["LICENSE"]
 dependencies = [
-    "PySide6==6.11.0", "qt-material", "yapf", "frontengine", "pycodestyle", "jedi",
-    "qtconsole", "langchain_openai==1.2.0", "langchain_core", "pydantic", "watchdog", "ruff", "gitpython"
+    "PySide6==6.11.2", "qt-material", "yapf", "frontengine", "pycodestyle", "jedi",
+    "qtconsole", "langchain_openai==1.6.2", "langchain_core", "pydantic", "watchdog", "ruff", "gitpython"
 ]
 classifiers = [
     "Programming Language :: Python :: 3.10",
@@ -27,9 +27,9 @@ classifiers = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/JE-Chen/je_editor"
+Homepage = "https://github.com/Integration-Automation/JEDITOR"
 Documentation = "https://je-editor.readthedocs.io/en/latest/"
-Code = "https://github.com/JE-Chen/je_editor"
+Code = "https://github.com/Integration-Automation/JEDITOR"
 
 [project.readme]
 file = "README.md"

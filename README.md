@@ -9,8 +9,8 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/JE-Chen/je_editor">
-    <img src="https://img.shields.io/github/stars/JE-Chen/je_editor?style=social" alt="GitHub Stars"/>
+  <a href="https://github.com/Integration-Automation/JEDITOR">
+    <img src="https://img.shields.io/github/stars/Integration-Automation/JEDITOR?style=social" alt="GitHub Stars"/>
   </a>
   <a href="https://pypi.org/project/je_editor/">
     <img src="https://img.shields.io/pypi/v/je_editor" alt="PyPI Version"/>
@@ -18,8 +18,8 @@
   <a href="https://pypi.org/project/je_editor/">
     <img src="https://img.shields.io/pypi/pyversions/je_editor" alt="Python Versions"/>
   </a>
-  <a href="https://github.com/JE-Chen/je_editor/blob/main/LICENSE">
-    <img src="https://img.shields.io/github/license/JE-Chen/je_editor" alt="License"/>
+  <a href="https://github.com/Integration-Automation/JEDITOR/blob/main/LICENSE">
+    <img src="https://img.shields.io/github/license/Integration-Automation/JEDITOR" alt="License"/>
   </a>
   <a href="https://je-editor.readthedocs.io/en/latest/">
     <img src="https://img.shields.io/readthedocs/je-editor" alt="Read the Docs"/>
@@ -278,7 +278,7 @@ pip install je_editor
 ### From Source
 
 ```bash
-git clone https://github.com/JE-Chen/je_editor.git
+git clone https://github.com/Integration-Automation/JEDITOR.git
 cd je_editor
 pip install .
 ```
@@ -650,7 +650,7 @@ Full documentation is available at
 ## Contributing
 
 Contributions are welcome. Please feel free to submit issues and pull requests on
-[GitHub](https://github.com/JE-Chen/je_editor).
+[GitHub](https://github.com/Integration-Automation/JEDITOR).
 
 ---
 

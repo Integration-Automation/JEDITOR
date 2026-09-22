@@ -16,21 +16,21 @@ JEditor 是以 PySide6（Qt for Python）寫成的程式碼編輯器，功能涵
 | 語言 / 版本 | Python 3.10+（CI 測 3.10 / 3.11 / 3.12） |
 | UI 框架 | PySide6 6.11.0 + qt-material 主題 |
 | 主要相依 | `jedi`（Python 補全）、`ruff`（診斷）、`yapf` / `pycodestyle`（格式化與檢查）、`gitpython`、`watchdog`、`qtconsole` + `IPython`、`langchain_openai` + `langchain_core`、`frontengine` |
-| 測試 | pytest + pytest-qt，88 個測試檔、約 13,400 行 |
+| 測試 | pytest + pytest-qt，89 個測試檔、約 13,450 行 |
 | 靜態分析 | ruff、SonarCloud（`sonar.sources=je_editor`）、Codacy、bandit |
 
 ### 各套件規模
 
 | 套件 | 模組數 | 行數 | 定位 |
 | --- | ---: | ---: | --- |
-| `pyside_ui/` | 98 | 20,311 | View / Controller：所有 Qt 元件與選單 |
-| `utils/` | 59 | 8,544 | 純邏輯層（絕大多數不 import Qt，可單獨測試） |
+| `pyside_ui/` | 98 | 20,330 | View / Controller：所有 Qt 元件與選單 |
+| `utils/` | 59 | 8,668 | 純邏輯層（絕大多數不 import Qt，可單獨測試） |
 | `git_client/` | 6 | 777 | Git 操作（GitPython + git CLI 兩條路） |
 | `code_scan/` | 4 | 365 | ruff 執行與 watchdog 檔案監看 |
 | `plugins/` | 1 | 337 | 插件註冊表與外部插件載入器 |
 | 頂層 | 2 | 131 | `__main__.py`、`start_editor.py`（另有 `__init__.py` 匯出公開 API） |
 
-（行數含各層 `__init__.py`，合計 30,465 行。）
+（行數含各層 `__init__.py`，合計 30,608 行。）
 
 ---
 
@@ -69,7 +69,7 @@ JEditor 是以 PySide6（Qt for Python）寫成的程式碼編輯器，功能涵
 **設計慣例**：幾乎每個功能都拆成「純邏輯 + Qt 整合層」兩塊。
 例如折疊 = `utils/code_folding/fold_regions.py`（算區塊）+ `pyside_ui/code/folding/folding_manager.py`（藏行、重畫）；
 書籤 = `utils/bookmark/bookmark_navigation.py` + `pyside_ui/code/bookmark/bookmark_manager.py`。
-這讓大部分邏輯可以不開視窗就測試，也是 `test/` 能有 88 個測試檔的原因。
+這讓大部分邏輯可以不開視窗就測試，也是 `test/` 能有 89 個測試檔的原因。
 
 ---
 
@@ -222,7 +222,7 @@ start_editor(debug_mode)                       je_editor/start_editor.py
 
 | 模組 | 行 | 功用 |
 | --- | ---: | --- |
-| `logging/loggin_instance.py` | 61 | `jeditor_logger` 與 `JEditorLoggingHandler`（RotatingFileHandler 子類） |
+| `logging/loggin_instance.py` | 148 | `jeditor_logger` 與 `JEditorLoggingHandler`（RotatingFileHandler 子類）；日誌檔在 `$JE_EDITOR_LOG_FILE` 或 `~/.je_editor/logs/JEditor.log`，第一筆紀錄才開檔、附加、UTF-8 |
 | `redirect_manager/redirect_manager_class.py` | 130 | 把 stdout / stderr 導入兩個 Queue，同時也是 logging Handler |
 | `exception/exceptions.py` | 30 | 8 個 `JEditorException` 家族的例外類別 |
 | `exception/exception_tags.py` | 28 | 例外訊息字串常數 |
@@ -478,7 +478,7 @@ qt-material 負責視窗樣式；編輯器自身的顏色（語法高亮、diff 
 
 ## 7. 測試與 CI
 
-- `test/` 88 個測試檔、約 13,400 行，與模組大致一對一（`test_fold_regions.py`、`test_shortcut_registry.py`…）。
+- `test/` 89 個測試檔、約 13,450 行，與模組大致一對一（`test_fold_regions.py`、`test_shortcut_registry.py`…）。
 - `conftest.py` 提供 session 級 `qapp`、`tmp_dir`、`tmp_file`，以及 autouse 的「等工具列背景執行緒結束」fixture；
   `collect_ignore_glob` 排除會真的開視窗的 `start_qt_ui.py` / `extend_test.py`。
 - `pyproject.toml` 設定 `testpaths = ["test"]`、`qt_api = "pyside6"`；bandit 排除測試目錄（pytest 慣用 `assert`）。

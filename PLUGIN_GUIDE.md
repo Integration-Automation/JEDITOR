@@ -1,8 +1,30 @@
-# PyBreeze Plugin Guide / 插件開發指南
+# JEditor / PyBreeze Plugin Guide / 插件開發指南
 
-PyBreeze (jeditor) supports external plugins for adding **syntax highlighting** and **UI translations**.
+JEditor (`je_editor`) supports external plugins for adding **syntax highlighting**, **UI translations**
+and **run configurations**. PyBreeze is built on JEditor and loads the same plugins, so this file is the
+single guide for both; PyBreeze's `PLUGIN_GUIDE.md` only points here.
+Ready-made plugins live in the [IDE_Plugins](https://github.com/Jeffrey-Plugin-Repos/IDE_Plugins) repository.
 
-PyBreeze (jeditor) 支援外部插件，可用於新增**語法高亮**和 **UI 翻譯**。
+JEditor（`je_editor`）支援外部插件，可用於新增**語法高亮**、**UI 翻譯**與**執行設定**。
+PyBreeze 建立在 JEditor 之上、載入同一套插件，所以兩者共用這份指南；PyBreeze 的 `PLUGIN_GUIDE.md` 只是指向這裡。
+現成的插件放在 [IDE_Plugins](https://github.com/Jeffrey-Plugin-Repos/IDE_Plugins) repo。
+
+---
+
+## Installing Plugins / 安裝插件
+
+- **Plugin Browser**: *Plugins → Plugin Browser* lists every `.py` file of a GitHub repository
+  (default `https://github.com/Jeffrey-Plugin-Repos/IDE_Plugins`, any public repository URL can be typed in), shows its metadata and source,
+  and **Download & Install** saves the file into `jeditor_plugins/` under the current working
+  directory. Restart the editor to load it.
+- **By hand**: copy a plugin file (or a package directory) into `jeditor_plugins/`.
+
+<!-- -->
+
+- **插件瀏覽器**：*插件 → Plugin Browser* 會列出 GitHub repo 裡的每個 `.py` 檔（預設為 `https://github.com/Jeffrey-Plugin-Repos/IDE_Plugins`，
+  也可以輸入其他公開 repo 的網址），可以看 metadata 與原始碼；按 **Download & Install** 會把檔案存到
+  目前工作目錄下的 `jeditor_plugins/`。重新啟動編輯器後生效。
+- **手動**：把插件檔（或套件目錄）複製到 `jeditor_plugins/`。
 
 ---
 
@@ -185,10 +207,10 @@ Common keys include:
 | `help_menu_label` | Help menu / 幫助選單 |
 
 For a complete list, refer to `je_editor.utils.multi_language.english.english_word_dict`
-or see the example plugin `exe/jeditor_plugins/french.py`.
+or see the example plugin [`languages/french.py`](https://github.com/Jeffrey-Plugin-Repos/IDE_Plugins/blob/main/languages/french.py) in IDE_Plugins.
 
 完整鍵值列表請參考 `je_editor.utils.multi_language.english.english_word_dict`，
-或參考範例插件 `exe/jeditor_plugins/french.py`。
+或參考 IDE_Plugins 的範例插件 [`languages/french.py`](https://github.com/Jeffrey-Plugin-Repos/IDE_Plugins/blob/main/languages/french.py)。
 
 ### Full Example / 完整範例
 
@@ -286,29 +308,39 @@ working_directory/
     my_language.py
     my_package/             # Package plugin / 套件插件
       __init__.py
+    program_languages/      # Category directory (no __init__.py) / 分類目錄（沒有 __init__.py）
+      go_syntax.py
 ```
 
-- Plugins are auto-discovered from `jeditor_plugins/` under the current working directory.
-- Files starting with `_` or `.` are ignored.
-- Each plugin must have a `register()` function.
+- Two `jeditor_plugins/` directories are scanned: the one under the current working directory, then
+  the one next to the installed `je_editor` package (development checkouts). If two plugins share a
+  name, the first one found wins.
+- A subdirectory with `__init__.py` is one package plugin; a subdirectory without it is a category and
+  is scanned recursively.
+- Files and directories starting with `_` or `.` are ignored.
+- Each plugin must have a `register()` function; a module without one is skipped with a warning.
 
 <!-- -->
 
-- 插件會從工作目錄下的 `jeditor_plugins/` 自動載入。
-- 以 `_` 或 `.` 開頭的檔案會被忽略。
-- 每個插件必須有 `register()` 函式。
+- 會掃描兩個 `jeditor_plugins/`：先是目前工作目錄底下的，再來是已安裝的 `je_editor` 套件旁邊的（開發用的
+  原始碼目錄）。兩個插件同名時，先找到的那個生效。
+- 有 `__init__.py` 的子目錄算一個套件插件；沒有的算分類目錄，會遞迴往下找。
+- 以 `_` 或 `.` 開頭的檔案與目錄會被忽略。
+- 每個插件必須有 `register()` 函式；沒有的模組會被略過並記一筆警告。
 
 ---
 
 ## Existing Plugins / 現有插件
 
+These live in the [IDE_Plugins](https://github.com/Jeffrey-Plugin-Repos/IDE_Plugins) repository (install them with the Plugin Browser).
+
+這些插件放在 [IDE_Plugins](https://github.com/Jeffrey-Plugin-Repos/IDE_Plugins) repo（用插件瀏覽器安裝）。
+
 | Plugin | File | Type | Run Support |
 |---|---|---|---|
-| C Syntax Highlighting | `c_syntax.py` | Syntax (`.c`) | GCC compile & run |
-| C++ Syntax Highlighting | `cpp_syntax.py` | Syntax (`.cpp`, `.cxx`, `.cc`, `.h`, `.hpp`, `.hxx`) | G++ compile & run |
-| Go Syntax Highlighting | `go_syntax.py` | Syntax (`.go`) | `go run` |
-| Java Syntax Highlighting | `java_syntax.py` | Syntax (`.java`) | `java` |
-| Rust Syntax Highlighting | `rust_syntax.py` | Syntax (`.rs`) | rustc compile & run |
-| French Translation | `french.py` | Language | - |
-
-All plugins are located in `exe/jeditor_plugins/`.
+| C Syntax Highlighting | `program_languages/c_syntax.py` | Syntax (`.c`, `.i`) | GCC compile & run |
+| C++ Syntax Highlighting | `program_languages/cpp_syntax.py` | Syntax (`.cpp`, `.cxx`, `.cc`, `.h`, `.hpp`, `.hxx`) | G++ compile & run |
+| Go Syntax Highlighting | `program_languages/go_syntax.py` | Syntax (`.go`) | `go run` |
+| Java Syntax Highlighting | `program_languages/java_syntax.py` | Syntax (`.java`, `.jav`) | `java` |
+| Rust Syntax Highlighting | `program_languages/rust_syntax.py` | Syntax (`.rs`) | rustc compile & run |
+| French Translation | `languages/french.py` | Language | - |

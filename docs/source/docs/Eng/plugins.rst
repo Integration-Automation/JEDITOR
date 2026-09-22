@@ -27,13 +27,21 @@ Plugins are auto-discovered from the ``jeditor_plugins/`` directory under your w
        my_language.py
        my_package/             # Package plugin
          __init__.py
+       program_languages/      # Category directory (no __init__.py), scanned recursively
+         go_syntax.py
 
 **Discovery Rules:**
 
-- Files starting with ``_`` or ``.`` are ignored
+- Two ``jeditor_plugins/`` directories are scanned: the one under the working directory, then the
+  one next to the installed ``je_editor`` package (development checkouts)
+- Files and directories starting with ``_`` or ``.`` are ignored
 - Each plugin **must** define a ``register()`` function
-- Package plugins use ``__init__.py`` as the entry point
+- Package plugins use ``__init__.py`` as the entry point; a subdirectory without it is a category
 - Duplicate plugin names are handled by first-found-wins
+
+**Installing:** *Plugins → Plugin Browser* lists the ``.py`` files of a GitHub repository (default
+`IDE_Plugins <https://github.com/Jeffrey-Plugin-Repos/IDE_Plugins>`_) and **Download & Install** saves the chosen file into ``jeditor_plugins/``
+under the working directory; restart the editor to load it. Copying a file there by hand works too.
 
 Plugin Metadata
 ----------------
@@ -198,7 +206,7 @@ Common keys include:
      - Help menu
 
 For a complete list, refer to ``je_editor.utils.multi_language.english.english_word_dict``
-or the example plugin at ``exe/jeditor_plugins/french.py``.
+or the example plugin `languages/french.py <https://github.com/Jeffrey-Plugin-Repos/IDE_Plugins/blob/main/languages/french.py>`_ in IDE_Plugins.
 
 **Full Example — Japanese Translation:**
 
@@ -291,7 +299,8 @@ Define how to execute files of specific types.
 Pre-built Plugins
 ------------------
 
-JEditor ships with the following example plugins in ``exe/jeditor_plugins/``:
+The following plugins live in the `IDE_Plugins <https://github.com/Jeffrey-Plugin-Repos/IDE_Plugins>`_ repository
+(``program_languages/`` and ``languages/``); install them with the Plugin Browser:
 
 .. list-table::
    :header-rows: 1
@@ -303,7 +312,7 @@ JEditor ships with the following example plugins in ``exe/jeditor_plugins/``:
      - Run Support
    * - C Syntax Highlighting
      - Syntax
-     - ``.c``
+     - ``.c``, ``.i``
      - GCC compile & run
    * - C++ Syntax Highlighting
      - Syntax
@@ -315,7 +324,7 @@ JEditor ships with the following example plugins in ``exe/jeditor_plugins/``:
      - ``go run``
    * - Java Syntax Highlighting
      - Syntax
-     - ``.java``
+     - ``.java``, ``.jav``
      - ``java``
    * - Rust Syntax Highlighting
      - Syntax

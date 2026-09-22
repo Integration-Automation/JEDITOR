@@ -2,10 +2,10 @@
 
 ## Session Start
 
-1. **`PROGRESS.md`** (repo root, untracked, gitignored) — the outstanding-work list, and *only* that.
+1. **`PROGRESS.md`** (repo root, tracked) — the outstanding-work list, and *only* that.
    Read it first to resume unfinished work, keep it updated as you go, and **clear it to just the
-   heading when everything is done**. Items may span the JEditor and PyBreeze repos, so each item
-   names its repo. Create it when multi-step or cross-session work is worth tracking. Rules and
+   heading when everything is done**. PyBreeze items live in
+   PyBreeze's own `progress.md`; finished items are deleted here and recorded in `docs/updates/`. Rules and
    standing knowledge belong in this file, never in `PROGRESS.md`, which gets emptied.
 2. **`architecture_explore.md`** (repo root) — the module-by-module architecture record.
 
@@ -22,7 +22,7 @@ existing module that change nothing structural need no update.
 JEditor is a Python code editor built with PySide6 (Qt), featuring syntax highlighting, code
 formatting, a plugin system, Git integration, and LangChain-powered AI assistance.
 
-- **Language**: Python 3.10+ · **UI**: PySide6 6.11.0 · **Packaging**: pip / setuptools
+- **Language**: Python 3.10+ · **UI**: PySide6 6.11.2 · **Packaging**: pip / setuptools
 - **Testing**: pytest + pytest-qt · **Lint**: ruff, pycodestyle · **Format**: yapf
 
 ```
@@ -143,6 +143,18 @@ python -m build                        # build (swap pyproject.toml <-> dev.toml
 - A dependency nothing imports is not worth patching — remove it.
 - **Regular expressions** must not backtrack super-linearly (S8786): no two greedy quantifiers that
   can trade against each other, and no lazy quantifier driven across a whole line.
+
+## Stage commits, `PROGRESS.md`, `docs/updates/` and `architecture.md`
+
+Workspace rule shared by every repository under `D:\Codes` (full text: `D:\Codes\CLAUDE.md`).
+
+- **Commit at every stage.** A stage is the smallest piece of work that leaves the repository consistent and passes this project's checks (definition of done, tests, lint): one finished `PROGRESS.md` item, or one self-contained step of a larger one. Commit it before starting the next stage, before switching to another repository, and before the session ends. Do not leave work uncommitted across sessions; if a stage cannot be finished, commit the consistent part and record the rest in `PROGRESS.md`.
+  - Stage only the files that stage touched (`git add <path>`, never `git add -A`), follow this file's commit-message rules, and never add AI attribution.
+  - Committing is not pushing: push or open a PR only as this project's branch flow says or when asked.
+- **`PROGRESS.md`** (repository root, tracked) holds outstanding work only: no finished items, no history, no rules.
+- **`docs/updates/`** records finished work: one batch file per month (`YYYY-MM.md`), one entry per piece of work headed `## U-YYYYMMDD-NN · date · title · #tags`, and an index with query commands in `docs/updates/README.md`. When a `PROGRESS.md` item is done, delete it and add a `#done` entry plus its index row in the same commit.
+- **`architecture.md`** (repository root) is the short architecture overview: layers, entry points, main flows, extension points, cross-project boundaries. Update it in the same commit whenever a change alters any of those. `architecture_explore.md` stays the detailed per-module map under its own rule in this file.
+- **Cross-project contracts** are listed in `architecture.md` §6: what other repositories rely on here (CLI flags, import paths, constructor arguments, file layouts) and what this repository relies on elsewhere. No test here protects them, so never rename or remove one without changing its consumers in the same round, and update §6 whenever a contract is added or changes.
 
 ## Git & Commits
 

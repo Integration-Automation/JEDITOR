@@ -27,13 +27,20 @@ JEditor 支援四種類型的插件：
        my_language.py
        my_package/             # 套件插件
          __init__.py
+       program_languages/      # 分類目錄（沒有 __init__.py），會遞迴掃描
+         go_syntax.py
 
 **發現規則：**
 
-- 以 ``_`` 或 ``.`` 開頭的檔案會被忽略
+- 會掃描兩個 ``jeditor_plugins/``：先是工作目錄底下的，再來是已安裝的 ``je_editor`` 套件旁邊的（開發用原始碼目錄）
+- 以 ``_`` 或 ``.`` 開頭的檔案與目錄會被忽略
 - 每個插件 **必須** 定義一個 ``register()`` 函式
-- 套件插件使用 ``__init__.py`` 作為進入點
+- 套件插件使用 ``__init__.py`` 作為進入點；沒有 ``__init__.py`` 的子目錄算分類目錄
 - 重複的插件名稱以先找到的為準
+
+**安裝：** *插件 → Plugin Browser* 會列出 GitHub repo 的 ``.py`` 檔（預設為
+`IDE_Plugins <https://github.com/Jeffrey-Plugin-Repos/IDE_Plugins>`_），按 **Download & Install** 會把檔案存到工作目錄下的
+``jeditor_plugins/``，重新啟動編輯器後生效。也可以手動把檔案複製進去。
 
 插件元資料
 -----------
@@ -198,7 +205,7 @@ JEditor 支援四種類型的插件：
      - 幫助選單
 
 完整鍵值列表請參考 ``je_editor.utils.multi_language.english.english_word_dict``
-或範例插件 ``exe/jeditor_plugins/french.py``。
+或 IDE_Plugins 的範例插件 `languages/french.py <https://github.com/Jeffrey-Plugin-Repos/IDE_Plugins/blob/main/languages/french.py>`_。
 
 **完整範例 — 日語翻譯：**
 
@@ -291,7 +298,7 @@ JEditor 支援四種類型的插件：
 預建插件
 ---------
 
-JEditor 在 ``exe/jeditor_plugins/`` 中提供以下範例插件：
+以下插件放在 `IDE_Plugins <https://github.com/Jeffrey-Plugin-Repos/IDE_Plugins>`_ repo（``program_languages/`` 與 ``languages/``），用插件瀏覽器安裝：
 
 .. list-table::
    :header-rows: 1
@@ -303,7 +310,7 @@ JEditor 在 ``exe/jeditor_plugins/`` 中提供以下範例插件：
      - 執行支援
    * - C 語法高亮
      - 語法
-     - ``.c``
+     - ``.c``, ``.i``
      - GCC 編譯與執行
    * - C++ 語法高亮
      - 語法
@@ -315,7 +322,7 @@ JEditor 在 ``exe/jeditor_plugins/`` 中提供以下範例插件：
      - ``go run``
    * - Java 語法高亮
      - 語法
-     - ``.java``
+     - ``.java``, ``.jav``
      - ``java``
    * - Rust 語法高亮
      - 語法
