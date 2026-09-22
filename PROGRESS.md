@@ -3,7 +3,7 @@
 只放還沒做的事。做完就在同一個 commit 裡刪掉這條，並在 `docs/updates/` 新增一筆 `#done` 紀錄（格式與查詢方式見 `docs/updates/README.md`）。不放已完成的項目、不寫流水帳、不寫規則（規則在 `CLAUDE.md`）。
 本檔納入版控。PyBreeze 的待辦寫在 PyBreeze 自己的 `progress.md`。
 編號 `#n` 不重用。標記：〔決定〕需擁有者拍板、〔阻塞〕在等別的事、〔未確認〕觀察到但還沒證實。
-跨專案與工作區層級的待辦在 `D:\Codes\progress.md`（與本專案相關：X-1、X-10、X-16、X-17）。
+跨專案與工作區層級的待辦在 `D:\Codes\progress.md`（與本專案相關：X-1、X-16、X-17）。
 
 ## 待辦
 
@@ -20,4 +20,3 @@
 - **#4** `dev.toml` 過期：版本 1.0.11、PySide6 6.11.0、langchain_openai 1.2.0（`dev.toml:9,17-18`）；`CLAUDE.md` 的 Project Overview 也還寫 PySide6 6.11.0，而 `pyproject.toml` 已是 6.11.1（工作區 X-1）。
 - **#5** 〔未確認〕`pyproject.toml` 的 pytest addopts 沒有 `--ignore=test/qt_ui`（`dev.toml` 有），照 `CLAUDE.md` 跑 bare `pytest` 可能把 `extend_test.py` 收進來、開出整個 app。
 - **#6** 兩個 dependabot 分支沒合併：`pyside6-6.11.2`、`langchain-openai-1.6.0`（工作區 X-16）。
-- **#7** `PLUGIN_GUIDE.md`（≈:188、:191、:314）指向不存在的 `exe/jeditor_plugins/`，應改指 IDE_Plugins；PyBreeze 有一份逐字相同的副本（工作區 X-10）。
