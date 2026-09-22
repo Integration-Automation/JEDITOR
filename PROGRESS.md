@@ -16,7 +16,4 @@
   `_handle_ctrl_shortcuts` / `_handle_alt_shortcuts`，不在 `shortcut_registry` 裡，因此
   設定對話框改不到。文件（README 與 keyboard_shortcuts）已如實標為「固定按鍵」；若要
   改成可設定，需把它們搬進 registry 並改由 `_add_shortcut_action` 綁定。
-- **#3** `dev` 上的 `509dbfd` 還沒發佈到 `main`。
-- **#4** `dev.toml` 過期：版本 1.0.11、PySide6 6.11.0、langchain_openai 1.2.0（`dev.toml:9,17-18`）；`CLAUDE.md` 的 Project Overview 也還寫 PySide6 6.11.0，而 `pyproject.toml` 已是 6.11.1（工作區 X-1）。
-- **#5** 〔未確認〕`pyproject.toml` 的 pytest addopts 沒有 `--ignore=test/qt_ui`（`dev.toml` 有），照 `CLAUDE.md` 跑 bare `pytest` 可能把 `extend_test.py` 收進來、開出整個 app。
-- **#6** 兩個 dependabot 分支沒合併：`pyside6-6.11.2`、`langchain-openai-1.6.0`（工作區 X-16）。
+- **#4** `dev.toml` 的版本還停在 1.0.11（`dev.toml:9`）。版號由 CI 管、不手改；要不要處理取決於開發通道要不要發佈（工作區 X-13）。相依與 `CLAUDE.md` 的 PySide6 已在 2026-09-23 對齊。
