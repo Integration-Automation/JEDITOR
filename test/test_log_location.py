@@ -55,7 +55,7 @@ def test_environment_variable_overrides_the_location(monkeypatch, tmp_path):
 
 def test_importing_writes_no_file(tmp_path):
     target = tmp_path / "home" / "JEditor.log"
-    result = subprocess.run(  # nosec B603 - fixed interpreter, test-controlled arguments
+    result = subprocess.run(  # nosemgrep  # noqa: S603  # nosec B603 - fixed interpreter, test-controlled argv
         [sys.executable, "-c", _IMPORT_ONLY, str(MODULE_FILE)],
         cwd=tmp_path, env={**_base_env(), LOG_FILE_ENV: str(target)},
         capture_output=True, text=True, timeout=120, check=False,
