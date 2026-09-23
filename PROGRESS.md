@@ -12,3 +12,4 @@
   要清掉這一項得在 SonarCloud 把 issue 轉成 False Positive（用 API 改狀態需要 Administer
   Issues 權限）。
 - **#4** `dev.toml` 的版本還停在 1.0.11（`dev.toml:9`）。版號由 CI 管、不手改；要不要處理取決於開發通道要不要發佈（工作區 X-13）。相依與 `CLAUDE.md` 的 PySide6 已在 2026-09-23 對齊。
+- **#8** 〔阻塞〕dev 領先 main 4 個 commit，要等 PyBreeze 發版後才能開 dev→main PR。原因：`_register_editing_key_actions()` 註冊的 Ctrl+D、Ctrl+=、Ctrl+- 等快捷鍵，會跟目前 PyBreeze 發行版圖表編輯器的全視窗 `QShortcut` 衝突，兩邊都失效。PyBreeze 已在 dev 修好（`04e935e`，`diagram_editor_widget.py:343`），但還沒發版。
