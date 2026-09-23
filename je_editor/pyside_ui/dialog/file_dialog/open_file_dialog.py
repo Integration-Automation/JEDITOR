@@ -5,7 +5,6 @@ import sys
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from je_editor.pyside_ui.code.auto_save.auto_save_manager import init_new_auto_save_thread, file_is_open_manager_dict
 from je_editor.pyside_ui.main_ui.save_settings.user_setting_file import user_setting_dict, read_user_setting
 from je_editor.utils.logging.loggin_instance import jeditor_logger
 from je_editor.utils.multi_language.multi_language_wrapper import language_wrapper
@@ -19,7 +18,6 @@ if TYPE_CHECKING:
 from PySide6.QtWidgets import QFileDialog
 
 from je_editor.pyside_ui.main_ui.editor.editor_widget import EditorWidget
-from je_editor.utils.file.open.open_file import read_file
 
 
 def _prompt_for_file(parent_qt_instance: EditorMain) -> str:
@@ -34,36 +32,19 @@ def _prompt_for_file(parent_qt_instance: EditorMain) -> str:
     return file_path or ""
 
 
-def _focus_existing_tab_for_file(widget: EditorWidget, normalized_path: str) -> bool:
-    """若檔案已開啟，切換到該分頁並回傳 True / Focus existing tab if the file is already open."""
-    if file_is_open_manager_dict.get(normalized_path, None) is None:
-        return False
-    found_widget = widget.tab_manager.findChild(EditorWidget, normalized_path)
-    if found_widget is not None:
-        widget.tab_manager.setCurrentWidget(found_widget)
-    return True
-
-
-def _load_file_into_widget(widget: EditorWidget, file_path: str) -> bool:
-    """讀檔並套用到 EditorWidget，回傳是否成功 / Load file content into the widget."""
-    result = read_file(file_path)
-    if result is None:
-        return False
-    widget.current_file = file_path
-    widget.code_edit.setPlainText(result[1])
-    try:
-        widget.code_edit.apply_detected_indentation()
-    except Exception as detect_error:
-        jeditor_logger.warning(f"Indent detection failed: {detect_error}")
-    if widget.code_save_thread is None:
-        init_new_auto_save_thread(widget.current_file, widget)
-    else:
-        widget.code_save_thread.file = widget.current_file
-    return True
-
-
 def choose_file_get_open_file_path(parent_qt_instance: EditorMain) -> None:
-    """開啟檔案並將內容載入編輯器 / Open file and load its content into the editor."""
+    """
+    開啟檔案並將內容載入目前的編輯器分頁
+    Open a file and load its content into the editor tab in front.
+
+    交給 ``EditorWidget.open_an_file``：它記下檔案的編碼與行尾、更新檔案監控，
+    讀不了時會告訴使用者。以前這裡只用 UTF-8 讀，非 UTF-8 的檔案丟出例外，
+    而且檔案已經被記成「已開啟」，之後再也開不了。
+    Handed to ``EditorWidget.open_an_file``, which keeps the file's encoding and
+    line ending, updates the file watcher and tells the user when the file cannot
+    be read. This used to read UTF-8 only: a file in another encoding raised out
+    of the menu, already recorded as open, so it could never be opened again.
+    """
     jeditor_logger.info("open_file_dialog.py choose_file_get_open_file_path"
                         f" parent_qt_instance: {parent_qt_instance}")
     widget = parent_qt_instance.tab_widget.currentWidget()
@@ -73,19 +54,11 @@ def choose_file_get_open_file_path(parent_qt_instance: EditorMain) -> None:
     file_path = _prompt_for_file(parent_qt_instance)
     if not file_path:
         return
-
-    normalized_path = str(Path(file_path))
-    if _focus_existing_tab_for_file(widget, normalized_path):
-        return
-    file_is_open_manager_dict.update({normalized_path: str(Path(file_path).name)})
-
-    if not _load_file_into_widget(widget, file_path):
+    if not widget.open_an_file(Path(file_path)):
         return
 
-    user_setting_dict.update({"last_file": str(widget.current_file)})
     from je_editor.pyside_ui.main_ui.menu.file_menu.build_file_menu import add_to_recent_files
     add_to_recent_files(str(widget.current_file))
-    widget.rename_self_tab()
 
 
 def choose_dir_get_dir_path(parent_qt_instance: EditorMain) -> None:

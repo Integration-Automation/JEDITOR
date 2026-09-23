@@ -16,7 +16,7 @@ JEditor 是以 PySide6（Qt for Python）寫成的程式碼編輯器，功能涵
 | 語言 / 版本 | Python 3.10+（CI 測 3.10 / 3.11 / 3.12） |
 | UI 框架 | PySide6 6.11.0 + qt-material 主題 |
 | 主要相依 | `jedi`（Python 補全）、`ruff`（診斷）、`yapf` / `pycodestyle`（格式化與檢查）、`gitpython`、`watchdog`、`qtconsole` + `IPython`、`langchain_openai` + `langchain_core`、`frontengine` |
-| 測試 | pytest + pytest-qt，92 個測試檔、約 13,850 行 |
+| 測試 | pytest + pytest-qt，93 個測試檔、約 13,920 行 |
 | 靜態分析 | ruff、SonarCloud（`sonar.sources=je_editor`）、Codacy、bandit |
 
 ### 各套件規模
@@ -69,7 +69,7 @@ JEditor 是以 PySide6（Qt for Python）寫成的程式碼編輯器，功能涵
 **設計慣例**：幾乎每個功能都拆成「純邏輯 + Qt 整合層」兩塊。
 例如折疊 = `utils/code_folding/fold_regions.py`（算區塊）+ `pyside_ui/code/folding/folding_manager.py`（藏行、重畫）；
 書籤 = `utils/bookmark/bookmark_navigation.py` + `pyside_ui/code/bookmark/bookmark_manager.py`。
-這讓大部分邏輯可以不開視窗就測試，也是 `test/` 能有 92 個測試檔的原因。
+這讓大部分邏輯可以不開視窗就測試，也是 `test/` 能有 93 個測試檔的原因。
 
 ---
 
@@ -297,7 +297,7 @@ start_editor(debug_mode)                       je_editor/start_editor.py
 | 模組 | 行 | 功用 |
 | --- | ---: | --- |
 | `main_editor.py` | 609 | `EditorMain(QMainWindow)`：分頁容器、輸出重導計時器、狀態列更新、設定定期儲存、工作階段還原 / 儲存、關閉時收尾；`EDITOR_EXTEND_TAB` 掛載點 |
-| `editor/editor_widget.py` | 542 | `EditorWidget`：一個編輯分頁＝左側專案樹 + 上方 `CodeEditor` + 下方輸出分頁（執行結果 / 格式檢查 / 除錯 / 終端機 / 變數檢視 / Git），含拖放開檔、外部變更偵測、縮圖與分割檢視切換 |
+| `editor/editor_widget.py` | 571 | `EditorWidget`：一個編輯分頁＝左側專案樹 + 上方 `CodeEditor` + 下方輸出分頁（執行結果 / 格式檢查 / 除錯 / 終端機 / 變數檢視 / Git），含拖放開檔、外部變更偵測、縮圖與分割檢視切換。所有開檔都經 `open_an_file()`：讀不了時 `report_open_failure()` 告訴使用者並撤掉「已開啟」紀錄；外部變更後重新載入用檔案自己的編碼 |
 | `editor/editor_widget_dock.py` | 85 | `FullEditorWidget`：可停駐的單檔編輯器；關閉時只在有修改時，以檔案原本的編碼與行尾存回 |
 | `editor/process_input.py` | 104 | 對子程序（program / shell / debugger）送入標準輸入的視窗 |
 | `dock/destroy_dock.py` | 52 | `DestroyDock`：關閉時會真的銷毀內容的 `QDockWidget` |
@@ -371,7 +371,7 @@ start_editor(debug_mode)                       je_editor/start_editor.py
 | `search_ui/search_error_box.py` | 49 | 搜尋結果 / 錯誤提示框 |
 | `shortcut_dialog/shortcut_settings_dialog.py` | 179 | 列出所有指令、改按鍵、即時衝突提示、還原預設 |
 | `snippet_dialog/snippet_editor_dialog.py` | 148 | 使用者片段的新增 / 刪除 / 編輯，存檔後重載已開分頁 |
-| `file_dialog/open_file_dialog.py` | 129 | 開檔流程：選檔、已開啟就切分頁、載入內容；另有選資料夾更新專案樹 |
+| `file_dialog/open_file_dialog.py` | 102 | 開檔流程：選檔後交給目前分頁的 `EditorWidget.open_an_file()`（已開啟就切分頁、記下編碼與行尾）；另有選資料夾更新專案樹 |
 | `file_dialog/save_file_dialog.py` | 157 | 另存新檔：依插件語言動態建立篩選器並依副檔名預選；寫檔失敗時分頁保留原路徑、不標已存；`report_save_failure()` 是各存檔路徑共用的失敗訊息 |
 | `file_dialog/create_file_dialog.py` | 77 | 建立新檔案 |
 | `ai_dialog/set_ai_dialog.py` | 71 | 設定 AI 模型參數 |
@@ -480,7 +480,7 @@ qt-material 負責視窗樣式；編輯器自身的顏色（語法高亮、diff 
 
 ## 7. 測試與 CI
 
-- `test/` 92 個測試檔、約 13,850 行，與模組大致一對一（`test_fold_regions.py`、`test_shortcut_registry.py`…）。
+- `test/` 93 個測試檔、約 13,920 行，與模組大致一對一（`test_fold_regions.py`、`test_shortcut_registry.py`…）。
 - `conftest.py` 提供 session 級 `qapp`、`tmp_dir`、`tmp_file`，以及 autouse 的「等工具列背景執行緒結束」fixture；
   `collect_ignore_glob` 排除會真的開視窗的 `start_qt_ui.py` / `extend_test.py`。
 - `pyproject.toml` 設定 `testpaths = ["test"]`、`qt_api = "pyside6"`；bandit 排除測試目錄（pytest 慣用 `assert`）。

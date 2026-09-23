@@ -70,6 +70,8 @@ simplified_chinese_word_dict = {
     "dock_editor_title": "编辑器",
     "save_file_failed_title": "保存失败",
     "save_file_failed_message": "{file} 无法保存：{error}",
+    "open_file_failed_title": "打开失败",
+    "open_file_failed_message": "{file} 无法打开：{error}",
     "dock_frontengine_title": "前景引擎",
     "dock_browser_title": "浏览器",
     "dock_ipython_title": "IPython(Jupyter)",

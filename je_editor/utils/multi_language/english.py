@@ -73,6 +73,8 @@ english_word_dict = {
     "dock_editor_title": "Editor",
     "save_file_failed_title": "Save failed",
     "save_file_failed_message": "{file} could not be saved: {error}",
+    "open_file_failed_title": "Open failed",
+    "open_file_failed_message": "{file} could not be opened: {error}",
     "dock_frontengine_title": "FrontEngine",
     "dock_browser_title": "Browser",
     "dock_ipython_title": "IPython",

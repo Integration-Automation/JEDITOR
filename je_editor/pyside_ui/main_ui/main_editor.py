@@ -457,7 +457,12 @@ class EditorMain(QMainWindow, QtStyleTools):
                 f"{self.tab_widget.count()}"
             )
             self.tab_widget.setCurrentWidget(editor_widget)
-            editor_widget.open_an_file(file_path)
+            if not editor_widget.open_an_file(file_path):
+                # 沒開成（使用者已經看到原因）：不留下一個空白分頁
+                # Not opened (the user has been told why): leave no empty tab behind
+                self.tab_widget.removeTab(self.tab_widget.indexOf(editor_widget))
+                editor_widget.close()
+                editor_widget.deleteLater()
         else:
             # 如果檔案已開啟，直接切換到該分頁
             # If file already opened, switch to that tab

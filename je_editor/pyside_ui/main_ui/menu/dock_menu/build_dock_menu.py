@@ -17,6 +17,7 @@ from je_editor.pyside_ui.git_ui.git_client.git_client_gui import GitGui
 from je_editor.pyside_ui.main_ui.ai_widget.chat_ui import ChatUI
 from je_editor.pyside_ui.main_ui.console_widget.console_gui import ConsoleWidget
 from je_editor.pyside_ui.main_ui.dock.destroy_dock import DestroyDock
+from je_editor.pyside_ui.main_ui.editor.editor_widget import report_open_failure
 from je_editor.pyside_ui.main_ui.editor.editor_widget_dock import FullEditorWidget
 from je_editor.pyside_ui.main_ui.ipython_widget.ipython_console import IpythonWidget
 from je_editor.pyside_ui.main_ui.outline_panel.outline_panel_widget import OutlinePanelWidget
@@ -179,7 +180,10 @@ def _make_editor_dock(ui_we_want_to_set: EditorMain, dock_widget: "DestroyDock")
         # Keep the encoding and line ending, so a save on close writes them back
         result = read_file_with_encoding(file_path)
     except JEditorOpenFileException as error:
+        # 以前只寫進 log，使用者看到的是什麼都沒發生
+        # This used to go to the log only; the user saw nothing happen
         jeditor_logger.error(f"Editor dock could not open {file_path}: {error.__cause__ or error}")
+        report_open_failure(ui_we_want_to_set, file_path, error)
         return False
     if result is None:
         return False
