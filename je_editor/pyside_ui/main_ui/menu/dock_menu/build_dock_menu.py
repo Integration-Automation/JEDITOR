@@ -23,7 +23,8 @@ from je_editor.pyside_ui.main_ui.outline_panel.outline_panel_widget import Outli
 from je_editor.pyside_ui.main_ui.problems_panel.problems_panel_widget import ProblemsPanelWidget
 from je_editor.pyside_ui.main_ui.test_panel.test_panel_widget import TestPanelWidget
 from je_editor.pyside_ui.main_ui.todo_panel.todo_panel_widget import TodoPanelWidget
-from je_editor.utils.file.open.open_file import read_file  # 檔案讀取工具 / File reading utility
+from je_editor.utils.exception.exceptions import JEditorOpenFileException
+from je_editor.utils.file.open.open_file import read_file_with_encoding  # 檔案讀取工具 / File reading utility
 from je_editor.utils.logging.loggin_instance import jeditor_logger  # 日誌紀錄器 / Logger
 from je_editor.utils.multi_language.multi_language_wrapper import language_wrapper  # 多語系支援 / Multi-language wrapper
 
@@ -173,11 +174,18 @@ def _make_editor_dock(ui_we_want_to_set: EditorMain, dock_widget: "DestroyDock")
     )[0]
     if not file_path:
         return False
-    result = read_file(file_path)
+    try:
+        # 記下編碼與行尾，關閉存檔時才寫得回原樣
+        # Keep the encoding and line ending, so a save on close writes them back
+        result = read_file_with_encoding(file_path)
+    except JEditorOpenFileException as error:
+        jeditor_logger.error(f"Editor dock could not open {file_path}: {error.__cause__ or error}")
+        return False
     if result is None:
         return False
-    widget = FullEditorWidget(current_file=file_path)
+    widget = FullEditorWidget(current_file=file_path, encoding=result[2], line_ending=result[3])
     widget.code_edit.setPlainText(result[1])
+    widget.code_edit.document().setModified(False)
     dock_widget.setWindowTitle(language_wrapper.language_word_dict.get("dock_editor_title"))
     dock_widget.setWidget(widget)
     return True

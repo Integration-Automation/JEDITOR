@@ -72,6 +72,8 @@ japanese_word_dict = {
     "dock_frontengine_label": "新しい FrontEngine ドック",
     "dock_ipython_label": "New Ipython(Jupyter)",
     "dock_editor_title": _EDITOR_LABEL,
+    "save_file_failed_title": "保存に失敗しました",
+    "save_file_failed_message": "{file} を保存できませんでした：{error}",
     "dock_frontengine_title": "FrontEngine",
     "dock_browser_title": "ブラウザー",
     "dock_ipython_title": "IPython(Jupyter)",

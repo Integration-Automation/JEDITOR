@@ -71,6 +71,8 @@ english_word_dict = {
     "dock_frontengine_label": "New Dock FrontEngine",
     "dock_ipython_label": "New Ipython(Jupyter)",
     "dock_editor_title": "Editor",
+    "save_file_failed_title": "Save failed",
+    "save_file_failed_message": "{file} could not be saved: {error}",
     "dock_frontengine_title": "FrontEngine",
     "dock_browser_title": "Browser",
     "dock_ipython_title": "IPython",

@@ -68,6 +68,8 @@ traditional_chinese_word_dict = {
     "dock_frontengine_label": "新前景引擎區域",
     "dock_ipython_label": "New Ipython(Jupyter)",
     "dock_editor_title": "編輯器",
+    "save_file_failed_title": "存檔失敗",
+    "save_file_failed_message": "{file} 無法存檔：{error}",
     "dock_frontengine_title": "前景引擎",
     "dock_browser_title": "瀏覽器",
     "dock_ipython_title": "IPython(Jupyter)",
