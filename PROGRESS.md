@@ -11,9 +11,4 @@
   `# 初始化並記錄日誌` 被當成「註解掉的程式碼」。這是本專案雙語註解的正常寫法，不該刪。
   要清掉這一項得在 SonarCloud 把 issue 轉成 False Positive（用 API 改狀態需要 Administer
   Issues 權限）。
-- **#2** 讓編輯區自行處理的按鍵也能重新指派：`Ctrl+D`、`Ctrl+/`、`Alt+Up/Down`、
-  `Ctrl+B`、`Ctrl+Shift+\`、`Ctrl++`/`Ctrl+-` 目前寫死在 `code_edit_plaintext.py` 的
-  `_handle_ctrl_shortcuts` / `_handle_alt_shortcuts`，不在 `shortcut_registry` 裡，因此
-  設定對話框改不到。文件（README 與 keyboard_shortcuts）已如實標為「固定按鍵」；若要
-  改成可設定，需把它們搬進 registry 並改由 `_add_shortcut_action` 綁定。
 - **#4** `dev.toml` 的版本還停在 1.0.11（`dev.toml:9`）。版號由 CI 管、不手改；要不要處理取決於開發通道要不要發佈（工作區 X-13）。相依與 `CLAUDE.md` 的 PySide6 已在 2026-09-23 對齊。

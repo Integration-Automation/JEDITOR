@@ -155,6 +155,6 @@ class TestTheEditorHasNoClashes:
         }
         assert contexts == {Qt.ShortcutContext.WidgetWithChildrenShortcut}
 
-    def test_duplicate_line_still_owns_control_d(self, editor):
-        # Ctrl+D is handled in keyPressEvent; no action may shadow it.
-        assert editor.shortcut_registry.owner_of("Ctrl+D") is None
+    def test_duplicate_line_owns_control_d(self, editor):
+        # Ctrl+D is an ordinary command now, registered like every other one.
+        assert editor.shortcut_registry.owner_of("Ctrl+D") == "duplicate_line"

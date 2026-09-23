@@ -7,7 +7,7 @@ and more efficient.
 Most of the shortcuts on this page can be reassigned from **Style → Keyboard
 Shortcuts**. Two commands cannot be given the same keys: Qt runs neither of them when
 that happens, so the settings dialog refuses to save a clash. A change takes effect
-immediately, and only what differs from a default is stored. The few keys handled
+immediately, and only what differs from a default is stored. Only the keys handled
 directly by the editing area — listed under `Fixed Keys`_ — are not in that list and
 cannot be reassigned.
 
@@ -58,6 +58,10 @@ Search and Navigation
      - Navigate back / forward through cursor jumps
    * - ``Ctrl+Alt+E``
      - Recent locations
+   * - ``Ctrl+B``
+     - Jump to the definition under the caret
+   * - ``Ctrl+Shift+\``
+     - Jump to the matching bracket
 
 Code Editing
 -------------
@@ -80,6 +84,12 @@ Code Editing
      - Increment / decrement the number under the caret
    * - ``F2``
      - Rename every occurrence in the file
+   * - ``Ctrl+D``
+     - Duplicate the line or selection
+   * - ``Ctrl+/``
+     - Toggle comment
+   * - ``Alt+Up`` / ``Alt+Down``
+     - Move the line up / down
 
 Multiple Carets
 ----------------
@@ -193,6 +203,11 @@ Macros and View
      - Toggle the minimap
    * - ``Alt+W``
      - Toggle word wrap
+   * - ``Ctrl++`` or ``Ctrl+=`` / ``Ctrl+-``
+     - Zoom the editor font in / out
+
+Zoom in has two commands, one for each of its keys, so ``Ctrl++`` and ``Ctrl+=`` can
+be reassigned separately.
 
 Python Environment
 -------------------
@@ -236,18 +251,6 @@ appear in the shortcut settings and cannot be reassigned:
 
    * - Shortcut
      - Action
-   * - ``Ctrl+D``
-     - Duplicate the line or selection
-   * - ``Ctrl+/``
-     - Toggle comment
-   * - ``Alt+Up`` / ``Alt+Down``
-     - Move the line up / down
-   * - ``Ctrl+B``
-     - Jump to the definition under the caret
-   * - ``Ctrl+Shift+\``
-     - Jump to the matching bracket
-   * - ``Ctrl++`` / ``Ctrl+-``
-     - Zoom the editor font in / out
    * - ``Tab`` / ``Shift+Tab``
      - Indent / unindent the line or selection
 
