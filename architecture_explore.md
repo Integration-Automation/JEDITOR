@@ -157,7 +157,7 @@ start_editor(debug_mode)                       je_editor/start_editor.py
 | 模組 | 行 | 功用 |
 | --- | ---: | --- |
 | `file/open/open_file.py` | 99 | 讀檔並回報實際編碼與原始行尾（thread lock 保護） |
-| `file/save/save_file.py` | 97 | 依指定編碼與行尾寫檔 |
+| `file/save/save_file.py` | 112 | 依指定編碼與行尾寫檔；先編碼成功才開檔寫入，編碼失敗不動磁碟上的檔案 |
 | `encodings/text_codec.py` | 143 | 行尾偵測 / 正規化 / 套用；BOM 判斷編碼；位元組解碼 |
 | `encodings/python_encodings.py` | 102 | 編碼選單用的完整編碼名稱清單 |
 | `json/json_file.py` | 68 | JSON 讀寫（含鎖與例外轉換） |
