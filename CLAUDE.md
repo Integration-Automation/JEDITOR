@@ -19,12 +19,14 @@ existing module that change nothing structural need no update.
 
 ## Keeping the READMEs Current (mandatory)
 
-**`README.md` and every translated README must stay in sync with the code.** This repo ships
-`README.md`, `README/README_zh-TW.md` and `README/README_zh-CN.md`. Any user-facing change —
-features, commands, CLI flags, install/setup, configuration or requirements — updates `README.md`
-**and every language variant in the same commit**, with structure and content aligned. Never
-update one language and leave the others stale. There is no README-parity guard, so this is a
-manual check against the three files above.
+**`README.md`, every translated README, and the docs must stay in sync with the code.** This repo
+ships `README.md`, `README/README_zh-TW.md` and `README/README_zh-CN.md`, plus the Sphinx sources
+under `docs/`. Any user-facing change — features, commands, CLI flags, install/setup, configuration
+or requirements — updates `README.md`, **every language variant, and the affected `docs/` pages in
+the same commit**, with section structure and content aligned across languages; the translations
+must reflect the English content, not merely match its headings. Never update one language, or
+`README.md` alone, and leave the other READMEs or the docs stale. There is no README-parity guard,
+so this is a manual check against the files above.
 
 ## Project Overview
 
