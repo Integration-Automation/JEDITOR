@@ -1,7 +1,7 @@
 # JEDITOR
 
 <p align="center">
-  <img src="../docs/source/docs/Eng/image/JEditor.png" alt="JEDITOR Logo" width="200"/>
+  <img src="../image/JEditor.png" alt="JEDITOR Logo" width="180"/>
 </p>
 
 <p align="center">
@@ -28,7 +28,12 @@
 
 <p align="center">
   <a href="../README.md">English</a> |
-  <a href="README_zh-TW.md">繁體中文</a>
+  <a href="README_zh-TW.md">繁體中文</a> |
+  <strong>简体中文</strong>
+</p>
+
+<p align="center">
+  <img src="../image/screenshot-main-window.png" alt="JEDITOR 主窗口"/>
 </p>
 
 ---
@@ -36,24 +41,22 @@
 ## 目录
 
 - [简介](#简介)
+- [功能导览](#功能导览)
+  - [运行代码并查看输出](#运行代码并查看输出)
+  - [无需离开键盘即可查找任何内容](#无需离开键盘即可查找任何内容)
+  - [随打随查的静态分析](#随打随查的静态分析)
+  - [在当前文件中导航](#在当前文件中导航)
+  - [运行测试并直达失败处](#运行测试并直达失败处)
+  - [Git，从行号区到整个仓库](#git从行号区到整个仓库)
+  - [跨项目搜索与替换](#跨项目搜索与替换)
+  - [一次读到文件的更多内容](#一次读到文件的更多内容)
+  - [同一窗口内的终端与浏览器](#同一窗口内的终端与浏览器)
+  - [打造专属于您的编辑器](#打造专属于您的编辑器)
 - [主要特性](#主要特性)
-- [截图展示](#截图展示)
 - [系统要求](#系统要求)
 - [安装方式](#安装方式)
 - [快速开始](#快速开始)
 - [功能详情](#功能详情)
-  - [代码编辑](#代码编辑)
-  - [导航](#导航)
-  - [程序执行与调试](#程序执行与调试)
-  - [代码质量与格式化](#代码质量与格式化)
-  - [文件操作](#文件操作)
-  - [Git 集成](#git-集成)
-  - [AI 助手](#ai-助手)
-  - [控制台与 REPL](#控制台与-repl)
-  - [内置浏览器](#内置浏览器)
-  - [插件系统](#插件系统)
-  - [主题与自定义](#主题与自定义)
-  - [多语言界面](#多语言界面)
 - [键盘快捷键](#键盘快捷键)
 - [项目架构](#项目架构)
 - [插件开发](#插件开发)
@@ -69,6 +72,134 @@
 JEDITOR 是原始 JEditor 项目的完全重写版本，从零开始重新打造，专注于**速度**、**易用性**与**可扩展性**。以 **PySide6**（Qt for Python）为基础，提供现代化的桌面编辑体验，内置语法高亮、自动补全、集成式 Git 客户端、AI 助手、内嵌浏览器、IPython 控制台以及强大的插件系统等丰富功能。
 
 与原始 JEditor 相比，JEDITOR 性能提升高达 **1000%**，同时提供更加丰富的功能集。
+
+> 下方每一张截图都是运行中的应用程序的真实画面，而非示意图。
+
+---
+
+## 功能导览
+
+### 运行代码并查看输出
+
+按下 `F5`，当前文件便会以您选择的解释器运行；stdout 与 stderr 会随到随现地流式回传到 **Code Result** 窗格，错误以红色显示。`Shift+F5` 可停止运行，调试器、终端、变量检查器与 Git 窗格则以标签页的形式并列在旁边。
+
+<p align="center">
+  <img src="../image/screenshot-run-output.png" alt="以实时输出运行 Python 文件"/>
+</p>
+
+### 无需离开键盘即可查找任何内容
+
+`Ctrl+Shift+A` 会以名称或菜单路径模糊搜索每一个菜单命令，按词边界、连续字符与前缀排序，并在右侧显示每个命令自己的快捷键。
+
+<p align="center">
+  <img src="../image/screenshot-command-palette.png" alt="命令面板" width="760"/>
+</p>
+
+`Ctrl+P` 对文件做同样的事。索引在后台线程建立，会跳过版本控制、缓存、虚拟环境与构建目录以及二进制文件类型；开头输入 `>` 可将同一个选择器切换回命令模式。
+
+<p align="center">
+  <img src="../image/screenshot-quick-open.png" alt="快速打开文件选择器" width="760"/>
+</p>
+
+### 随打随查的静态分析
+
+`ruff` 检查的是 **缓冲区** 而非磁盘上的文件，在停止输入后于工作线程运行，因此未保存的编辑也会被覆盖，而被取代的过时结果会被丢弃。检查结果会就地以下划线标示，并列在问题（Problems）面板中，其中的 **Apply Fixes** 会套用 ruff 自己能修的全部内容。
+
+<p align="center">
+  <img src="../image/screenshot-problems-panel.png" alt="列出 ruff 诊断的问题面板"/>
+</p>
+
+<p align="center">
+  <img src="../image/screenshot-lint-inline.png" alt="编辑器中以下划线标示的诊断"/>
+</p>
+
+### 在当前文件中导航
+
+大纲面板会列出当前文件的类、方法、函数与模块变量。Python 用 `ast` 解析，不会运行任何代码；其他语言则向其语言服务器询问，也就是说 TypeScript 或 Rust 文件同样能得到大纲。
+
+<p align="center">
+  <img src="../image/screenshot-outline-panel.png" alt="文档大纲面板" width="520"/>
+</p>
+
+TODO 面板会扫描整个项目中的 `TODO`、`FIXME`、`HACK`、`XXX`、`BUG`、`NOTE` 与 `OPTIMIZE` 注释，涵盖 Python、C 系、HTML、SQL 等注释风格。标签只有出现在注释符之后才会被报告，因此普通字符串绝不会被误判。
+
+<p align="center">
+  <img src="../image/screenshot-todo-panel.png" alt="TODO 面板"/>
+</p>
+
+### 运行测试并直达失败处
+
+从面板运行 pytest，并以失败优先的方式查看结果。选中一条失败的测试会在列表下方显示其 traceback，双击可在失败的那一行打开该测试，您还可以重跑全部、仅重跑选中项，或只重跑上次失败的项。勾选 **With coverage** 会在摘要旁加上总覆盖率。
+
+<p align="center">
+  <img src="../image/screenshot-test-panel.png" alt="显示失败测试及其 traceback 的测试面板"/>
+</p>
+
+### Git，从行号区到整个仓库
+
+行号区会显示文件与最后一次提交的差异——绿色表示新增的行，橙色表示修改，细红线表示该处有行被删除。`F7` / `Shift+F7` 在变更之间跳转，`Ctrl+Alt+Z` 以一次撤销将光标所在的变更还原，右键菜单则只暂存那一处变更。`Ctrl+Alt+B` 切换行内 blame。已提交的版本在后台线程读取，比对本身是纯内存中的 diff，因此编辑永远不必等待 git。
+
+完整的客户端可处理分支、暂存、提交、贮藏、冲突、克隆与推送：
+
+<p align="center">
+  <img src="../image/screenshot-git-panel.png" alt="Git 客户端面板"/>
+</p>
+
+任何变更都能以并排比较的形式打开，与 `HEAD` 或与已暂存的内容比较：
+
+<p align="center">
+  <img src="../image/screenshot-diff-side-by-side.png" alt="并排差异查看器"/>
+</p>
+
+### 跨项目搜索与替换
+
+在当前文件、某个文件夹或整个项目中搜索，支持正则表达式与大小写选项。较长的搜索会在工作线程运行，因此窗口保持流畅，双击某个命中处即可在该行打开对应文件。
+
+<p align="center">
+  <img src="../image/screenshot-search-replace.png" alt="搜索与替换对话框" width="900"/>
+</p>
+
+### 一次读到文件的更多内容
+
+`Ctrl+Alt+M` 会打开整个文件的缩略图，以长条依每一行的长度与缩进绘制，并标示 lint 诊断、git 变更与搜索命中处。`Ctrl+Alt+\` 会分割视图：两侧共用同一份文档，因此任一侧的编辑会立刻反映到另一侧，而滚动位置与光标各自独立。
+
+<p align="center">
+  <img src="../image/screenshot-minimap-split-view.png" alt="缩略图与分屏视图"/>
+</p>
+
+### 同一窗口内的终端与浏览器
+
+终端标签页是一个真正的交互式 Shell（cmd、PowerShell、bash 或 sh），具备命令历史与自己的工作目录。
+
+<p align="center">
+  <img src="../image/screenshot-terminal.png" alt="内嵌终端"/>
+</p>
+
+浏览器标签页让文档与 Stack Overflow 触手可及，具备标签页、地址栏与页面内搜索。
+
+<p align="center">
+  <img src="../image/screenshot-browser.png" alt="内嵌网页浏览器"/>
+</p>
+
+### 打造专属于您的编辑器
+
+每个命令的按键都列在一份可编辑的表格中。两个命令不能共用同一组按键，因为发生这种情况时 Qt 两个都不会执行；改动立即生效，而且只有与默认值不同的项会被记录。
+
+<p align="center">
+  <img src="../image/screenshot-shortcut-settings.png" alt="键盘快捷键设置" width="760"/>
+</p>
+
+代码片段采用常见的 `$1` / `${2:default}` / `$0` 记法，各语言专属的片段集叠加在共享片段之上，从 **Tab > Edit Snippets** 编辑，而不必手动改文件。
+
+<p align="center">
+  <img src="../image/screenshot-snippet-editor.png" alt="代码片段编辑器" width="760"/>
+</p>
+
+主题来自 Qt Material，编辑器本身的颜色会跟随您所选的主题——浅色窗口绝不会让您对着深色主题的语法配色。
+
+<p align="center">
+  <img src="../image/screenshot-light-theme.png" alt="使用浅色主题的 JEDITOR"/>
+</p>
 
 ---
 
@@ -88,14 +219,6 @@ JEDITOR 是原始 JEditor 项目的完全重写版本，从零开始重新打造
 | **界面** | 深色/浅色主题（Qt Material）与配套的编辑器配色、可配置的键盘快捷键、字体自定义、可停靠面板、系统托盘、工具栏、状态栏 |
 | **国际化** | 英文、繁体中文、简体中文、日本語；跟随系统语言、无需重启即可切换、可通过插件扩展 |
 | **文件** | 自动保存、多编码支持（UTF-8、GBK、Latin-1 等）、最近打开的文件、多文件会话恢复 |
-
----
-
-## 截图展示
-
-<p align="center">
-  <img src="../docs/source/docs/Zh/image/JEditor.png" alt="JEDITOR 截图"/>
-</p>
 
 ---
 
@@ -139,7 +262,7 @@ pip install .
 | jedi | Python 自动补全与分析 |
 | ruff | 快速 Python 静态分析工具 |
 | gitpython | Git 仓库操作 |
-| langchain + langchain_openai | AI/LLM 集成 |
+| langchain_openai + langchain_core | AI/LLM 集成 |
 | watchdog | 文件系统监控 |
 | pycodestyle | PEP8 风格检查 |
 | qtconsole | Jupyter/IPython 控制台组件 |
@@ -191,7 +314,6 @@ start_editor()
 - **出现处高亮** -- 将光标放在标识符上时，文件中该标识符的其他全词出现处都会被高亮。关键字与单个字符会被忽略，超大文件则跳过扫描，以保持光标移动的即时性。
 - **行操作** -- 删除当前行或选中内容（`Ctrl+Shift+D`）、排序选中的行（`Ctrl+Alt+S`）、将选中的行合并成一行（`Ctrl+Shift+J`），以及（在 Text 菜单中）自然排序、删除重复行、删除空行、反转行顺序，或按分隔符（例如 `=`）对齐。每一项都算作一次撤销。
 - **复制行**（`Ctrl+D`）-- 有选区时复制选中内容并选中新的副本，没有时则复制整行。
-- **大小写转换**（Text 菜单）-- 将选中内容转为大写或小写，并保持选中状态。
 - **智能选择** -- 由词 → 行 → 外层缩进块 → 整个文件逐步向外扩大选区（`Ctrl+Alt+Right`），并可逐步收回（`Ctrl+Alt+Left`）。收回只会回溯之前的扩大，手动改变选区则会重置历史。
 - **数字加减** -- 将光标处的整数加一或减一（`Ctrl+Alt+Up` / `Ctrl+Alt+Down`），并正确处理负号与位数变化。
 - **文件内重命名**（`F2`）-- 将光标所在标识符在整个文件中的每个全词出现处一次改名，算作一次撤销。词边界可保护部分匹配的情况（改 `val` 绝不会动到 `value`）。
@@ -210,7 +332,7 @@ start_editor()
 ### 程序执行与调试
 
 - **运行 Python 脚本**（F5）-- 执行当前文件并实时流式输出。
-- **调试模式**（F9）-- 启动 Python 调试器进行逐步调试：`Ctrl+F9` 切换断点、`Ctrl+F5` 继续执行、`F10` / `F11` / `Shift+F11` 分别为单步跳过／进入／跳出。断点锚定在文本上，因此会跟着代码移动。
+- **调试模式**（F9）-- 启动 Python 调试器进行逐步调试，可从行号区切换断点（`Ctrl+F9`）。
 - **Shell 命令** -- 在编辑器内直接执行任意 Shell/终端命令。
 - **虚拟环境检测** -- 自动检测并激活 Python 虚拟环境。
 - **进程管理** -- 停止单个或所有运行中的进程。
@@ -239,22 +361,18 @@ start_editor()
 
 ### Git 集成
 
-JEDITOR 内置完整的 Git 客户端：
-
 - **分支管理** -- 从工具栏列出、切换与检出分支。
-- **提交历史** -- 以表格形式查看提交的元数据（作者、日期、信息）。
-- **并排差异查看器** -- 具有行号的彩色高亮代码比较。
-- **多文件差异** -- 比较多个文件间的变更。
-- **暂存区操作** -- 暂存或取消暂存单个文件的变更，也可从编辑器的行号区逐处变更暂存。
+- **提交历史** -- 以表格形式查看提交的元数据（作者、日期、信息），并附有按泳道着色的提交图。
+- **并排差异查看器** -- 具有行号的彩色高亮比较，可对比 `HEAD` 或索引。
+- **多文件差异** -- 比较多个文件间的变更，每个文件一个标签页。
+- **暂存区操作** -- 暂存或取消暂存整个文件，也可从编辑器的行号区逐处变更暂存。
 - **贮藏（Stash）** -- 把当前的变更先收起来、列出贮藏的内容，并可取回其中一条。
 - **冲突解决** -- 列出合并后仍处于冲突的文件，并可选择保留其中一方来解决。
 - **审计日志** -- 记录所有 Git 操作，方便追踪与合规。
 
 ### AI 助手
 
-集成 OpenAI 与 LangChain 的 AI 助手：
-
-- **GPT-3.5 / GPT-4 支持** -- 连接 OpenAI 的语言模型。
+- **通过 LangChain 连接 OpenAI 模型** -- 连接 OpenAI 的语言模型。
 - **交互式聊天面板** -- 编辑器内的对话式 AI 面板。
 - **可配置模型** -- 设置自定义 API 密钥、端点、模型名称与系统提示词。
 - **异步消息** -- 使用消息队列实现非阻塞 AI 交互。
@@ -275,8 +393,6 @@ JEDITOR 内置完整的 Git 客户端：
 
 ### 插件系统
 
-JEDITOR 支持模块化的插件架构，提供四种插件类型：
-
 | 类型 | 用途 |
 |---|---|
 | 编程语言 | 为新语言添加语法高亮 |
@@ -284,15 +400,15 @@ JEDITOR 支持模块化的插件架构，提供四种插件类型：
 | 运行配置 | 定义自定义执行环境 |
 | 插件元数据 | 提供插件版本与作者信息 |
 
-插件会自动从 `jeditor_plugins/` 目录中发现并加载。详见[插件开发](#插件开发)章节。
+插件会自动从 `jeditor_plugins/` 目录中发现，也可以在编辑器内浏览并安装。详见[插件开发](#插件开发)。
 
 ### 主题与自定义
 
-- **深色/浅色主题** -- Qt Material 主题，琥珀色配色方案。编辑器本身的颜色会跟随窗口样式，您自己挑过的颜色则不会被覆盖。
-- **字体自定义** -- 更改编辑器与 UI 的字体族与大小。
+- **深色/浅色主题** -- Qt Material 主题；编辑器本身的颜色会跟随窗口样式。
+- **字体自定义** -- 分别更改编辑器与 UI 的字体族与大小。
 - **可停靠面板** -- 通过停靠/取消停靠面板重新排列 UI 布局。
 - **系统托盘** -- 将编辑器最小化至系统托盘。
-- **工具栏** -- JetBrains 风格的快速操作按钮。
+- **工具栏** -- JetBrains 风格的快速操作按钮，包含当前的 Git 分支。
 
 ### 多语言界面
 
@@ -382,112 +498,29 @@ JEDITOR 支持模块化的插件架构，提供四种插件类型：
 
 ```
 je_editor/
-├── pyside_ui/                    # GUI 组件（PySide6）
-│   ├── browser/                  # 内嵌网页浏览器
-│   ├── code/                     # 核心代码编辑
-│   │   ├── auto_save/            # 自动保存
-│   │   ├── bookmark/             # 书签管理（以 QTextCursor 锚定）
-│   │   ├── breakpoint/           # 断点标记
-│   │   ├── code_format/          # YAPF 与 PEP8 格式化
-│   │   ├── code_process/         # 程序执行（ExecManager）
-│   │   ├── folding/              # 代码折叠管理
-│   │   ├── git_diff/             # 行号区变更标记与行内 blame
-│   │   ├── lint/                 # 单个编辑器的 lint 诊断
-│   │   ├── lsp/                  # 语言服务器客户端与共享连接
-│   │   ├── minimap/              # 缩略图组件
-│   │   ├── multi_cursor/         # 额外光标管理
-│   │   ├── snippets/             # 代码片段展开
-│   │   ├── shell_process/        # Shell 执行（ShellManager）
-│   │   ├── syntax/               # 语法高亮引擎
-│   │   ├── plaintext_code_edit/  # 纯文本编辑器组件
-│   │   ├── textedit_code_result/ # 输出显示组件
-│   │   └── variable_inspector/   # 变量调试
-│   ├── dialog/                   # 对话框窗口
-│   │   ├── ai_dialog/            # AI 配置对话框
-│   │   ├── file_dialog/          # 文件操作对话框
-│   │   └── search_ui/            # 搜索与替换对话框
-│   ├── git_ui/                   # Git 界面
-│   │   ├── code_diff_compare/    # 并排差异查看器
-│   │   └── git_client/           # 分支与提交 UI
-│   └── main_ui/                  # 主编辑器窗口
-│       ├── ai_widget/            # AI 聊天面板
-│       ├── command_palette/      # 命令面板、快速打开、转到符号
-│       ├── console_widget/       # 交互式控制台
-│       ├── dock/                 # 可停靠组件管理
-│       ├── editor/               # 标签页式编辑器
-│       ├── ipython_widget/       # Jupyter/IPython 控制台
-│       ├── menu/                 # 菜单栏系统
-│       ├── outline_panel/        # 文档大纲（符号树）
-│       ├── plugin_browser/       # 插件管理 UI
-│       ├── problems_panel/       # lint 诊断面板
-│       ├── retranslate.py        # 语言变更时重新标注整个界面
-│       ├── save_settings/        # 设置持久化、快捷键与配色
-│       ├── system_tray/          # 系统托盘集成
-│       ├── test_panel/           # pytest 结果、traceback 与覆盖率
-│       ├── todo_panel/           # TODO/FIXME 任务面板
-│       └── toolbar/              # 工具栏操作
-├── code_scan/                    # 代码扫描
-│   ├── ruff_thread.py            # Ruff 静态分析（多线程）
-│   ├── watchdog_implement.py     # 文件系统监控
-│   └── watchdog_thread.py        # Watchdog 多线程
-├── git_client/                   # Git 后端
-│   ├── git_action.py             # Git 操作（含审计日志）
-│   ├── git_cli.py                # Git CLI 包装器
-│   └── commit_graph.py           # 提交图形可视化
-├── plugins/                      # 插件系统
-│   └── plugin_loader.py          # 动态插件加载
-├── utils/                        # 工具程序
-│   ├── align/                    # 按分隔符对齐行（不依赖 Qt）
-│   ├── bookmark/                 # 书签导航逻辑（不依赖 Qt）
-│   ├── browser/                  # 内嵌 Chromium 标志（不依赖 Qt）
-│   ├── case_convert/             # 命名风格转换（不依赖 Qt）
-│   ├── code_folding/             # 折叠区域：按缩进与按花括号（不依赖 Qt）
-│   ├── command_palette/          # 模糊匹配与排序（不依赖 Qt）
-│   ├── debugger/                 # 组装 pdb 命令（不依赖 Qt）
-│   ├── encode_decode/            # Base64/URL/HTML/JSON 转换（不依赖 Qt）
-│   ├── encodings/                # 编码检测
-│   ├── exception/                # 自定义异常
-│   ├── file/                     # 文件 I/O（打开/保存）
-│   ├── file_diff/                # 行状态、hunk 与 unified diff（不依赖 Qt）
-│   ├── file_scan/                # 共享忽略规则、文件索引、TODO 扫描
-│   ├── format_code/              # yapf 格式化（不依赖 Qt）
-│   ├── indentation/              # Tab/空格转换与缩进检测（不依赖 Qt）
-│   ├── json_format/              # JSON 格式化
-│   ├── line_ops/                 # 行操作转换（不依赖 Qt）
-│   ├── lint/                     # Ruff 诊断解析（不依赖 Qt）
-│   ├── logging/                  # 日志设置
-│   ├── lsp/                      # LSP 分包、协议与服务器注册表（不依赖 Qt）
-│   ├── macro/                    # 按键宏录制（不依赖 Qt）
-│   ├── minimap/                  # 缩略图几何与采样（不依赖 Qt）
-│   ├── multi_cursor/             # 额外光标位置与编辑位移（不依赖 Qt）
-│   ├── multi_language/           # 国际化：英文、繁体与简体中文、日文、
-│   │                             #   区域匹配、实时重新标注
-│   ├── navigation/               # 光标跳转历史（不依赖 Qt）
-│   ├── number_ops/               # 光标处数字加减（不依赖 Qt）
-│   ├── occurrence/               # 词出现处查找与全词重命名（不依赖 Qt）
-│   ├── redirect_manager/         # 输出流重定向
-│   ├── selection/                # 智能选区与包围（不依赖 Qt）
-│   ├── session/                  # 多文件会话恢复（不依赖 Qt）
-│   ├── shortcuts/                # 键盘快捷键表（不依赖 Qt）
-│   ├── snippets/                 # 片段展开与 tab stop（不依赖 Qt）
-│   ├── status/                   # 状态栏文本（不依赖 Qt）
-│   ├── symbols/                  # 符号提取：Python 用 ast，其余问服务器
-│   ├── syntax/                   # 各语言的高亮规则（不依赖 Qt）
-│   ├── test_runner/              # pytest 输出解析（不依赖 Qt）
-│   ├── text_cleanup/             # 行尾空白／换行清理（不依赖 Qt）
-│   ├── text_stats/               # 行／词／字符统计（不依赖 Qt）
-│   ├── theme/                    # 深色与浅色的编辑器配色（不依赖 Qt）
-│   └── venv_check/               # 虚拟环境检测
-├── __init__.py                   # 公共 API
-├── __main__.py                   # CLI 入口点
-└── start_editor.py               # 应用程序启动器
+├── pyside_ui/          GUI 层（PySide6）
+│   ├── browser/        内嵌网页浏览器
+│   ├── code/           编辑器本体：语法、折叠、lint、LSP、git 标记、
+│   │                   多光标、代码片段、缩略图、进程执行
+│   ├── dialog/         搜索与替换、快捷键、代码片段、文件对话框
+│   ├── git_ui/         Git 客户端、提交图、差异查看器
+│   └── main_ui/        主窗口、菜单、工具栏、面板、设置、AI、控制台
+├── code_scan/          Ruff 执行与 watchdog 文件监控
+├── git_client/         Git 操作（GitPython + git CLI）
+├── plugins/            插件注册表与加载器
+└── utils/              纯逻辑，不依赖 Qt：diff、折叠、模糊匹配、符号、
+                        LSP 协议、编码、快捷键、翻译
 ```
+
+功能都拆成两半来构建：算法放在 `utils/` 中且不 import Qt，`pyside_ui/` 中的一层轻薄管理器再把它接到组件上。以折叠为例，就是 `utils/code_folding/` 加上 `pyside_ui/code/folding/`。这正是上面大部分行为都能不开窗口就测试的原因。
+
+逐模块的参考——每个文件做什么、线程模型、全局单例与设置布局——记录在 **[`architecture_explore.md`](../architecture_explore.md)** 中。
 
 ---
 
 ## 插件开发
 
-在工作目录中创建 `jeditor_plugins/` 目录来放置插件。JEDITOR 支持三种插件类型：
+在工作目录中的 `jeditor_plugins/` 目录里创建插件。每个插件都是一个 Python 模块，会在被 import 时注册它所提供的内容。
 
 ### 1. 编程语言插件
 
@@ -499,13 +532,13 @@ from je_editor.plugins import register_programming_language
 register_programming_language(
     suffix=".rs",
     syntax_words={"keywords": ["fn", "let", "mut", "struct", "impl", "enum"]},
-    syntax_rules={"keyword_color": "#FF6600"}
+    syntax_rules={"keyword_color": "#FF6600"},
 )
 ```
 
 ### 2. 自然语言插件
 
-添加 UI 翻译：
+添加新的 UI 翻译：
 
 ```python
 from je_editor.plugins import register_natural_language
@@ -513,36 +546,56 @@ from je_editor.plugins import register_natural_language
 register_natural_language(
     language_key="ja",
     display_name="Japanese",
-    word_dict={"file": "ファイル", "edit": "編集", "run": "実行"}
+    word_dict={"file": "ファイル", "edit": "編集", "run": "実行"},
 )
 ```
 
 ### 3. 运行配置插件
 
-定义自定义执行环境：
+教会 **Run with...** 菜单如何运行另一种语言。解释型语言只需要一个编译器与它的参数：
 
 ```python
 from je_editor.plugins import register_plugin_run_config
 
-register_plugin_run_config(
-    name="Node.js",
-    run_config={"command": "node", "suffix": ".js"}
-)
+register_plugin_run_config({
+    "name": "Go",             # shown in the menu
+    "suffixes": (".go",),     # file types this applies to
+    "compiler": "go",         # executable
+    "args": ("run",),         # arguments before the file path
+})
+# runs: go run file.go
 ```
 
-完整指南请参阅 `PLUGIN_GUIDE.md`。
+编译型语言则加上 `compile_then_run` 以及指定输出二进制文件名的旗标：
+
+```python
+register_plugin_run_config({
+    "name": "C (GCC)",
+    "suffixes": (".c",),
+    "compiler": "gcc",
+    "args": (),
+    "compile_then_run": True,
+    "output_flag": "-o",
+})
+# compiles: gcc file.c -o file    then runs the result
+```
+
+完整指南，包含插件元数据与打包，请参阅 [`PLUGIN_GUIDE.md`](../PLUGIN_GUIDE.md)。
 
 ---
 
 ## 配置文件
 
-JEDITOR 将用户设置存储在 `.jeditor/` 目录中：
+JEDITOR 将用户设置存储在工作目录中的 `.jeditor/` 目录里：
 
 | 文件 | 内容 |
 |---|---|
 | `user_setting.json` | 通用偏好设置（字体、主题、语言、最近打开的文件、打开的标签页、重新指定过的快捷键） |
 | `user_color_setting.json` | 编辑器与输出的配色，含语法高亮 |
+| `snippets.json` | 您自己的代码片段，叠加合并在内置片段集之上 |
 | `ai_config.json` | AI 助手设置——启动时读取、从不写入，需自行创建 |
+
+每个文件在被重写前都会备份到 `<name>.bak`。
 
 ---
 
