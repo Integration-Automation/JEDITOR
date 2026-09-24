@@ -7,7 +7,7 @@ twine
 build
 yapf
 wheel
-gitpython>=3.1.58
+gitpython>=3.1.59
 qtconsole
 pycodestyle
 pydantic
