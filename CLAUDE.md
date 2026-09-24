@@ -17,6 +17,15 @@ on each other; add or remove a global singleton, settings key, thread, or config
 startup flow. Keep the line counts and module tables in step with the code. Pure bug fixes inside an
 existing module that change nothing structural need no update.
 
+## Keeping the READMEs Current (mandatory)
+
+**`README.md` and every translated README must stay in sync with the code.** This repo ships
+`README.md`, `README/README_zh-TW.md` and `README/README_zh-CN.md`. Any user-facing change —
+features, commands, CLI flags, install/setup, configuration or requirements — updates `README.md`
+**and every language variant in the same commit**, with structure and content aligned. Never
+update one language and leave the others stale. There is no README-parity guard, so this is a
+manual check against the three files above.
+
 ## Project Overview
 
 JEditor is a Python code editor built with PySide6 (Qt), featuring syntax highlighting, code
