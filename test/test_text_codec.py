@@ -17,7 +17,8 @@ from je_editor.utils.encodings.text_codec import (
     normalise_line_endings,
 )
 from je_editor.utils.file.open.open_file import read_file_with_encoding
-from je_editor.utils.file.save.save_file import write_file_with_encoding
+from je_editor.utils.exception.exceptions import JEditorSaveFileException
+from je_editor.utils.file.save.save_file import write_file, write_file_with_encoding
 
 
 class TestDetectLineEnding:
@@ -136,3 +137,46 @@ class TestFileRoundTrip:
 
     def test_writing_an_empty_path_does_nothing(self, tmp_path):
         write_file_with_encoding("", "text")  # must not raise
+
+
+class TestASaveThatCannotBeEncoded:
+    """編碼失敗的存檔不能動到磁碟上的檔案 / A save that cannot be encoded leaves the file alone."""
+
+    def test_a_character_the_encoding_lacks_keeps_the_file(self, tmp_path):
+        # 以前先以 "w" 開檔才編碼，失敗時檔案已被清空
+        # The file used to be opened with "w" before encoding, so it was emptied
+        path = tmp_path / "big5.txt"
+        path.write_bytes("舊內容\n".encode("big5"))
+
+        with pytest.raises(JEditorSaveFileException):
+            write_file_with_encoding(str(path), "€ 不在 Big5 裡\n", "big5", LINE_ENDING_LF)
+
+        assert path.read_bytes() == "舊內容\n".encode("big5")
+
+    def test_an_unknown_encoding_keeps_the_file(self, tmp_path):
+        path = tmp_path / "kept.txt"
+        path.write_bytes(b"kept\n")
+
+        with pytest.raises(JEditorSaveFileException):
+            write_file_with_encoding(str(path), "new\n", "no-such-codec", LINE_ENDING_LF)
+
+        assert path.read_bytes() == b"kept\n"
+
+    def test_a_lone_surrogate_keeps_the_file_and_is_reported(self, tmp_path):
+        # 以前 UnicodeEncodeError 沒被接住，直接往外丟，而且檔案已被清空
+        # The UnicodeEncodeError used to escape uncaught, after emptying the file
+        path = tmp_path / "utf8.txt"
+        path.write_bytes(b"kept\n")
+
+        with pytest.raises(JEditorSaveFileException):
+            write_file(str(path), "bad \ud800 text\n")
+
+        assert path.read_bytes() == b"kept\n"
+
+    def test_write_file_still_writes_platform_line_endings(self, tmp_path):
+        import os
+
+        path = tmp_path / "plain.txt"
+        write_file(str(path), "a\nb\n")
+
+        assert path.read_bytes() == f"a{os.linesep}b{os.linesep}".encode("ascii")

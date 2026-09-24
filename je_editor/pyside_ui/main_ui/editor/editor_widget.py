@@ -36,7 +36,23 @@ from je_editor.pyside_ui.main_ui.save_settings.user_setting_file import user_set
 from je_editor.utils.encodings.text_codec import (
     DEFAULT_ENCODING, LINE_ENDING_LF
 )
-from je_editor.utils.file.open.open_file import read_file, read_file_with_encoding
+from je_editor.utils.exception.exceptions import JEditorOpenFileException
+from je_editor.utils.file.open.open_file import read_file_with_encoding
+
+
+def report_open_failure(parent: QWidget, file_path, error: JEditorOpenFileException) -> None:
+    """
+    告訴使用者檔案沒開成，以及原因
+    Tell the user a file could not be opened, and why.
+
+    :param parent: 訊息框的父視窗 / the message box's parent
+    :param file_path: 沒開成的檔案 / the file that was not opened
+    :param error: 開檔失敗的例外 / the failure
+    """
+    QMessageBox.warning(
+        parent, language_wrapper.language_word_dict.get("open_file_failed_title"),
+        language_wrapper.language_word_dict.get("open_file_failed_message").format(
+            file=Path(str(file_path)).name, error=error.__cause__ or error))
 
 
 class EditorWidget(QWidget):
@@ -231,20 +247,17 @@ class EditorWidget(QWidget):
             # 嘗試在分頁中找到對應的 EditorWidget
             # Try to find the corresponding EditorWidget in tab manager
             widget: QWidget = self.tab_manager.findChild(EditorWidget, str(path))
-            if widget is None:
-                # 如果找不到，代表之前的紀錄失效，移除紀錄
-                # If not found, remove stale record
-                file_is_open_manager_dict.pop(str(path), None)
-            else:
+            if widget is not None:
                 # 如果找到，直接切換到該分頁
                 # If found, switch to that tab
                 self.tab_manager.setCurrentWidget(widget)
                 return False
-        else:
-            # 如果檔案未開啟，加入紀錄
-            # If file not open, add to open manager dict
-            file_is_open_manager_dict.update({str(path): str(path)})
-            return True
+            # 找不到代表紀錄失效：當作沒開過（以前這裡回傳 None，這次開檔什麼都不做）
+            # Not found: the record is stale, so the file is not open (this used
+            # to return None, and the open did nothing)
+        # 加入紀錄 / Record it as open
+        file_is_open_manager_dict.update({str(path): str(path)})
+        return True
 
     def open_an_file(self, path: Path) -> bool:
         """
@@ -266,8 +279,17 @@ class EditorWidget(QWidget):
         # 讀取檔案內容，同時記下編碼與行尾，存檔時照原樣寫回
         # Read the content, remembering the encoding and line ending so a save
         # writes the file back the way it was found
-        result = read_file_with_encoding(str(path))
+        try:
+            result = read_file_with_encoding(str(path))
+        except JEditorOpenFileException as error:
+            # 讀不了（被鎖住、沒有權限）：說出來，並撤掉「已開啟」的紀錄，否則之後再也開不了
+            # Unreadable (locked, no permission): say so, and drop the "open"
+            # record, which otherwise kept the file from ever being opened again
+            file_is_open_manager_dict.pop(str(path), None)
+            report_open_failure(self, path, error)
+            return False
         if result is None:
+            file_is_open_manager_dict.pop(str(path), None)
             return False
         file, file_content, self.file_encoding, self.line_ending = result
         self.code_edit.setPlainText(file_content)
@@ -479,9 +501,17 @@ class EditorWidget(QWidget):
             QMessageBox.StandardButton.Yes
         )
         if reply == QMessageBox.StandardButton.Yes:
-            result = read_file(str(file_path))
+            # 用這個檔案自己的編碼重新讀取（以前只用 UTF-8，其他編碼的檔案會從訊號裡丟例外）
+            # Re-read in the file's own encoding: it was read as UTF-8 only, and
+            # a file in any other encoding raised out of the watcher's signal
+            try:
+                result = read_file_with_encoding(str(file_path), self.file_encoding)
+            except JEditorOpenFileException as error:
+                report_open_failure(self, file_path, error)
+                result = None
             if result is not None:
                 self._ignore_next_change = True
+                self.line_ending = result[3]
                 self.code_edit.setPlainText(result[1])
                 self._is_modified = False
                 idx = self.tab_manager.indexOf(self)

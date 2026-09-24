@@ -58,6 +58,14 @@ In the same commit: delete the item from `progress.md`, add a `#done` entry here
 
 | ID | Date | Title | Tags | Batch |
 |---|---|---|---|---|
+| U-20260924-02 | 2026-09-24 | checkout 只在要 push 的工作保留憑證 | #ci #security | [2026-09](2026-09.md) |
+| U-20260924-01 | 2026-09-24 | CI 改用鎖 commit 的 Node 24 action | #ci #security #deps | [2026-09](2026-09.md) |
+| U-20260923-09 | 2026-09-23 | gitpython 下限拉到 3.1.58 | #deps #security | [2026-09](2026-09.md) |
+| U-20260923-08 | 2026-09-23 | A file that cannot be opened is reported, and can be opened later | #fix #files | [2026-09](2026-09.md) |
+| U-20260923-07 | 2026-09-23 | Every save path reports a failed save; the editor dock keeps encoding and endings | #fix #files | [2026-09](2026-09.md) |
+| U-20260923-06 | 2026-09-23 | A save that cannot be encoded no longer empties the file | #fix #files | [2026-09](2026-09.md) |
+| U-20260923-05 | 2026-09-23 | Built-in editing keys are reassignable | #done #shortcuts | [2026-09](2026-09.md) |
+| U-20260923-04 | 2026-09-23 | Released as 1.0.26; three items closed | #done #release | [2026-09](2026-09.md) |
 | U-20260923-03 | 2026-09-23 | PySide6 6.11.2 across the three pin files | #done #deps | [2026-09](2026-09.md) |
 | U-20260923-02 | 2026-09-23 | langchain_openai 1.6.2; Dependabot targets dev | #done #deps #ci | [2026-09](2026-09.md) |
 | U-20260923-01 | 2026-09-23 | JEditor.log moves out of the working directory | #done #logging | [2026-09](2026-09.md) |
@@ -70,4 +78,4 @@ In the same commit: delete the item from `progress.md`, add a `#done` entry here
 
 | File | Period | Entries |
 |---|---|---:|
-| [2026-09.md](2026-09.md) | 2026-09 | 7 |
+| [2026-09.md](2026-09.md) | 2026-09 | 15 |

@@ -43,7 +43,9 @@ from PySide6.QtWidgets import QMenu
 from je_editor.pyside_ui.dialog.file_dialog.create_file_dialog import CreateFileDialog
 from je_editor.pyside_ui.dialog.file_dialog.open_file_dialog import choose_file_get_open_file_path, \
     choose_dir_get_dir_path
-from je_editor.pyside_ui.dialog.file_dialog.save_file_dialog import choose_file_get_save_file_path
+from je_editor.pyside_ui.dialog.file_dialog.save_file_dialog import (
+    choose_file_get_save_file_path, report_save_failure
+)
 
 
 # 設定檔案選單 (File Menu)
@@ -113,8 +115,21 @@ def set_file_menu(ui_we_want_to_set: EditorMain) -> None:
         language_wrapper.language_word_dict.get("file_menu_save_all_label"))
     bind(ui_we_want_to_set.file_menu.save_all_action, "save_all")
     ui_we_want_to_set.file_menu.save_all_action.triggered.connect(
-        lambda: save_all_tabs(ui_we_want_to_set))
+        lambda: _save_all_and_report(ui_we_want_to_set))
     ui_we_want_to_set.file_menu.addAction(ui_we_want_to_set.file_menu.save_all_action)
+
+
+def _save_all_and_report(ui_we_want_to_set: EditorMain) -> None:
+    """
+    儲存所有分頁，並說出哪些沒存成
+    Save every tab, and say which could not be saved.
+
+    :param ui_we_want_to_set: 主編輯器視窗 / the main editor window
+    """
+    failures: list = []
+    save_all_tabs(ui_we_want_to_set, failures)
+    for file_path, error in failures:
+        report_save_failure(ui_we_want_to_set, file_path, error)
 
 
 # 最近開啟的檔案選單 / Recent Files menu

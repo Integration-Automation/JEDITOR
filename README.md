@@ -511,20 +511,21 @@ and installed from within the editor. See [Plugin Development](#plugin-developme
 | `Ctrl+F9` | Toggle breakpoint |
 | `Ctrl+F5` | Debugger: continue |
 | `F10` / `F11` / `Shift+F11` | Debugger: step over / into / out |
-| `Up/Down` | Command history (console) |
-
-Every shortcut above can be reassigned from **Style > Keyboard Shortcuts**. The keys below are
-handled by the editing area itself, so they are fixed:
-
-| Shortcut | Action |
-|---|---|
 | `Ctrl+D` | Duplicate line / selection |
 | `Ctrl+/` | Toggle comment |
 | `Alt+Up` / `Alt+Down` | Move line up / down |
 | `Ctrl+B` | Jump to the definition under the caret |
 | `Ctrl+Shift+\` | Jump to the matching bracket |
-| `Ctrl++` / `Ctrl+-` | Zoom the editor font in / out |
+| `Ctrl++` or `Ctrl+=` / `Ctrl+-` | Zoom the editor font in / out |
+
+Every shortcut above can be reassigned from **Style > Keyboard Shortcuts**; `Ctrl++` and `Ctrl+=`
+are two separate zoom-in commands, so each can be changed on its own. The keys below are handled
+by the editing area or the console themselves, so they are fixed:
+
+| Shortcut | Action |
+|---|---|
 | `Tab` / `Shift+Tab` | Indent / unindent the line or selection |
+| `Up/Down` | Command history (console) |
 
 ---
 

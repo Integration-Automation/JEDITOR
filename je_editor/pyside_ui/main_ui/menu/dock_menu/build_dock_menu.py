@@ -17,13 +17,15 @@ from je_editor.pyside_ui.git_ui.git_client.git_client_gui import GitGui
 from je_editor.pyside_ui.main_ui.ai_widget.chat_ui import ChatUI
 from je_editor.pyside_ui.main_ui.console_widget.console_gui import ConsoleWidget
 from je_editor.pyside_ui.main_ui.dock.destroy_dock import DestroyDock
+from je_editor.pyside_ui.main_ui.editor.editor_widget import report_open_failure
 from je_editor.pyside_ui.main_ui.editor.editor_widget_dock import FullEditorWidget
 from je_editor.pyside_ui.main_ui.ipython_widget.ipython_console import IpythonWidget
 from je_editor.pyside_ui.main_ui.outline_panel.outline_panel_widget import OutlinePanelWidget
 from je_editor.pyside_ui.main_ui.problems_panel.problems_panel_widget import ProblemsPanelWidget
 from je_editor.pyside_ui.main_ui.test_panel.test_panel_widget import TestPanelWidget
 from je_editor.pyside_ui.main_ui.todo_panel.todo_panel_widget import TodoPanelWidget
-from je_editor.utils.file.open.open_file import read_file  # 檔案讀取工具 / File reading utility
+from je_editor.utils.exception.exceptions import JEditorOpenFileException
+from je_editor.utils.file.open.open_file import read_file_with_encoding  # 檔案讀取工具 / File reading utility
 from je_editor.utils.logging.loggin_instance import jeditor_logger  # 日誌紀錄器 / Logger
 from je_editor.utils.multi_language.multi_language_wrapper import language_wrapper  # 多語系支援 / Multi-language wrapper
 
@@ -173,11 +175,21 @@ def _make_editor_dock(ui_we_want_to_set: EditorMain, dock_widget: "DestroyDock")
     )[0]
     if not file_path:
         return False
-    result = read_file(file_path)
+    try:
+        # 記下編碼與行尾，關閉存檔時才寫得回原樣
+        # Keep the encoding and line ending, so a save on close writes them back
+        result = read_file_with_encoding(file_path)
+    except JEditorOpenFileException as error:
+        # 以前只寫進 log，使用者看到的是什麼都沒發生
+        # This used to go to the log only; the user saw nothing happen
+        jeditor_logger.error(f"Editor dock could not open {file_path}: {error.__cause__ or error}")
+        report_open_failure(ui_we_want_to_set, file_path, error)
+        return False
     if result is None:
         return False
-    widget = FullEditorWidget(current_file=file_path)
+    widget = FullEditorWidget(current_file=file_path, encoding=result[2], line_ending=result[3])
     widget.code_edit.setPlainText(result[1])
+    widget.code_edit.document().setModified(False)
     dock_widget.setWindowTitle(language_wrapper.language_word_dict.get("dock_editor_title"))
     dock_widget.setWidget(widget)
     return True

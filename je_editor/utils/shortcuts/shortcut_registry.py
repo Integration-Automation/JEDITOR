@@ -215,6 +215,19 @@ EDITOR_SHORTCUTS: Dict[str, str] = {
     "increment_number": "Ctrl+Alt+Up",
     "decrement_number": "Ctrl+Alt+Down",
     "rename_occurrences": "F2",
+    "duplicate_line": "Ctrl+D",
+    "toggle_comment": "Ctrl+/",
+    "move_line_up": "Alt+Up",
+    "move_line_down": "Alt+Down",
+    # 跳轉 / Jumps
+    "jump_to_definition": "Ctrl+B",
+    "jump_to_matching_bracket": "Ctrl+Shift+\\",
+    # 字型縮放；一個指令只有一組按鍵，所以美式鍵盤不必按 Shift 的 Ctrl+= 另設一個指令
+    # Font zoom. A command owns one sequence, so Ctrl+= (no Shift needed on a US
+    # layout) is a command of its own
+    "zoom_in": "Ctrl++",
+    "zoom_in_alternate": "Ctrl+=",
+    "zoom_out": "Ctrl+-",
     # git
     "next_change": "F7",
     "previous_change": "Shift+F7",

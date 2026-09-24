@@ -1,3 +1,4 @@
+import os
 from threading import Lock
 
 # 匯入自訂例外與日誌工具
@@ -37,16 +38,14 @@ def write_file_with_encoding(
         return
     text = apply_line_ending(str(content), line_ending)
     try:
-        _file_write_lock.acquire()
-        # newline="" 讓上面轉好的行尾原樣寫出，不再被 Python 轉換一次
-        # newline="" writes the endings above as-is instead of translating again
-        with open(file_path, "w", encoding=encoding, newline="") as file_to_write:
-            file_to_write.write(text)
-    except (OSError, UnicodeEncodeError, LookupError) as error:
-        jeditor_logger.error(f"Failed to write file {file_path}: {error}")
+        # 先編碼再開檔：以 "w" 開檔就會清空檔案，編碼失敗時磁碟上只剩空檔
+        # Encode before opening: opening with "w" empties the file, so an
+        # encoding failure left an empty file where the last good one was
+        data = text.encode(encoding)
+    except (UnicodeEncodeError, LookupError) as error:
+        jeditor_logger.error(f"Failed to encode file {file_path}: {error}")
         raise JEditorSaveFileException from error
-    finally:
-        _file_write_lock.release()
+    _write_bytes(file_path, data)
 
 
 def write_file(file_path: str, content: str) -> None:
@@ -79,19 +78,35 @@ def write_file(file_path: str, content: str) -> None:
                         f"file_path: {file_path} "
                         f"length: {len(content)}")
 
+    if file_path == "" or file_path is None:  # 確認路徑有效 / Ensure path is valid
+        return
+    try:
+        # 先編碼再開檔，理由同 write_file_with_encoding（例如孤立的代理字元）
+        # Encode before opening, for the same reason as write_file_with_encoding
+        # (a lone surrogate, for one, cannot be written as UTF-8)
+        data = content.encode("utf-8")
+    except UnicodeEncodeError as error:
+        jeditor_logger.error(f"Failed to encode file {file_path}: {error}")
+        raise JEditorSaveFileException from error
+    # 以文字模式寫入時 Windows 會把 \n 轉成 \r\n，這裡照舊
+    # Text mode turned \n into \r\n on Windows; keep doing that
+    _write_bytes(file_path, data.replace(b"\n", os.linesep.encode("ascii")))
+
+
+def _write_bytes(file_path: str, data: bytes) -> None:
+    """
+    在鎖內把已編碼好的內容寫入檔案
+    Write already-encoded content to the file, under the module lock.
+
+    :raises JEditorSaveFileException: 寫入失敗時 / when the write fails
+    """
     try:
         _file_write_lock.acquire()  # 嘗試鎖定資源 / Acquire the lock
-        if file_path != "" and file_path is not None:  # 確認路徑有效 / Ensure path is valid
-            # 以寫入模式開啟檔案 (UTF-8 編碼)
-            # Open file in write+read mode with UTF-8 encoding
-            with open(file_path, "w+", encoding="utf-8") as file_to_write:
-                file_to_write.write(content)  # 寫入內容 / Write content
-    except OSError as e:
-        # 捕捉檔案 IO 例外
-        # Catch file IO exceptions
-        jeditor_logger.error(f"Failed to write file {file_path}: {e}")
-        raise JEditorSaveFileException from e
+        with open(file_path, "wb") as file_to_write:
+            file_to_write.write(data)
+    except OSError as error:
+        jeditor_logger.error(f"Failed to write file {file_path}: {error}")
+        raise JEditorSaveFileException from error
     finally:
-        # 確保鎖一定會被釋放
-        # Ensure the lock is always released
+        # 確保鎖一定會被釋放 / Ensure the lock is always released
         _file_write_lock.release()

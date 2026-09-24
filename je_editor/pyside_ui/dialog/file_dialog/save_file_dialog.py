@@ -12,12 +12,14 @@ if TYPE_CHECKING:
     # Only imported during type checking to avoid circular imports
     from je_editor.pyside_ui.main_ui.main_editor import EditorMain
 
-from PySide6.QtWidgets import QFileDialog
+from PySide6.QtWidgets import QFileDialog, QMessageBox
 
 from je_editor.pyside_ui.main_ui.editor.editor_widget import EditorWidget
 from je_editor.pyside_ui.main_ui.menu.file_menu.encoding_actions import format_before_save
 from je_editor.utils.encodings.text_codec import DEFAULT_ENCODING, LINE_ENDING_LF
+from je_editor.utils.exception.exceptions import JEditorSaveFileException
 from je_editor.utils.file.save.save_file import write_file_with_encoding
+from je_editor.utils.multi_language.multi_language_wrapper import language_wrapper
 
 
 def _build_save_file_filters() -> list[str]:
@@ -60,6 +62,21 @@ def _select_filter_by_suffix(filters: list[str], suffix: str) -> str:
     return filters[0]
 
 
+def report_save_failure(parent, file_path, error: JEditorSaveFileException) -> None:
+    """
+    告訴使用者檔案沒存成，以及原因
+    Tell the user a file was not saved, and why.
+
+    :param parent: 訊息框的父視窗 / the message box's parent
+    :param file_path: 沒存成的檔案 / the file that was not saved
+    :param error: 存檔失敗的例外 / the failure
+    """
+    QMessageBox.warning(
+        parent, language_wrapper.language_word_dict.get("save_file_failed_title"),
+        language_wrapper.language_word_dict.get("save_file_failed_message").format(
+            file=Path(str(file_path)).name, error=error.__cause__ or error))
+
+
 def choose_file_get_save_file_path(parent_qt_instance: EditorMain) -> bool:
     """
     開啟「另存新檔」對話框，將編輯器內容儲存到檔案
@@ -98,6 +115,7 @@ def choose_file_get_save_file_path(parent_qt_instance: EditorMain) -> bool:
         # 確認使用者有選擇檔案路徑 / Ensure user selected a file path
         if file_path is not None and file_path != "":
             # 更新目前檔案路徑 / Update current file path
+            previous_file = widget.current_file
             widget.current_file = file_path
 
             # 若已開啟「存檔時格式化」，先套用再寫出
@@ -105,10 +123,17 @@ def choose_file_get_save_file_path(parent_qt_instance: EditorMain) -> bool:
             format_before_save(widget)
 
             # 以該分頁的編碼與行尾寫入 / Write with the tab's encoding and line ending
-            write_file_with_encoding(
-                file_path, widget.code_edit.toPlainText(),
-                getattr(widget, "file_encoding", DEFAULT_ENCODING),
-                getattr(widget, "line_ending", LINE_ENDING_LF))
+            try:
+                write_file_with_encoding(
+                    file_path, widget.code_edit.toPlainText(),
+                    getattr(widget, "file_encoding", DEFAULT_ENCODING),
+                    getattr(widget, "line_ending", LINE_ENDING_LF))
+            except JEditorSaveFileException as error:
+                # 沒寫成就不能把分頁改指向新路徑，也不能標成已存檔
+                # Nothing was written: the tab keeps its old file and stays unsaved
+                widget.current_file = previous_file
+                report_save_failure(parent_qt_instance, file_path, error)
+                return False
 
             # 更新已開啟檔案管理字典 / Update opened file manager dictionary
             path = Path(file_path)

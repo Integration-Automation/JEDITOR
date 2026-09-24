@@ -345,6 +345,7 @@ class CodeEditor(QPlainTextEdit):
         self.cursorPositionChanged.connect(self._record_cursor_jump)
         self._register_history_actions()
         self._register_line_operation_actions()
+        self._register_editing_key_actions()
 
         # 智慧選取（擴大 / 縮回）/ Smart selection (expand/shrink)
         self.smart_selection_manager = SmartSelectionManager(self)
@@ -1556,7 +1557,7 @@ class CodeEditor(QPlainTextEdit):
 
     def jump_to_matching_bracket(self) -> None:
         """
-        跳到匹配的括號位置 (Ctrl+Shift+\\)
+        跳到匹配的括號位置（預設 Ctrl+Shift+\\）
         Jump to matching bracket
         """
         cursor = self.textCursor()
@@ -1571,7 +1572,7 @@ class CodeEditor(QPlainTextEdit):
 
     def duplicate_line(self) -> None:
         """
-        複製當前行或選取內容 (Ctrl+D)
+        複製當前行或選取內容（預設 Ctrl+D）
         Duplicate the current line, or the selection when there is one.
 
         有選取時在選取結尾後插入一份相同內容，並讓游標選住新複本；沒有選取時
@@ -1696,6 +1697,47 @@ class CodeEditor(QPlainTextEdit):
             ("join_lines", self.join_selected_lines),
             ("sort_lines", self.sort_selected_lines),
         ))
+
+    def _register_editing_key_actions(self) -> None:
+        """
+        註冊複製行、註解、移動行、跳轉與縮放的快捷鍵
+        Register the duplicate, comment, move-line, jump and zoom shortcuts.
+
+        這些按鍵過去寫死在 ``keyPressEvent``，設定對話框改不到；改成動作之後，按鍵
+        來自快捷鍵表，和其他指令一樣可以重新指派。
+        These keys used to be hard-coded in ``keyPressEvent``, out of the settings
+        dialog's reach; as actions they take their keys from the shortcut table and
+        can be reassigned like every other command.
+        """
+        self._add_shortcut_actions((
+            ("duplicate_line", self.duplicate_line),
+            ("toggle_comment", self.toggle_comment),
+            ("move_line_up", lambda: self._move_line_or_carets(-1)),
+            ("move_line_down", lambda: self._move_line_or_carets(1)),
+            ("jump_to_definition", self._jump_to_definition),
+            ("jump_to_matching_bracket", self.jump_to_matching_bracket),
+            ("zoom_in", self._zoom_in),
+            ("zoom_in_alternate", self._zoom_in),
+            ("zoom_out", self._zoom_out),
+        ))
+
+    def _move_line_or_carets(self, direction: int) -> None:
+        """
+        移動目前這一行；有額外游標時改為上下移動所有游標
+        Move the current line, or every caret when extra carets are active.
+
+        改成動作以前，多重游標的按鍵處理先看到 Alt+Up/Down，會移動所有游標；這裡保留
+        那個行為，免得搬動一行時讓額外游標和文字對不上。
+        Before these keys became actions, the extra-caret key handling saw Alt+Up/Down
+        first and moved every caret; this keeps that, so moving a line never leaves the
+        extra carets pointing at shifted text.
+
+        :param direction: -1 往上、1 往下 / -1 up, 1 down
+        """
+        if self.multi_cursor_manager.active:
+            self.multi_cursor_manager.move_all_vertically(direction)
+            return
+        self.move_line(direction)
 
     def _selected_block_range(self, cursor: QTextCursor) -> tuple[int, int]:
         """取得選取（或游標所在）涵蓋的 block 區間 / The block range covered by the selection."""
@@ -2055,7 +2097,7 @@ class CodeEditor(QPlainTextEdit):
             cursor.deleteChar()
 
     def toggle_comment(self) -> None:
-        """切換註解 (Ctrl+/) / Toggle comment for current line or selected lines."""
+        """切換註解（預設 Ctrl+/）/ Toggle comment for current line or selected lines."""
         cursor = self.textCursor()
         cursor.beginEditBlock()
         start_block, end_block = self._toggle_comment_block_range(cursor)
@@ -2073,7 +2115,7 @@ class CodeEditor(QPlainTextEdit):
 
     def move_line(self, direction: int) -> None:
         """
-        移動當前行 (Alt+Up/Down)
+        移動當前行（預設 Alt+Up／Alt+Down）
         Move current line up or down
         :param direction: -1 上移, 1 下移 / -1 up, 1 down
         """
@@ -2243,41 +2285,6 @@ class CodeEditor(QPlainTextEdit):
                 self._unindent_current_block(cursor)
             cursor.movePosition(QTextCursor.MoveOperation.NextBlock)
         cursor.endEditBlock()
-
-    def _handle_ctrl_shortcuts(self, event: QKeyEvent) -> bool:
-        """處理 Ctrl 組合鍵 / Handle Ctrl shortcuts; return True if consumed."""
-        key = event.key()
-        modifiers = event.modifiers()
-        if key == Qt.Key.Key_D:
-            self.duplicate_line()
-            return True
-        if key == Qt.Key.Key_Slash:
-            self.toggle_comment()
-            return True
-        if key == Qt.Key.Key_Backslash and modifiers & Qt.KeyboardModifier.ShiftModifier:
-            self.jump_to_matching_bracket()
-            return True
-        if key in (Qt.Key.Key_Plus, Qt.Key.Key_Equal):
-            self._zoom_in()
-            return True
-        if key == Qt.Key.Key_Minus:
-            self._zoom_out()
-            return True
-        if key == Qt.Key.Key_B:
-            self._jump_to_definition()
-            return True
-        return False
-
-    def _handle_alt_shortcuts(self, event: QKeyEvent) -> bool:
-        """處理 Alt 組合鍵 / Handle Alt shortcuts; return True if consumed."""
-        key = event.key()
-        if key == Qt.Key.Key_Up:
-            self.move_line(-1)
-            return True
-        if key == Qt.Key.Key_Down:
-            self.move_line(1)
-            return True
-        return False
 
     def _jump_to_definition(self) -> None:
         """使用 Jedi 跳轉到符號定義 / Use Jedi to jump to symbol definition."""
@@ -2803,8 +2810,8 @@ class CodeEditor(QPlainTextEdit):
             self.setTextCursor(cursor)
         self.highlight_current_line()
 
-    def _handled_by_editing_keys(self, event: QKeyEvent, modifiers) -> bool:
-        """選取包夾、多重游標與修飾鍵動作 / Surround, extra carets and modifier actions."""
+    def _handled_by_editing_keys(self, event: QKeyEvent) -> bool:
+        """選取包夾、多重游標與 Tab 縮排 / Surround, extra carets and Tab indentation."""
         # 對選取範圍輸入成對字元時包住它，而不是取代掉
         # Typing a pairing character over a selection wraps it instead of
         # replacing it
@@ -2813,12 +2820,6 @@ class CodeEditor(QPlainTextEdit):
                 return True
 
         if self._handle_multi_cursor_key(event):
-            return True
-
-        if modifiers & Qt.KeyboardModifier.ControlModifier and self._handle_ctrl_shortcuts(event):
-            return True
-
-        if modifiers & Qt.KeyboardModifier.AltModifier and self._handle_alt_shortcuts(event):
             return True
 
         return self._handle_tab_indent(event)
@@ -2863,7 +2864,7 @@ class CodeEditor(QPlainTextEdit):
         # While recording, note the keystroke before handling it as usual
         self.macro.record(int(key), int(modifiers.value), event.text())
 
-        if self._handled_by_editing_keys(event, modifiers):
+        if self._handled_by_editing_keys(event):
             return
 
         if self._handled_by_popup_or_newline(event, key, modifiers):

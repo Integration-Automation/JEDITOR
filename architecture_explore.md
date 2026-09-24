@@ -16,7 +16,7 @@ JEditor 是以 PySide6（Qt for Python）寫成的程式碼編輯器，功能涵
 | 語言 / 版本 | Python 3.10+（CI 測 3.10 / 3.11 / 3.12） |
 | UI 框架 | PySide6 6.11.0 + qt-material 主題 |
 | 主要相依 | `jedi`（Python 補全）、`ruff`（診斷）、`yapf` / `pycodestyle`（格式化與檢查）、`gitpython`、`watchdog`、`qtconsole` + `IPython`、`langchain_openai` + `langchain_core`、`frontengine` |
-| 測試 | pytest + pytest-qt，89 個測試檔、約 13,450 行 |
+| 測試 | pytest + pytest-qt，93 個測試檔、約 13,920 行 |
 | 靜態分析 | ruff、SonarCloud（`sonar.sources=je_editor`）、Codacy、bandit |
 
 ### 各套件規模
@@ -69,7 +69,7 @@ JEditor 是以 PySide6（Qt for Python）寫成的程式碼編輯器，功能涵
 **設計慣例**：幾乎每個功能都拆成「純邏輯 + Qt 整合層」兩塊。
 例如折疊 = `utils/code_folding/fold_regions.py`（算區塊）+ `pyside_ui/code/folding/folding_manager.py`（藏行、重畫）；
 書籤 = `utils/bookmark/bookmark_navigation.py` + `pyside_ui/code/bookmark/bookmark_manager.py`。
-這讓大部分邏輯可以不開視窗就測試，也是 `test/` 能有 89 個測試檔的原因。
+這讓大部分邏輯可以不開視窗就測試，也是 `test/` 能有 93 個測試檔的原因。
 
 ---
 
@@ -157,7 +157,7 @@ start_editor(debug_mode)                       je_editor/start_editor.py
 | 模組 | 行 | 功用 |
 | --- | ---: | --- |
 | `file/open/open_file.py` | 99 | 讀檔並回報實際編碼與原始行尾（thread lock 保護） |
-| `file/save/save_file.py` | 97 | 依指定編碼與行尾寫檔 |
+| `file/save/save_file.py` | 112 | 依指定編碼與行尾寫檔；先編碼成功才開檔寫入，編碼失敗不動磁碟上的檔案 |
 | `encodings/text_codec.py` | 143 | 行尾偵測 / 正規化 / 套用；BOM 判斷編碼；位元組解碼 |
 | `encodings/python_encodings.py` | 102 | 編碼選單用的完整編碼名稱清單 |
 | `json/json_file.py` | 68 | JSON 讀寫（含鎖與例外轉換） |
@@ -202,7 +202,7 @@ start_editor(debug_mode)                       je_editor/start_editor.py
 | `macro/keystroke_macro.py` | 89 | 按鍵巨集的錄製與重播狀態（上限 2000 鍵） |
 | `command_palette/fuzzy_matcher.py` | 174 | 模糊比對評分（連續 / 詞界 / 前綴 / 子字串加分，長度與前導罰分）與排序 |
 | `minimap/minimap_layout.py` | 112 | 縮圖座標換算：取樣間隔、行↔像素、長條寬度、可視範圍方框 |
-| `shortcuts/shortcut_registry.py` | 316 | 快捷鍵正規化、`ShortcutRegistry` 衝突偵測、預設表 `WINDOW_SHORTCUTS` / `EDITOR_SHORTCUTS`、使用者覆寫清理 |
+| `shortcuts/shortcut_registry.py` | 329 | 快捷鍵正規化、`ShortcutRegistry` 衝突偵測、預設表 `WINDOW_SHORTCUTS` / `EDITOR_SHORTCUTS`、使用者覆寫清理 |
 | `status/status_text.py` | 71 | 狀態列文字：語言名稱、編碼、行尾、游標位置 |
 | `theme/theme_colors.py` | 127 | 深 / 淺色調色盤，換主題時保留使用者自訂的顏色 |
 
@@ -210,10 +210,10 @@ start_editor(debug_mode)                       je_editor/start_editor.py
 
 | 模組 | 行 | 功用 |
 | --- | ---: | --- |
-| `multi_language/english.py` | 483 | 英文字典（其他語言以此為鍵值基準） |
-| `multi_language/traditional_chinese.py` | 473 | 繁體中文字典 |
-| `multi_language/simplified_chinese.py` | 473 | 簡體中文字典 |
-| `multi_language/japanese.py` | 473 | 日文字典 |
+| `multi_language/english.py` | 492 | 英文字典（其他語言以此為鍵值基準） |
+| `multi_language/traditional_chinese.py` | 482 | 繁體中文字典 |
+| `multi_language/simplified_chinese.py` | 482 | 簡體中文字典 |
+| `multi_language/japanese.py` | 486 | 日文字典 |
 | `multi_language/multi_language_wrapper.py` | 150 | `LanguageWrapper` 單例：註冊語言、切換、啟動語言決策 |
 | `multi_language/locale_match.py` | 116 | 系統語系 → 編輯器語言（含中文繁簡判定） |
 | `multi_language/retranslate_text.py` | 154 | 反查「這段文字是哪個鍵翻出來的」，用於換語言時就地換字 |
@@ -263,7 +263,7 @@ start_editor(debug_mode)                       je_editor/start_editor.py
 
 | 模組 | 行 | 功用 |
 | --- | ---: | --- |
-| `plaintext_code_edit/code_edit_plaintext.py` | **3,225** | `CodeEditor(QPlainTextEdit)`：整個編輯器的中樞。行號區 `LineNumber`、gutter（中斷點 / 書籤 / 折疊 / diff 標記）、自繪縮排參考線與 blame、jedi 背景補全 `_JediCompleteWorker`、括號配對、出現次數高亮、所有文字轉換動作、註解切換、縮放、快捷鍵註冊、LSP 訊號接線、右鍵選單 |
+| `plaintext_code_edit/code_edit_plaintext.py` | **3,222** | `CodeEditor(QPlainTextEdit)`：整個編輯器的中樞。行號區 `LineNumber`、gutter（中斷點 / 書籤 / 折疊 / diff 標記）、自繪縮排參考線與 blame、jedi 背景補全 `_JediCompleteWorker`、括號配對、出現次數高亮、所有文字轉換動作、註解切換、縮放、快捷鍵註冊、LSP 訊號接線、右鍵選單 |
 | `multi_cursor/multi_cursor_manager.py` | 530 | 額外游標的維護與批次套用（插入 / 刪除 / 移動 / 擴選 / 欄選取 / 下一個相同字） |
 | `snippets/snippet_manager.py` | 280 | 片段展開、定位點跳轉、複本同步；使用者片段存於 `.jeditor/snippets.json` |
 | `lsp/lsp_client.py` | 438 | 單一檔案這端的 LSP 連線：didOpen / didChange、completion / hover / rename / formatting / signature / references / codeAction / symbols / definition，回應以 Qt 訊號送出 |
@@ -286,7 +286,7 @@ start_editor(debug_mode)                       je_editor/start_editor.py
 | `syntax/syntax_setting.py` | 95 | 高亮規則 / 關鍵字 / 插件擴充三個字典 |
 | `code_format/pep8_format.py` | 124 | `PEP8FormatChecker`：pycodestyle Checker 子類，把檢查結果導到格式檢查面板 |
 | `textedit_code_result/code_record.py` | 89 | `CodeRecord(QTextEdit)`：輸出區，支援搜尋 |
-| `auto_save/auto_save_thread.py` | 116 | `CodeEditSaveThread`：定時存檔；`_TextFetcher` 確保在主執行緒取文字 |
+| `auto_save/auto_save_thread.py` | 120 | `CodeEditSaveThread`：定時存檔；`_TextFetcher` 確保在主執行緒取文字；存檔失敗只記錄，執行緒繼續 |
 | `auto_save/auto_save_manager.py` | 64 | 建立 / 取代分頁的自動儲存執行緒，維護兩個全域字典 |
 | `variable_inspector/inspector_gui.py` | 184 | 變數檢視器：`QAbstractTableModel` + 過濾代理 + GUI |
 
@@ -297,8 +297,8 @@ start_editor(debug_mode)                       je_editor/start_editor.py
 | 模組 | 行 | 功用 |
 | --- | ---: | --- |
 | `main_editor.py` | 609 | `EditorMain(QMainWindow)`：分頁容器、輸出重導計時器、狀態列更新、設定定期儲存、工作階段還原 / 儲存、關閉時收尾；`EDITOR_EXTEND_TAB` 掛載點 |
-| `editor/editor_widget.py` | 542 | `EditorWidget`：一個編輯分頁＝左側專案樹 + 上方 `CodeEditor` + 下方輸出分頁（執行結果 / 格式檢查 / 除錯 / 終端機 / 變數檢視 / Git），含拖放開檔、外部變更偵測、縮圖與分割檢視切換 |
-| `editor/editor_widget_dock.py` | 71 | `FullEditorWidget`：可停駐的單檔編輯器 |
+| `editor/editor_widget.py` | 571 | `EditorWidget`：一個編輯分頁＝左側專案樹 + 上方 `CodeEditor` + 下方輸出分頁（執行結果 / 格式檢查 / 除錯 / 終端機 / 變數檢視 / Git），含拖放開檔、外部變更偵測、縮圖與分割檢視切換。所有開檔都經 `open_an_file()`：讀不了時 `report_open_failure()` 告訴使用者並撤掉「已開啟」紀錄；外部變更後重新載入用檔案自己的編碼 |
+| `editor/editor_widget_dock.py` | 85 | `FullEditorWidget`：可停駐的單檔編輯器；關閉時只在有修改時，以檔案原本的編碼與行尾存回 |
 | `editor/process_input.py` | 104 | 對子程序（program / shell / debugger）送入標準輸入的視窗 |
 | `dock/destroy_dock.py` | 52 | `DestroyDock`：關閉時會真的銷毀內容的 `QDockWidget` |
 | `system_tray/extend_system_tray.py` | 88 | 系統匣圖示與隱藏 / 還原 / 關閉選項 |
@@ -310,8 +310,8 @@ start_editor(debug_mode)                       je_editor/start_editor.py
 | 模組 | 行 | 功用 |
 | --- | ---: | --- |
 | `set_menu_bar.py` | 69 | 依序組裝 10 個子選單；extend 模式不建插件選單 |
-| `file_menu/build_file_menu.py` | 282 | 檔案選單：開 / 存 / 另存、最近檔案（上限 10）、編碼、行尾、字型與大小 |
-| `file_menu/encoding_actions.py` | 177 | 實際套用編碼 / 行尾、存檔前格式化、儲存所有分頁 |
+| `file_menu/build_file_menu.py` | 297 | 檔案選單：開 / 存 / 另存、最近檔案（上限 10）、編碼、行尾、字型與大小 |
+| `file_menu/encoding_actions.py` | 186 | 實際套用編碼 / 行尾、存檔前格式化、儲存所有分頁（一個分頁存不了，其他照存並回報） |
 | `run_menu/build_run_menu.py` | 155 | 執行選單骨架、停止程式、清除輸出、說明 |
 | `run_menu/under_run_menu/build_program_menu.py` | 108 | 執行使用者程式（解析插件 run_config） |
 | `run_menu/under_run_menu/build_shell_menu.py` | 98 | 執行 shell 指令 |
@@ -322,7 +322,7 @@ start_editor(debug_mode)                       je_editor/start_editor.py
 | `tab_menu/build_tab_menu.py` | 187 | 分頁選單：新增編輯 / 瀏覽器 / 終端機分頁、片段編輯器、縮圖與分割檢視切換 |
 | `tab_menu/build_tab_git_menu.py` | 200 | Git 分頁：HEAD diff、staged diff、Git 用戶端、提交圖、diff 比對 |
 | `tab_menu/build_tab_tools_menu.py` | 155 | 工具分頁：IPython、變數檢視器、FrontEngine、AI 對話、TODO 面板、大綱面板 |
-| `dock_menu/build_dock_menu.py` | 230 | 各種 dock 視窗的建立（含 FrontEngine 元件） |
+| `dock_menu/build_dock_menu.py` | 238 | 各種 dock 視窗的建立（含 FrontEngine 元件） |
 | `style_menu/build_style_menu.py` | 170 | qt-material 樣式切換、縮排參考線 / 尾端空白開關、開啟快捷鍵設定 |
 | `language_menu/build_language_server.py` | 96 | 介面語言切換（含插件註冊的語言） |
 | `python_env_menu/build_venv_menu.py` | 243 | 建立 venv、pip 安裝 / 升級、選擇直譯器 |
@@ -371,8 +371,8 @@ start_editor(debug_mode)                       je_editor/start_editor.py
 | `search_ui/search_error_box.py` | 49 | 搜尋結果 / 錯誤提示框 |
 | `shortcut_dialog/shortcut_settings_dialog.py` | 179 | 列出所有指令、改按鍵、即時衝突提示、還原預設 |
 | `snippet_dialog/snippet_editor_dialog.py` | 148 | 使用者片段的新增 / 刪除 / 編輯，存檔後重載已開分頁 |
-| `file_dialog/open_file_dialog.py` | 129 | 開檔流程：選檔、已開啟就切分頁、載入內容；另有選資料夾更新專案樹 |
-| `file_dialog/save_file_dialog.py` | 132 | 另存新檔：依插件語言動態建立篩選器並依副檔名預選 |
+| `file_dialog/open_file_dialog.py` | 102 | 開檔流程：選檔後交給目前分頁的 `EditorWidget.open_an_file()`（已開啟就切分頁、記下編碼與行尾）；另有選資料夾更新專案樹 |
+| `file_dialog/save_file_dialog.py` | 157 | 另存新檔：依插件語言動態建立篩選器並依副檔名預選；寫檔失敗時分頁保留原路徑、不標已存；`report_save_failure()` 是各存檔路徑共用的失敗訊息 |
 | `file_dialog/create_file_dialog.py` | 77 | 建立新檔案 |
 | `ai_dialog/set_ai_dialog.py` | 71 | 設定 AI 模型參數 |
 
@@ -442,9 +442,11 @@ UI 執行緒不做 I/O 是硬性規則，重活分成三類：
 `EDITOR_SHORTCUTS`（編輯器層）合成 `DEFAULT_SHORTCUTS`，使用者覆寫存在設定裡且只記與預設不同的項目。
 `ShortcutRegistry` 會偵測重複指派（Qt 遇到重複時兩個動作都不會執行，卻不報錯）。
 
-**例外**：`Ctrl+D`、`Ctrl+/`、`Alt+Up/Down`、`Ctrl+B`、`Ctrl+Shift+\`、`Ctrl++`/`Ctrl+-`
-目前寫死在 `code_edit_plaintext.py` 的 `_handle_ctrl_shortcuts` / `_handle_alt_shortcuts`，
-不在 registry 中，因此設定對話框改不到（`PROGRESS.md` 有記此待辦）。
+編輯器的每個指令都經由 `CodeEditor._add_shortcut_action` 變成一個 `QAction`（脈絡為
+`WidgetWithChildrenShortcut`），包括複製行、切換註解、移動行、跳到定義、跳到對應括號與縮放；
+`keyPressEvent` 不再比對任何 Ctrl／Alt 組合。放大有 `zoom_in`（`Ctrl++`）與 `zoom_in_alternate`
+（`Ctrl+=`）兩個指令，因為一個指令只對應一組按鍵。仍由編輯區自己處理、無法重新指派的只剩
+`Tab`／`Shift+Tab`（縮排、片段）、多重游標的方向鍵與輸入，以及選取包夾。
 
 ### 6.5 主題顏色
 
@@ -478,7 +480,7 @@ qt-material 負責視窗樣式；編輯器自身的顏色（語法高亮、diff 
 
 ## 7. 測試與 CI
 
-- `test/` 89 個測試檔、約 13,450 行，與模組大致一對一（`test_fold_regions.py`、`test_shortcut_registry.py`…）。
+- `test/` 93 個測試檔、約 13,920 行，與模組大致一對一（`test_fold_regions.py`、`test_shortcut_registry.py`…）。
 - `conftest.py` 提供 session 級 `qapp`、`tmp_dir`、`tmp_file`，以及 autouse 的「等工具列背景執行緒結束」fixture；
   `collect_ignore_glob` 排除會真的開視窗的 `start_qt_ui.py` / `extend_test.py`。
 - `pyproject.toml` 設定 `testpaths = ["test"]`、`qt_api = "pyside6"`；bandit 排除測試目錄（pytest 慣用 `assert`）。
@@ -497,7 +499,7 @@ qt-material 負責視窗樣式；編輯器自身的顏色（語法高亮、diff 
 
 ### 值得注意的張力
 
-1. **`code_edit_plaintext.py` 3,225 行、`CodeEditor` 有 190 個方法**，明顯與 CLAUDE.md 的「避免 god class」相衝。
+1. **`code_edit_plaintext.py` 3,222 行、`CodeEditor` 有 189 個方法**，明顯與 CLAUDE.md 的「避免 god class」相衝。
    目前靠把狀態外包給十多個 manager 緩解，但方法本身（文字轉換、繪製、快捷鍵、LSP 回呼）仍集中在同一類別。
    若要拆，`_paint_*` 系列與 `*_selection` 系列是最自然的切分線。
 2. **`git_client_gui.py` 1,072 行**，`GitGui` 一個類別同時負責 UI 佈局、diff 呈現、Git 操作與主題套用。

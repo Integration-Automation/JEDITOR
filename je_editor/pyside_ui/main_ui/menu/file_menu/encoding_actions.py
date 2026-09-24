@@ -127,7 +127,7 @@ def format_before_save(widget) -> bool:
     return True
 
 
-def save_all_tabs(ui_we_want_to_set) -> int:
+def save_all_tabs(ui_we_want_to_set, failures: list | None = None) -> int:
     """
     儲存每個有未存修改的編輯分頁
     Save every editor tab that has unsaved changes.
@@ -137,11 +137,14 @@ def save_all_tabs(ui_we_want_to_set) -> int:
     Save As dialog, and its location must not be decided silently.
 
     :param ui_we_want_to_set: 主編輯器視窗 / the main editor window
+    :param failures: 存不了的分頁會以 ``(檔案, 例外)`` 加進來 / tabs that could not
+        be saved are appended to it as ``(file, error)``
     :return: 實際存檔的分頁數 / how many tabs were written
     """
     from je_editor.pyside_ui.main_ui.editor.editor_widget import EditorWidget
     from je_editor.utils.encodings.text_codec import DEFAULT_ENCODING
     from je_editor.utils.file.save.save_file import write_file_with_encoding
+    from je_editor.utils.exception.exceptions import JEditorSaveFileException
     tab_widget = getattr(ui_we_want_to_set, "tab_widget", None)
     if tab_widget is None:
         return 0
@@ -151,10 +154,16 @@ def save_all_tabs(ui_we_want_to_set) -> int:
         if not isinstance(widget, EditorWidget) or not widget.current_file:
             continue
         format_before_save(widget)
-        write_file_with_encoding(
-            str(widget.current_file), widget.code_edit.toPlainText(),
-            getattr(widget, "file_encoding", DEFAULT_ENCODING),
-            getattr(widget, "line_ending", LINE_ENDING_LF))
+        try:
+            write_file_with_encoding(
+                str(widget.current_file), widget.code_edit.toPlainText(),
+                getattr(widget, "file_encoding", DEFAULT_ENCODING),
+                getattr(widget, "line_ending", LINE_ENDING_LF))
+        except JEditorSaveFileException as error:
+            # 一個分頁存不了，其他分頁照存 / One tab that cannot be saved does not stop the rest
+            if failures is not None:
+                failures.append((widget.current_file, error))
+            continue
         saved += 1
     return saved
 

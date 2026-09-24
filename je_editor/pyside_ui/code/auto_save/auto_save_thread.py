@@ -7,6 +7,7 @@ from PySide6.QtCore import QObject, Qt, Signal, Slot
 
 from je_editor.pyside_ui.code.plaintext_code_edit.code_edit_plaintext import CodeEditor
 from je_editor.utils.encodings.text_codec import DEFAULT_ENCODING, LINE_ENDING_LF
+from je_editor.utils.exception.exceptions import JEditorSaveFileException
 from je_editor.utils.file.save.save_file import write_file_with_encoding
 from je_editor.utils.logging.loggin_instance import jeditor_logger
 
@@ -98,8 +99,11 @@ class CodeEditSaveThread(Thread):
             if self.before_write_callback is not None:
                 self.before_write_callback()
             write_file_with_encoding(self.file, text, self.encoding, self.line_ending)
-        except (OSError, RuntimeError) as e:
-            jeditor_logger.error(f"Auto-save failed for {self.file}: {e}")
+        except (OSError, RuntimeError, JEditorSaveFileException) as e:
+            # 寫檔失敗丟的是 JEditorSaveFileException；以前沒接住，執行緒就此結束，之後不再自動儲存
+            # A failed write raises JEditorSaveFileException; uncaught, it ended
+            # the thread and the tab was never auto-saved again
+            jeditor_logger.error(f"Auto-save failed for {self.file}: {e.__cause__ or e}")
 
     def run(self) -> None:
         """迴圈自動儲存當前編輯檔案 / Loop and save the current editor file periodically."""
