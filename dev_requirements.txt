@@ -1,5 +1,5 @@
 PySide6==6.11.2
-langchain_openai==1.6.2
+langchain_openai==1.6.3
 langchain_core
 ruff
 sphinx
