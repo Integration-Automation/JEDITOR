@@ -86,12 +86,17 @@ python -m build                        # build (swap pyproject.toml <-> dev.toml
 - The matrix is **Python 3.10 / 3.11 / 3.12** on Windows. To reproduce a 3.10-only failure locally,
   use `uv python install 3.10` plus `uv venv`.
 - Watch a run with `gh run watch <run-id> --exit-status`, or `gh pr checks <PR> --watch` for a PR.
-- For analyser detail, the tokens live in the environment:
-  - Codacy — header `project-token: $CODACY_PROJECT_TOKEN` against
+- For analyser detail:
+  - Codacy — query
     `https://app.codacy.com/api/v3/analysis/organizations/gh/Integration-Automation/repositories/<repo>/pull-requests/<PR>/issues`
-    lists file:line and rule id directly.
-  - SonarCloud — `$SonarCloudToken` against
+    **without** a key (the repository is public); it lists file:line and rule id directly. The
+    `CODACY_PROJECT_TOKEN` in the environment is a project token valid only for its own project:
+    sent as `project-token` for this repository it answers "Bad credentials".
+  - SonarCloud — `curl -s -u "$SonarCloudToken:"` against
     `https://sonarcloud.io/api/issues/search?componentKeys=<key>&pullRequest=<PR>`.
+  - **Never reveal a key or any personal credential while doing so**: refer to the variables by
+    name only, never echo or print their values, and never put them in files, commit messages, PR
+    or issue text, logs, or any output that leaves the machine.
 - Treat an analyser finding as a claim to verify, not an order. Where a finding is wrong (a
   bilingual comment read as commented-out code) or where following it would make the code more
   fragile, leave the code correct and record why.
