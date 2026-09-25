@@ -58,6 +58,7 @@ In the same commit: delete the item from `progress.md`, add a `#done` entry here
 
 | ID | Date | Title | Tags | Batch |
 |---|---|---|---|---|
+| U-20260925-05 | 2026-09-25 | CI 與分類器涵蓋 Python 3.13、3.14 | #ci #packaging #tests | [2026-09](2026-09.md) |
 | U-20260925-04 | 2026-09-25 | 授權中繼資料改用 SPDX 運算式 | #packaging | [2026-09](2026-09.md) |
 | U-20260925-03 | 2026-09-25 | dev_requirements.txt 的 PySide6、langchain_openai 對齊套件版本 | #deps #tests | [2026-09](2026-09.md) |
 | U-20260925-02 | 2026-09-25 | Dependabot 新版本等 7 天才開 PR | #ci #security #deps | [2026-09](2026-09.md) |
@@ -82,4 +83,4 @@ In the same commit: delete the item from `progress.md`, add a `#done` entry here
 
 | File | Period | Entries |
 |---|---|---:|
-| [2026-09.md](2026-09.md) | 2026-09 | 19 |
+| [2026-09.md](2026-09.md) | 2026-09 | 20 |
