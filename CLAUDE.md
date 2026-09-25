@@ -19,12 +19,14 @@ existing module that change nothing structural need no update.
 
 ## Keeping the READMEs Current (mandatory)
 
-**`README.md` and every translated README must stay in sync with the code.** This repo ships
-`README.md`, `README/README_zh-TW.md` and `README/README_zh-CN.md`. Any user-facing change —
-features, commands, CLI flags, install/setup, configuration or requirements — updates `README.md`
-**and every language variant in the same commit**, with structure and content aligned. Never
-update one language and leave the others stale. There is no README-parity guard, so this is a
-manual check against the three files above.
+**`README.md`, every translated README, and the docs must stay in sync with the code.** This repo
+ships `README.md`, `README/README_zh-TW.md` and `README/README_zh-CN.md`, plus the Sphinx sources
+under `docs/`. Any user-facing change — features, commands, CLI flags, install/setup, configuration
+or requirements — updates `README.md`, **every language variant, and the affected `docs/` pages in
+the same commit**, with section structure and content aligned across languages; the translations
+must reflect the English content, not merely match its headings. Never update one language, or
+`README.md` alone, and leave the other READMEs or the docs stale. There is no README-parity guard,
+so this is a manual check against the files above.
 
 ## Project Overview
 
@@ -160,6 +162,7 @@ Workspace rule shared by every repository under `D:\Codes` (full text: `D:\Codes
 - **Commit at every stage.** A stage is the smallest piece of work that leaves the repository consistent and passes this project's checks (definition of done, tests, lint): one finished `PROGRESS.md` item, or one self-contained step of a larger one. Commit it before starting the next stage, before switching to another repository, and before the session ends. Do not leave work uncommitted across sessions; if a stage cannot be finished, commit the consistent part and record the rest in `PROGRESS.md`.
   - Stage only the files that stage touched (`git add <path>`, never `git add -A`), follow this file's commit-message rules, and never add AI attribution.
   - Committing is not pushing: push or open a PR only as this project's branch flow says or when asked.
+  - **Commit and push frequently.** After each big feature — a self-contained stage that passes this project's checks — commit and push to the remote; do not pile up a large batch of work before committing or pushing. Smaller batches collide less with other sessions, let CI catch problems earlier, and are easier to revert. Follow this project's normal branch flow (usually `dev`).
 - **`PROGRESS.md`** (repository root, tracked) holds outstanding work only: no finished items, no history, no rules.
 - **`docs/updates/`** records finished work: one batch file per month (`YYYY-MM.md`), one entry per piece of work headed `## U-YYYYMMDD-NN · date · title · #tags`, and an index with query commands in `docs/updates/README.md`. When a `PROGRESS.md` item is done, delete it and add a `#done` entry plus its index row in the same commit.
 - **`architecture.md`** (repository root) is the short architecture overview: layers, entry points, main flows, extension points, cross-project boundaries. Update it in the same commit whenever a change alters any of those. `architecture_explore.md` stays the detailed per-module map under its own rule in this file.
