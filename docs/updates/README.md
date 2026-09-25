@@ -58,6 +58,7 @@ In the same commit: delete the item from `progress.md`, add a `#done` entry here
 
 | ID | Date | Title | Tags | Batch |
 |---|---|---|---|---|
+| U-20260925-01 | 2026-09-25 | #8 結案：編輯快捷鍵已隨 PyBreeze 修正一起發版 | #done #release | [2026-09](2026-09.md) |
 | U-20260924-02 | 2026-09-24 | checkout 只在要 push 的工作保留憑證 | #ci #security | [2026-09](2026-09.md) |
 | U-20260924-01 | 2026-09-24 | CI 改用鎖 commit 的 Node 24 action | #ci #security #deps | [2026-09](2026-09.md) |
 | U-20260923-09 | 2026-09-23 | gitpython 下限拉到 3.1.58 | #deps #security | [2026-09](2026-09.md) |
@@ -78,4 +79,4 @@ In the same commit: delete the item from `progress.md`, add a `#done` entry here
 
 | File | Period | Entries |
 |---|---|---:|
-| [2026-09.md](2026-09.md) | 2026-09 | 15 |
+| [2026-09.md](2026-09.md) | 2026-09 | 16 |

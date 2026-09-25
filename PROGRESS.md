@@ -3,7 +3,7 @@
 只放還沒做的事。做完就在同一個 commit 裡刪掉這條，並在 `docs/updates/` 新增一筆 `#done` 紀錄（格式與查詢方式見 `docs/updates/README.md`）。不放已完成的項目、不寫流水帳、不寫規則（規則在 `CLAUDE.md`）。
 本檔納入版控。PyBreeze 的待辦寫在 PyBreeze 自己的 `progress.md`。
 編號 `#n` 不重用。標記：〔決定〕需擁有者拍板、〔阻塞〕在等別的事、〔未確認〕觀察到但還沒證實。
-跨專案與工作區層級的待辦在 `D:\Codes\progress.md`（與本專案相關：X-1、X-16、X-17）。
+跨專案與工作區層級的待辦在 `D:\Codes\progress.md`（與本專案相關：X-13、X-16、X-17）。
 
 ## 待辦
 
@@ -12,4 +12,3 @@
   要清掉這一項得在 SonarCloud 把 issue 轉成 False Positive（用 API 改狀態需要 Administer
   Issues 權限）。
 - **#4** `dev.toml` 的版本還停在 1.0.11（`dev.toml:9`）。版號由 CI 管、不手改；要不要處理取決於開發通道要不要發佈（工作區 X-13）。相依與 `CLAUDE.md` 的 PySide6 已在 2026-09-23 對齊。
-- **#8** 〔阻塞〕dev 領先 main 4 個 commit，要等 PyBreeze 發版後才能開 dev→main PR。原因：`_register_editing_key_actions()` 註冊的 Ctrl+D、Ctrl+=、Ctrl+- 等快捷鍵，會跟目前 PyBreeze 發行版圖表編輯器的全視窗 `QShortcut` 衝突，兩邊都失效。PyBreeze 已在 dev 修好（`04e935e`，`diagram_editor_widget.py:343`），但還沒發版。
