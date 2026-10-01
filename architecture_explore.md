@@ -480,11 +480,17 @@ qt-material 負責視窗樣式；編輯器自身的顏色（語法高亮、diff 
 
 ## 7. 測試與 CI
 
-- `test/` 93 個測試檔、約 13,920 行，與模組大致一對一（`test_fold_regions.py`、`test_shortcut_registry.py`…）。
+- `test/` 98 個測試檔、約 14,360 行，與模組大致一對一（`test_fold_regions.py`、`test_shortcut_registry.py`…）。
 - `conftest.py` 提供 session 級 `qapp`、`tmp_dir`、`tmp_file`，以及 autouse 的「等工具列背景執行緒結束」fixture；
   `collect_ignore_glob` 排除會真的開視窗的 `start_qt_ui.py` / `extend_test.py`。
 - `pyproject.toml` 設定 `testpaths = ["test"]`、`qt_api = "pyside6"`；bandit 排除測試目錄（pytest 慣用 `assert`）。
-- CI（`.github/workflows/dev.yml`、`stable.yml`）跑 Python 3.10 / 3.11 / 3.12，不設 `QT_QPA_PLATFORM=offscreen`。
+- CI（`.github/workflows/dev.yml`、`stable.yml`）跑 Python 3.10～3.14，單元測試步驟不設 `QT_QPA_PLATFORM=offscreen`。
+- 發佈都由 CI 做：`stable.yml` 的 `publish_to_pypi` 在推送到 `main`（或手動執行）後升版、打標籤、上傳 `je_editor`；
+  `dev.yml` 的 `publish-dev` 在推送到 `dev`、測試矩陣全過之後，用 `dev.toml` 建置 `je_editor_dev`，
+  只有該 commit 仍是 `dev` 的最新一筆、而且 wheel 跟 PyPI 上最新的不同時才上傳。
+  `scripts/dev_release.py`（只用標準函式庫，不屬於套件）負責算版號（PyPI 最新版加一個修訂號，不提交回 repo）
+  和比對 wheel；`test_dev_release.py` 守這支腳本與工作流程的條件，`test_dev_toml_parity.py` 守
+  `dev.toml` 與 `pyproject.toml` 的相依、Python 下限、進入點和 `[tool.setuptools]` 一致。
 
 ---
 

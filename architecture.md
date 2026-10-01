@@ -26,8 +26,9 @@ window, and plugins extend it through a small registry API.
 | `je_editor/plugins/` | Plugin registry (`__init__.py`) and `jeditor_plugins/` loader (`plugin_loader.py`) |
 | `test/` | pytest suites; `test/qt_ui/unit_test/` holds the launch scripts CI runs (`start_qt_ui.py`, `extend_test.py`) |
 | `docs/`, `exe/` | Sphinx docs; executable-build entry (`exe/start_editor.py`) and packaging configs |
-| `pyproject.toml`, `dev.toml` | Stable and dev package definitions (swap them to build the dev package) |
-| `.github/workflows/` | `dev.yml`, `stable.yml` (Windows, Python matrix) |
+| `pyproject.toml`, `dev.toml` | Stable and dev package definitions. CI writes `dev.toml` to `pyproject.toml` to build the dev package, so their dependencies, Python floor, entry points and `[tool.setuptools]` must agree (`test/test_dev_toml_parity.py`) |
+| `scripts/` | `dev_release.py`: release helper the `publish-dev` job runs (next dev version, wheel comparison); standard library only, not part of the package |
+| `.github/workflows/` | `dev.yml`, `stable.yml`: tests on a Windows Python matrix, then one publish job each on `ubuntu-latest` (§3 PyPI packages) |
 
 Dependencies point downwards: `pyside_ui/` → `code_scan/`, `git_client/`, `plugins/` → `utils/`.
 Most features are split into a pure function in `utils/` plus a thin Qt layer in `pyside_ui/`.
@@ -49,6 +50,13 @@ Most features are split into a pure function in `utils/` plus a thin Qt layer in
   `user_setting_color_dict`, `jeditor_logger`, the `JEditorException` family.
 - **Persisted state**: `.jeditor/` under the working directory (`user_setting.json`,
   `user_color_setting.json`, `snippets.json`, `.bak` backups).
+- **PyPI packages**: `je_editor` (stable) and `je_editor_dev` (dev channel), both published by CI.
+  Stable: a push to `main` or a manual run of `stable.yml` runs its `publish_to_pypi` job, which
+  bumps `pyproject.toml`, tags and uploads. Dev: the `publish-dev` job of `dev.yml` runs after the
+  test matrix on a push to `dev`, builds from `dev.toml` and uploads when the commit is still the
+  tip of `dev` and the wheel differs from the newest published one. `scripts/dev_release.py` takes
+  the version from PyPI (newest release plus one patch), so nothing is committed back and the
+  version in `dev.toml` is only a floor.
 
 ## 4. Main flows
 
@@ -121,8 +129,9 @@ Plugin browser (pyside_ui/main_ui/plugin_browser/) → github_api.fetch_repo_tre
   Its files depend only on the registry functions above and on the `PLUGIN_*` / `register()`
   convention, so keep those signatures stable.
 - **PySide6 pin**: it must match across JEditor, PyBreeze and FrontEngine (`pyproject.toml`,
-  `dev.toml`, `requirements.txt`). At last verification it did not match. JEditor's `pyproject.toml`
-  and `requirements.txt` pin 6.11.1, as does FrontEngine. JEditor's `dev.toml` pins 6.11.0, as does PyBreeze.
+  `dev.toml`, `requirements.txt`). On 2026-10-01 all three pinned 6.11.2. Within JEditor,
+  `pyproject.toml` is the truth: `test/test_requirement_pins.py` holds the requirements files to it
+  and `test/test_dev_toml_parity.py` holds `dev.toml` to it. Nothing checks across repositories.
 
 ## 7. Design constraints
 

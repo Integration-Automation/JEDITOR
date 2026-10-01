@@ -1,5 +1,8 @@
-# Rename to build dev version
-# This is dev version
+# 開發通道 je_editor_dev。.github/workflows/dev.yml 的 publish-dev 工作把本檔寫成 pyproject.toml 來建置
+# （scripts/dev_release.py）。下面的版本只是下限：CI 發佈的是 PyPI 上最新版再加一個修訂號，不提交回來。
+# The dev channel, je_editor_dev. The publish-dev job of .github/workflows/dev.yml builds it by
+# writing this file to pyproject.toml (scripts/dev_release.py). The version below is a floor: CI publishes
+# one patch above the newest release on PyPI and commits nothing back.
 [build-system]
 requires = ["setuptools>=82.0.1"]
 build-backend = "setuptools.build_meta"
