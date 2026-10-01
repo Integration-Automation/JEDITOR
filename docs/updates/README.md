@@ -58,6 +58,7 @@ In the same commit: delete the item from `progress.md`, add a `#done` entry here
 
 | ID | Date | Title | Tags | Batch |
 |---|---|---|---|---|
+| U-20261001-05 | 2026-10-01 | sdist 不再帶測試 | #done #packaging #X-13 | [2026-10](2026-10.md) |
 | U-20261001-04 | 2026-10-01 | wheel 不再把 test/ 當成頂層套件裝進去 | #fix #packaging | [2026-10](2026-10.md) |
 | U-20261001-03 | 2026-10-01 | PROGRESS #4 結案：dev.toml 的版本改由 CI 決定 | #done #X-13 | [2026-10](2026-10.md) |
 | U-20261001-02 | 2026-10-01 | CI 從 dev 分支發佈 je_editor_dev | #release #ci #X-13 | [2026-10](2026-10.md) |
@@ -87,5 +88,5 @@ In the same commit: delete the item from `progress.md`, add a `#done` entry here
 
 | File | Period | Entries |
 |---|---|---:|
-| [2026-10.md](2026-10.md) | 2026-10 | 4 |
+| [2026-10.md](2026-10.md) | 2026-10 | 5 |
 | [2026-09.md](2026-09.md) | 2026-09 | 20 |

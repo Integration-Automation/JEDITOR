@@ -1,0 +1,6 @@
+# sdist 不帶測試：setuptools 預設會把 test*/test*.py 收進 sdist，而 wheel 已經只收 je_editor。
+# 指令依序執行，prune 要留在最後，後面的 include／graft 會把 test/ 加回來。
+# The sdist carries no tests: setuptools adds test*/test*.py to an sdist by default, while the wheel
+# already ships je_editor only. Commands run in order, so prune stays last: an include or graft after
+# it would bring test/ back.
+prune test

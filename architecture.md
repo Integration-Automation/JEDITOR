@@ -26,7 +26,7 @@ window, and plugins extend it through a small registry API.
 | `je_editor/plugins/` | Plugin registry (`__init__.py`) and `jeditor_plugins/` loader (`plugin_loader.py`) |
 | `test/` | pytest suites; `test/qt_ui/unit_test/` holds the launch scripts CI runs (`start_qt_ui.py`, `extend_test.py`) |
 | `docs/`, `exe/` | Sphinx docs; executable-build entry (`exe/start_editor.py`) and packaging configs |
-| `pyproject.toml`, `dev.toml` | Stable and dev package definitions. CI writes `dev.toml` to `pyproject.toml` to build the dev package, so their dependencies, Python floor, entry points and `[tool.setuptools]` must agree (`test/test_dev_toml_parity.py`) |
+| `pyproject.toml`, `dev.toml`, `MANIFEST.in` | Stable and dev package definitions. CI writes `dev.toml` to `pyproject.toml` to build the dev package, so their dependencies, Python floor, entry points and `[tool.setuptools]` must agree. Neither distribution carries `test/`: package discovery includes `je_editor` only (wheel) and `MANIFEST.in` prunes `test` (sdist). `test/test_dev_toml_parity.py` holds all of it |
 | `scripts/` | `dev_release.py`: release helper the `publish-dev` job runs (next dev version, wheel comparison); standard library only, not part of the package |
 | `.github/workflows/` | `dev.yml`, `stable.yml`: tests on a Windows Python matrix, then one publish job each on `ubuntu-latest` (§3 PyPI packages) |
 

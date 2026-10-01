@@ -3,7 +3,8 @@
 The dev channel (``je_editor_dev``) is built by writing ``dev.toml`` to ``pyproject.toml``, while
 the tests run against an install made from ``pyproject.toml``. A dependency, a Python floor or a
 packaging rule changed on one side only ships a dev package that differs from what was tested:
-``dev.toml`` once pinned an older PySide6 than ``pyproject.toml``.
+``dev.toml`` once pinned an older PySide6 than ``pyproject.toml``. ``MANIFEST.in`` is one file for
+both channels and keeps the test suite out of either sdist.
 """
 from __future__ import annotations
 
@@ -61,3 +62,18 @@ def test_only_the_package_is_shipped():
 def test_shipped_files_match():
     # Package discovery and package data decide which files reach the wheel.
     assert DEV_FILE["tool"]["setuptools"] == STABLE_FILE["tool"]["setuptools"]
+
+
+def _manifest_commands() -> list[list[str]]:
+    """Return the words of each ``MANIFEST.in`` command, comments and blank lines left out."""
+    lines = (REPO_ROOT / "MANIFEST.in").read_text(encoding="utf-8").splitlines()
+    return [line.split() for line in lines if line.strip() and not line.lstrip().startswith("#")]
+
+
+def test_the_sdist_leaves_the_tests_out():
+    # include 只管 wheel；setuptools 預設仍把 test*/test*.py 收進 sdist，要靠 MANIFEST.in 的 prune 拿掉。
+    # 指令依序執行，所以 prune 必須是最後一條，後面的 include 或 graft 會把 test/ 加回來。
+    # include only governs the wheel; setuptools still adds test*/test*.py to an sdist by default, and
+    # the prune in MANIFEST.in takes it out. Commands run in order, so prune has to be the last one:
+    # an include or graft after it would bring test/ back.
+    assert _manifest_commands()[-1] == ["prune", Path(__file__).resolve().parent.name]
