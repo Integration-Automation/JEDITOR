@@ -53,7 +53,7 @@ docs/            Sphinx documentation
 pip install -r requirements.txt        # runtime deps
 pip install -r dev_requirements.txt    # dev deps
 pytest                                 # tests (Qt UI scripts excluded)
-python -m build                        # build (swap pyproject.toml <-> dev.toml for the dev package)
+python -m build                        # build je_editor (CI builds je_editor_dev from dev.toml)
 ```
 
 - **Run tooling through the project venv** (`.venv/Scripts/python.exe` on Windows). Git Bash here has
@@ -83,7 +83,7 @@ python -m build                        # build (swap pyproject.toml <-> dev.toml
 
 ## CI
 
-- The matrix is **Python 3.10 / 3.11 / 3.12** on Windows. To reproduce a 3.10-only failure locally,
+- The matrix is **Python 3.10 to 3.14** on Windows. To reproduce a 3.10-only failure locally,
   use `uv python install 3.10` plus `uv venv`.
 - Watch a run with `gh run watch <run-id> --exit-status`, or `gh pr checks <PR> --watch` for a PR.
 - For analyser detail:
@@ -178,6 +178,10 @@ Workspace rule shared by every repository under `D:\Codes` (full text: `D:\Codes
 - English, imperative, one logical change per commit (e.g. "Add plugin hot-reload support").
   Stage deliberately — `git add -u` bundles unrelated work into the wrong commit.
 - `main` = stable, `dev` = active development.
+- Both branches publish to PyPI from CI: a push to `main` releases `je_editor` (`stable.yml`), and a
+  push to `dev` that passes the tests and changes what the package ships releases `je_editor_dev`
+  (the `publish-dev` job of `dev.yml`, `scripts/dev_release.py`). Never bump a version by hand; the
+  version in `dev.toml` is only a floor.
 - **Merge PRs with a merge commit** (`gh pr merge <PR> --merge`), never squash. This holds for both
   this repo and PyBreeze.
 - After a merge, `dev`'s `pyproject.toml` version lags `main`. That is the existing flow, not a bug.
