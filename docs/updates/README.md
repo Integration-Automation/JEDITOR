@@ -58,6 +58,7 @@ In the same commit: delete the item from `progress.md`, add a `#done` entry here
 
 | ID | Date | Title | Tags | Batch |
 |---|---|---|---|---|
+| U-20261001-07 | 2026-10-01 | 發佈工作用鎖定的 setuptools 建置，不再下載當下最新的版本 | #done #ci #security #X-13 | [2026-10](2026-10.md) |
 | U-20261001-06 | 2026-10-01 | 發佈工作的建置工具改照雜湊鎖定的清單安裝 | #done #ci #security #X-13 | [2026-10](2026-10.md) |
 | U-20261001-05 | 2026-10-01 | sdist 不再帶測試 | #done #packaging #X-13 | [2026-10](2026-10.md) |
 | U-20261001-04 | 2026-10-01 | wheel 不再把 test/ 當成頂層套件裝進去 | #fix #packaging | [2026-10](2026-10.md) |
@@ -89,5 +90,5 @@ In the same commit: delete the item from `progress.md`, add a `#done` entry here
 
 | File | Period | Entries |
 |---|---|---:|
-| [2026-10.md](2026-10.md) | 2026-10 | 6 |
+| [2026-10.md](2026-10.md) | 2026-10 | 7 |
 | [2026-09.md](2026-09.md) | 2026-09 | 20 |

@@ -13,3 +13,9 @@ build
 twine
 tomli
 tomli-w
+# 建置後端。兩個工作跑的是 python -m build --no-isolation，所以用的是這裡鎖定的 setuptools，不是工作
+# 執行當下 PyPI 上最新的那一版。它必須滿足 pyproject.toml 與 dev.toml 的 build-system.requires。
+# The build backend. Both jobs run python -m build --no-isolation, so the backend is the setuptools
+# locked here and not whatever is newest on PyPI when the job runs. It must satisfy
+# build-system.requires in pyproject.toml and dev.toml.
+setuptools

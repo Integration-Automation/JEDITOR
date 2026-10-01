@@ -138,8 +138,11 @@ jobs:
           git push origin main
           git push origin "v${{ steps.bump.outputs.new_version }}"
 
+      # --no-isolation：用 publish.txt 鎖定的 setuptools 建置；隔離建置會另外下載當下最新的那一版。
+      # --no-isolation: build with the setuptools locked in publish.txt; an isolated build downloads
+      # whatever is newest at that moment instead.
       - name: Build distribution
-        run: python -m build
+        run: python -m build --no-isolation
 
       - name: Publish to PyPI
         # Pinned to full SHA of pypa/gh-action-pypi-publish release/v1

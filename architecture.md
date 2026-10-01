@@ -29,7 +29,7 @@ window, and plugins extend it through a small registry API.
 | `pyproject.toml`, `dev.toml`, `MANIFEST.in` | Stable and dev package definitions. CI writes `dev.toml` to `pyproject.toml` to build the dev package, so their dependencies, Python floor, entry points and `[tool.setuptools]` must agree. Neither distribution carries `test/`: package discovery includes `je_editor` only (wheel) and `MANIFEST.in` prunes `test` (sdist). `test/test_dev_toml_parity.py` holds all of it |
 | `scripts/` | `dev_release.py`: release helper the `publish-dev` job runs (next dev version, wheel comparison); standard library only, not part of the package |
 | `.github/workflows/` | `dev.yml`, `stable.yml`: tests on a Windows Python matrix, then one publish job each on `ubuntu-latest` (§3 PyPI packages) |
-| `.github/requirements/` | `publish.in` and the `publish.txt` generated from it: the build tooling of the two publish jobs, pinned by version and hash. The jobs install nothing else (`test/test_workflow_actions.py`); Dependabot keeps it current |
+| `.github/requirements/` | `publish.in` and the `publish.txt` generated from it: the build tooling of the two publish jobs, build backend (`setuptools`) included, pinned by version and hash. The jobs install nothing else and build with `python -m build --no-isolation`, so the backend is the locked one; the lock has to satisfy `build-system.requires` of `pyproject.toml` and `dev.toml` (`test/test_workflow_actions.py`). Dependabot keeps it current |
 
 Dependencies point downwards: `pyside_ui/` → `code_scan/`, `git_client/`, `plugins/` → `utils/`.
 Most features are split into a pure function in `utils/` plus a thin Qt layer in `pyside_ui/`.

@@ -7,7 +7,8 @@ which is what Dependabot reads and updates. Pinning also keeps Node 20 actions
 from lingering unnoticed: GitHub removed Node 20 from its runners on 2026-09-23.
 
 The jobs that hold the PyPI token get the same treatment for their Python tools:
-they install only ``.github/requirements/publish.txt``, pinned by version and hash.
+they install only ``.github/requirements/publish.txt``, pinned by version and hash,
+and build without isolation so that the build backend is the locked one too.
 """
 from __future__ import annotations
 
@@ -15,6 +16,10 @@ import re
 from pathlib import Path
 
 import pytest
+# packaging 隨 pytest 安裝；build 在 --no-isolation 下也是用它檢查 build-system.requires。
+# packaging is installed with pytest, and is what build itself checks build-system.requires with
+# under --no-isolation.
+from packaging.requirements import Requirement
 
 _ROOT = next(p for p in Path(__file__).resolve().parents if (p / ".github" / "workflows").is_dir())
 _WORKFLOWS = sorted((_ROOT / ".github" / "workflows").glob("*.yml"))
@@ -138,16 +143,31 @@ _PUBLISH_MARKER = "secrets.PYPI_API_TOKEN"
 _LOCKED_INSTALL = ("python -m pip install --require-hashes --only-binary :all: "
                    "-r .github/requirements/publish.txt")
 _PIP_INSTALL = re.compile(r"\bpipx?\d*\s+install\b")
+_BUILD = re.compile(r"-m build\b")
+_NO_ISOLATION = "--no-isolation"
+# 發佈工作可能拿來建置的中繼資料：stable.yml 用 pyproject.toml，publish-dev 把 dev.toml 寫成 pyproject.toml。
+# The metadata a publish job can build from: stable.yml uses pyproject.toml, and publish-dev writes
+# dev.toml over pyproject.toml.
+_METADATA_FILES = ("pyproject.toml", "dev.toml")
 _DISTRIBUTION = re.compile(r"[A-Za-z0-9._-]+")
 _PINNED_LINE = re.compile(r"^[A-Za-z0-9._-]+==\S+ \\$")
 _PUBLISH_JOBS = {f"{workflow.name}:{name}": body for workflow in _WORKFLOWS
                  for name, body in _jobs(workflow) if _PUBLISH_MARKER in body}
 
 
+def _commands(job: str) -> list[str]:
+    """Return each line of a job's text with its comment and indentation removed."""
+    return [line.split("#", 1)[0].strip() for line in job.splitlines()]
+
+
 def _pip_installs(job: str) -> list[str]:
     """Return each line of a job's text that runs ``pip install``, comments left out."""
-    lines = (line.split("#", 1)[0].strip() for line in job.splitlines())
-    return [line for line in lines if _PIP_INSTALL.search(line)]
+    return [line for line in _commands(job) if _PIP_INSTALL.search(line)]
+
+
+def _builds(job: str) -> list[str]:
+    """Return each line of a job's text that runs ``python -m build``, comments left out."""
+    return [line for line in _commands(job) if _BUILD.search(line)]
 
 
 def _locked_blocks() -> list[str]:
@@ -156,10 +176,27 @@ def _locked_blocks() -> list[str]:
     return re.split(r"^(?=[^\s#])", text, flags=re.MULTILINE)[1:]
 
 
+def _canonical(name: str) -> str:
+    """Return the PEP 503 form of a distribution name (``tomli_w`` and ``tomli-w`` are one)."""
+    return re.sub(r"[-_.]+", "-", name).lower()
+
+
 def _distributions(requirements: list[str]) -> set[str]:
-    """Return the PEP 503 name each requirement starts with (``tomli_w`` and ``tomli-w`` are one)."""
-    names = (_DISTRIBUTION.match(requirement).group() for requirement in requirements)
-    return {re.sub(r"[-_.]+", "-", name).lower() for name in names}
+    """Return the PEP 503 name each requirement starts with."""
+    return {_canonical(_DISTRIBUTION.match(requirement).group()) for requirement in requirements}
+
+
+def _locked_versions() -> dict[str, str]:
+    """Return the version ``publish.txt`` pins for each distribution, keyed by PEP 503 name."""
+    pins = (block.splitlines()[0].rstrip(" \\").split("==", 1) for block in _locked_blocks())
+    return {_canonical(name): version for name, version in pins}
+
+
+def _unmet_by_the_lock(requirement: str) -> bool:
+    """Return whether ``publish.txt`` has no pin that satisfies a ``build-system.requires`` entry."""
+    wanted = Requirement(requirement)
+    locked = _locked_versions().get(_canonical(wanted.name))
+    return locked is None or not wanted.specifier.contains(locked, prereleases=True)
 
 
 def test_the_publish_jobs_are_the_two_that_hold_the_pypi_token():
@@ -193,3 +230,24 @@ def test_the_lock_holds_every_tool_the_publish_jobs_ask_for():
     lines = (_REQUIREMENTS / "publish.in").read_text(encoding="utf-8").splitlines()
     asked = _distributions([line for line in lines if line.strip() and not line.startswith("#")])
     assert asked and asked <= _distributions(_locked_blocks())
+
+
+@pytest.mark.parametrize("job", list(_PUBLISH_JOBS.values()), ids=list(_PUBLISH_JOBS))
+def test_a_job_holding_the_pypi_token_builds_with_the_locked_backend(job):
+    # 隔離建置會另開環境，下載當下 PyPI 上最新的 setuptools 來執行；那一份不在鎖定檔裡，而 token 就在這個工作手上。
+    # An isolated build makes its own environment and runs whatever setuptools is newest on PyPI at
+    # that moment: outside the lock, in the job that holds the token.
+    builds = _builds(job)
+    assert builds and all(_NO_ISOLATION in command.split() for command in builds)
+
+
+@pytest.mark.parametrize("metadata", _METADATA_FILES)
+def test_the_lock_satisfies_build_system_requires(metadata):
+    # --no-isolation 只檢查 build-system.requires、不安裝；下限被調高（Dependabot 會改這些檔）卻沒有
+    # 重新產生鎖定檔的話，要在這裡失敗，而不是等到發佈工作建置時才失敗。
+    # --no-isolation checks build-system.requires instead of installing it, so a floor raised without
+    # regenerating the lock (Dependabot edits these files) has to fail here, not in the publish job.
+    tomllib = pytest.importorskip("tomllib")  # stdlib from 3.11; CI also runs 3.10
+    with (_ROOT / metadata).open("rb") as handle:
+        requires = tomllib.load(handle)["build-system"]["requires"]
+    assert requires and [item for item in requires if _unmet_by_the_lock(item)] == []
