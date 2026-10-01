@@ -6,7 +6,14 @@
 version: 2
 updates:
   - package-ecosystem: "pip" # See documentation for possible values
-    directory: "/" # Location of package manifests
+    # "/" 是套件與開發環境的需求檔；/.github/requirements 是發佈工作照雜湊安裝的
+    # 工具清單（publish.in、publish.txt），只寫 "/" 管不到那裡。
+    # "/" holds the package and dev-environment requirements. /.github/requirements
+    # holds the hash-locked tooling of the publish jobs (publish.in, publish.txt),
+    # which "/" alone does not reach.
+    directories: # Locations of package manifests
+      - "/"
+      - "/.github/requirements"
     # Updates belong on dev: main is the released branch, and a PR opened
     # against main sits unmerged (two of them did).
     target-branch: "dev"

@@ -79,10 +79,14 @@ jobs:
         with:
           python-version: "3.12"
 
+      # 這個工作拿得到 PyPI token，所以工具只照雜湊鎖定的清單裝、只收 wheel，也不另外升級 pip。
+      # 清單與重新產生它的指令在 .github/requirements/publish.in。
+      # This job holds the PyPI token, so its tools come from a hash-locked, wheels-only list and pip
+      # is not upgraded on the side. The list and the command that regenerates it are in
+      # .github/requirements/publish.in.
       - name: Install build tooling
         run: |
-          python -m pip install --upgrade pip
-          pip install build tomli tomli-w
+          python -m pip install --require-hashes --only-binary :all: -r .github/requirements/publish.txt
 
       - name: Bump version in pyproject.toml
         id: bump

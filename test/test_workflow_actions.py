@@ -5,6 +5,9 @@ tj-actions/changed-files compromise rewrote tags), so each ``uses:`` names a
 full 40-hex commit and carries the release it corresponds to as a comment,
 which is what Dependabot reads and updates. Pinning also keeps Node 20 actions
 from lingering unnoticed: GitHub removed Node 20 from its runners on 2026-09-23.
+
+The jobs that hold the PyPI token get the same treatment for their Python tools:
+they install only ``.github/requirements/publish.txt``, pinned by version and hash.
 """
 from __future__ import annotations
 
@@ -63,6 +66,10 @@ def test_dependabot_keeps_pins_current_on_dev():
     assert {"pip", "github-actions"} <= ecosystems
     assert all(re.search(r"^\s*target-branch:\s*\"dev\"", block, re.MULTILINE)
                for block in blocks)
+    # 發佈工作的鎖定檔不在根目錄，pip 那一項只寫 "/" 的話沒有人會更新它。
+    # The publish jobs' lock is not in the root, so a pip entry that names only "/" leaves it to go stale.
+    pip = next(block for block in blocks if block.split()[0].strip("\"'") == "pip")
+    assert re.search(r'^\s*-\s*"/\.github/requirements"\s*$', pip, re.MULTILINE)
 
 
 def test_dependabot_waits_a_week_before_proposing_a_release():
@@ -122,3 +129,67 @@ def test_every_job_has_a_timeout(workflow):
     bad = [name for name, body in _jobs(workflow)
            if "runs-on:" in body and not re.search(r"^\s*timeout-minutes:", body, re.MULTILINE)]
     assert bad == []
+
+
+_REQUIREMENTS = _ROOT / ".github" / "requirements"
+# 用到這個密鑰的工作就是發佈工作
+# A job that reads this secret is a publish job.
+_PUBLISH_MARKER = "secrets.PYPI_API_TOKEN"
+_LOCKED_INSTALL = ("python -m pip install --require-hashes --only-binary :all: "
+                   "-r .github/requirements/publish.txt")
+_PIP_INSTALL = re.compile(r"\bpipx?\d*\s+install\b")
+_DISTRIBUTION = re.compile(r"[A-Za-z0-9._-]+")
+_PINNED_LINE = re.compile(r"^[A-Za-z0-9._-]+==\S+ \\$")
+_PUBLISH_JOBS = {f"{workflow.name}:{name}": body for workflow in _WORKFLOWS
+                 for name, body in _jobs(workflow) if _PUBLISH_MARKER in body}
+
+
+def _pip_installs(job: str) -> list[str]:
+    """Return each line of a job's text that runs ``pip install``, comments left out."""
+    lines = (line.split("#", 1)[0].strip() for line in job.splitlines())
+    return [line for line in lines if _PIP_INSTALL.search(line)]
+
+
+def _locked_blocks() -> list[str]:
+    """Return ``publish.txt`` cut into one block per requirement: the pin line and its hash lines."""
+    text = (_REQUIREMENTS / "publish.txt").read_text(encoding="utf-8")
+    return re.split(r"^(?=[^\s#])", text, flags=re.MULTILINE)[1:]
+
+
+def _distributions(requirements: list[str]) -> set[str]:
+    """Return the PEP 503 name each requirement starts with (``tomli_w`` and ``tomli-w`` are one)."""
+    names = (_DISTRIBUTION.match(requirement).group() for requirement in requirements)
+    return {re.sub(r"[-_.]+", "-", name).lower() for name in names}
+
+
+def test_the_publish_jobs_are_the_two_that_hold_the_pypi_token():
+    # 下面的測試以這份清單為對象；找不到工作的話它們會沒有東西可查而直接通過。
+    # The tests below run over this list; with no job found they would pass with nothing to check.
+    assert sorted(_PUBLISH_JOBS) == ["dev.yml:publish-dev", "stable.yml:publish_to_pypi"]
+
+
+@pytest.mark.parametrize("job", list(_PUBLISH_JOBS.values()), ids=list(_PUBLISH_JOBS))
+def test_a_job_holding_the_pypi_token_installs_only_the_locked_tooling(job):
+    # 沒鎖版本的 pip install（升級 pip 也算）會讓 PyPI 上當天最新的套件在上傳前、token 在手時執行。
+    # 指令要自己佔一行（`run: |` 底下）：跟 `run:` 寫在同一行的話，`:all: ` 的冒號加空白是 YAML 語法錯誤。
+    # An unpinned pip install, upgrading pip included, runs whatever is newest on PyPI that day in the
+    # job that is about to upload with the token. The command has a line to itself under `run: |`:
+    # on the same line as `run:`, the colon and space of `:all: ` are a YAML syntax error.
+    assert _pip_installs(job) == [_LOCKED_INSTALL]
+
+
+def test_every_locked_requirement_has_a_version_and_a_hash():
+    # --require-hashes 遇到沒有雜湊的需求會讓發佈工作在安裝時失敗；在這裡先擋下來。
+    # --require-hashes fails the publish job at install time on a requirement without a hash; catch it here.
+    blocks = _locked_blocks()
+    bad = [block.splitlines()[0] for block in blocks
+           if not (_PINNED_LINE.match(block.splitlines()[0]) and "--hash=sha256:" in block)]
+    assert blocks and bad == []
+
+
+def test_the_lock_holds_every_tool_the_publish_jobs_ask_for():
+    # publish.in 加了工具卻沒有重新產生 publish.txt，工作就裝不到它。
+    # A tool added to publish.in without regenerating publish.txt is not installed by the jobs.
+    lines = (_REQUIREMENTS / "publish.in").read_text(encoding="utf-8").splitlines()
+    asked = _distributions([line for line in lines if line.strip() and not line.startswith("#")])
+    assert asked and asked <= _distributions(_locked_blocks())

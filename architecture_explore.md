@@ -491,6 +491,10 @@ qt-material 負責視窗樣式；編輯器自身的顏色（語法高亮、diff 
   `scripts/dev_release.py`（只用標準函式庫，不屬於套件）負責算版號（PyPI 最新版加一個修訂號，不提交回 repo）
   和比對 wheel；`test_dev_release.py` 守這支腳本與工作流程的條件，`test_dev_toml_parity.py` 守
   `dev.toml` 與 `pyproject.toml` 的相依、Python 下限、進入點和 `[tool.setuptools]` 一致。
+- 兩個發佈工作拿得到 PyPI token，工具（`build`、`twine`、`tomli`、`tomli-w` 與它們的相依）只照
+  `.github/requirements/publish.txt` 的版本與雜湊安裝（`pip install --require-hashes --only-binary :all:`），
+  不另外升級 pip。`publish.txt` 由 `publish.in` 用 `uv pip compile` 產生，指令寫在 `publish.in`；Dependabot 的
+  pip 項目涵蓋這個目錄。`test_workflow_actions.py` 擋住發佈工作裡任何其他的 `pip install`。
 - 兩種發佈檔都不帶 `test/`：wheel 靠套件探索的 `include`（只收 `je_editor`），sdist 靠 `MANIFEST.in` 的
   `prune test`（setuptools 預設會把 `test*/test*.py` 收進 sdist）。兩項都由 `test_dev_toml_parity.py` 守著。
 
