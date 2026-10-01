@@ -4,7 +4,10 @@
 # their tools are installed from publish.txt, pinned by version and hash. List only what the jobs
 # run, then regenerate publish.txt:
 #   uv pip compile .github/requirements/publish.in --generate-hashes --python-version 3.12 \
-#     --python-platform x86_64-manylinux_2_28 --only-binary :all: -o .github/requirements/publish.txt
+#     --python-platform x86_64-manylinux_2_28 --only-binary :all: --exclude-newer 2026-09-24 \
+#     -o .github/requirements/publish.txt
+# --exclude-newer 對齊 Dependabot 的七天等待；重新產生時把日期往後挪。
+# --exclude-newer keeps the 7-day wait Dependabot applies; move the date when regenerating.
 # build：兩個工作都跑 python -m build。twine：publish-dev 的 twine check 與 twine upload。
 # tomli、tomli-w：stable.yml 升版號的步驟 import 它們。
 # build: both jobs run python -m build. twine: twine check and twine upload in publish-dev.
