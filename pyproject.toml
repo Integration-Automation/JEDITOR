@@ -41,7 +41,9 @@ file = "README.md"
 content-type = "text/markdown"
 
 [tool.setuptools.packages]
-find = { namespaces = false }
+# 只收 je_editor：test/ 有 __init__.py，不寫 include 會被一起裝進 site-packages。
+# Ship je_editor only: test/ has an __init__.py and would be installed too without include.
+find = { include = ["je_editor", "je_editor.*"], namespaces = false }
 
 [tool.pytest.ini_options]
 testpaths = ["test"]

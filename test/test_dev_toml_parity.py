@@ -51,6 +51,13 @@ def test_entry_points_match(table):
     assert DEV.get(table, {}) == STABLE.get(table, {})
 
 
+def test_only_the_package_is_shipped():
+    # 沒有 include 的話，setuptools 會把有 __init__.py 的 test/ 也當成頂層套件收進 wheel。
+    # Without include, setuptools also packages test/ (it has an __init__.py) as a top-level package.
+    find = STABLE_FILE["tool"]["setuptools"]["packages"]["find"]
+    assert find["include"] == ["je_editor", "je_editor.*"]
+
+
 def test_shipped_files_match():
     # Package discovery and package data decide which files reach the wheel.
     assert DEV_FILE["tool"]["setuptools"] == STABLE_FILE["tool"]["setuptools"]
