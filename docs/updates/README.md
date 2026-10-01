@@ -58,6 +58,7 @@ In the same commit: delete the item from `progress.md`, add a `#done` entry here
 
 | ID | Date | Title | Tags | Batch |
 |---|---|---|---|---|
+| U-20261001-03 | 2026-10-01 | PROGRESS #4 結案：dev.toml 的版本改由 CI 決定 | #done #X-13 | [2026-10](2026-10.md) |
 | U-20261001-02 | 2026-10-01 | CI 從 dev 分支發佈 je_editor_dev | #release #ci #X-13 | [2026-10](2026-10.md) |
 | U-20261001-01 | 2026-10-01 | Every workflow job has a timeout | #ci #tests | [2026-10](2026-10.md) |
 | U-20260925-05 | 2026-09-25 | CI 與分類器涵蓋 Python 3.13、3.14 | #ci #packaging #tests | [2026-09](2026-09.md) |
@@ -85,5 +86,5 @@ In the same commit: delete the item from `progress.md`, add a `#done` entry here
 
 | File | Period | Entries |
 |---|---|---:|
-| [2026-10.md](2026-10.md) | 2026-10 | 2 |
+| [2026-10.md](2026-10.md) | 2026-10 | 3 |
 | [2026-09.md](2026-09.md) | 2026-09 | 20 |
