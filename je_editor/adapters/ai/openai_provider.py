@@ -126,7 +126,10 @@ class OpenAIProvider:
 
     def _invoke(self, settings: ProviderSettings, model: str, request: ChatRequest) -> Any:
         """呼叫模型，把 SDK 的錯誤轉成編輯器的例外 / Call the model, turning SDK errors into the editor's."""
-        from openai import OpenAIError
+        # 只匯入例外類別來辨認錯誤；請求本身是 LangChain 發出的，這裡沒有直接呼叫這個 SDK
+        # Only the exception type is imported, to recognise a failure. The request
+        # itself is made by LangChain, and nothing here calls this SDK directly
+        from openai import OpenAIError  # nosemgrep
         try:
             return self._chat_factory(settings, model).invoke(_as_langchain_messages(request, settings))
         # ValueError 也涵蓋 pydantic 對設定的驗證錯誤 / ValueError covers pydantic's validation of the settings too

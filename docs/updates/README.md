@@ -58,6 +58,7 @@ In the same commit: delete the item from `progress.md`, add a `#done` entry here
 
 | ID | Date | Title | Tags | Batch |
 |---|---|---|---|---|
+| U-20261008-06 | 2026-10-08 | M2 診斷與 M5 的 CI 結果；Codacy 三筆：一筆改掉、兩筆是誤判 | #decision #ci #roadmap | [2026-10](2026-10.md) |
 | U-20261008-05 | 2026-10-08 | 藍圖 M5：AI 對話面板改成可切換供應者，新增 Anthropic 後端 | #done #roadmap #ai #deps | [2026-10](2026-10.md) |
 | U-20261008-04 | 2026-10-08 | 藍圖 M2（診斷）：ruff 與語言伺服器的診斷走同一個模型，問題面板依嚴重度與來源篩選 | #migration #roadmap #diagnostics | [2026-10](2026-10.md) |
 | U-20261008-03 | 2026-10-08 | PROGRESS #18、#19、#20：寫明 ruff 規則、長路徑測試、fixture 寫法 | #done #decision #tests | [2026-10](2026-10.md) |
@@ -96,5 +97,5 @@ In the same commit: delete the item from `progress.md`, add a `#done` entry here
 
 | File | Period | Entries |
 |---|---|---:|
-| [2026-10.md](2026-10.md) | 2026-10 | 13 |
+| [2026-10.md](2026-10.md) | 2026-10 | 14 |
 | [2026-09.md](2026-09.md) | 2026-09 | 20 |

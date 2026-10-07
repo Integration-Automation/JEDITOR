@@ -12,11 +12,12 @@ from je_editor.adapters.ai.settings_file import (
 from je_editor.core.ai.ai_settings import AISettings, ProviderSettings
 from je_editor.utils.exception.exceptions import JEditorServiceException
 
-SECRET_KEY = "sk-test-0123456789abcdefghij"
+# A made-up value that only has to be long enough to be masked; it opens nothing.
+PLACEHOLDER_KEY = "placeholder-0123456789-abcdefghij"
 # What the settings file looked like before settings were grouped by provider
 OLDER_FILE = {"AI_model": {
     "ai_base_url": "https://example.invalid/v1",
-    "ai_api_key": SECRET_KEY,
+    "ai_api_key": PLACEHOLDER_KEY,
     "chat_model": "gpt-4o-mini",
     "prompt_template": "You are a careful reviewer.",
 }}
@@ -27,9 +28,9 @@ class TestProviderSettings:
         assert ProviderSettings() == ProviderSettings("", "", "", "")
 
     def test_a_long_key_is_masked_to_its_ends(self):
-        masked = ProviderSettings(api_key=SECRET_KEY).masked_api_key
-        assert masked == "sk-t...ghij"
-        assert SECRET_KEY[4:-4] not in masked
+        masked = ProviderSettings(api_key=PLACEHOLDER_KEY).masked_api_key
+        assert masked == "plac...ghij"
+        assert PLACEHOLDER_KEY[4:-4] not in masked
 
     @pytest.mark.parametrize("key", ["a", "abcd", "abcdefgh"])
     def test_a_short_key_is_hidden_entirely(self, key):
@@ -79,7 +80,7 @@ class TestTheOlderFileFormat:
     def test_the_single_group_becomes_the_openai_provider(self):
         loaded = AISettings.from_dict(OLDER_FILE)
         assert loaded.settings_for("openai") == ProviderSettings(
-            api_key=SECRET_KEY, base_url="https://example.invalid/v1", model="gpt-4o-mini",
+            api_key=PLACEHOLDER_KEY, base_url="https://example.invalid/v1", model="gpt-4o-mini",
             system_prompt="You are a careful reviewer.")
 
     def test_the_openai_provider_becomes_the_one_in_use(self):
@@ -110,7 +111,7 @@ class TestTheSettingsFile:
 
     def test_what_is_saved_is_what_is_loaded(self, tmp_path):
         settings = AISettings(active_provider="anthropic")
-        settings.update("anthropic", api_key=SECRET_KEY, model="claude-opus-5-5")
+        settings.update("anthropic", api_key=PLACEHOLDER_KEY, model="claude-opus-5-5")
         target = save_ai_settings(settings, ai_settings_path(tmp_path))
         assert load_ai_settings(target) == settings
 
@@ -148,7 +149,7 @@ class TestTheKeyStaysOutOfTheLog:
     @pytest.fixture()
     def logged(self, tmp_path, caplog):
         settings = AISettings(active_provider="anthropic")
-        settings.update("anthropic", api_key=SECRET_KEY)
+        settings.update("anthropic", api_key=PLACEHOLDER_KEY)
         with caplog.at_level(logging.DEBUG, logger="JEditor"):
             target = save_ai_settings(settings, tmp_path / "ai_config.json")
             load_ai_settings(target)
@@ -159,4 +160,4 @@ class TestTheKeyStaysOutOfTheLog:
         assert "ai_config.json" in logged
 
     def test_the_key_is_not_recorded(self, logged):
-        assert SECRET_KEY not in logged
+        assert PLACEHOLDER_KEY not in logged

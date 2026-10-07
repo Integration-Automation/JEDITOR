@@ -148,7 +148,8 @@ class TestOpenAIRequestShape:
         assert (response.cancelled, response.text, heard) == (True, "", [])
 
     def test_a_failure_of_the_service_becomes_the_editor_exception(self):
-        from openai import OpenAIError
+        # Only the exception type, to raise what the service would raise.
+        from openai import OpenAIError  # nosemgrep
 
         class Failing:
             def invoke(self, _messages):
