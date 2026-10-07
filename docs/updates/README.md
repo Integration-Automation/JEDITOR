@@ -58,6 +58,7 @@ In the same commit: delete the item from `progress.md`, add a `#done` entry here
 
 | ID | Date | Title | Tags | Batch |
 |---|---|---|---|---|
+| U-20261008-01 | 2026-10-08 | 藍圖 M0：不依賴 Qt 的核心服務層 je_editor/core | #migration #roadmap #core | [2026-10](2026-10.md) |
 | U-20261001-08 | 2026-10-01 | 發佈鎖檔改用和其他鎖檔一樣的七天截止日解析 | #ci #security #X-13 | [2026-10](2026-10.md) |
 | U-20261001-07 | 2026-10-01 | 發佈工作用鎖定的 setuptools 建置，不再下載當下最新的版本 | #done #ci #security #X-13 | [2026-10](2026-10.md) |
 | U-20261001-06 | 2026-10-01 | 發佈工作的建置工具改照雜湊鎖定的清單安裝 | #done #ci #security #X-13 | [2026-10](2026-10.md) |
@@ -91,5 +92,5 @@ In the same commit: delete the item from `progress.md`, add a `#done` entry here
 
 | File | Period | Entries |
 |---|---|---:|
-| [2026-10.md](2026-10.md) | 2026-10 | 8 |
+| [2026-10.md](2026-10.md) | 2026-10 | 9 |
 | [2026-09.md](2026-09.md) | 2026-09 | 20 |

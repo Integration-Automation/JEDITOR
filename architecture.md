@@ -1,7 +1,8 @@
 # JEditor Architecture
 
 > Short overview for people and agents. Per-module detail lives in [`architecture_explore.md`](architecture_explore.md).
-> Last verified: 2026-09-22 against `509dbfd` on `dev`.
+> Last verified: 2026-09-22 against `509dbfd` on `dev`. §2, §3, §5 and §6 re-checked 2026-10-08 on
+> `roadmap/editor-next` when the core service layer was added; §6 against PyBreeze `16214a5`.
 
 ## 1. Purpose
 
@@ -20,6 +21,7 @@ window, and plugins extend it through a small registry API.
 | `je_editor/pyside_ui/main_ui/` | Main window `EditorMain` (`main_editor.py`), editor tab `EditorWidget` (`editor/`), menus (`menu/`), toolbar, panels, command palette, console, IPython, chat panel (`ai_widget/`), plugin browser, settings persistence (`save_settings/`) |
 | `je_editor/pyside_ui/code/` | `CodeEditor` (`plaintext_code_edit/`) plus its managers (folding, bookmarks, lint, LSP, diff/blame, snippets, multi-cursor), highlighters (`syntax/`), process runners (`code_process/`, `shell_process/`, `base_process_manager.py`) |
 | `je_editor/pyside_ui/dialog/`, `git_ui/`, `browser/` | Search/replace, shortcut, snippet and file dialogs; Git panel, commit graph, diff viewers; embedded QtWebEngine browser |
+| `je_editor/core/` | Service layer with no Qt import: `EditorServices` (`services/`) bundles the workspace model (`workspace/`), open documents (`document/`), the unified diagnostic model and store (`diagnostics/`), the language service registry (`language/`), and the interfaces for debug sessions (`debug/`), task execution (`process/`), remote sessions (`remote/`) and AI providers (`ai/`). `events/` and `registry/` replace Qt signals and per-feature registries. The window does not consume it yet (roadmap M0, `docs/roadmap/2026-editor-next.md`) |
 | `je_editor/utils/` | Pure logic with no widgets (only `multi_language/locale_match.py` imports Qt): text operations, encodings, sessions, diffs, symbols, LSP protocol, shortcut registry, theme colors, translations (`multi_language/`), logging, stdout/stderr redirect |
 | `je_editor/code_scan/` | ruff runner and watchdog file monitor, run on worker threads |
 | `je_editor/git_client/` | Git access: `GitService` (GitPython) and `GitCLI` (subprocess), blame, HEAD baseline, hunk staging |
@@ -31,8 +33,13 @@ window, and plugins extend it through a small registry API.
 | `.github/workflows/` | `dev.yml`, `stable.yml`: tests on a Windows Python matrix, then one publish job each on `ubuntu-latest` (§3 PyPI packages) |
 | `.github/requirements/` | `publish.in` and the `publish.txt` generated from it: the build tooling of the two publish jobs, build backend (`setuptools`) included, pinned by version and hash. The jobs install nothing else and build with `python -m build --no-isolation`, so the backend is the locked one; the lock has to satisfy `build-system.requires` of `pyproject.toml` and `dev.toml` (`test/test_workflow_actions.py`). Dependabot keeps it current |
 
-Dependencies point downwards: `pyside_ui/` → `code_scan/`, `git_client/`, `plugins/` → `utils/`.
-Most features are split into a pure function in `utils/` plus a thin Qt layer in `pyside_ui/`.
+Dependencies point downwards: `pyside_ui/` → `core/` → `code_scan/`, `git_client/`, `plugins/` →
+`utils/`. Most features are split into a pure function in `utils/` plus a thin Qt layer in
+`pyside_ui/`. `test/test_core_architecture.py` enforces the direction: nothing `core/` imports,
+directly or indirectly, may be Qt or `pyside_ui/`; the packages below the UI may not import Qt or
+`pyside_ui/` except two listed modules (`utils/multi_language/locale_match.py` for `QLocale`,
+`plugins/__init__.py` for the highlighting tables); and the services are built in a process where
+Qt cannot be imported.
 
 ## 3. Entry points and public interfaces
 
@@ -48,7 +55,14 @@ Most features are split into a pure function in `utils/` plus a thin Qt layer in
 - **Other exports**: `EditorWidget`, `FullEditorWidget`, `ExecManager`, `ShellManager`,
   `MainBrowserWidget`, `PythonHighlighter`, `syntax_rule_setting_dict`, `syntax_extend_setting_dict`,
   `language_wrapper`, `english_word_dict`, `traditional_chinese_word_dict`, `user_setting_dict`,
-  `user_setting_color_dict`, `jeditor_logger`, the `JEditorException` family.
+  `user_setting_color_dict`, `jeditor_logger`, the `JEditorException` family (including
+  `JEditorServiceException`, raised by the core services).
+- **Core services**: `je_editor.core` (`__all__` in `je_editor/core/__init__.py`). A host builds
+  `EditorServices(workspace)` and calls `shutdown()` when it closes; there is no module-level
+  instance. `Document`, `LanguageService`, `DebugSession`, `TaskRunner`/`TaskHandle`,
+  `RemoteSession` and `AIProvider` are `typing.Protocol`s, so a `QObject` can satisfy them without
+  a metaclass clash. Changes are announced through `EventHook`, on the thread that caused them.
+  `import je_editor.core` still runs `je_editor/__init__.py`, which imports Qt.
 - **Persisted state**: `.jeditor/` under the working directory (`user_setting.json`,
   `user_color_setting.json`, `snippets.json`, `.bak` backups).
 - **PyPI packages**: `je_editor` (stable) and `je_editor_dev` (dev channel), both published by CI.
@@ -108,17 +122,28 @@ Plugin browser (pyside_ui/main_ui/plugin_browser/) → github_api.fetch_repo_tre
   command and merges in user settings.
 - **Shortcuts / colors / UI strings**: single sources in `utils/shortcuts/shortcut_registry.py`,
   `utils/theme/theme_colors.py`, and the dictionaries in `utils/multi_language/`.
+- **Core service providers**: an `EditorServices` instance takes implementations by name through
+  its `NamedRegistry` attributes — `ai_providers`, `debug_adapters` (session factories),
+  `task_runners`, `remote_transports` (by URI scheme) — and language services through
+  `languages.register()`. Any source reports findings with `diagnostics.publish(source, uri, ...)`.
+  No implementation ships in `core/` yet; the roadmap milestones add them.
 
 ## 6. Cross-project boundaries
 
 - **PyBreeze (downstream)**: `PyBreezeMainWindow` subclasses `EditorMain` with `extend=True`
   (`pybreeze/pybreeze_ui/editor_main/main_ui.py`). `pybreeze/__init__.py` re-exports
   `load_external_plugins`, `register_natural_language` and `register_programming_language`. PyBreeze
-  also imports some non-exported internals: `PluginBrowserWidget`, `DestroyDock`,
-  `check_and_choose_venv`, `choose_file_get_save_file_path`, `write_file` and `actually_color_dict`.
-  Grep PyBreeze before you move or rename a module. It merges its UI strings by mutating the exported
-  `english_word_dict` and `traditional_chinese_word_dict` in place. Treat these names, `EditorMain`'s
-  constructor and the attributes PyBreeze uses (`tab_widget`, `menu`, `help_menu`) as a contract.
+  also imports some internals by module path: `PluginBrowserWidget`, `DestroyDock`,
+  `FullEditorWidget`, `user_setting_dict`, `actually_color_dict`, `choose_file_get_save_file_path`,
+  `auto_save_manager_dict` / `file_is_open_manager_dict` / `init_new_auto_save_thread`,
+  `check_and_choose_venv`, `RedirectStdErr`, `DEFAULT_ENCODING` / `LINE_ENDING_LF` and
+  `write_file_with_encoding` (`write_file`, listed here before, is pinned too). Grep PyBreeze
+  before you move or rename a module. It merges its UI strings by mutating the exported
+  `english_word_dict` and `traditional_chinese_word_dict` in place. Treat these names,
+  `EditorMain`'s constructor and the attributes PyBreeze uses (`tab_widget`, `menu`, `help_menu`)
+  as a contract. `test/test_public_api_contract.py` pins the exported names, those module paths
+  and the constructor's arguments; it cannot see behaviour or attributes, and its list is a copy
+  that has to be updated when PyBreeze starts importing something new.
 - **Translations**: a JEditor translation change must keep PyBreeze's
   `test/test_utils/test_language_parity.py` green. Run PyBreeze tests as `pytest test/test_utils`.
 - **FrontEngine (upstream)**: `frontengine` is a runtime dependency. `FrontEngineMainUI` is embedded
@@ -161,7 +186,8 @@ Plugin browser (pyside_ui/main_ui/plugin_browser/) → github_api.fetch_repo_tre
 Update it in the same commit when any of these changes:
 
 - a top-level package or directory in §2;
-- an entry point or an export in `je_editor/__init__.py`;
+- an entry point or an export in `je_editor/__init__.py` or `je_editor/core/__init__.py`;
+- the dependency direction in §2, or the list of modules allowed to break it;
 - the startup, run or plugin flow in §4;
 - an extension point in §5;
 - a cross-repo contract in §6 (`EditorMain` signature or extend mode, the exported language dicts,

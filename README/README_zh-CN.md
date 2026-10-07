@@ -287,6 +287,22 @@ start_editor()
 
 编辑器默认会以最大化窗口与深色琥珀色主题启动。
 
+编辑器里不属于组件的部分——工作区、打开的文档与诊断，以及语言服务、调试、任务执行、远程会话与 AI 提供者的接口——都在 `je_editor.core`，不需要窗口就能使用：
+
+```python
+from je_editor.core import Diagnostic, EditorServices, Severity, TextRange, Workspace, to_uri
+
+services = EditorServices(Workspace.single_root("my_project"))
+uri = to_uri("my_project/main.py")
+services.diagnostics.publish("ruff", uri, [
+    Diagnostic("`os` imported but unused", TextRange.from_lines(1, 8), Severity.WARNING, code="F401"),
+])
+print(services.diagnostics.counts()[Severity.WARNING])  # 1
+services.shutdown()
+```
+
+这一层是下一代编辑器的基础；编辑器窗口目前还没有改用它。请参阅[文档](https://je-editor.readthedocs.io/en/latest/)中的“核心服务”页面。
+
 ---
 
 ## 功能详情
@@ -505,6 +521,8 @@ je_editor/
 │   ├── dialog/         搜索与替换、快捷键、代码片段、文件对话框
 │   ├── git_ui/         Git 客户端、提交图、差异查看器
 │   └── main_ui/        主窗口、菜单、工具栏、面板、设置、AI、控制台
+├── core/               服务层，不依赖 Qt：工作区、文档、诊断，以及语言服务、
+│                       调试、任务执行、远程与 AI 的接口
 ├── code_scan/          Ruff 执行与 watchdog 文件监控
 ├── git_client/         Git 操作（GitPython + git CLI）
 ├── plugins/            插件注册表与加载器
@@ -513,6 +531,8 @@ je_editor/
 ```
 
 功能都拆成两半来构建：算法放在 `utils/` 中且不 import Qt，`pyside_ui/` 中的一层轻薄管理器再把它接到组件上。以折叠为例，就是 `utils/code_folding/` 加上 `pyside_ui/code/folding/`。这正是上面大部分行为都能不开窗口就测试的原因。
+
+`core/` 位于两者之间：它把这些逻辑组成服务，让宿主程序不必创建 JEditor 窗口就能使用。有一个测试会遍历它的导入关系，底下只要出现 Qt 的导入就失败。
 
 逐模块的参考——每个文件做什么、线程模型、全局单例与设置布局——记录在 **[`architecture_explore.md`](../architecture_explore.md)** 中。
 

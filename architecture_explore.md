@@ -1,7 +1,7 @@
 # JEditor 架構導覽 / Architecture Exploration
 
-> 產出時間：2026-08-03　對應版本：`dev` 分支（commit `f17e07a`）
-> 涵蓋範圍：`je_editor/` 全部 277 個 `.py`（170 個實作模組 + 107 個 `__init__.py`），共 30,465 行。
+> 產出時間：2026-08-03　對應版本：`dev` 分支（commit `f17e07a`）；2026-10-08 加入 `core/` 並重算各套件規模。
+> 涵蓋範圍：`je_editor/` 全部 303 個 `.py`（183 個實作模組 + 120 個 `__init__.py`），共 32,957 行。
 > 這份文件記錄「每個模組負責什麼」與「模組之間怎麼串起來」，不是使用手冊（使用說明見 `README.md`、插件說明見 `PLUGIN_GUIDE.md`）。
 
 ---
@@ -13,24 +13,25 @@ JEditor 是以 PySide6（Qt for Python）寫成的程式碼編輯器，功能涵
 
 | 項目 | 內容 |
 | --- | --- |
-| 語言 / 版本 | Python 3.10+（CI 測 3.10 / 3.11 / 3.12） |
-| UI 框架 | PySide6 6.11.0 + qt-material 主題 |
+| 語言 / 版本 | Python 3.10+（CI 測 3.10 ～ 3.14） |
+| UI 框架 | PySide6 6.11.2 + qt-material 主題 |
 | 主要相依 | `jedi`（Python 補全）、`ruff`（診斷）、`yapf` / `pycodestyle`（格式化與檢查）、`gitpython`、`watchdog`、`qtconsole` + `IPython`、`langchain_openai` + `langchain_core`、`frontengine` |
-| 測試 | pytest + pytest-qt，93 個測試檔、約 13,920 行 |
+| 測試 | pytest + pytest-qt，106 個測試檔、約 16,400 行 |
 | 靜態分析 | ruff、SonarCloud（`sonar.sources=je_editor`）、Codacy、bandit |
 
 ### 各套件規模
 
 | 套件 | 模組數 | 行數 | 定位 |
 | --- | ---: | ---: | --- |
-| `pyside_ui/` | 98 | 20,330 | View / Controller：所有 Qt 元件與選單 |
-| `utils/` | 59 | 8,668 | 純邏輯層（絕大多數不 import Qt，可單獨測試） |
+| `pyside_ui/` | 98 | 20,418 | View / Controller：所有 Qt 元件與選單 |
+| `utils/` | 59 | 8,752 | 純邏輯層（絕大多數不 import Qt，可單獨測試） |
+| `core/` | 13 | 2,176 | 核心服務層：工作區、文件、診斷的模型，以及語言服務、除錯、工作執行、遠端、AI 的介面（完全不 import Qt） |
 | `git_client/` | 6 | 777 | Git 操作（GitPython + git CLI 兩條路） |
 | `code_scan/` | 4 | 365 | ruff 執行與 watchdog 檔案監看 |
 | `plugins/` | 1 | 337 | 插件註冊表與外部插件載入器 |
 | 頂層 | 2 | 131 | `__main__.py`、`start_editor.py`（另有 `__init__.py` 匯出公開 API） |
 
-（行數含各層 `__init__.py`，合計 30,608 行。）
+（行數含各層 `__init__.py`，合計 32,957 行。）
 
 ---
 
@@ -58,6 +59,11 @@ JEditor 是以 PySide6（Qt for Python）寫成的程式碼編輯器，功能涵
                     │  multi_cursor / breakpoint / selection    │
                     └──────────────────┬───────────────────────┘
                     ┌──────────────────▼───────────────────────┐
+     服務層          │ core/（EditorServices：工作區、文件、診斷、 │
+                    │ 語言服務、除錯、工作執行、遠端、AI 的介面） │
+                    │ 不含 Qt；視窗層目前還沒有改用它            │
+                    └──────────────────┬───────────────────────┘
+                    ┌──────────────────▼───────────────────────┐
      邏輯層          │ utils/（純函式與資料類別，不含 Qt）        │
                     │ code_scan/ · git_client/ · plugins/       │
                     └──────────────────────────────────────────┘
@@ -66,10 +72,15 @@ JEditor 是以 PySide6（Qt for Python）寫成的程式碼編輯器，功能涵
 以 duck typing 操作 widget、`utils/multi_language/locale_match.py` 讀 Qt 的 QLocale）。
 ```
 
+這個方向由 `test/test_core_architecture.py` 守著：`core/` 直接或間接匯入的任何模組都不能是 Qt 或
+`pyside_ui/`；UI 層以下的套件（`core/`、`utils/`、`code_scan/`、`git_client/`、`plugins/`）裡，允許向上匯入的
+只有測試列出的兩個模組（`utils/multi_language/locale_match.py` 的 `QLocale`、`plugins/__init__.py` 匯入
+`pyside_ui/code/syntax/syntax_setting` 的高亮規則表）。
+
 **設計慣例**：幾乎每個功能都拆成「純邏輯 + Qt 整合層」兩塊。
 例如折疊 = `utils/code_folding/fold_regions.py`（算區塊）+ `pyside_ui/code/folding/folding_manager.py`（藏行、重畫）；
 書籤 = `utils/bookmark/bookmark_navigation.py` + `pyside_ui/code/bookmark/bookmark_manager.py`。
-這讓大部分邏輯可以不開視窗就測試，也是 `test/` 能有 93 個測試檔的原因。
+這讓大部分邏輯可以不開視窗就測試，也是 `test/` 能有 106 個測試檔的原因。
 
 ---
 
@@ -118,6 +129,9 @@ start_editor(debug_mode)                       je_editor/start_editor.py
 | `EDITOR_EXTEND_TAB` | `main_ui/main_editor.py` | 給下游專案（PyBreeze）塞自訂分頁的掛載點 |
 | `_plugin_metadata_list` 等 | `plugins/__init__.py` | 已註冊的語言 / 翻譯 / 執行設定 / 中繼資料 |
 
+`core/` 刻意沒有模組層級的單例：`EditorServices` 由建立它的人持有，所以同一個行程嵌入兩個編輯器時不會共用
+工作區與診斷。
+
 ---
 
 ## 5. 模組逐一說明
@@ -126,13 +140,13 @@ start_editor(debug_mode)                       je_editor/start_editor.py
 
 | 模組 | 行 | 功用 |
 | --- | ---: | --- |
-| `__init__.py` | 57 | 公開 API 匯總（`__all__`）：`start_editor`、`EditorMain`、`EditorWidget`、例外類別、語言字典、插件註冊函式 |
+| `__init__.py` | 58 | 公開 API 匯總（`__all__`）：`start_editor`、`EditorMain`、`EditorWidget`、例外類別、語言字典、插件註冊函式 |
 | `__main__.py` | 18 | `python -m je_editor -s` 的 argparse 進入點 |
 | `start_editor.py` | 56 | 建 `QApplication`、載插件、套 qt-material 主題、最大化顯示、`os._exit` 收場 |
 
 ---
 
-### 5.2 `utils/` — 純邏輯層（59 模組 / 8,544 行）
+### 5.2 `utils/` — 純邏輯層（59 模組 / 8,752 行）
 
 #### 文字與行操作
 
@@ -224,7 +238,7 @@ start_editor(debug_mode)                       je_editor/start_editor.py
 | --- | ---: | --- |
 | `logging/loggin_instance.py` | 148 | `jeditor_logger` 與 `JEditorLoggingHandler`（RotatingFileHandler 子類）；日誌檔在 `$JE_EDITOR_LOG_FILE` 或 `~/.je_editor/logs/JEditor.log`，第一筆紀錄才開檔、附加、UTF-8 |
 | `redirect_manager/redirect_manager_class.py` | 130 | 把 stdout / stderr 導入兩個 Queue，同時也是 logging Handler |
-| `exception/exceptions.py` | 30 | 8 個 `JEditorException` 家族的例外類別 |
+| `exception/exceptions.py` | 34 | 9 個 `JEditorException` 家族的例外類別（`JEditorServiceException` 由 `core/` 丟出） |
 | `exception/exception_tags.py` | 28 | 例外訊息字串常數 |
 | `browser/chromium_flags.py` | 64 | 設定 `QTWEBENGINE_CHROMIUM_FLAGS`，壓下內嵌 Chromium 的日誌 |
 
@@ -399,6 +413,32 @@ start_editor(debug_mode)                       je_editor/start_editor.py
 | `browser_serach_lineedit.py` | 52 | 網址 / 搜尋輸入列 |
 | `browser_download_window.py` | 75 | 下載進度與狀態視窗 |
 
+### 5.11 `core/` — 核心服務層（13 模組 / 2,176 行）
+
+下一代編輯器藍圖（`docs/roadmap/2026-editor-next.md`）的 M0：先把服務的介面與資料物件定下來，視窗層之後
+逐個里程碑改接過來。目前 `pyside_ui/` 還沒有任何模組匯入 `core/`。整層不匯入 Qt 也不匯入 `pyside_ui/`；
+介面一律用 `typing.Protocol`，之後由 `QObject` 持有資源的轉接器才不會遇到中繼類別衝突。
+
+| 模組 | 行 | 功用 |
+| --- | ---: | --- |
+| `__init__.py` | 63 | 核心層的公開 API（`__all__`） |
+| `services/editor_services.py` | 77 | `EditorServices`：把下列服務組在一起，`shutdown()` 依序關閉語言服務與工作執行器、清掉診斷、關閉文件；沒有模組層級的實例 |
+| `events/event_hook.py` | 99 | `EventHook`：不靠 Qt 的訂閱與通知；在發出通知的執行緒上呼叫訂閱者，一個訂閱者出錯只記錄、不擋其他人 |
+| `registry/named_registry.py` | 116 | `NamedRegistry[T]`：名稱對應實作的登記表，AI 供應者、除錯轉接器、遠端傳輸、工作執行器共用 |
+| `uri/resource_uri.py` | 91 | 資源 URI：`to_uri` / `to_path`（沿用 `utils/lsp/lsp_protocol` 的轉換）、`uri_scheme`、`uri_key`（同一個本機檔案的不同寫法得到同一個鍵） |
+| `workspace/workspace_model.py` | 265 | `ProjectRoot`（以 URI 指認，可以不在本機；`resolve()` 擋住跑出根目錄的路徑）與 `Workspace`（零到多個根目錄、`root_for()` / `root_for_uri()` 取最深的那一個、`relative_path()`） |
+| `document/document_model.py` | 224 | `Document` 協定、記憶體實作 `TextDocument`、以 URI 為鍵的 `DocumentStore`（`opened` / `changed` / `closed` 事件） |
+| `diagnostics/diagnostic_model.py` | 325 | 統一的診斷模型：`Severity`（數值同 LSP）、`Position` / `TextRange`（1 起算）、`RelatedInformation`、`TextEdit` / `QuickFix`、`Diagnostic`；`DiagnosticStore` 依「來源 × 資源」整組取代，`select()` 依嚴重度 / 來源 / 資源篩選且順序固定 |
+| `diagnostics/legacy_diagnostics.py` | 80 | 統一模型與 `utils/lint/ruff_diagnostics.Diagnostic` 之間的雙向轉換，讓底線、縮圖、問題面板可以分批改用新模型 |
+| `language/language_service.py` | 204 | `LanguageCapability`、`LanguageService` 協定，以及 `LanguageServiceRegistry`：把 `DocumentStore` 的開啟 / 變更 / 關閉轉給處理該文件的服務，晚登記的服務會補收已開文件的「開啟」 |
+| `debug/debug_session.py` | 205 | `DebugSession` 協定與資料物件（`DebugLaunchRequest`、`Breakpoint`、`StackFrame`、`Variable`、`DebugState`、`StepKind`），名稱對應 DAP 的概念 |
+| `process/task_service.py` | 169 | `TaskSpec`（指令只能是引數清單，建立後指令與環境變數都不能再改）、`TaskHandle` / `TaskRunner` 協定、`TaskState`、`OutputStream` |
+| `remote/remote_session.py` | 91 | `RemoteSession` 協定與 `RemoteState`；`task_runner()` 回傳與本機相同的 `TaskRunner` 介面 |
+| `ai/ai_provider.py` | 167 | `AIProvider` 協定與資料物件（`ChatRequest`、`ChatMessage`、`ChatRole`、`ChatResponse`、`ModelInfo`、`CancelToken`） |
+
+除錯、工作執行、遠端與 AI 四項目前只有介面，`core/` 裡沒有實作；既有的 pdb 除錯、`BaseProcessManager` 與
+LangChain 對話仍然走原本的路徑。
+
 ---
 
 ## 6. 橫切主題
@@ -417,6 +457,9 @@ UI 執行緒不做 I/O 是硬性規則，重活分成三類：
 
 已知地雷（`conftest.py` 與註解都有記錄）：`QThread` 若在執行中被銷毀，Qt 會 `qFatal` 直接中止行程。
 因此每個 QThread 子類都會 `setObjectName(...)`，測試有 autouse fixture 等工具列的背景掃描結束。
+
+`core/` 自己不開執行緒。它的 `EventHook` 在發出通知的那個執行緒上呼叫訂閱者，所以之後接上來的 Qt 訂閱者要
+自己轉回 UI 執行緒；各個儲存區與登記表以 `threading.Lock` 保護內部狀態。
 
 ### 6.2 設定與持久化
 
@@ -480,7 +523,11 @@ qt-material 負責視窗樣式；編輯器自身的顏色（語法高亮、diff 
 
 ## 7. 測試與 CI
 
-- `test/` 98 個測試檔、約 14,360 行，與模組大致一對一（`test_fold_regions.py`、`test_shortcut_registry.py`…）。
+- `test/` 106 個測試檔、約 16,400 行，與模組大致一對一（`test_fold_regions.py`、`test_shortcut_registry.py`…）。
+- `core/` 的測試是 `test_core_*.py` 七個檔。其中 `test_core_architecture.py` 守分層：以 `ast` 走訪 `core/` 的
+  匯入關係（函式內的匯入也算）、列出 UI 層以下允許向上匯入的模組，並在子行程裡擋掉 Qt 的匯入後實際建立
+  `EditorServices`。`test_public_api_contract.py` 釘住 `je_editor.__all__` 的既有名稱、PyBreeze 以模組路徑匯入的
+  內部名稱，以及 `EditorMain` 建構子的引數。
 - `conftest.py` 提供 session 級 `qapp`、`tmp_dir`、`tmp_file`，以及 autouse 的「等工具列背景執行緒結束」fixture；
   `collect_ignore_glob` 排除會真的開視窗的 `start_qt_ui.py` / `extend_test.py`。
 - `pyproject.toml` 設定 `testpaths = ["test"]`、`qt_api = "pyside6"`；bandit 排除測試目錄（pytest 慣用 `assert`）。
@@ -526,3 +573,12 @@ qt-material 負責視窗樣式；編輯器自身的顏色（語法高亮、diff 
    讓「純邏輯層」的界線稍微模糊。
 6. **命名遺留**：`utils/logging/loggin_instance.py`、`browser/browser_serach_lineedit.py` 兩處拼字錯誤已成公開路徑，
    要改需同時處理下游 import。
+7. **`core/` 還沒有消費者**：服務層已經可以獨立使用，但視窗層仍然各自持有狀態，所以現在同一件事有兩個模型
+   （例如 `utils/lint` 的 `Diagnostic` 與 `core/diagnostics` 的 `Diagnostic`，靠 `legacy_diagnostics.py` 互轉）。
+   這是遷移期間的狀態，藍圖的 M1 之後逐步收斂。
+8. **`import je_editor.core` 仍會載入 Qt**：匯入任何子套件都會先執行 `je_editor/__init__.py`，而它匯入整個 Qt
+   應用程式。服務本身不需要 Qt（測試在擋掉 Qt 的行程裡驗證過），但要讓「只用核心」的宿主程式完全不載入 Qt，
+   得等可嵌入元件那個里程碑處理頂層 `__init__`。
+9. **`pyside_ui/` 底下還有不含 Qt 的模組**：`ai_widget/ai_config.py`、`plugin_browser/github_api.py`、
+   `save_settings/user_setting_file.py`、`code/running_process_manager.py` 等本身不匯入 Qt，卻放在 UI 套件裡；
+   其中幾個路徑是 PyBreeze 的契約，搬動時要留相容匯入。

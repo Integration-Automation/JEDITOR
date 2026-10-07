@@ -320,6 +320,25 @@ start_editor()
 
 The editor launches maximized with a dark amber theme by default.
 
+The parts of the editor that are not widgets — the workspace, open documents and diagnostics, plus
+the interfaces for language services, debugging, task execution, remote sessions and AI providers
+— live in `je_editor.core` and need no window:
+
+```python
+from je_editor.core import Diagnostic, EditorServices, Severity, TextRange, Workspace, to_uri
+
+services = EditorServices(Workspace.single_root("my_project"))
+uri = to_uri("my_project/main.py")
+services.diagnostics.publish("ruff", uri, [
+    Diagnostic("`os` imported but unused", TextRange.from_lines(1, 8), Severity.WARNING, code="F401"),
+])
+print(services.diagnostics.counts()[Severity.WARNING])  # 1
+services.shutdown()
+```
+
+This layer is the foundation of the next-generation editor; the editor window does not consume it
+yet. See the *Core Services* page of the [documentation](https://je-editor.readthedocs.io/en/latest/).
+
 ---
 
 ## Feature Details
@@ -540,6 +559,8 @@ je_editor/
 │   ├── dialog/         Search & replace, shortcuts, snippets, file dialogs
 │   ├── git_ui/         Git client, commit graph, diff viewers
 │   └── main_ui/        Main window, menus, toolbar, panels, settings, AI, console
+├── core/               Service layer, no Qt: workspace, documents, diagnostics, and the
+│                       interfaces for language services, debugging, tasks, remote and AI
 ├── code_scan/          Ruff execution and watchdog file monitoring
 ├── git_client/         Git operations (GitPython + git CLI)
 ├── plugins/            Plugin registry and loader
@@ -551,6 +572,9 @@ Features are built in two halves: the algorithm lives in `utils/` with no Qt imp
 manager in `pyside_ui/` wires it to widgets. Folding, for example, is `utils/code_folding/` plus
 `pyside_ui/code/folding/`. That is why most of the behaviour above can be tested without opening a
 window.
+
+`core/` sits between the two: it composes that logic into services a host application can use
+without the JEditor window. A test walks its import graph and fails on any Qt import beneath it.
 
 A module-by-module reference — what every file does, the threading model, the global singletons and
 the settings layout — is kept in **[`architecture_explore.md`](architecture_explore.md)**.

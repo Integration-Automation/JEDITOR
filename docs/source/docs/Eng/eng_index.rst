@@ -24,4 +24,5 @@ a significantly richer feature set.
    configuration
    keyboard_shortcuts
    api_reference
+   core_services
    how_to_extend_using_pyside

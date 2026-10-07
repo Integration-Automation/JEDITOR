@@ -7,6 +7,22 @@
 > This document is deliberately a roadmap, not an implementation PR. Each milestone should land as a
 > separate, reviewable PR with tests and documentation. The order below is dependency-driven.
 
+## Implementation status
+
+| Milestone | Status | Record |
+| --- | --- | --- |
+| M0 — Foundation and compatibility boundary | Implemented: `je_editor/core/` | `docs/updates/2026-10.md`, U-20261008-01 |
+| M1 – M8 | Not started | `PROGRESS.md` |
+
+M0 defines the service layer and proves it runs without Qt. It deliberately stops short of three
+things, each left to the milestone that needs it:
+
+- the editor window does not consume the services yet;
+- debugging, task execution, remote sessions and AI providers are interfaces with no
+  implementation in `core/` (M4, M6 and M5 supply them), and the request-and-reply calls of a
+  language service (completion, hover and the rest) take their shape in M2;
+- `import je_editor.core` still runs `je_editor/__init__.py`, which imports Qt (M7).
+
 ## Goals
 
 Turn JEditor from a feature-rich desktop editor into a reusable editor platform:
