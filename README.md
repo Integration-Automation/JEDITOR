@@ -246,7 +246,7 @@ window never leaves you with dark-theme syntax colours.
 | **Execution** | Run Python scripts (F5), debug mode (F9), shell commands, virtual environment detection |
 | **Code Quality** | YAPF formatting, format on save, PEP8 checking, Ruff linting with a problems panel, language-server diagnostics and quick fixes, pytest panel with tracebacks and coverage, JSON reformatting |
 | **Git** | Branch management, commit history, side-by-side diff viewer, gutter change markers, per-change staging and revert, inline blame, stash, conflict resolution, audit logging |
-| **AI** | OpenAI GPT integration via LangChain, interactive chat widget, configurable models & prompts |
+| **AI** | Chat panel with interchangeable providers: OpenAI-compatible endpoints (LangChain) and Anthropic (streamed), per-provider models, keys & prompts |
 | **Console** | Interactive shell, Jupyter/IPython console, command history, multi-shell support |
 | **Browser** | Embedded web browser, URL navigation, in-page search |
 | **Plugins** | Custom syntax highlighting, UI translations, run configurations, auto-discovery |
@@ -296,7 +296,8 @@ Core dependencies are installed automatically:
 | jedi | Python auto-completion & analysis |
 | ruff | Fast Python linter |
 | gitpython | Git repository operations |
-| langchain_openai + langchain_core | AI/LLM integration |
+| langchain_openai + langchain_core | OpenAI-compatible AI provider |
+| anthropic | Anthropic AI provider |
 | watchdog | File system monitoring |
 | pycodestyle | PEP8 style checking |
 | qtconsole | Jupyter/IPython console widget |
@@ -425,10 +426,17 @@ yet. See the *Core Services* page of the [documentation](https://je-editor.readt
 
 ### AI Assistant
 
-- **OpenAI models via LangChain** -- Connect to OpenAI's language models.
-- **Interactive chat widget** -- Conversational AI panel within the editor.
-- **Configurable models** -- Set custom API keys, endpoints, model names, and system prompts.
-- **Async messaging** -- Non-blocking AI interaction using a message queue.
+- **Interchangeable providers** -- The chat panel talks to whichever provider is selected: any
+  OpenAI-compatible endpoint through LangChain, or Anthropic through its official SDK. A plugin can
+  register another one without touching the panel.
+- **Conversations, not single prompts** -- Follow-up questions carry the conversation so far; **New
+  chat** starts over.
+- **Streaming and cancelling** -- Anthropic replies appear as they are generated, and **Stop** cancels
+  a request in flight.
+- **Per-provider settings** -- Each provider keeps its own API key, endpoint, model and system prompt.
+  Settings apply to the session and are only written to disk when you tick the box.
+- **Never blocks the window** -- Requests run on a background thread; failures are explained in a
+  dialog and token usage is shown when the provider reports it.
 
 ### Console & REPL
 
@@ -562,6 +570,7 @@ je_editor/
 │   └── main_ui/        Main window, menus, toolbar, panels, settings, AI, console
 ├── core/               Service layer, no Qt: workspace, documents, diagnostics, and the
 │                       interfaces for language services, debugging, tasks, remote and AI
+├── adapters/           Implementations of those interfaces, no Qt: the AI providers
 ├── code_scan/          Ruff execution and watchdog file monitoring
 ├── git_client/         Git operations (GitPython + git CLI)
 ├── plugins/            Plugin registry and loader
@@ -660,7 +669,7 @@ JEDITOR stores user settings in a `.jeditor/` directory inside the working direc
 | `user_setting.json` | General preferences (font, theme, language, recent files, open tabs, reassigned shortcuts) |
 | `user_color_setting.json` | Editor and output colours, including syntax highlighting |
 | `snippets.json` | Your own snippets, merged over the built-in sets |
-| `ai_config.json` | AI assistant settings — read at startup, never written; create it yourself |
+| `ai_config.json` | AI assistant settings, grouped by provider — written only when you tick saving in the AI settings dialog, since it holds the key as plain text |
 
 Each file is backed up to `<name>.bak` before it is rewritten.
 

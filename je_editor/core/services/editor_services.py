@@ -14,6 +14,7 @@ Building this needs no ``QApplication`` and starts no process or thread.
 from __future__ import annotations
 
 from je_editor.core.ai.ai_provider import AIProvider
+from je_editor.core.ai.ai_settings import AISettings
 from je_editor.core.debug.debug_session import DebugSessionFactory
 from je_editor.core.diagnostics.diagnostic_model import DiagnosticStore
 from je_editor.core.document.document_model import DocumentStore
@@ -47,6 +48,9 @@ class EditorServices:
         self.remote_transports: NamedRegistry[RemoteTransport] = NamedRegistry("remote transport")
         # 以供應者名稱登記 / Registered by provider name
         self.ai_providers: NamedRegistry[AIProvider] = NamedRegistry("AI provider")
+        # 每個供應者各一組的設定；從檔案載入是擁有者的事
+        # One group of settings per provider; loading them from a file is the owner's job
+        self.ai_settings = AISettings()
         self._shut_down = False
 
     @property

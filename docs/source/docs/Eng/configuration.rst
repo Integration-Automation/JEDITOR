@@ -98,15 +98,17 @@ falls back to the current theme's value, so a partial file is fine.
 ai_config.json
 ^^^^^^^^^^^^^^^
 
-AI assistant configuration (see :doc:`ai_assistant` for details):
+AI assistant configuration (see :doc:`ai_assistant` for details), grouped by provider.
+Each provider has:
 
 - API base URL
 - API key
 - Model name
-- System prompt template
+- System prompt
 
-Unlike the two files above, this one is read but never written — create it yourself if
-you want the settings loaded on every launch.
+The provider in use is recorded as well. Unlike the two files above, the editor does not
+write this one by default — only when saving is ticked in the AI settings dialog, because
+the key in it is plain text. You can also create it yourself.
 
 Theming
 --------

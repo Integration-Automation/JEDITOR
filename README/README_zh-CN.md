@@ -212,7 +212,7 @@ TODO 面板会扫描整个项目中的 `TODO`、`FIXME`、`HACK`、`XXX`、`BUG`
 | **执行** | 运行 Python 脚本（F5）、调试模式（F9）、Shell 命令、虚拟环境检测 |
 | **代码质量** | YAPF 格式化、保存时格式化、PEP8 检查、Ruff 静态分析与问题面板、语言服务器诊断与快速修复、带 traceback 与覆盖率的 pytest 面板、JSON 重新格式化 |
 | **Git** | 分支管理、提交历史、并排差异查看器、行号区变更标记、逐处变更暂存与还原、行内 blame、贮藏（stash）、冲突解决、审计日志 |
-| **AI** | 通过 LangChain 集成 OpenAI GPT、交互式聊天面板、可配置模型与提示词 |
+| **AI** | 可切换提供者的对话面板：OpenAI 兼容端点（LangChain）与 Anthropic（流式），各提供者有自己的模型、密钥与提示词 |
 | **控制台** | 交互式 Shell、Jupyter/IPython 控制台、命令历史、多 Shell 支持 |
 | **浏览器** | 内嵌网页浏览器、URL 导航、页面内搜索 |
 | **插件** | 自定义语法高亮、UI 翻译、运行配置、自动发现 |
@@ -262,7 +262,8 @@ pip install .
 | jedi | Python 自动补全与分析 |
 | ruff | 快速 Python 静态分析工具 |
 | gitpython | Git 仓库操作 |
-| langchain_openai + langchain_core | AI/LLM 集成 |
+| langchain_openai + langchain_core | OpenAI 兼容的 AI 提供者 |
+| anthropic | Anthropic 的 AI 提供者 |
 | watchdog | 文件系统监控 |
 | pycodestyle | PEP8 风格检查 |
 | qtconsole | Jupyter/IPython 控制台组件 |
@@ -388,10 +389,11 @@ services.shutdown()
 
 ### AI 助手
 
-- **通过 LangChain 连接 OpenAI 模型** -- 连接 OpenAI 的语言模型。
-- **交互式聊天面板** -- 编辑器内的对话式 AI 面板。
-- **可配置模型** -- 设置自定义 API 密钥、端点、模型名称与系统提示词。
-- **异步消息** -- 使用消息队列实现非阻塞 AI 交互。
+- **可切换的提供者** -- 对话面板与当前选用的提供者对话：通过 LangChain 连接任何 OpenAI 兼容的端点，或通过官方 SDK 连接 Anthropic。插件可以再注册别的提供者，面板不必改。
+- **是对话，不是单句** -- 追问时会带着到目前为止的对话；**新对话** 重新开始。
+- **流式与取消** -- Anthropic 的回复会边生成边显示，**停止** 可以取消进行中的请求。
+- **每个提供者各自的设置** -- 每个提供者保管自己的 API 密钥、端点、模型与系统提示词。设置只应用于本次运行，勾选之后才会写入磁盘。
+- **不会卡住窗口** -- 请求在后台线程进行；失败时以对话框说明原因，提供者有回报时会显示 token 用量。
 
 ### 控制台与 REPL
 
@@ -523,6 +525,7 @@ je_editor/
 │   └── main_ui/        主窗口、菜单、工具栏、面板、设置、AI、控制台
 ├── core/               服务层，不依赖 Qt：工作区、文档、诊断，以及语言服务、
 │                       调试、任务执行、远程与 AI 的接口
+├── adapters/           上述接口的实现，不依赖 Qt：AI 提供者
 ├── code_scan/          Ruff 执行与 watchdog 文件监控
 ├── git_client/         Git 操作（GitPython + git CLI）
 ├── plugins/            插件注册表与加载器
@@ -613,7 +616,7 @@ JEDITOR 将用户设置存储在工作目录中的 `.jeditor/` 目录里：
 | `user_setting.json` | 通用偏好设置（字体、主题、语言、最近打开的文件、打开的标签页、重新指定过的快捷键） |
 | `user_color_setting.json` | 编辑器与输出的配色，含语法高亮 |
 | `snippets.json` | 您自己的代码片段，叠加合并在内置片段集之上 |
-| `ai_config.json` | AI 助手设置——启动时读取、从不写入，需自行创建 |
+| `ai_config.json` | AI 助手设置，按提供者分组——只有在 AI 设置对话框勾选保存时才会写入，因为密钥是明文 |
 
 每个文件在被重写前都会备份到 `<name>.bak`。
 

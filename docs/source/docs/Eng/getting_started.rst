@@ -101,5 +101,5 @@ When JEditor starts, it creates a ``.jeditor/`` directory in the current working
   reassigned shortcuts
 - ``user_color_setting.json`` — Color scheme for editor and output
 
-Both are created automatically on first launch. A third file, ``ai_config.json``, is read
-if you write it yourself; see :doc:`ai_assistant`.
+Both are created automatically on first launch. A third file, ``ai_config.json``, holds the
+AI assistant's settings and is only written when you ask for it; see :doc:`ai_assistant`.

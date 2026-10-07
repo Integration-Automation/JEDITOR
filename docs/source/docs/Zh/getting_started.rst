@@ -100,5 +100,5 @@ JEditor 啟動時會在目前工作目錄下建立 ``.jeditor/`` 資料夾，用
   重新指派過的快捷鍵
 - ``user_color_setting.json`` — 編輯器與輸出的色彩配置
 
-這兩個檔案會在首次啟動時自動建立。第三個檔案 ``ai_config.json`` 需要您自行撰寫，編輯器
-只會讀取它；詳見 :doc:`ai_assistant`。
+這兩個檔案會在首次啟動時自動建立。第三個檔案 ``ai_config.json`` 保存 AI 助手的設定，只有
+在您要求時才會寫入；詳見 :doc:`ai_assistant`。

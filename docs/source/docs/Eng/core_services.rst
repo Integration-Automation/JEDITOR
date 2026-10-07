@@ -210,8 +210,9 @@ services for a document.
 Debugging, Tasks, Remote Sessions and AI Providers
 ---------------------------------------------------
 
-These four are interfaces with their data objects. JEditor ships no implementation of them in
-this layer yet; a host or a plugin registers its own.
+These four are interfaces with their data objects. The implementations live in
+``je_editor.adapters``, outside this layer. So far that is the two AI providers (``openai`` and
+``anthropic``, see :doc:`ai_assistant`); a host or a plugin registers its own for the rest.
 
 .. list-table::
    :header-rows: 1

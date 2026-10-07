@@ -24,7 +24,7 @@ QT_MODULES = frozenset({"PySide6", "shiboken6", "qt_material", "qtconsole", "fro
 # The parts of je_editor that are the Qt application
 UI_MODULES = ("je_editor.pyside_ui", "je_editor.start_editor")
 # The packages below the UI: logic only
-LOGIC_PACKAGES = ("core", "utils", "code_scan", "git_client", "plugins")
+LOGIC_PACKAGES = ("core", "adapters", "utils", "code_scan", "git_client", "plugins")
 # The modules below the UI that reach upwards today. This is a ratchet: the set
 # may shrink, and a new entry needs a reason as good as these.
 KNOWN_UPWARD_IMPORTS = {

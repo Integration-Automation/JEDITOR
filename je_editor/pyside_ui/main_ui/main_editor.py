@@ -19,9 +19,11 @@ from qt_material import QtStyleTools
 
 # 匯入專案內部模組 (自訂 UI 與功能)
 # Import project-specific modules (custom UI and features)
+from je_editor.adapters.default_services import build_default_services
 from je_editor.pyside_ui.browser.browser_widget import BrowserWidget
 from je_editor.pyside_ui.browser.main_browser_widget import MainBrowserWidget
 from je_editor.pyside_ui.code.auto_save.auto_save_manager import init_new_auto_save_thread, file_is_open_manager_dict
+from je_editor.pyside_ui.main_ui.ai_widget.chat_worker import cancel_chat_workers
 from je_editor.pyside_ui.main_ui.editor.editor_widget import EditorWidget
 from je_editor.pyside_ui.main_ui.menu.set_menu_bar import set_menu_bar
 from je_editor.pyside_ui.main_ui.save_settings.user_color_setting_file import (
@@ -91,6 +93,10 @@ class EditorMain(QMainWindow, QtStyleTools):
         self.font_menu = None
         self.working_dir = None
         self.show_system_tray_ray = show_system_tray_ray
+        # 不屬於任何元件的狀態（工作區、診斷、AI 供應者與設定）；面板向它要，而不是各自保管
+        # The state that belongs to no widget (workspace, diagnostics, AI providers
+        # and settings); panels ask it instead of each keeping a copy
+        self.services = build_default_services()
         self.extend = extend  # 是否為擴充模式（如 PyBreeze）/ Whether in extend mode (e.g. PyBreeze)
 
         # 確保外部插件已載入（若尚未載入）
@@ -563,6 +569,10 @@ class EditorMain(QMainWindow, QtStyleTools):
             stop_background_threads
         )
         stop_background_threads()
+        # 還在等回覆的 AI 請求先取消，再放掉服務持有的資源
+        # Cancel AI requests still waiting for a reply, then release what the services hold
+        cancel_chat_workers()
+        self.services.shutdown()
         write_user_setting()
         write_user_color_setting()
         super().closeEvent(event)

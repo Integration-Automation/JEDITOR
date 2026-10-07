@@ -13,6 +13,8 @@ no window; ``test/test_core_architecture.py`` holds that line.
 from je_editor.core.ai.ai_provider import (
     AIProvider, CancelToken, ChatMessage, ChatRequest, ChatResponse, ChatRole, ModelInfo
 )
+from je_editor.core.ai.ai_settings import AISettings, ProviderSettings
+from je_editor.core.ai.chat_session import ChatSession
 from je_editor.core.debug.debug_session import (
     Breakpoint, DebugLaunchRequest, DebugSession, DebugSessionFactory, DebugState,
     StackFrame, StepKind, Variable
@@ -59,5 +61,5 @@ __all__ = [
     "RemoteSession", "RemoteState", "RemoteTransport",
     # AI providers
     "AIProvider", "ChatRequest", "ChatResponse", "ChatMessage", "ChatRole",
-    "ModelInfo", "CancelToken",
+    "ModelInfo", "CancelToken", "ChatSession", "AISettings", "ProviderSettings",
 ]

@@ -8,8 +8,8 @@
 
 JEditor is a PySide6 code editor published as `je_editor` (stable) and `je_editor_dev` (dev).
 It provides syntax highlighting, folding, multi-cursor editing, an LSP client, ruff diagnostics,
-a pytest panel, Git integration, an embedded browser, an IPython console and a LangChain/OpenAI
-chat panel. It runs as a standalone app and also works as a library: PyBreeze subclasses its main
+a pytest panel, Git integration, an embedded browser, an IPython console and an AI chat panel
+with interchangeable providers (OpenAI-compatible and Anthropic). It runs as a standalone app and also works as a library: PyBreeze subclasses its main
 window, and plugins extend it through a small registry API.
 
 ## 2. Layers and directories
@@ -22,6 +22,7 @@ window, and plugins extend it through a small registry API.
 | `je_editor/pyside_ui/code/` | `CodeEditor` (`plaintext_code_edit/`) plus its managers (folding, bookmarks, lint, LSP, diff/blame, snippets, multi-cursor), highlighters (`syntax/`), process runners (`code_process/`, `shell_process/`, `base_process_manager.py`) |
 | `je_editor/pyside_ui/dialog/`, `git_ui/`, `browser/` | Search/replace, shortcut, snippet and file dialogs; Git panel, commit graph, diff viewers; embedded QtWebEngine browser |
 | `je_editor/core/` | Service layer with no Qt import: `EditorServices` (`services/`) bundles the workspace model (`workspace/`), open documents (`document/`), the unified diagnostic model and store (`diagnostics/`), the language service registry (`language/`), and the interfaces for debug sessions (`debug/`), task execution (`process/`), remote sessions (`remote/`) and AI providers (`ai/`). `events/` and `registry/` replace Qt signals and per-feature registries. The window consumes the diagnostics part so far: the editor's `LintManager` and the Problems panel hold their findings in the unified model (roadmap `docs/roadmap/2026-editor-next.md`) |
+| `je_editor/adapters/` | Implementations of the `core/` interfaces, also Qt-free; third-party SDKs are imported at the point of use. `ai/`: `OpenAIProvider` (LangChain `ChatOpenAI`), `AnthropicProvider` (official `anthropic` SDK, streamed), the built-in registration and the `.jeditor/ai_config.json` reader/writer (which never logs the content). `default_services.py` builds an `EditorServices` with these registered |
 | `je_editor/utils/` | Pure logic with no widgets (only `multi_language/locale_match.py` imports Qt): text operations, encodings, sessions, diffs, symbols, LSP protocol, shortcut registry, theme colors, translations (`multi_language/`), logging, stdout/stderr redirect |
 | `je_editor/code_scan/` | ruff runner and watchdog file monitor, run on worker threads |
 | `je_editor/git_client/` | Git access: `GitService` (GitPython) and `GitCLI` (subprocess), blame, HEAD baseline, hunk staging |
@@ -33,8 +34,8 @@ window, and plugins extend it through a small registry API.
 | `.github/workflows/` | `dev.yml`, `stable.yml`: tests on a Windows Python matrix, then one publish job each on `ubuntu-latest` (§3 PyPI packages) |
 | `.github/requirements/` | `publish.in` and the `publish.txt` generated from it: the build tooling of the two publish jobs, build backend (`setuptools`) included, pinned by version and hash. The jobs install nothing else and build with `python -m build --no-isolation`, so the backend is the locked one; the lock has to satisfy `build-system.requires` of `pyproject.toml` and `dev.toml` (`test/test_workflow_actions.py`). Dependabot keeps it current |
 
-Dependencies point downwards: `pyside_ui/` → `core/` → `code_scan/`, `git_client/`, `plugins/` →
-`utils/`. Most features are split into a pure function in `utils/` plus a thin Qt layer in
+Dependencies point downwards: `pyside_ui/` → `adapters/` → `core/` → `code_scan/`, `git_client/`,
+`plugins/` → `utils/`. Most features are split into a pure function in `utils/` plus a thin Qt layer in
 `pyside_ui/`. `test/test_core_architecture.py` enforces the direction: nothing `core/` imports,
 directly or indirectly, may be Qt or `pyside_ui/`; the packages below the UI may not import Qt or
 `pyside_ui/` except two listed modules (`utils/multi_language/locale_match.py` for `QLocale`,
@@ -48,6 +49,9 @@ Qt cannot be imported.
   so headless CI can start it.
 - **Embedding**: `EditorMain(debug_mode, show_system_tray_ray, extend)`. `extend=True` skips the
   Windows app ID, the icon and tray, and the Plugins menu, so a host app can supply its own.
+- **Window services**: `EditorMain.services` is the window's `EditorServices`, built by
+  `adapters/default_services.build_default_services()` and shut down in `closeEvent`. Panels read
+  it with `getattr(window, "services", None)` and build their own when a host window has none.
 - **Custom tabs**: `EDITOR_EXTEND_TAB: Dict[str, Type[QWidget]]` in `pyside_ui/main_ui/main_editor.py`.
 - **Plugin API** (`je_editor/plugins/__init__.py`, re-exported from `je_editor`):
   `register_programming_language`, `register_natural_language`, `register_plugin_run_config`,
@@ -126,7 +130,9 @@ Plugin browser (pyside_ui/main_ui/plugin_browser/) → github_api.fetch_repo_tre
   its `NamedRegistry` attributes — `ai_providers`, `debug_adapters` (session factories),
   `task_runners`, `remote_transports` (by URI scheme) — and language services through
   `languages.register()`. Any source reports findings with `diagnostics.publish(source, uri, ...)`.
-  No implementation ships in `core/` yet; the roadmap milestones add them.
+  Implementations live in `adapters/`: the AI providers `openai` and `anthropic` so far. A plugin
+  adds another AI provider with `window.services.ai_providers.register(name, provider)`, and the
+  chat panel lists it with no change to the panel.
 
 ## 6. Cross-project boundaries
 
@@ -141,7 +147,7 @@ Plugin browser (pyside_ui/main_ui/plugin_browser/) → github_api.fetch_repo_tre
   before you move or rename a module. It merges its UI strings by mutating the exported
   `english_word_dict` and `traditional_chinese_word_dict` in place. Treat these names,
   `EditorMain`'s constructor and the attributes PyBreeze uses (`tab_widget`, `menu`, `help_menu`)
-  as a contract. `test/test_public_api_contract.py` pins the exported names, those module paths
+  as a contract. `EditorMain` also sets `services`; PyBreeze does not use that name today. `test/test_public_api_contract.py` pins the exported names, those module paths
   and the constructor's arguments; it cannot see behaviour or attributes, and its list is a copy
   that has to be updated when PyBreeze starts importing something new.
 - **Translations**: a JEditor translation change must keep PyBreeze's
