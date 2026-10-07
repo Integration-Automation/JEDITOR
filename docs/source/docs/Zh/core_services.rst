@@ -8,7 +8,7 @@
 .. note::
 
    這一層是下一代編輯器藍圖的基礎。編輯器視窗一次改接一個部分：目前診斷、AI 對話面板、工作區
-   與語法高亮已經在用它，除錯、工作執行與遠端工作階段還只有介面。
+   與語法高亮已經在用它。除錯與工作執行已經有實作，但視窗還沒有改用；遠端工作階段還只有介面。
 
 快速範例
 --------
@@ -303,11 +303,75 @@ EditorServices
 ``highlights.scm`` 會接在文法自帶的高亮查詢之後， ``regions.scm`` 則指出結構區塊。文法沒有安裝、
 或查詢檔編譯不過時，那個語言只是變成不支援，不會丟出例外，編輯器會退回以樣式比對的高亮器。
 
-除錯、工作執行、遠端工作階段與 AI 供應者
-----------------------------------------
+除錯
+----
 
-這四項是介面加上各自的資料物件。實作放在這一層之外的 ``je_editor.adapters`` ，目前有兩個 AI 供應者
-（ ``openai`` 與 ``anthropic`` ，見 :doc:`ai_assistant` ）；其餘的由宿主程式或外掛自行登記。
+``DebugSession`` 代表一個正在被除錯的程式：啟動它或接上它、設定中斷點、逐步執行，並查詢
+執行緒、堆疊、變數與運算式。它的名稱沿用 Debug Adapter Protocol（DAP）的概念，
+``je_editor.adapters.debug`` 則以 DAP 跟轉接器對話來實作它。 ``build_default_services()`` 會登記
+Python 的轉接器 ``debugpy`` 。
+
+.. code-block:: python
+
+   import tempfile
+   import threading
+   from pathlib import Path
+
+   from je_editor.adapters.default_services import build_default_services
+   from je_editor.core import Breakpoint, DebugLaunchRequest, to_uri
+
+   program = Path(tempfile.mkdtemp()) / "program.py"
+   program.write_text("total = 0\nfor number in range(3):\n    total += number\nprint(total)\n",
+                      encoding="utf-8")
+
+   services = build_default_services()
+   session = services.debug_adapters.require("debugpy")()
+   stops = []
+   stopped, answered = threading.Event(), threading.Event()
+   session.stopped.subscribe(lambda stop: (stops.append(stop), stopped.set()))
+
+   uri = to_uri(program)
+   session.set_breakpoints(uri, [Breakpoint(uri, 3, condition="number == 2")])
+   session.launch(DebugLaunchRequest(str(program)))
+   stopped.wait(60)
+   print(stops[0].reason, session.state().value)      # breakpoint paused
+
+
+   def show(reply):
+       print([(frame.name, frame.line) for frame in reply.value])
+       answered.set()
+
+
+   session.stack_trace(stops[0].thread_id, show)       # [('<module>', 3)]
+   answered.wait(60)
+   session.terminate()
+   services.shutdown()
+
+- **控制指令** 送出就回來： ``resume()`` 、 ``pause()`` 、 ``step(StepKind.OVER)`` （另有 ``INTO``
+  與 ``OUT`` ）與 ``terminate()`` 。每一個都可以指定執行緒，沒指定時作用在上次停下來的那一條。
+- **查詢** 跟語言服務一樣，要給一個收回覆的函式： ``threads()`` 、 ``stack_trace(thread_id)`` 、
+  ``scopes(frame_id)`` 、 ``variables(reference)`` 、 ``evaluate(expression, frame_id)`` 與
+  ``exception_info(thread_id)`` 。回覆是 ``DebugReply`` ，有 ``value`` 、 ``error`` 與 ``ok`` ；
+  答不出來的查詢回覆的是 ``error`` 與空值，不會丟出例外。
+- **事件** 有 ``state_changed`` （ ``DebugState`` ）、 ``stopped`` （ ``StopEvent`` ：為什麼停、
+  哪一條執行緒）、 ``output`` （ ``OutputEvent`` ）與 ``breakpoints_reported``
+  （ ``BreakpointStatus`` ）。
+- ``set_breakpoints(uri, breakpoints)`` 每次都給一個檔案的整份清單。 ``Breakpoint`` 可以帶
+  ``condition`` 。啟動之前設定的中斷點會在轉接器準備好之後送出。
+- ``attach(DebugAttachRequest(port, host))`` 接上一個已經在等除錯器的程式，例如以
+  ``python -m debugpy --listen 5678 --wait-for-client`` 啟動的程式。
+- 回覆與事件都在工作階段自己的執行緒上送達。要更新畫面的程式得自己把它們轉回畫面執行緒。
+
+轉接器程序是透過 ``TaskRunner`` 啟動的，所以換成一個在別處啟動程序的執行器，同一個工作階段
+就成了遠端除錯。別的轉接器就是一個帶著自己的指令與啟動引數的 ``DapSession`` ，以名稱登記在
+``services.debug_adapters`` 。
+
+工作執行、遠端工作階段與 AI 供應者
+----------------------------------
+
+這幾項是介面加上各自的資料物件。實作放在這一層之外的 ``je_editor.adapters`` ：兩個 AI 供應者
+（ ``openai`` 與 ``anthropic`` ，見 :doc:`ai_assistant` ）與這台機器的 ``TaskRunner``
+（登記名稱是 ``local`` ）。遠端工作階段還沒有實作，由宿主程式或外掛自行登記。
 
 .. list-table::
    :header-rows: 1
@@ -316,10 +380,6 @@ EditorServices
    * - 領域
      - 介面
      - 資料物件
-   * - 除錯
-     - ``DebugSession``
-     - ``DebugLaunchRequest``、``Breakpoint``、``StackFrame``、``Variable``、``DebugState``、
-       ``StepKind``
    * - 工作執行
      - ``TaskRunner``、``TaskHandle``
      - ``TaskSpec``、``TaskState``、``OutputStream``
@@ -334,6 +394,8 @@ EditorServices
 - ``TaskSpec`` 的指令一律是引數清單。沒有「把一整行交給 shell」的形式，給字串會被拒絕。
 - ``TaskRunner.create(spec)`` 回傳一個尚未啟動的把手。先訂閱它的 ``output`` 與 ``finished`` 事件，
   再呼叫 ``start()``，才不會漏掉一開始的輸出。
+- ``TaskSpec`` 設了 ``binary=True`` 時，輸出以讀到的位元組原樣送出， ``write()`` 也收位元組。
+  以位元組組框的協定（除錯轉接器的就是）需要這個。
 - ``RemoteSession.task_runner()`` 回傳的是同一個 ``TaskRunner`` 介面，所以呼叫端不必分辨程序在哪裡
   執行。
 - ``AIProvider.complete(request, on_text, cancel)`` 會等到回覆完成才返回，請在背景執行緒呼叫。

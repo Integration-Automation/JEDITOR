@@ -67,6 +67,8 @@ JEditor 會自動安裝以下依賴套件：
      - AI 助理：Anthropic 供應者
    * - tree-sitter / tree-sitter-python / tree-sitter-javascript / tree-sitter-json
      - 語法高亮用的語法解析
+   * - debugpy
+     - Python 的除錯轉接器（Debug Adapter Protocol）
    * - watchdog
      - 檔案系統監控
    * - pycodestyle

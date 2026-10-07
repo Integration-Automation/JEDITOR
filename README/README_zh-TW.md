@@ -265,6 +265,7 @@ pip install .
 | langchain_openai + langchain_core | OpenAI 相容的 AI 供應者 |
 | anthropic | Anthropic 的 AI 供應者 |
 | tree-sitter + tree-sitter-python / -javascript / -json | 語法高亮用的語法解析 |
+| debugpy | Python 的除錯轉接器（Debug Adapter Protocol） |
 | watchdog | 檔案系統監控 |
 | pycodestyle | PEP8 風格檢查 |
 | qtconsole | Jupyter/IPython 主控台元件 |
@@ -527,8 +528,8 @@ je_editor/
 │   └── main_ui/        主視窗、選單、工具列、面板、設定、AI、主控台
 ├── core/               服務層，不依賴 Qt：工作區、文件、診斷，以及語言服務、
 │                       除錯、工作執行、遠端與 AI 的介面
-├── adapters/           上述介面的實作，不依賴 Qt：AI 供應者與
-│                       Tree-sitter 語法引擎
+├── adapters/           上述介面的實作，不依賴 Qt：AI 供應者、Tree-sitter 語法引擎、
+│                       本機工作執行器與 DAP 除錯工作階段
 ├── code_scan/          Ruff 執行與 watchdog 檔案監控
 ├── git_client/         Git 操作（GitPython + git CLI）
 ├── plugins/            外掛註冊表與載入器

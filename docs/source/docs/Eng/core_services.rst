@@ -10,8 +10,8 @@ command-line tool or a host application that never builds the JEditor window.
 
    This layer is the foundation of the next-generation editor roadmap. The editor window moves
    onto it one area at a time: diagnostics, the AI chat panel, the workspace and syntax
-   highlighting use it so far, while debugging, task execution and remote sessions are
-   interfaces only.
+   highlighting use it so far. Debugging and task execution have implementations the window
+   does not use yet, and remote sessions are an interface only.
 
 Quick Example
 --------------
@@ -320,12 +320,80 @@ and ``regions.scm`` names the structural regions. A grammar that is not installe
 that does not compile, makes that language unsupported rather than raising, and the editor
 falls back to its pattern-based highlighter.
 
-Debugging, Tasks, Remote Sessions and AI Providers
----------------------------------------------------
+Debugging
+----------
 
-These four are interfaces with their data objects. The implementations live in
-``je_editor.adapters``, outside this layer. So far that is the two AI providers (``openai`` and
-``anthropic``, see :doc:`ai_assistant`); a host or a plugin registers its own for the rest.
+A ``DebugSession`` is one program being debugged: launch it or attach to it, set breakpoints,
+step, and ask about threads, the stack, variables and expressions. Its names follow the Debug
+Adapter Protocol (DAP), and ``je_editor.adapters.debug`` implements it by talking DAP to an
+adapter. ``build_default_services()`` registers ``debugpy``, the adapter for Python.
+
+.. code-block:: python
+
+   import tempfile
+   import threading
+   from pathlib import Path
+
+   from je_editor.adapters.default_services import build_default_services
+   from je_editor.core import Breakpoint, DebugLaunchRequest, to_uri
+
+   program = Path(tempfile.mkdtemp()) / "program.py"
+   program.write_text("total = 0\nfor number in range(3):\n    total += number\nprint(total)\n",
+                      encoding="utf-8")
+
+   services = build_default_services()
+   session = services.debug_adapters.require("debugpy")()
+   stops = []
+   stopped, answered = threading.Event(), threading.Event()
+   session.stopped.subscribe(lambda stop: (stops.append(stop), stopped.set()))
+
+   uri = to_uri(program)
+   session.set_breakpoints(uri, [Breakpoint(uri, 3, condition="number == 2")])
+   session.launch(DebugLaunchRequest(str(program)))
+   stopped.wait(60)
+   print(stops[0].reason, session.state().value)      # breakpoint paused
+
+
+   def show(reply):
+       print([(frame.name, frame.line) for frame in reply.value])
+       answered.set()
+
+
+   session.stack_trace(stops[0].thread_id, show)       # [('<module>', 3)]
+   answered.wait(60)
+   session.terminate()
+   services.shutdown()
+
+- **Control commands** return as soon as they are sent: ``resume()``, ``pause()``,
+  ``step(StepKind.OVER)`` (also ``INTO`` and ``OUT``) and ``terminate()``. Each takes an optional
+  thread and otherwise acts on the thread that stopped last.
+- **Queries** take a function for the reply, as language services do: ``threads()``,
+  ``stack_trace(thread_id)``, ``scopes(frame_id)``, ``variables(reference)``,
+  ``evaluate(expression, frame_id)`` and ``exception_info(thread_id)``. The reply is a
+  ``DebugReply`` with ``value``, ``error`` and ``ok``; a query that cannot be answered replies
+  with an ``error`` and the empty value rather than raising.
+- **Events** are ``state_changed`` (``DebugState``), ``stopped`` (``StopEvent``: why and which
+  thread), ``output`` (``OutputEvent``) and ``breakpoints_reported`` (``BreakpointStatus``).
+- ``set_breakpoints(uri, breakpoints)`` gives the whole list for one file each time. A
+  ``Breakpoint`` may carry a ``condition``. Breakpoints set before the launch are sent once
+  the adapter is ready.
+- ``attach(DebugAttachRequest(port, host))`` connects to a program that is already waiting for
+  a debugger, such as one started with ``python -m debugpy --listen 5678 --wait-for-client``.
+- Replies and events arrive on the session's own thread. Code that updates widgets has to
+  move them to the widget thread.
+
+The adapter process is started through a ``TaskRunner``, so a runner that starts processes
+somewhere else turns the same session into remote debugging. Another adapter is a ``DapSession``
+with its own command and launch arguments, registered under a name in
+``services.debug_adapters``.
+
+Tasks, Remote Sessions and AI Providers
+----------------------------------------
+
+These are interfaces with their data objects. The implementations live in
+``je_editor.adapters``, outside this layer: the two AI providers (``openai`` and ``anthropic``,
+see :doc:`ai_assistant`) and a ``TaskRunner`` for this machine, registered as ``local``. Remote
+sessions have no implementation yet; a host or a plugin registers its own.
 
 .. list-table::
    :header-rows: 1
@@ -334,10 +402,6 @@ These four are interfaces with their data objects. The implementations live in
    * - Area
      - Interface
      - Data objects
-   * - Debugging
-     - ``DebugSession``
-     - ``DebugLaunchRequest``, ``Breakpoint``, ``StackFrame``, ``Variable``, ``DebugState``,
-       ``StepKind``
    * - Task execution
      - ``TaskRunner``, ``TaskHandle``
      - ``TaskSpec``, ``TaskState``, ``OutputStream``
@@ -353,6 +417,8 @@ These four are interfaces with their data objects. The implementations live in
   a shell, and a string is refused.
 - ``TaskRunner.create(spec)`` returns a handle that has not started. Subscribe to its
   ``output`` and ``finished`` events, then call ``start()``, so no early output is missed.
+- A ``TaskSpec`` with ``binary=True`` delivers output as the bytes that were read and takes
+  bytes in ``write()``. Protocols framed in bytes, a debug adapter's among them, need that.
 - ``RemoteSession.task_runner()`` returns the same ``TaskRunner`` interface, so a caller never
   has to tell where a process runs.
 - ``AIProvider.complete(request, on_text, cancel)`` blocks until the reply is complete. Call it

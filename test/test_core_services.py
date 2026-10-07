@@ -8,7 +8,7 @@ from je_editor.core.ai.ai_provider import (
     AIProvider, CancelToken, ChatMessage, ChatRequest, ChatResponse, ChatRole, ModelInfo
 )
 from je_editor.core.debug.debug_session import (
-    Breakpoint, DebugLaunchRequest, DebugSession, DebugState, StepKind
+    Breakpoint, DebugLaunchRequest, DebugReply, DebugSession, DebugState, StepKind
 )
 from je_editor.core.diagnostics.diagnostic_model import Diagnostic, TextRange
 from je_editor.core.document.document_model import TextDocument
@@ -85,6 +85,9 @@ class FakeDebugSession:
 
     def __init__(self) -> None:
         self.state_changed = EventHook("debug state changed")
+        self.stopped = EventHook("debug stopped")
+        self.output = EventHook("debug output")
+        self.breakpoints_reported = EventHook("debug breakpoints reported")
         self._state = DebugState.IDLE
         self.breakpoints: dict[str, list[Breakpoint]] = {}
 
@@ -99,17 +102,39 @@ class FakeDebugSession:
         self._move_to(DebugState.PAUSED if request.stop_on_entry else DebugState.RUNNING)
         return True
 
+    def attach(self, request) -> bool:
+        self._move_to(DebugState.RUNNING)
+        return True
+
     def set_breakpoints(self, uri: str, breakpoints) -> None:
         self.breakpoints[uri] = list(breakpoints)
 
-    def resume(self) -> None:
+    def resume(self, thread_id: int = 0) -> None:
         self._move_to(DebugState.RUNNING)
 
-    def pause(self) -> None:
+    def pause(self, thread_id: int = 0) -> None:
         self._move_to(DebugState.PAUSED)
 
-    def step(self, kind: StepKind) -> None:
+    def step(self, kind: StepKind, thread_id: int = 0) -> None:
         self._move_to(DebugState.PAUSED)
+
+    def threads(self, on_reply) -> None:
+        on_reply(DebugReply(()))
+
+    def stack_trace(self, thread_id: int, on_reply) -> None:
+        on_reply(DebugReply(()))
+
+    def scopes(self, frame_id: int, on_reply) -> None:
+        on_reply(DebugReply(()))
+
+    def variables(self, reference: int, on_reply) -> None:
+        on_reply(DebugReply(()))
+
+    def evaluate(self, expression: str, frame_id: int, on_reply) -> None:
+        on_reply(DebugReply(None, "the fake evaluates nothing"))
+
+    def exception_info(self, thread_id: int, on_reply) -> None:
+        on_reply(DebugReply(None))
 
     def terminate(self) -> None:
         self._move_to(DebugState.TERMINATED)
@@ -272,6 +297,22 @@ class TestTaskInterface:
 class TestDebugInterface:
     def test_the_fake_satisfies_the_protocol(self):
         assert isinstance(FakeDebugSession(), DebugSession)
+
+    def test_a_session_without_the_queries_does_not(self):
+        class ControlOnly:
+            state_changed = EventHook("state")
+
+            def state(self) -> DebugState:
+                return DebugState.IDLE
+
+        assert not isinstance(ControlOnly(), DebugSession)
+
+    def test_a_reply_is_ok_unless_it_carries_an_error(self):
+        replies: list[DebugReply] = []
+        session = FakeDebugSession()
+        session.threads(replies.append)
+        session.evaluate("x", 0, replies.append)
+        assert [(reply.ok, reply.value) for reply in replies] == [(True, ()), (False, None)]
 
     def test_a_launch_needs_a_program(self):
         with pytest.raises(JEditorServiceException, match="needs a program"):

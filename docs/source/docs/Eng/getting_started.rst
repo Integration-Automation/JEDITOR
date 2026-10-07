@@ -67,6 +67,8 @@ JEditor will automatically install the following dependencies:
      - AI assistant: Anthropic provider
    * - tree-sitter / tree-sitter-python / tree-sitter-javascript / tree-sitter-json
      - Syntax parsing for highlighting
+   * - debugpy
+     - Python debug adapter (Debug Adapter Protocol)
    * - watchdog
      - File system monitoring
    * - pycodestyle

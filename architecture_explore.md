@@ -1,7 +1,7 @@
 # JEditor 架構導覽 / Architecture Exploration
 
 > 產出時間：2026-08-03　對應版本：`dev` 分支（commit `f17e07a`）；2026-10-08 加入 `core/` 並重算各套件規模。
-> 涵蓋範圍：`je_editor/` 全部 326 個 `.py`（201 個實作模組 + 125 個 `__init__.py`），共 36,784 行。
+> 涵蓋範圍：`je_editor/` 全部 334 個 `.py`（206 個實作模組 + 128 個 `__init__.py`），共 38,177 行。
 > 這份文件記錄「每個模組負責什麼」與「模組之間怎麼串起來」，不是使用手冊（使用說明見 `README.md`、插件說明見 `PLUGIN_GUIDE.md`）。
 
 ---
@@ -15,8 +15,8 @@ JEditor 是以 PySide6（Qt for Python）寫成的程式碼編輯器，功能涵
 | --- | --- |
 | 語言 / 版本 | Python 3.10+（CI 測 3.10 ～ 3.14） |
 | UI 框架 | PySide6 6.11.2 + qt-material 主題 |
-| 主要相依 | `jedi`（Python 補全）、`ruff`（診斷）、`yapf` / `pycodestyle`（格式化與檢查）、`gitpython`、`watchdog`、`qtconsole` + `IPython`、`langchain_openai` + `langchain_core`、`anthropic`、`tree-sitter` 與三個文法套件（`tree-sitter-python` / `-javascript` / `-json`）、`frontengine` |
-| 測試 | pytest + pytest-qt，112 個測試檔、約 19,400 行 |
+| 主要相依 | `jedi`（Python 補全）、`ruff`（診斷）、`yapf` / `pycodestyle`（格式化與檢查）、`gitpython`、`watchdog`、`qtconsole` + `IPython`、`langchain_openai` + `langchain_core`、`anthropic`、`tree-sitter` 與三個文法套件（`tree-sitter-python` / `-javascript` / `-json`）、`debugpy`、`frontengine` |
+| 測試 | pytest + pytest-qt，114 個測試檔、約 20,300 行 |
 | 靜態分析 | ruff、SonarCloud（`sonar.sources=je_editor`）、Codacy、bandit |
 
 ### 各套件規模
@@ -24,15 +24,15 @@ JEditor 是以 PySide6（Qt for Python）寫成的程式碼編輯器，功能涵
 | 套件 | 模組數 | 行數 | 定位 |
 | --- | ---: | ---: | --- |
 | `pyside_ui/` | 101 | 21,691 | View / Controller：所有 Qt 元件與選單 |
-| `utils/` | 60 | 9,011 | 純邏輯層（絕大多數不 import Qt，可單獨測試） |
-| `adapters/` | 8 | 1,355 | 核心介面的實作（同樣不 import Qt）：AI 供應者、設定檔讀寫、預設服務的組裝 |
-| `core/` | 19 | 3,113 | 核心服務層：工作區、文件、診斷的模型，以及語言服務、除錯、工作執行、遠端、AI 的介面（完全不 import Qt） |
+| `utils/` | 61 | 9,131 | 純邏輯層（絕大多數不 import Qt，可單獨測試） |
+| `adapters/` | 12 | 2,340 | 核心介面的實作（同樣不 import Qt）：AI 供應者、設定檔讀寫、預設服務的組裝 |
+| `core/` | 19 | 3,401 | 核心服務層：工作區、文件、診斷的模型，以及語言服務、除錯、工作執行、遠端、AI 的介面（完全不 import Qt） |
 | `git_client/` | 6 | 777 | Git 操作（GitPython + git CLI 兩條路） |
 | `code_scan/` | 4 | 368 | ruff 執行與 watchdog 檔案監看 |
 | `plugins/` | 1 | 337 | 插件註冊表與外部插件載入器 |
 | 頂層 | 2 | 131 | `__main__.py`、`start_editor.py`（另有 `__init__.py` 匯出公開 API） |
 
-（行數含各層 `__init__.py`，合計 36,784 行。）
+（行數含各層 `__init__.py`，合計 38,177 行。）
 
 ---
 
@@ -81,7 +81,7 @@ JEditor 是以 PySide6（Qt for Python）寫成的程式碼編輯器，功能涵
 **設計慣例**：幾乎每個功能都拆成「純邏輯 + Qt 整合層」兩塊。
 例如折疊 = `utils/code_folding/fold_regions.py`（算區塊）+ `pyside_ui/code/folding/folding_manager.py`（藏行、重畫）；
 書籤 = `utils/bookmark/bookmark_navigation.py` + `pyside_ui/code/bookmark/bookmark_manager.py`。
-這讓大部分邏輯可以不開視窗就測試，也是 `test/` 能有 112 個測試檔的原因。
+這讓大部分邏輯可以不開視窗就測試，也是 `test/` 能有 114 個測試檔的原因。
 
 ---
 
@@ -148,7 +148,7 @@ start_editor(debug_mode)                       je_editor/start_editor.py
 
 ---
 
-### 5.2 `utils/` — 純邏輯層（60 模組 / 9,011 行）
+### 5.2 `utils/` — 純邏輯層（61 模組 / 9,131 行）
 
 #### 文字與行操作
 
@@ -424,7 +424,7 @@ start_editor(debug_mode)                       je_editor/start_editor.py
 | `browser_serach_lineedit.py` | 52 | 網址 / 搜尋輸入列 |
 | `browser_download_window.py` | 75 | 下載進度與狀態視窗 |
 
-### 5.11 `core/` — 核心服務層（19 模組 / 3,113 行）
+### 5.11 `core/` — 核心服務層（19 模組 / 3,401 行）
 
 下一代編輯器藍圖（`docs/roadmap/2026-editor-next.md`）的 M0：先把服務的介面與資料物件定下來，視窗層之後
 逐個里程碑改接過來。目前診斷（`LintManager` 與問題面板）、AI 對話面板、工作區與語法高亮已經在用。整層不匯入 Qt 也不匯入 `pyside_ui/`；
@@ -446,18 +446,18 @@ start_editor(debug_mode)                       je_editor/start_editor.py
 | `language/language_request.py` | 152 | 向語言服務發問的形式：`LanguageRequest`、`LanguageReply`，以及保證「回覆最多一次、取消之後不再送達」的 `ReplyOnce`（以鎖保護，服務可以從自己的執行緒回覆） |
 | `language/language_service.py` | 233 | `LanguageService` 協定（文件生命週期加上 `request()`）與 `LanguageServiceRegistry`：把 `DocumentStore` 的開啟 / 變更 / 關閉轉給處理該文件的服務，晚登記的服務會補收已開文件的「開啟」；`request()` 把問題交給第一個處理那份文件又提供那個功能的服務 |
 | `syntax/syntax_model.py` | 244 | 語法分析的模型與介面：`SyntaxCategory`、`SyntaxSpan`（一行裡的一段，欄號 1 起算、以 UTF-16 單位計）、`LineSpan`、`RegionKind` / `StructuralRegion`，`SyntaxSession` 與 `SyntaxEngine` 兩個協定，以及什麼語言都不會的 `NoSyntaxEngine`（`EditorServices.syntax` 的預設值） |
-| `debug/debug_session.py` | 205 | `DebugSession` 協定與資料物件（`DebugLaunchRequest`、`Breakpoint`、`StackFrame`、`Variable`、`DebugState`、`StepKind`），名稱對應 DAP 的概念 |
-| `process/task_service.py` | 169 | `TaskSpec`（指令只能是引數清單，建立後指令與環境變數都不能再改）、`TaskHandle` / `TaskRunner` 協定、`TaskState`、`OutputStream` |
+| `debug/debug_session.py` | 477 | `DebugSession` 協定與資料物件，名稱對應 DAP 的概念：啟動（`DebugLaunchRequest`）與接上（`DebugAttachRequest`）、中斷點（可帶條件）與轉接器的回報（`BreakpointStatus`）、控制指令（繼續 / 暫停 / 逐步，可指定執行緒）、查詢（執行緒、堆疊、變數群組、變數、求值、例外資訊；給一個收回覆的函式，回覆是 `DebugReply`）、事件（`state_changed`、`stopped`、`output`、`breakpoints_reported`） |
+| `process/task_service.py` | 182 | `TaskSpec`（指令只能是引數清單，建立後指令與環境變數都不能再改）、`TaskHandle` / `TaskRunner` 協定、`TaskState`、`OutputStream`；`TaskSpec.binary` 讓輸出與寫入都以位元組進行，給除錯轉接器這類以位元組組框的協定用 |
 | `remote/remote_session.py` | 91 | `RemoteSession` 協定與 `RemoteState`；`task_runner()` 回傳與本機相同的 `TaskRunner` 介面 |
 | `ai/ai_provider.py` | 167 | `AIProvider` 協定與資料物件（`ChatRequest`、`ChatMessage`、`ChatRole`、`ChatResponse`、`ModelInfo`、`CancelToken`） |
 | `ai/ai_settings.py` | 166 | `ProviderSettings` 與 `AISettings`：依供應者分組的設定（金鑰、位址、模型、系統提示詞）與目前選用的供應者；舊格式的 `AI_model` 會被讀成 `openai` 那一組 |
 | `ai/chat_session.py` | 94 | `ChatSession`：保管一段對話、組出下一個請求；失敗或被取消的那一句不留在對話裡 |
 
-除錯、工作執行、遠端三項目前只有介面；既有的 pdb 除錯與 `BaseProcessManager` 仍然走原本的路徑。AI 的實作在
+遠端目前只有介面。除錯與工作執行在 `adapters/` 已經有實作（DAP 與本機子程序），但視窗還沒有改用：既有的 pdb 除錯與 `BaseProcessManager` 仍然走原本的路徑。AI 的實作在
 `adapters/ai/`，對話面板已經改走 `AIProvider`；語法分析的實作在 `adapters/syntax/`，編輯器的高亮已經改走
 `SyntaxEngine`。
 
-### 5.12 `adapters/` — 核心介面的實作（8 模組 / 1,355 行）
+### 5.12 `adapters/` — 核心介面的實作（12 模組 / 2,340 行）
 
 `core/` 只有介面；真正去連某一家服務的程式碼放在這裡。跟 `core/` 一樣不匯入 Qt 與 `pyside_ui/`
 （`test_core_architecture.py` 把它列進 UI 層以下的套件），第三方 SDK 都在用到的時候才匯入。
@@ -465,11 +465,15 @@ start_editor(debug_mode)                       je_editor/start_editor.py
 | 模組 | 行 | 功用 |
 | --- | ---: | --- |
 | `__init__.py` | 58 | 套件說明 |
-| `default_services.py` | 57 | `build_default_services()`：建立 `EditorServices`、接上共用的語法引擎並登記 `SyntaxLanguageService`、載入 AI 設定、登記內建的 AI 供應者；`EditorMain` 與沒有 `services` 的宿主視窗都用它 |
+| `default_services.py` | 67 | `build_default_services()`：建立 `EditorServices`、接上共用的語法引擎並登記 `SyntaxLanguageService`、登記本機工作執行器（`local`）與內建的除錯轉接器（`debugpy`）、載入 AI 設定、登記內建的 AI 供應者；`EditorMain` 與沒有 `services` 的宿主視窗都用它 |
 | `ai/openai_provider.py` | 147 | `OpenAIProvider`：透過 LangChain 的 `ChatOpenAI` 呼叫 OpenAI 相容端點；回覆整份回來後去掉 `</think>` 之前的思考過程 |
 | `ai/anthropic_provider.py` | 201 | `AnthropicProvider`：官方 `anthropic` SDK 的串流請求；可中途取消、回報 token 用量、把 SDK 的錯誤類別轉成給使用者看的說明；會拒絕請求的模型啟用伺服器端 fallback |
 | `ai/builtin_providers.py` | 50 | `register_builtin_ai_providers()`：每個供應者拿到「取得自己那組設定」的函式，所以改設定不必重新登記 |
 | `ai/settings_file.py` | 80 | `.jeditor/ai_config.json` 的讀寫；日誌只記路徑、從不記內容（裡面有 API 金鑰） |
+| `process/local_task_runner.py` | 246 | `LocalTaskRunner` / `LocalTask`：`TaskRunner` 的本機實作。以引數清單啟動子程序（從不經過 shell），標準輸出與標準錯誤各一條執行緒讀取，另一條等程序結束並通知結束代碼；`wait()` 等到結束代碼通知出去為止 |
+| `debug/dap_session.py` | 439 | `DapSession`：以 DAP 實作的 `DebugSession`。啟動轉接器後照協定的順序打招呼（`initialize` → `launch` / `attach` → 等 `initialized` 事件 → 送中斷點 → `configurationDone`），把回應與事件轉成核心層的資料物件；不知道被除錯的是哪種語言，轉接器的指令、啟動引數與接上既有程式時的通道都由外面給 |
+| `debug/socket_channel.py` | 158 | `SocketChannel`：把一條 TCP 連線包成跟位元組模式的工作一樣的形狀。接上已經帶著轉接器在連接埠等待的程式時用它，之後經 SSH 轉送的遠端除錯也是 |
+| `debug/debugpy_adapter.py` | 132 | Python 的轉接器 debugpy：轉接器的指令（編輯器自己的直譯器）、`launch` / `attach` 引數、接上時直接連到連接埠；`register_builtin_debug_adapters()` 在 debugpy 有安裝時才登記 |
 | `syntax/grammar_table.py` | 130 | 內建文法的表（`GrammarSpec`：語言 ID、副檔名、匯入文法套件的函式）、查詢名稱到 `SyntaxCategory` 的對照（`function.builtin` 找不到時退回 `function`），以及讀專案自己查詢檔的 `own_query()`。多支援一種語言就是加一列與一組查詢檔 |
 | `syntax/tree_sitter_engine.py` | 536 | `TreeSitterEngine` 與 `TreeSitterSession`，唯一知道 Tree-sitter 的地方。更新時找出新舊文字不同的最小一段（對齊到字元邊界）告訴舊的樹，只重新解析受影響的部分，並回報語法變了的行；分類以 64 行為一塊、用到才算；同一個節點被多條規則抓到時取查詢裡寫在後面的那一條；位元組欄換算成 UTF-16 欄；超過 2 MB 不解析。文法或查詢載不起來時那個語言變成不支援，不丟例外。讀 Tree-sitter 的位置一律用索引（原因寫在模組裡：0.26.0 的 `.row` / `.column` 會弄壞參考計數） |
 | `syntax/syntax_language_service.py` | 142 | `SyntaxLanguageService`：把語法引擎接成語言服務，文件一開就有語法樹、一變就更新；回答 `SYNTAX_TREE`（那份文件的 session）與 `DOCUMENT_SYMBOLS`（有名稱的結構區塊） |
@@ -562,7 +566,7 @@ Qt 的高亮器重畫時會送出 `textChanged`（不是 `contentsChange`），�
 
 ## 7. 測試與 CI
 
-- `test/` 112 個測試檔、約 19,400 行，與模組大致一對一（`test_fold_regions.py`、`test_shortcut_registry.py`…）。
+- `test/` 114 個測試檔、約 20,300 行，與模組大致一對一（`test_fold_regions.py`、`test_shortcut_registry.py`…）。
 - `core/` 的測試是 `test_core_*.py` 七個檔。其中 `test_core_architecture.py` 守分層：以 `ast` 走訪 `core/` 的
   匯入關係（函式內的匯入也算）、列出 UI 層以下允許向上匯入的模組，並在子行程裡擋掉 Qt 的匯入後實際建立
   `EditorServices`。`test_public_api_contract.py` 釘住 `je_editor.__all__` 的既有名稱、PyBreeze 以模組路徑匯入的
@@ -616,7 +620,7 @@ Qt 的高亮器重畫時會送出 `textChanged`（不是 `contentsChange`），�
 6. **命名遺留**：`utils/logging/loggin_instance.py`、`browser/browser_serach_lineedit.py` 兩處拼字錯誤已成公開路徑，
    要改需同時處理下游 import。
 7. **`core/` 接上了診斷、AI、工作區與語法高亮**：編輯器的診斷與問題面板已經改用統一模型，ruff 解析器（`utils/lint`）仍然輸出舊形式、在 `LintManager` 與面板的入口以 `unify()` 轉換。文件、語言服務、除錯、工作執行與遠端還沒有接上，視窗層仍然
-   各自持有這些狀態。語法引擎目前只用來上色：編輯器直接向引擎要 session，沒有經過 `DocumentStore`，大綱、折疊與智慧選取也還在用各自的分析（`utils/symbols`、`utils/code_folding`、`utils/selection`）。工作區只管「有哪些根目錄」：執行程式、測試面板、終端機、Git 工具列與直譯器仍然只認
+   各自持有這些狀態（除錯與工作執行的實作已經在 `adapters/`，差的是視窗這一端）。語法引擎目前只用來上色：編輯器直接向引擎要 session，沒有經過 `DocumentStore`，大綱、折疊與智慧選取也還在用各自的分析（`utils/symbols`、`utils/code_folding`、`utils/selection`）。工作區只管「有哪些根目錄」：執行程式、測試面板、終端機、Git 工具列與直譯器仍然只認
    主要的根目錄（工作目錄）。
 8. **`import je_editor.core` 仍會載入 Qt**：匯入任何子套件都會先執行 `je_editor/__init__.py`，而它匯入整個 Qt
    應用程式。服務本身不需要 Qt（測試在擋掉 Qt 的行程裡驗證過），但要讓「只用核心」的宿主程式完全不載入 Qt，

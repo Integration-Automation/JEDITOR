@@ -16,8 +16,9 @@ from je_editor.core.ai.ai_provider import (
 from je_editor.core.ai.ai_settings import AISettings, ProviderSettings
 from je_editor.core.ai.chat_session import ChatSession
 from je_editor.core.debug.debug_session import (
-    Breakpoint, DebugLaunchRequest, DebugSession, DebugSessionFactory, DebugState,
-    StackFrame, StepKind, Variable
+    Breakpoint, BreakpointStatus, DebugAttachRequest, DebugLaunchRequest, DebugReply,
+    DebugSession, DebugSessionFactory, DebugState, DebugThread, EvaluateResult, ExceptionInfo,
+    OutputEvent, Scope, StackFrame, StepKind, StopEvent, Variable
 )
 from je_editor.core.diagnostics.diagnostic_model import (
     Diagnostic, DiagnosticStore, Position, QuickFix, RelatedInformation, Severity,
@@ -65,7 +66,9 @@ __all__ = [
     "StructuralRegion", "RegionKind", "NoSyntaxEngine",
     # Debugging
     "DebugSession", "DebugSessionFactory", "DebugState", "DebugLaunchRequest",
-    "Breakpoint", "StackFrame", "Variable", "StepKind",
+    "DebugAttachRequest", "Breakpoint", "BreakpointStatus", "StackFrame", "Variable", "StepKind",
+    "DebugThread", "Scope", "StopEvent", "OutputEvent", "ExceptionInfo", "EvaluateResult",
+    "DebugReply",
     # Task execution
     "TaskRunner", "TaskHandle", "TaskSpec", "TaskState", "OutputStream",
     # Remote sessions

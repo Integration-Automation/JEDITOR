@@ -299,6 +299,7 @@ Core dependencies are installed automatically:
 | langchain_openai + langchain_core | OpenAI-compatible AI provider |
 | anthropic | Anthropic AI provider |
 | tree-sitter + tree-sitter-python / -javascript / -json | Syntax parsing for highlighting |
+| debugpy | Python debug adapter (Debug Adapter Protocol) |
 | watchdog | File system monitoring |
 | pycodestyle | PEP8 style checking |
 | qtconsole | Jupyter/IPython console widget |
@@ -572,8 +573,9 @@ je_editor/
 │   └── main_ui/        Main window, menus, toolbar, panels, settings, AI, console
 ├── core/               Service layer, no Qt: workspace, documents, diagnostics, and the
 │                       interfaces for language services, debugging, tasks, remote and AI
-├── adapters/           Implementations of those interfaces, no Qt: the AI providers and
-│                       the Tree-sitter syntax engine
+├── adapters/           Implementations of those interfaces, no Qt: the AI providers, the
+│                       Tree-sitter syntax engine, the local task runner and the DAP
+│                       debug session
 ├── code_scan/          Ruff execution and watchdog file monitoring
 ├── git_client/         Git operations (GitPython + git CLI)
 ├── plugins/            Plugin registry and loader

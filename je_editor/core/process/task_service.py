@@ -64,6 +64,10 @@ class TaskSpec:
         the working directory, empty to keep the current one
     :param environment: 要加上或覆寫的環境變數 / environment variables to add or override
     :param name: 給使用者看的名稱 / the name to show the user
+    :param binary: 為真時輸出以讀到的位元組原樣送出、寫入也收位元組；給除錯轉接器
+        這種以位元組組框的協定用
+        when true, output is delivered as the bytes that were read and writes
+        take bytes: for protocols framed in bytes, such as a debug adapter's
     :raises JEditorServiceException: 指令是空的，或裡面有不是字串的項目
         when the command is empty or holds something that is not a string
     """
@@ -72,6 +76,7 @@ class TaskSpec:
     working_directory: str = ""
     environment: Mapping[str, str] = field(default_factory=dict)
     name: str = ""
+    binary: bool = False
 
     def __post_init__(self) -> None:
         if isinstance(self.command, str) or not self.command:
@@ -100,7 +105,14 @@ class TaskHandle(Protocol):
 
     @property
     def output(self) -> EventHook:
-        """有輸出時發出，引數是 :class:`OutputStream` 與文字 / Fired with the stream and the text."""
+        """
+        有輸出時發出，引數是 :class:`OutputStream` 與內容
+        Fired with the stream and what was read.
+
+        內容是文字；工作是 ``binary`` 時則是位元組。訂閱者在讀取輸出的執行緒上被呼叫。
+        What was read is text, or bytes for a ``binary`` task. Subscribers are
+        called on the thread that reads the output.
+        """
 
     @property
     def finished(self) -> EventHook:
@@ -130,12 +142,13 @@ class TaskHandle(Protocol):
         :return: 有啟動時為 ``True`` / ``True`` when it started
         """
 
-    def write(self, text: str) -> bool:
+    def write(self, text: str | bytes) -> bool:
         """
         寫到程序的標準輸入
         Write to the process's standard input.
 
-        :param text: 要寫入的文字 / the text to write
+        :param text: 要寫入的文字；工作是 ``binary`` 時給位元組
+            the text to write, or bytes for a ``binary`` task
         :return: 有寫入時為 ``True`` / ``True`` when it was written
         """
 
