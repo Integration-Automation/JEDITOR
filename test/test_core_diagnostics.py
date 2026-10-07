@@ -7,7 +7,7 @@ from je_editor.core.diagnostics.diagnostic_model import (
     Diagnostic, DiagnosticStore, Position, QuickFix, RelatedInformation, Severity,
     TextEdit, TextRange, filter_diagnostics
 )
-from je_editor.core.diagnostics.legacy_diagnostics import from_legacy, to_legacy
+from je_editor.core.diagnostics.legacy_diagnostics import from_legacy, to_legacy, unify
 from je_editor.core.uri.resource_uri import to_path, to_uri
 from je_editor.utils.lint.ruff_diagnostics import (
     SEVERITY_ERROR, SEVERITY_INFO, SEVERITY_WARNING
@@ -282,6 +282,27 @@ class TestLegacyBridge:
 
     def test_a_diagnostic_without_a_resource_has_no_file_path(self):
         assert to_legacy(finding("buffer only")).file_path == ""
+
+
+class TestUnify:
+    def test_a_unified_diagnostic_is_kept_as_it_is(self, uri):
+        already = Diagnostic("from a server", TextRange.from_lines(2), Severity.HINT,
+                             source=SERVER, uri=uri)
+        assert unify([already], RUFF, "file:///ignored.py") == [already]
+
+    def test_an_older_diagnostic_gains_the_source_and_the_resource(self, uri):
+        legacy = LegacyDiagnostic(1, 1, 1, 2, "F401", "unused")
+        converted = unify([legacy], RUFF, uri)[0]
+        assert (converted.source, converted.uri, converted.code) == (RUFF, uri, "F401")
+
+    def test_a_mixed_list_keeps_its_order(self, uri):
+        already = Diagnostic("second", TextRange.from_lines(2), source=SERVER)
+        legacy = LegacyDiagnostic(1, 1, 1, 2, "F401", "first")
+        assert [item.message for item in unify([legacy, already], RUFF, uri)] == [
+            "first", "second"]
+
+    def test_an_empty_list_stays_empty(self):
+        assert unify([], RUFF) == []
 
 
 class TestBothSourcesShareTheModel:

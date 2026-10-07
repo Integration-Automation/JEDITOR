@@ -11,6 +11,11 @@
   `# 初始化並記錄日誌` 被當成「註解掉的程式碼」。這是本專案雙語註解的正常寫法，不該刪。
   要清掉這一項得在 SonarCloud 把 issue 轉成 False Positive（用 API 改狀態需要 Administer
   Issues 權限）。
+- **#21** 〔未確認〕整套測試在機器忙碌時偶爾被 Qt 中止（`Fatal Python error: Aborted`，結束代碼 3）。
+  2026-10-08 看到兩次，都是主工作樹裡同時還有別的 pytest 行程在跑的時候；其中一次留有紀錄，停在
+  `test_toolbar_actions.py::TestTheBranchScan::test_a_subdirectory_still_finds_the_repository` 的 setup，
+  pytest-qt 的 `_process_events` 裡。在獨立的工作樹各跑三次（`132246e` 與診斷那次修改）六次都通過，
+  所以不是那次修改造成的。還沒用 `pytest -s` 抓到 Qt 的訊息，不知道是哪個物件。
 
 ### 下一代編輯器藍圖（`docs/roadmap/2026-editor-next.md`，PR #270）
 
@@ -21,9 +26,9 @@ M0（`je_editor/core/` 服務層）已完成，見 U-20261008-01。以下每個�
   變動的 ID。語系那一項大部分已經有了：四份字典各 438 個鍵，鍵與佔位符的 parity、空白值、退回英文都
   由 `test/test_languages.py` 在 CI 守著；還沒做的是「語系載入改成資料驅動」。〔決定〕UI 的版面方向
   （活動列、編輯區、側邊面板、底部面板）要先定，才能動視窗層。
-- **#10** M2（Tree-sitter、統一診斷）。問題面板、底線、縮圖改用 `core/diagnostics`（現在靠
-  `legacy_diagnostics.py` 互轉）；`utils/lsp/lsp_protocol.diagnostic_entries` 沒有帶出伺服器給的
-  嚴重度，要補上；`LanguageService` 的「發問、等回覆」呼叫形式在這裡定。
+- **#10** M2 剩下 Tree-sitter 那一半（診斷那一半已完成，見 U-20261008-04）：不依賴 Qt 的解析服務、
+  以查詢檔決定語法分類與結構區塊、既有的高亮器改成轉接器；`LanguageService` 的「發問、等回覆」
+  呼叫形式也在這裡定。
 - **#11** M3（工作區與多根專案）。`EditorMain` 持有 `EditorServices`，`working_dir` 改由 `Workspace`
   提供；LSP 連線以「伺服器 + 根目錄」為鍵；搜尋、索引、TODO、Git、診斷改成認得工作區。
 - **#12** M4（除錯器改走 DAP）。實作 `DebugSession`；堆疊、變數、求值的非同步查詢形式在這裡定；

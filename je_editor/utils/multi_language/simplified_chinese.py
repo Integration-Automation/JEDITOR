@@ -473,6 +473,13 @@ simplified_chinese_word_dict = {
     "problems_panel_col_file": "文件",
     "problems_panel_whole_project": "整个项目",
     "problems_panel_all_severities": "所有严重级别",
+    "problems_panel_all_sources": "所有来源",
+    "problems_panel_severity_error": "错误",
+    "problems_panel_severity_warning": "警告",
+    "problems_panel_severity_information": "信息",
+    "problems_panel_severity_hint": "提示",
+    "problems_panel_col_severity": "严重级别",
+    "problems_panel_col_source": "来源",
     "problems_panel_fix": "应用修复",
     # Outline panel
     "tab_menu_outline_panel_tab_name": "大纲",

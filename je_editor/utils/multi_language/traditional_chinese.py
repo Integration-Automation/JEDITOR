@@ -473,6 +473,13 @@ traditional_chinese_word_dict = {
     "problems_panel_col_file": "檔案",
     "problems_panel_whole_project": "整個專案",
     "problems_panel_all_severities": "所有嚴重度",
+    "problems_panel_all_sources": "所有來源",
+    "problems_panel_severity_error": "錯誤",
+    "problems_panel_severity_warning": "警告",
+    "problems_panel_severity_information": "資訊",
+    "problems_panel_severity_hint": "提示",
+    "problems_panel_col_severity": "嚴重度",
+    "problems_panel_col_source": "來源",
     "problems_panel_fix": "套用修正",
     # Outline panel
     "tab_menu_outline_panel_tab_name": "大綱",

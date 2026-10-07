@@ -10,6 +10,8 @@ converts both ways so the two shapes need not change at once.
 """
 from __future__ import annotations
 
+from collections.abc import Iterable
+
 from je_editor.core.diagnostics.diagnostic_model import Diagnostic, Severity, TextRange
 from je_editor.core.uri.resource_uri import to_path, to_uri
 from je_editor.utils.lint.ruff_diagnostics import (
@@ -54,6 +56,27 @@ def from_legacy(diagnostic: LegacyDiagnostic, source: str, uri: str = "") -> Dia
         code=diagnostic.code,
         uri=to_uri(diagnostic.file_path) if diagnostic.file_path else uri,
     )
+
+
+def unify(diagnostics: Iterable[Diagnostic | LegacyDiagnostic], source: str,
+          uri: str = "") -> list[Diagnostic]:
+    """
+    把一份可能混著兩種形式的清單整理成統一模型
+    Bring a list that may mix both shapes into the unified model.
+
+    已經是統一模型的原樣保留；舊形式的才轉換，並補上它沒有記的來源與資源。
+    Anything already unified is kept as it is. Only the older shape is
+    converted, gaining the source and the resource it never recorded.
+
+    :param diagnostics: 兩種形式都可以的診斷 / diagnostics in either shape
+    :param source: 舊形式的診斷是誰報的 / who reported the older-shape ones
+    :param uri: 舊形式的診斷所在的資源 / the resource the older-shape ones are in
+    :return: 統一模型的診斷 / the diagnostics in the unified model
+    """
+    return [
+        item if isinstance(item, Diagnostic) else from_legacy(item, source, uri)
+        for item in diagnostics
+    ]
 
 
 def to_legacy(diagnostic: Diagnostic) -> LegacyDiagnostic:

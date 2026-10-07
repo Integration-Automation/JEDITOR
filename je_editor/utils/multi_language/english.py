@@ -483,6 +483,13 @@ please make sure that the current encoding is consistent with the default encodi
     "problems_panel_col_file": "File",
     "problems_panel_whole_project": "Whole project",
     "problems_panel_all_severities": "All severities",
+    "problems_panel_all_sources": "All sources",
+    "problems_panel_severity_error": "Error",
+    "problems_panel_severity_warning": "Warning",
+    "problems_panel_severity_information": "Information",
+    "problems_panel_severity_hint": "Hint",
+    "problems_panel_col_severity": "Severity",
+    "problems_panel_col_source": "Source",
     "problems_panel_fix": "Apply Fixes",
     # Outline panel
     "tab_menu_outline_panel_tab_name": "Outline",

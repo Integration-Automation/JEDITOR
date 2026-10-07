@@ -477,6 +477,13 @@ japanese_word_dict = {
     "problems_panel_col_file": "ファイル",
     "problems_panel_whole_project": "プロジェクト全体",
     "problems_panel_all_severities": "すべての重大度",
+    "problems_panel_all_sources": "すべてのソース",
+    "problems_panel_severity_error": "エラー",
+    "problems_panel_severity_warning": "警告",
+    "problems_panel_severity_information": "情報",
+    "problems_panel_severity_hint": "ヒント",
+    "problems_panel_col_severity": "重大度",
+    "problems_panel_col_source": "ソース",
     "problems_panel_fix": "修正を適用",
     # Outline panel
     "tab_menu_outline_panel_tab_name": "アウトライン",

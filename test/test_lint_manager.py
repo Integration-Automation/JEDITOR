@@ -7,12 +7,17 @@ import pytest
 from PySide6.QtGui import QTextCharFormat
 from PySide6.QtWidgets import QApplication
 
-from je_editor.utils.lint.ruff_diagnostics import Diagnostic
+from je_editor.core.diagnostics.diagnostic_model import Diagnostic, Severity, TextRange
+from je_editor.utils.lint.ruff_diagnostics import Diagnostic as OlderDiagnostic
 
 SAMPLE = Diagnostic(
-    line=1, column=1, end_line=1, end_column=7, code="F401", message="unused import")
+    "unused import", TextRange.from_lines(1, 1, 1, 7), Severity.ERROR, source="ruff", code="F401")
 OTHER = Diagnostic(
-    line=2, column=1, end_line=2, end_column=4, code="E701", message="multiple statements")
+    "multiple statements", TextRange.from_lines(2, 1, 2, 4), Severity.ERROR, source="ruff",
+    code="E701")
+# The same finding as SAMPLE in the shape ruff's parser produces
+OLDER_SAMPLE = OlderDiagnostic(
+    line=1, column=1, end_line=1, end_column=7, code="F401", message="unused import")
 
 
 @pytest.fixture(scope="module")
@@ -82,6 +87,17 @@ class TestLintManagerState:
         assert editor.lint_manager.set_diagnostics([SAMPLE]) is True
         assert editor.lint_manager.set_diagnostics([SAMPLE]) is False
 
+    def test_the_older_shape_is_still_accepted(self, editor):
+        editor.lint_manager.set_diagnostics([OLDER_SAMPLE])
+        assert editor.lint_manager.diagnostics() == [SAMPLE]
+
+    def test_the_older_shape_is_stamped_with_the_editor_file(self, editor, tmp_path):
+        from je_editor.core.uri.resource_uri import to_uri
+        editor.current_file = str(tmp_path / "module.py")
+        editor.lint_manager.set_diagnostics([OLDER_SAMPLE])
+        stored = editor.lint_manager.diagnostics()[0]
+        assert (stored.source, stored.uri) == ("ruff", to_uri(tmp_path / "module.py"))
+
     def test_for_line(self, editor):
         editor.lint_manager.set_diagnostics([SAMPLE, OTHER])
         assert editor.lint_manager.for_line(1) == [SAMPLE]
@@ -140,8 +156,7 @@ class TestUnderlines:
 
     def test_range_on_a_missing_line_is_refused(self, editor):
         editor.setPlainText("x = 1\n")
-        missing = Diagnostic(
-            line=99, column=1, end_line=99, end_column=4, code="E1", message="gone")
+        missing = Diagnostic("gone", TextRange.from_lines(99, 1, 99, 4), code="E1")
         assert editor._diagnostic_cursor(editor.document(), missing) is None
 
     def test_no_diagnostics_means_no_underline(self, editor):
@@ -153,14 +168,14 @@ class TestUnderlines:
     def test_a_diagnostic_past_the_end_is_skipped(self, editor):
         editor.setPlainText("x = 1\n")
         editor.lint_manager.set_diagnostics([
-            Diagnostic(line=99, column=1, end_line=99, end_column=4, code="E1", message="gone")])
+            Diagnostic("gone", TextRange.from_lines(99, 1, 99, 4), code="E1")])
         editor.refresh_lint_display()
         assert self._wave_selections(editor) == []
 
     def test_zero_width_range_still_marks_a_character(self, editor):
         editor.setPlainText("x = 1\n")
         editor.lint_manager.set_diagnostics([
-            Diagnostic(line=1, column=1, end_line=1, end_column=1, code="E2", message="here")])
+            Diagnostic("here", TextRange.from_lines(1, 1, 1, 1), code="E2")])
         editor.refresh_lint_display()
         assert len(self._wave_selections(editor)) == 1
 

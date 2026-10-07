@@ -59,6 +59,8 @@ class LspClient(QObject):
         super().__init__(parent)
         self._session: LspSession | None = None
         self._file_path: str | None = None
+        # 目前接上的伺服器指令 / The command of the server attached right now
+        self._server_command: list[str] = []
         self._version = 0
         self._pending_completion_id: int | None = None
         self._pending_definition_id: int | None = None
@@ -89,6 +91,18 @@ class LspClient(QObject):
         """伺服器是否正在執行 / Whether the server is running."""
         return self._session is not None and self._session.running
 
+    @property
+    def server_name(self) -> str:
+        """
+        目前接上的伺服器名稱，沒接上時為空字串
+        The name of the attached server, empty when none is attached.
+
+        伺服器自己沒有說明診斷來源時，問題面板用這個名稱當作來源。
+        When a server names no source for a diagnostic, the problems panel shows
+        this as the source.
+        """
+        return Path(self._server_command[0]).stem if self._server_command else ""
+
     def start_for(self, file_path: str, servers: dict | None = None) -> bool:
         """
         接上負責這個檔案的語言伺服器
@@ -113,6 +127,7 @@ class LspClient(QObject):
             return False
         self._session = session
         self._file_path = file_path
+        self._server_command = list(command)
         session.register_document(file_uri(file_path), self)
         return True
 
@@ -406,6 +421,7 @@ class LspClient(QObject):
         process is shut down once no editor is using that server any more.
         """
         session, self._session = self._session, None
+        self._server_command = []
         self._pending_completion_id = None
         self._pending_definition_id = None
         self._pending_hover_id = None

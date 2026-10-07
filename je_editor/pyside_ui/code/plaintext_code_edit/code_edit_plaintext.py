@@ -14,6 +14,9 @@ from PySide6.QtWidgets import (
     QPlainTextEdit, QWidget, QTextEdit, QCompleter, QInputDialog, QMenu
 )
 
+from je_editor.core.diagnostics.diagnostic_model import Diagnostic
+from je_editor.core.diagnostics.lsp_diagnostics import from_lsp_entries
+from je_editor.core.uri.resource_uri import to_uri
 from je_editor.pyside_ui.code.bookmark.bookmark_manager import BookmarkManager
 from je_editor.pyside_ui.code.breakpoint.breakpoint_manager import BreakpointManager
 from je_editor.pyside_ui.code.folding.folding_manager import FoldingManager
@@ -42,7 +45,6 @@ from je_editor.utils.debugger.pdb_commands import (
 )
 from je_editor.utils.file_diff.line_status import apply_hunk
 from je_editor.utils.file_diff.unified import unified_diff_text
-from je_editor.utils.lint.ruff_diagnostics import diagnostics_from_entries
 from je_editor.utils.macro.keystroke_macro import KeystrokeMacro
 from je_editor.utils.selection.surround import SURROUND_PAIRS, surround
 from je_editor.pyside_ui.main_ui.save_settings.shortcut_setting import bind, shortcut_for
@@ -1056,13 +1058,17 @@ class CodeEditor(QPlainTextEdit):
         Show the diagnostics a language server reported.
 
         與 ruff 的診斷走同一條顯示路徑，因此非 Python 檔也有波浪底線與問題面板。
+        伺服器給的嚴重度與來源都保留；伺服器沒說來源時用它自己的名稱。
         These take the same path as ruff's, so a non-Python file gets the same
-        underlines and the same problems panel.
+        underlines and the same problems panel. The server's severity and source
+        are kept, and its own name stands in when it names no source.
 
         :param entries: 伺服器回報的診斷 / the diagnostics the server reported
         :return: 顯示內容有變時為 ``True`` / ``True`` when the display changed
         """
-        if not self.lint_manager.set_diagnostics(diagnostics_from_entries(entries)):
+        uri = to_uri(self.current_file) if self.current_file else ""
+        diagnostics = from_lsp_entries(entries, uri, self.lsp_client.server_name)
+        if not self.lint_manager.set_diagnostics(diagnostics):
             return False
         self.refresh_lint_display()
         return True
@@ -1093,18 +1099,19 @@ class CodeEditor(QPlainTextEdit):
 
     @staticmethod
     def _diagnostic_cursor(
-            document: QTextDocument, diagnostic) -> QTextCursor | None:
+            document: QTextDocument, diagnostic: Diagnostic) -> QTextCursor | None:
         """
         取得診斷範圍的游標，範圍不存在時回傳 ``None``
         Return a cursor spanning a diagnostic, or ``None`` when it is out of range.
         """
-        block = document.findBlockByNumber(diagnostic.line - 1)
+        span = diagnostic.range
+        block = document.findBlockByNumber(span.start.line - 1)
         if not block.isValid():
             return None
-        start = block.position() + max(0, diagnostic.column - 1)
-        end_block = document.findBlockByNumber(diagnostic.end_line - 1)
+        start = block.position() + max(0, span.start.column - 1)
+        end_block = document.findBlockByNumber(span.end.line - 1)
         if end_block.isValid():
-            end = end_block.position() + max(0, diagnostic.end_column - 1)
+            end = end_block.position() + max(0, span.end.column - 1)
         else:
             end = block.position() + block.length() - 1
         # 零寬度的範圍看不見，至少標一個字元

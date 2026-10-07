@@ -114,7 +114,8 @@ same picker back into command mode.
 `ruff` runs on the **buffer** rather than the file on disk, on a worker thread once typing pauses, so
 unsaved edits are covered and a stale result from a superseded run is discarded. Findings are
 underlined in place and listed in the Problems panel, where **Apply Fixes** applies everything ruff
-can fix by itself.
+can fix by itself. A language server's diagnostics land in the same list, and the panel filters both
+by severity (Error, Warning, Information, Hint) and by source.
 
 <p align="center">
   <img src="image/screenshot-problems-panel.png" alt="Problems panel listing ruff diagnostics"/>
