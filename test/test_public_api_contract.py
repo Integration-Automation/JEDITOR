@@ -67,7 +67,10 @@ class TestThePackageExports:
 class TestTheInternalsDownstreamImports:
     @pytest.mark.parametrize("module_name, attribute", DOWNSTREAM_INTERNALS)
     def test_the_name_is_still_at_its_module_path(self, module_name, attribute):
-        assert hasattr(importlib.import_module(module_name), attribute)
+        # Every module name is a literal from the list above; nothing from
+        # outside this file reaches the import.
+        module = importlib.import_module(module_name)  # nosemgrep
+        assert hasattr(module, attribute)
 
 
 @pytest.fixture(scope="module")
