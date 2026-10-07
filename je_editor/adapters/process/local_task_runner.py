@@ -14,7 +14,7 @@ same interface.
 from __future__ import annotations
 
 import os
-import subprocess
+import subprocess  # nosec B404 - 執行工作就是它的用途；一律以引數清單啟動，shell=False
 import threading
 from typing import IO
 
@@ -98,7 +98,10 @@ class LocalTask:
             if self._state is not TaskState.PENDING:
                 return False
             try:
-                self._process = subprocess.Popen(
+                # 指令來自 TaskSpec：建立時就確認過是非空字串組成的清單，而且從不經過 shell
+                # The command comes from a TaskSpec, checked on creation to be a list of
+                # non-empty strings, and never goes through a shell
+                self._process = subprocess.Popen(  # nosemgrep  # noqa: S603  # nosec B603
                     list(self._spec.command), stdin=subprocess.PIPE, stdout=subprocess.PIPE,
                     stderr=subprocess.PIPE, cwd=self._spec.working_directory or None,
                     env={**os.environ, **self._spec.environment}, shell=False,

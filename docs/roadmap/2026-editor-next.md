@@ -16,13 +16,13 @@
 | M2 — Tree-sitter half | Implemented: `je_editor/adapters/syntax/` colours Python, JavaScript and JSON; folding, outline and selection still use their own analysers | U-20261008-08, `PROGRESS.md` |
 | M3 — Workspace + multi-root | Implemented; per-root environments and Git are left over | U-20261008-07, `PROGRESS.md` |
 | M5 — AI provider abstraction + Anthropic | Implemented: `je_editor/adapters/ai/` | U-20261008-05 |
-| M4 — Debugger migration to DAP | Service implemented and tested against debugpy: `je_editor/adapters/debug/`; the debugger UI still drives pdb | U-20261008-11, `PROGRESS.md` |
+| M4 — Debugger migration to DAP | Implemented: `je_editor/adapters/debug/` and the Debugger panel; the pdb console remains as the fallback without debugpy | U-20261008-11, U-20261008-12, `PROGRESS.md` |
 | M1, M6, M7, M8 | Not started | `PROGRESS.md` |
 
 M0 defines the service layer and proves it runs without Qt. What it left to later milestones:
 
 - the editor window consumes the services one area at a time: diagnostics, the AI chat panel,
-  the workspace and syntax highlighting do so far;
+  the workspace, syntax highlighting and debugging do so far;
 - debugging, task execution and remote sessions are interfaces with no implementation yet (M4
   and M6 supply them), and the request-and-reply calls of a language service (completion, hover
   and the rest) take their shape with Tree-sitter in M2;

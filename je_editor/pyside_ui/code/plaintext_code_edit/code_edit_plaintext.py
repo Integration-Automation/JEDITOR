@@ -15,6 +15,7 @@ from PySide6.QtWidgets import (
 )
 
 from je_editor.core.diagnostics.diagnostic_model import Diagnostic
+from je_editor.core.debug.debug_session import Breakpoint, StepKind
 from je_editor.core.diagnostics.lsp_diagnostics import from_lsp_entries
 from je_editor.core.uri.resource_uri import to_uri
 from je_editor.pyside_ui.code.bookmark.bookmark_manager import BookmarkManager
@@ -291,6 +292,10 @@ class CodeEditor(QPlainTextEdit):
             QtGui.QFontMetricsF(self.font()).horizontalAdvance("        ")
         )
 
+        # 除錯時程式停在的那一行；要在第一次畫目前行之前就有值
+        # The line the program being debugged has stopped on; it has to exist
+        # before the current line is first painted
+        self._execution_cursor: QTextCursor | None = None
         # 語法高亮；依檔名挑選，新分頁先當成 Python
         # Syntax highlighting, chosen by file name; a new tab counts as Python for now
         self.highlighter: QtGui.QSyntaxHighlighter | None = None
@@ -1463,8 +1468,50 @@ class CodeEditor(QPlainTextEdit):
             selections.append(selection)
             selection.format.setBackground(color_of_the_line)
             selection.format.setProperty(QTextFormat.FullWidthSelection, True)
+        self._append_execution_selection(selections)
         self._append_lint_selections(selections)
         self.setExtraSelections(selections)
+
+    def _append_execution_selection(self, selections: list) -> None:
+        """把「程式停在這一行」的底色加進去 / Add the background of the line the program stopped on."""
+        if self._execution_cursor is None:
+            return
+        selection = QTextEdit.ExtraSelection()
+        selection.format.setBackground(actually_color_dict.get("debug_execution_line_color"))
+        selection.format.setProperty(QTextFormat.FullWidthSelection, True)
+        selection.cursor = QTextCursor(self._execution_cursor)
+        selection.cursor.clearSelection()
+        selections.append(selection)
+
+    def set_execution_line(self, line: int | None) -> bool:
+        """
+        標出（或取消）除錯時程式停在的那一行
+        Mark, or unmark, the line the program being debugged has stopped on.
+
+        :param line: 1 起算的行號，``None`` 表示取消 / the 1-based line, or ``None`` to unmark
+        :return: 有標出來時為 ``True`` / ``True`` when a line is now marked
+        """
+        block = self.document().findBlockByNumber(line - 1) if line is not None else None
+        if block is None or not block.isValid():
+            changed = self._execution_cursor is not None
+            self._execution_cursor = None
+            if changed:
+                self.highlight_current_line()
+            return False
+        self._execution_cursor = QTextCursor(block)
+        self.setTextCursor(QTextCursor(block))
+        self.centerCursor()
+        self.highlight_current_line()
+        return True
+
+    def execution_line(self) -> int | None:
+        """
+        目前標著的執行行
+        The execution line that is marked.
+
+        :return: 1 起算的行號，沒有標時為 ``None`` / the 1-based line, or ``None`` when none is marked
+        """
+        return None if self._execution_cursor is None else self._execution_cursor.blockNumber() + 1
 
     def _highlight_matching_bracket(self) -> None:
         """
@@ -1505,6 +1552,7 @@ class CodeEditor(QPlainTextEdit):
                     selections.append(sel)
 
         self._append_occurrence_selections(selections, text, pos)
+        self._append_execution_selection(selections)
         self._append_lint_selections(selections)
         self.setExtraSelections(selections)
         self._show_lint_message_for_caret()
@@ -2436,7 +2484,42 @@ class CodeEditor(QPlainTextEdit):
         result = self.breakpoint_manager.toggle(line)
         self.line_number.update()
         self.send_breakpoint_change(line, result)
+        self.sync_debug_breakpoints()
         return result
+
+    def debug_breakpoints(self) -> list[Breakpoint]:
+        """
+        取得這個檔案的中斷點，給除錯工作階段用
+        This file's breakpoints, for a debug session.
+
+        :return: 中斷點；還沒有檔名的分頁沒有 / the breakpoints, none for a tab with no file yet
+        """
+        if self.current_file is None:
+            return []
+        uri = to_uri(str(self.current_file))
+        return [Breakpoint(uri, line + 1, condition)
+                for line, condition in self.breakpoint_manager.breakpoints()]
+
+    def _debug_controller(self):
+        """取得視窗的除錯控制，沒有時為 ``None`` / The window's debugging control, or ``None``."""
+        from je_editor.pyside_ui.main_ui.debug_panel.debug_controller import DebugController
+
+        window = getattr(self.main_window, "main_window", None)
+        controller = getattr(window, "debug_controller", None)
+        return controller if isinstance(controller, DebugController) else None
+
+    def sync_debug_breakpoints(self) -> bool:
+        """
+        除錯中途把這個檔案的中斷點重新交給除錯工作階段
+        Hand this file's breakpoints to the debug session again while debugging.
+
+        :return: 有送出時為 ``True`` / ``True`` when they were sent
+        """
+        controller = self._debug_controller()
+        if controller is None or not controller.is_active() or self.current_file is None:
+            return False
+        controller.set_breakpoints(to_uri(str(self.current_file)), self.debug_breakpoints())
+        return True
 
     def send_breakpoint_change(self, line: int, is_set: bool) -> bool:
         """
@@ -2475,10 +2558,28 @@ class CodeEditor(QPlainTextEdit):
             the action's name
         :return: 有送出時為 ``True`` / ``True`` when the command was sent
         """
+        if self._send_to_debug_session(action):
+            return True
         command = step_command(action)
         if command is None:
             return False
         return self._write_debugger_line(command)
+
+    def _send_to_debug_session(self, action: str) -> bool:
+        """把動作交給除錯工作階段；沒有在除錯時回傳 ``False`` / Hand an action to the debug session, or return ``False``."""
+        controller = self._debug_controller()
+        if controller is None or not controller.is_active():
+            return False
+        steps = {"over": StepKind.OVER, "into": StepKind.INTO, "out": StepKind.OUT}
+        if action in steps:
+            controller.step(steps[action])
+        elif action == "continue":
+            controller.resume()
+        elif action == "quit":
+            controller.stop()
+        else:
+            return False
+        return True
 
     def send_breakpoints_to_debugger(self) -> int:
         """

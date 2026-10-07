@@ -117,6 +117,20 @@ edit → document.contentsChange → TreeSitterHighlighter._analyse_again()
   → lines after the edit: block state toggled so Qt carries on; lines before it: next event-loop turn
 ```
 
+**Debugging**
+
+```
+F9 / Run → Debug → run_debugger() (menu/run_menu/under_run_menu/build_debug_menu.py)
+  → controller_of(window) [EditorMain.debug_controller, when the debugpy adapter is registered]
+      → start_debugging() (main_ui/debug_panel/debug_actions.py): breakpoints of every open editor
+        → DebugController.launch() → services.debug_adapters["debugpy"]() → DapSession
+          → LocalTaskRunner starts `python -m debugpy.adapter` → DAP handshake → program runs
+      | no adapter → ExecManager runs `python -m pdb` with ProcessInput (the earlier console)
+session thread: stopped / output / replies → DebugController Qt signals → DebugPanelWidget
+  → frame chosen → show_execution_line() → go_to_new_tab(path) → CodeEditor.set_execution_line()
+editor shortcuts (continue, step) → CodeEditor.send_debugger_command() → controller, else pdb
+```
+
 **Plugin install and load**
 
 ```
@@ -156,7 +170,7 @@ Plugin browser (pyside_ui/main_ui/plugin_browser/) → github_api.fetch_repo_tre
   `languages.register()`. Any source reports findings with `diagnostics.publish(source, uri, ...)`.
   Implementations live in `adapters/`: the AI providers `openai` and `anthropic`, the local task
   runner (`task_runners["local"]`), the `debugpy` debug adapter (`debug_adapters["debugpy"]`,
-  a factory returning a new `DebugSession`; the window does not use it yet), and the
+  a factory returning a new `DebugSession`, which `EditorMain.debug_controller` drives), and the
   Tree-sitter syntax engine, which `build_default_services()` sets as `services.syntax` and
   registers as the `syntax` language service. Questions to language services go through
   `languages.request(LanguageRequest, on_reply)`, which returns a cancel function. A plugin

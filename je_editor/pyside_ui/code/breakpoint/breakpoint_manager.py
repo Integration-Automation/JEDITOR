@@ -26,6 +26,9 @@ class BreakpointManager:
         """
         self._code_edit = code_edit
         self._cursors: list[QTextCursor] = []
+        # 跟 _cursors 一一對應：每個中斷點的條件，空字串表示一律停
+        # In step with _cursors: each breakpoint's condition, empty to stop every time
+        self._conditions: list[str] = []
 
     def lines(self) -> list[int]:
         """
@@ -57,14 +60,60 @@ class BreakpointManager:
         existing = next(
             (cursor for cursor in self._cursors if cursor.blockNumber() == line), None)
         if existing is not None:
-            self._cursors.remove(existing)
+            index = self._cursors.index(existing)
+            del self._cursors[index]
+            del self._conditions[index]
             return False
         block = self._code_edit.document().findBlockByNumber(line)
         if not block.isValid():
             return False
         cursor = QTextCursor(block)
         self._cursors.append(cursor)
+        self._conditions.append("")
         return True
+
+    def condition(self, line: int) -> str:
+        """
+        取得某一行中斷點的條件
+        The condition of the breakpoint on a line.
+
+        :param line: 以 0 起算的行號 / the 0-based line number
+        :return: 條件；那一行沒有中斷點或沒有條件時為空字串
+            the condition, empty when the line has no breakpoint or no condition
+        """
+        return dict(self.breakpoints()).get(line, "")
+
+    def set_condition(self, line: int, condition: str) -> bool:
+        """
+        設定某一行中斷點的條件；那一行沒有中斷點時先加上
+        Set the condition of the breakpoint on a line, adding the breakpoint first when there is none.
+
+        :param line: 以 0 起算的行號 / the 0-based line number
+        :param condition: 成立才停下來的條件，空字串表示一律停
+            the condition that has to hold to stop, empty to stop every time
+        :return: 那一行現在有中斷點時為 ``True`` / ``True`` when the line now has a breakpoint
+        """
+        if not self.has_breakpoint(line) and not self.toggle(line):
+            return False
+        for index, cursor in enumerate(self._cursors):
+            if cursor.blockNumber() == line:
+                self._conditions[index] = condition
+        return True
+
+    def breakpoints(self) -> list[tuple[int, str]]:
+        """
+        取得每個中斷點的行號與條件
+        Every breakpoint's line and condition.
+
+        編輯可能讓兩個中斷點落在同一行，這時只留先設的那一個。
+        Editing can bring two breakpoints onto one line, and then the one set first is kept.
+
+        :return: ``(以 0 起算的行號, 條件)``，依行號排序 / ``(0-based line, condition)``, sorted by line
+        """
+        found: dict[int, str] = {}
+        for cursor, condition in zip(self._cursors, self._conditions):
+            found.setdefault(cursor.blockNumber(), condition)
+        return sorted(found.items())
 
     def clear(self) -> bool:
         """
@@ -76,6 +125,7 @@ class BreakpointManager:
         if not self._cursors:
             return False
         self._cursors = []
+        self._conditions = []
         return True
 
     def pdb_lines(self) -> list[int]:

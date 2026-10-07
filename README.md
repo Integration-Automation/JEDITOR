@@ -388,7 +388,7 @@ yet. See the *Core Services* page of the [documentation](https://je-editor.readt
 ### Code Execution & Debugging
 
 - **Run Python scripts** (F5) -- Execute the current file with real-time output streaming.
-- **Debug mode** (F9) -- Launch the Python debugger for step-through debugging, with breakpoints toggled from the gutter (`Ctrl+F9`).
+- **Debug mode** (F9) -- Debug through the Debug Adapter Protocol (debugpy): a Debug Panel with threads, the call stack, variables you can open, expression evaluation and the program's output; the stopped line is marked in the editor. Breakpoints are toggled from the gutter (`Ctrl+F9`) and can carry a condition, and a program started with `debugpy --listen` can be attached to.
 - **Shell commands** -- Execute arbitrary shell/terminal commands from within the editor.
 - **Virtual environment detection** -- Automatically detects and activates Python virtual environments.
 - **Process management** -- Stop individual or all running processes.

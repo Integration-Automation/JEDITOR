@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import queue
 import socket
-import subprocess
+import subprocess  # nosec B404 - 啟動一個等待除錯器的程式來測試「接上」
 import sys
 import threading
 import time
@@ -222,7 +222,9 @@ class TestAttaching:
         with socket.socket() as probe:
             probe.bind(("127.0.0.1", 0))
             port = probe.getsockname()[1]
-        waiting = subprocess.Popen(
+        # 這台機器的直譯器與剛寫出來的測試檔，以引數清單啟動
+        # This machine's interpreter and the test file just written, started from an argument list
+        waiting = subprocess.Popen(  # nosemgrep  # noqa: S603  # nosec B603
             [sys.executable, "-m", "debugpy", "--listen", f"127.0.0.1:{port}", "--wait-for-client",
              program], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         try:

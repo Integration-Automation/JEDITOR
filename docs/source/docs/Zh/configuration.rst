@@ -79,6 +79,8 @@ user_color_setting.json
      - 語法高亮：關鍵字、字串、註解、數字
    * - ``syntax_function_color`` / ``syntax_builtin_color`` / ``syntax_self_color``
      - 語法高亮：函式名稱、內建名稱與型別名稱、 ``self`` / ``this``
+   * - ``debug_execution_line_color``
+     - 除錯時程式停下來的那一行
    * - ``diff_added_marker_color`` / ``diff_modified_marker_color`` /
        ``diff_removed_marker_color``
      - 行號區的 Git 變更標記

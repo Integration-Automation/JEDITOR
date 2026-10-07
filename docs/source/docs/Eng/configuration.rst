@@ -79,6 +79,8 @@ Controls the color scheme for the editor and output:
      - Syntax highlighting: keywords, strings, comments, numbers
    * - ``syntax_function_color`` / ``syntax_builtin_color`` / ``syntax_self_color``
      - Syntax highlighting: function names, built-ins and type names, ``self`` / ``this``
+   * - ``debug_execution_line_color``
+     - The line the program being debugged has stopped on
    * - ``diff_added_marker_color`` / ``diff_modified_marker_color`` /
        ``diff_removed_marker_color``
      - Git change markers in the gutter

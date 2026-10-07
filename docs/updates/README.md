@@ -58,6 +58,7 @@ In the same commit: delete the item from `progress.md`, add a `#done` entry here
 
 | ID | Date | Title | Tags | Batch |
 |---|---|---|---|---|
+| U-20261008-12 | 2026-10-08 | 藍圖 M4（下）：除錯面板改走 DAP；條件中斷點；接上執行中的程式 | #done #decision #roadmap #debug | [2026-10](2026-10.md) |
 | U-20261008-11 | 2026-10-08 | 藍圖 M4（上）：DAP 除錯服務、本機工作執行器、debugpy 轉接器 | #decision #roadmap #debug | [2026-10](2026-10.md) |
 | U-20261008-10 | 2026-10-08 | M2 的 CI 結果：SonarCloud 兩筆 S5863 改掉；Python 3.10 一次偶發失敗 | #ci #roadmap | [2026-10](2026-10.md) |
 | U-20261008-09 | 2026-10-08 | 恢復 PyBreeze 釘住的 LspClient.start_for 參數清單；把 PyBreeze 的契約測試列為檢查 | #fix #decision #contract | [2026-10](2026-10.md) |
@@ -102,5 +103,5 @@ In the same commit: delete the item from `progress.md`, add a `#done` entry here
 
 | File | Period | Entries |
 |---|---|---:|
-| [2026-10.md](2026-10.md) | 2026-10 | 19 |
+| [2026-10.md](2026-10.md) | 2026-10 | 20 |
 | [2026-09.md](2026-09.md) | 2026-09 | 20 |
