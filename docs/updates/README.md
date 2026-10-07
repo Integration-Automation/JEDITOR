@@ -58,6 +58,7 @@ In the same commit: delete the item from `progress.md`, add a `#done` entry here
 
 | ID | Date | Title | Tags | Batch |
 |---|---|---|---|---|
+| U-20261008-10 | 2026-10-08 | M2 的 CI 結果：SonarCloud 兩筆 S5863 改掉；Python 3.10 一次偶發失敗 | #ci #roadmap | [2026-10](2026-10.md) |
 | U-20261008-09 | 2026-10-08 | 恢復 PyBreeze 釘住的 LspClient.start_for 參數清單；把 PyBreeze 的契約測試列為檢查 | #fix #decision #contract | [2026-10](2026-10.md) |
 | U-20261008-08 | 2026-10-08 | 藍圖 M2：Tree-sitter 語法引擎與高亮；語言服務的發問形式；四個既有問題 | #done #decision #roadmap #syntax | [2026-10](2026-10.md) |
 | U-20261008-07 | 2026-10-08 | 藍圖 M3：工作區與多根專案 | #done #roadmap #workspace | [2026-10](2026-10.md) |
@@ -100,5 +101,5 @@ In the same commit: delete the item from `progress.md`, add a `#done` entry here
 
 | File | Period | Entries |
 |---|---|---:|
-| [2026-10.md](2026-10.md) | 2026-10 | 17 |
+| [2026-10.md](2026-10.md) | 2026-10 | 18 |
 | [2026-09.md](2026-09.md) | 2026-09 | 20 |

@@ -16,6 +16,11 @@
   `test_toolbar_actions.py::TestTheBranchScan::test_a_subdirectory_still_finds_the_repository` 的 setup，
   pytest-qt 的 `_process_events` 裡。在獨立的工作樹各跑三次（`132246e` 與診斷那次修改）六次都通過，
   所以不是那次修改造成的。還沒用 `pytest -s` 抓到 Qt 的訊息，不知道是哪個物件。
+  同一天 CI 也有一次：`45655aa` 的 Python 3.10 那一格在單元測試那一步以結束代碼 1 失敗（是測試失敗，不是當掉），
+  3.11 ～ 3.14 通過；下一個 commit `d4c8f27`（同一份程式碼加一個小修正）五個版本都通過，在本機以 Python 3.10.22
+  跑同一份程式碼兩次也都通過（2654 passed）。那一格的記錄檔要登入才看得到，所以不知道是哪個測試。
+  另外，U-20261008-08 找到並修掉了這一類問題的其中一個成因（走訪所有元件時發生垃圾回收），
+  但那個的表現是當掉，跟這裡的兩種都不一樣。
 
 ### 下一代編輯器藍圖（`docs/roadmap/2026-editor-next.md`，PR #270）
 

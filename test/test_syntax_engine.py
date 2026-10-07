@@ -67,9 +67,12 @@ class TestTheModel:
         region = StructuralRegion(RegionKind.CLASS, TextRange.from_lines(3, 1, 9, 1))
         assert (region.is_multiline, region.name) == (True, "")
 
-    def test_spans_and_line_spans_compare_by_value(self):
-        assert SyntaxSpan(1, 3, SyntaxCategory.KEYWORD) == SyntaxSpan(1, 3, SyntaxCategory.KEYWORD)
-        assert LineSpan(2, 5) == LineSpan(2, 5)
+    def test_spans_and_line_spans_are_values(self):
+        # Equal fields make one value, so a set keeps a single copy of it.
+        fields = (1, 3, SyntaxCategory.KEYWORD)
+        spans = {SyntaxSpan(*fields), SyntaxSpan(*fields), SyntaxSpan(2, 3, SyntaxCategory.KEYWORD)}
+        lines = {LineSpan(2, 5), LineSpan(*(2, 5)), LineSpan(2, 6)}
+        assert (len(spans), len(lines)) == (2, 2)
 
     def test_the_engine_that_knows_nothing(self):
         nothing = NoSyntaxEngine()
