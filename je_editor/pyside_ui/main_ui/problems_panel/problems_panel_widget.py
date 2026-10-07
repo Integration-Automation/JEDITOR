@@ -14,7 +14,6 @@ always comes out in the same order.
 """
 from __future__ import annotations
 
-import os
 from pathlib import Path
 
 from PySide6.QtCore import Qt
@@ -29,6 +28,9 @@ from je_editor.core.diagnostics.legacy_diagnostics import unify
 from je_editor.core.uri.resource_uri import to_path, to_uri, uri_key
 from je_editor.pyside_ui.main_ui.problems_panel.project_lint_worker import (
     ProjectLintWorker
+)
+from je_editor.pyside_ui.main_ui.workspace.workspace_roots import (
+    local_root_paths, primary_root_path
 )
 from je_editor.utils.file.open.open_file import read_file_with_encoding
 from je_editor.utils.multi_language.multi_language_wrapper import language_wrapper
@@ -217,7 +219,7 @@ class ProblemsPanelWidget(QWidget):
         :return: 是否啟動了檢查 / whether a check was started
         """
         self._stop_project_check()
-        worker = ProjectLintWorker(self._project_root(), self)
+        worker = ProjectLintWorker(local_root_paths(self._main_window), self)
         self._project_worker = worker
         worker.linted.connect(self._on_project_linted)
         # 先放掉參考再刪除，避免之後對已刪除的物件呼叫方法
@@ -266,11 +268,8 @@ class ProblemsPanelWidget(QWidget):
         super().closeEvent(event)
 
     def _project_root(self) -> str:
-        """取得要檢查的專案根目錄 / The project root to check."""
-        working_dir = getattr(self._main_window, "working_dir", None)
-        if working_dir and Path(str(working_dir)).is_dir():
-            return str(working_dir)
-        return os.getcwd()
+        """取得主要的專案根目錄 / The primary project root."""
+        return primary_root_path(self._main_window)
 
     def visible_diagnostics(self) -> list[Diagnostic]:
         """
@@ -321,10 +320,14 @@ class ProblemsPanelWidget(QWidget):
 
         :return: ruff 可用並已執行時為 ``True`` / ``True`` when ruff ran
         """
-        target = self._project_root() if self.project_check.isChecked() else self._current_file()
-        if target is None:
-            return False
-        if not apply_fixes(target):
+        if self.project_check.isChecked():
+            targets = local_root_paths(self._main_window)
+        else:
+            current = self._current_file()
+            targets = [] if current is None else [current]
+        # 每個目標都要試：一個根目錄沒有可修的東西，不代表下一個也沒有
+        # Every target is tried: one root having nothing to fix says nothing about the next
+        if not [target for target in targets if apply_fixes(target)]:
             return False
         self._reload_current_tab()
         self.refresh()

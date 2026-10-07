@@ -10,7 +10,6 @@ line it failed on.
 """
 from __future__ import annotations
 
-import os
 import subprocess  # nosec B404 - 以引數清單執行 pytest，未使用 shell
 import sys
 from pathlib import Path
@@ -21,6 +20,7 @@ from PySide6.QtWidgets import (
     QSplitter, QTreeWidget, QTreeWidgetItem, QVBoxLayout, QWidget
 )
 
+from je_editor.pyside_ui.main_ui.workspace.workspace_roots import primary_root_path
 from je_editor.utils.logging.loggin_instance import jeditor_logger
 from je_editor.utils.multi_language.multi_language_wrapper import language_wrapper
 from je_editor.utils.test_runner.pytest_output import (
@@ -388,10 +388,7 @@ def resolve_working_dir(main_window) -> str:
     :param main_window: 主編輯器視窗，可為 ``None`` / the main window, may be ``None``
     :return: 目錄路徑 / the directory path
     """
-    working_dir = getattr(main_window, "working_dir", None)
-    if working_dir and Path(str(working_dir)).is_dir():
-        return str(working_dir)
-    return os.getcwd()
+    return primary_root_path(main_window)
 
 
 def jump_to_line(main_window, line: int) -> bool:

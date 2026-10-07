@@ -213,6 +213,70 @@ class TestWorkspace:
         assert first[1] == second[1] == "src/main.py"
         assert first[0] != second[0]
 
+    def test_setting_the_roots_replaces_them_all_in_one_announcement(self, tmp_path):
+        workspace = Workspace.single_root(tmp_path / "old")
+        workspace.add_root(tmp_path / "extra")
+        announced = []
+        workspace.changed.subscribe(lambda changed: announced.append(len(changed.roots)))
+        assert workspace.set_roots([tmp_path / "new"]) is True
+        assert [root.name for root in workspace.roots] == ["new"]
+        assert announced == [1]
+
+    def test_setting_the_same_roots_changes_nothing(self, tmp_path):
+        workspace = Workspace.single_root(tmp_path / "app")
+        announced = []
+        workspace.changed.subscribe(announced.append)
+        assert workspace.set_roots([tmp_path / "app"]) is False
+        assert announced == []
+
+    def test_setting_roots_drops_a_repeated_one(self, tmp_path):
+        workspace = Workspace()
+        workspace.set_roots([tmp_path / "app", tmp_path / "pkg" / ".." / "app", tmp_path / "lib"])
+        assert [root.name for root in workspace.roots] == ["app", "lib"]
+
+    def test_roots_of_the_same_name_get_distinct_labels(self, tmp_path):
+        workspace = Workspace()
+        for parent in ("one", "two", "three"):
+            workspace.add_root(tmp_path / parent / "src")
+        workspace.add_root(tmp_path / "docs")
+        assert [label for label, _root in workspace.labelled_roots()] == [
+            "src", "src (2)", "src (3)", "docs"]
+
+    def test_one_root_shows_the_path_inside_it(self, tmp_path):
+        workspace = Workspace.single_root(tmp_path / "app")
+        assert workspace.display_path(tmp_path / "app" / "pkg" / "main.py") == "pkg/main.py"
+
+    def test_several_roots_put_the_label_in_front(self, tmp_path):
+        workspace = Workspace()
+        workspace.add_root(tmp_path / "frontend")
+        workspace.add_root(tmp_path / "backend")
+        assert workspace.display_path(tmp_path / "backend" / "src" / "main.py") == "backend/src/main.py"
+        assert workspace.display_path(tmp_path / "frontend") == "frontend"
+
+    def test_a_path_outside_every_root_is_shown_in_full(self, tmp_path):
+        workspace = Workspace.single_root(tmp_path / "app")
+        outside = tmp_path / "elsewhere" / "x.py"
+        assert workspace.display_path(outside) == outside.as_posix()
+
+    @pytest.mark.parametrize("roots", [["app"], ["frontend", "backend"], ["one/src", "two/src"]])
+    def test_a_shown_path_leads_back_to_the_file(self, tmp_path, roots):
+        workspace = Workspace()
+        for root in roots:
+            workspace.add_root(tmp_path / root)
+        target = tmp_path / roots[-1] / "pkg" / "main.py"
+        shown = workspace.display_path(target)
+        assert workspace.resolve_display_path(shown) == os.path.normpath(str(target))
+
+    @pytest.mark.parametrize("shown", ["unknown-root/main.py", "frontend/../../escape.py"])
+    def test_a_shown_path_that_matches_nothing_resolves_to_none(self, tmp_path, shown):
+        workspace = Workspace()
+        workspace.add_root(tmp_path / "frontend")
+        workspace.add_root(tmp_path / "backend")
+        assert workspace.resolve_display_path(shown) is None
+
+    def test_an_empty_workspace_resolves_nothing(self):
+        assert Workspace().resolve_display_path("main.py") is None
+
     def test_changes_are_announced_once_each(self, tmp_path):
         workspace = Workspace()
         announced = []

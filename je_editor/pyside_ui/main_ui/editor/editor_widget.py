@@ -18,7 +18,7 @@ from pathlib import Path
 from PySide6.QtCore import Qt, QFileInfo, QDir, QFileSystemWatcher
 from PySide6.QtGui import QDragEnterEvent, QDropEvent
 from PySide6.QtWidgets import QWidget, QGridLayout, QSplitter, QScrollArea, QFileSystemModel, QTreeView, QTabWidget, \
-    QMessageBox, QHBoxLayout
+    QMessageBox, QHBoxLayout, QComboBox, QVBoxLayout
 
 from je_editor.pyside_ui.code.auto_save.auto_save_manager import auto_save_manager_dict, init_new_auto_save_thread, \
     file_is_open_manager_dict
@@ -33,6 +33,7 @@ from je_editor.pyside_ui.code.split_view.split_editor_view import SplitEditorVie
 from je_editor.pyside_ui.code.textedit_code_result.code_record import CodeRecord
 from je_editor.pyside_ui.main_ui.save_settings.user_color_setting_file import actually_color_dict
 from je_editor.pyside_ui.main_ui.save_settings.user_setting_file import user_setting_dict
+from je_editor.pyside_ui.main_ui.workspace.workspace_roots import labelled_root_paths
 from je_editor.utils.encodings.text_codec import (
     DEFAULT_ENCODING, LINE_ENDING_LF
 )
@@ -186,7 +187,7 @@ class EditorWidget(QWidget):
         self.edit_splitter.setStretchFactor(1, 1)
         self.edit_splitter.setSizes([300, 100])
 
-        self.full_splitter.addWidget(self.project_treeview)
+        self.full_splitter.addWidget(self.project_tree_panel)
         self.full_splitter.addWidget(self.edit_splitter)
         self.full_splitter.setStretchFactor(0, 1)
         self.full_splitter.setStretchFactor(1, 3)
@@ -217,15 +218,10 @@ class EditorWidget(QWidget):
         self.project_treeview = QTreeView()
         self.project_treeview.setModel(self.project_treeview_model)
 
-        # 設定根目錄 (工作目錄或當前路徑) / Set root directory (working dir or current path)
-        if self.main_window.working_dir is None:
-            self.project_treeview.setRootIndex(
-                self.project_treeview_model.index(str(Path.cwd()))
-            )
-        else:
-            self.project_treeview.setRootIndex(
-                self.project_treeview_model.index(self.main_window.working_dir)
-            )
+        # 工作區有好幾個根目錄時，用這個選單決定樹狀檢視顯示哪一個
+        # With several workspace roots, this list decides which one the tree shows
+        self.project_root_combobox = QComboBox()
+        self.project_root_combobox.currentIndexChanged.connect(self._show_selected_root)
 
         # 包裝成可捲動區域 / Wrap in scroll area
         self.tree_view_scroll_area = QScrollArea()
@@ -234,8 +230,45 @@ class EditorWidget(QWidget):
         self.tree_view_scroll_area.setWidget(self.project_treeview)
         self.grid_layout.addWidget(self.tree_view_scroll_area, 0, 0, 0, 1)
 
+        # 根目錄選單在上、樹狀檢視在下 / The root list above, the tree below
+        self.project_tree_panel = QWidget()
+        panel_layout = QVBoxLayout(self.project_tree_panel)
+        panel_layout.setContentsMargins(0, 0, 0, 0)
+        panel_layout.addWidget(self.project_root_combobox)
+        panel_layout.addWidget(self.project_treeview)
+        self.refresh_project_roots()
+
         # 點擊檔案時觸發 / Connect click event
         self.project_treeview.clicked.connect(self.treeview_click)
+
+    def refresh_project_roots(self) -> None:
+        """
+        讓樹狀檢視上方的根目錄選單跟著工作區走
+        Bring the root list above the file tree in step with the workspace.
+
+        只有一個根目錄時不必選，選單收起來，畫面跟原本一樣。
+        One root needs no choosing, so the list is hidden and the panel looks as
+        it always did.
+        """
+        roots = labelled_root_paths(self.main_window)
+        shown = self.project_root_combobox.currentData()
+        self.project_root_combobox.blockSignals(True)
+        try:
+            self.project_root_combobox.clear()
+            for label, path in roots:
+                self.project_root_combobox.addItem(label, path)
+            self.project_root_combobox.setCurrentIndex(
+                max(self.project_root_combobox.findData(shown), 0))
+        finally:
+            self.project_root_combobox.blockSignals(False)
+        self.project_root_combobox.setVisible(len(roots) > 1)
+        self._show_selected_root()
+
+    def _show_selected_root(self) -> None:
+        """讓樹狀檢視顯示選單選中的根目錄 / Make the tree show the root picked in the list."""
+        path = self.project_root_combobox.currentData()
+        if path:
+            self.project_treeview.setRootIndex(self.project_treeview_model.index(path))
 
     def check_is_open(self, path: Path) -> bool:
         """

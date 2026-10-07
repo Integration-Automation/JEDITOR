@@ -67,6 +67,11 @@ Qt cannot be imported.
   `RemoteSession` and `AIProvider` are `typing.Protocol`s, so a `QObject` can satisfy them without
   a metaclass clash. Changes are announced through `EventHook`, on the thread that caused them.
   `import je_editor.core` still runs `je_editor/__init__.py`, which imports Qt.
+- **Workspace**: `EditorMain.services.workspace` lists the window's roots. The working directory is
+  the primary root; File → Add Folder to Workspace appends others, recorded per project in
+  `workspace_roots` of `user_setting.json`. Panels read the roots through
+  `pyside_ui/main_ui/workspace/workspace_roots.py`, never from `working_dir` or the current
+  directory themselves. Open Folder still changes the working directory and replaces every root.
 - **Persisted state**: `.jeditor/` under the working directory (`user_setting.json`,
   `user_color_setting.json`, `snippets.json`, `.bak` backups).
 - **PyPI packages**: `je_editor` (stable) and `je_editor_dev` (dev channel), both published by CI.

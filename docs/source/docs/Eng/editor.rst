@@ -130,6 +130,38 @@ When you open a folder (``Ctrl+K``), JEditor displays a file tree on the left si
 - Supports expanding and collapsing directories
 - Scrollable navigation for large projects
 
+Workspace with Several Folders
+-------------------------------
+
+A window works on a *workspace*: the folder you opened, plus any number of folders you add
+beside it. A workspace with a single folder is the ordinary case and behaves exactly as a
+project always has.
+
+- **File → Open Folder** (``Ctrl+K``) switches project. The working directory moves to that
+  folder and the workspace becomes that folder alone.
+- **File → Add Folder to Workspace** puts another folder beside the current project. The
+  working directory does not move.
+- **File → Remove Folder from Workspace** takes an added folder away again. The folder you
+  opened cannot be removed this way; open another folder to change it.
+
+With more than one folder in the workspace:
+
+- A list appears above the file tree to choose which folder the tree shows.
+- **Quick Open** (``Ctrl+P``) lists the files of every folder, each path starting with its
+  folder's name, so two files called ``main.py`` stay apart.
+- The **TODO** panel scans every folder, and **Problems** with **Whole project** ticked checks
+  every folder.
+- **Search in Files** with the project scope searches every folder. Replacing only ever writes
+  to files beneath one of the workspace's folders.
+- A language server is started at the folder a file belongs to, so each project's own
+  configuration is found. Files outside every folder use their own directory, as before.
+
+The added folders are remembered per project, in ``workspace_roots`` of
+``.jeditor/user_setting.json``, and come back the next time that project is opened.
+
+Running programs, the test panel, the terminal and the Git toolbar keep working in the folder
+you opened. Two folders that share a name are told apart by a number: ``src`` and ``src (2)``.
+
 Encoding and Line Endings
 --------------------------
 

@@ -1,7 +1,7 @@
 # JEditor 架構導覽 / Architecture Exploration
 
 > 產出時間：2026-08-03　對應版本：`dev` 分支（commit `f17e07a`）；2026-10-08 加入 `core/` 並重算各套件規模。
-> 涵蓋範圍：`je_editor/` 全部 311 個 `.py`（189 個實作模組 + 122 個 `__init__.py`），共 34,316 行。
+> 涵蓋範圍：`je_editor/` 全部 315 個 `.py`（192 個實作模組 + 123 個 `__init__.py`），共 34,989 行。
 > 這份文件記錄「每個模組負責什麼」與「模組之間怎麼串起來」，不是使用手冊（使用說明見 `README.md`、插件說明見 `PLUGIN_GUIDE.md`）。
 
 ---
@@ -16,23 +16,23 @@ JEditor 是以 PySide6（Qt for Python）寫成的程式碼編輯器，功能涵
 | 語言 / 版本 | Python 3.10+（CI 測 3.10 ～ 3.14） |
 | UI 框架 | PySide6 6.11.2 + qt-material 主題 |
 | 主要相依 | `jedi`（Python 補全）、`ruff`（診斷）、`yapf` / `pycodestyle`（格式化與檢查）、`gitpython`、`watchdog`、`qtconsole` + `IPython`、`langchain_openai` + `langchain_core`、`anthropic`、`frontengine` |
-| 測試 | pytest + pytest-qt，109 個測試檔、約 17,700 行 |
+| 測試 | pytest + pytest-qt，110 個測試檔、約 18,100 行 |
 | 靜態分析 | ruff、SonarCloud（`sonar.sources=je_editor`）、Codacy、bandit |
 
 ### 各套件規模
 
 | 套件 | 模組數 | 行數 | 定位 |
 | --- | ---: | ---: | --- |
-| `pyside_ui/` | 96 | 20,762 | View / Controller：所有 Qt 元件與選單 |
-| `utils/` | 59 | 8,854 | 純邏輯層（絕大多數不 import Qt，可單獨測試） |
-| `adapters/` | 5 | 539 | 核心介面的實作（同樣不 import Qt）：AI 供應者、設定檔讀寫、預設服務的組裝 |
-| `core/` | 16 | 2,547 | 核心服務層：工作區、文件、診斷的模型，以及語言服務、除錯、工作執行、遠端、AI 的介面（完全不 import Qt） |
+| `pyside_ui/` | 98 | 21,181 | View / Controller：所有 Qt 元件與選單 |
+| `utils/` | 60 | 9,009 | 純邏輯層（絕大多數不 import Qt，可單獨測試） |
+| `adapters/` | 5 | 542 | 核心介面的實作（同樣不 import Qt）：AI 供應者、設定檔讀寫、預設服務的組裝 |
+| `core/` | 16 | 2,643 | 核心服務層：工作區、文件、診斷的模型，以及語言服務、除錯、工作執行、遠端、AI 的介面（完全不 import Qt） |
 | `git_client/` | 6 | 777 | Git 操作（GitPython + git CLI 兩條路） |
 | `code_scan/` | 4 | 368 | ruff 執行與 watchdog 檔案監看 |
 | `plugins/` | 1 | 337 | 插件註冊表與外部插件載入器 |
 | 頂層 | 2 | 131 | `__main__.py`、`start_editor.py`（另有 `__init__.py` 匯出公開 API） |
 
-（行數含各層 `__init__.py`，合計 34,316 行。）
+（行數含各層 `__init__.py`，合計 34,989 行。）
 
 ---
 
@@ -81,7 +81,7 @@ JEditor 是以 PySide6（Qt for Python）寫成的程式碼編輯器，功能涵
 **設計慣例**：幾乎每個功能都拆成「純邏輯 + Qt 整合層」兩塊。
 例如折疊 = `utils/code_folding/fold_regions.py`（算區塊）+ `pyside_ui/code/folding/folding_manager.py`（藏行、重畫）；
 書籤 = `utils/bookmark/bookmark_navigation.py` + `pyside_ui/code/bookmark/bookmark_manager.py`。
-這讓大部分邏輯可以不開視窗就測試，也是 `test/` 能有 109 個測試檔的原因。
+這讓大部分邏輯可以不開視窗就測試，也是 `test/` 能有 110 個測試檔的原因。
 
 ---
 
@@ -147,7 +147,7 @@ start_editor(debug_mode)                       je_editor/start_editor.py
 
 ---
 
-### 5.2 `utils/` — 純邏輯層（59 模組 / 8,854 行）
+### 5.2 `utils/` — 純邏輯層（60 模組 / 9,009 行）
 
 #### 文字與行操作
 
@@ -181,6 +181,7 @@ start_editor(debug_mode)                       je_editor/start_editor.py
 | `file_scan/file_indexer.py` | 106 | 專案檔案索引（深度上限 24、檔案上限 20000），供快速開啟 |
 | `file_scan/ignore_rules.py` | 73 | 掃描時共用的忽略規則（`.git`、`__pycache__`、二進位副檔名、null byte 偵測） |
 | `file_scan/todo_scanner.py` | 138 | 掃描 TODO / FIXME 註解，支援多種註解符號 |
+| `file_scan/workspace_scan.py` | 135 | 對工作區的每個根目錄各跑一次索引與 TODO 掃描；有好幾個根目錄時顯示路徑前面加上根目錄的顯示名稱，並帶著開檔用的完整路徑 |
 | `venv_check/check_venv.py` | 75 | 找出 venv 的 Python 執行檔路徑 |
 
 #### 差異、Git 與診斷
@@ -225,10 +226,10 @@ start_editor(debug_mode)                       je_editor/start_editor.py
 
 | 模組 | 行 | 功用 |
 | --- | ---: | --- |
-| `multi_language/english.py` | 519 | 英文字典（其他語言以此為鍵值基準） |
-| `multi_language/traditional_chinese.py` | 509 | 繁體中文字典 |
-| `multi_language/simplified_chinese.py` | 509 | 簡體中文字典 |
-| `multi_language/japanese.py` | 513 | 日文字典 |
+| `multi_language/english.py` | 524 | 英文字典（其他語言以此為鍵值基準） |
+| `multi_language/traditional_chinese.py` | 514 | 繁體中文字典 |
+| `multi_language/simplified_chinese.py` | 514 | 簡體中文字典 |
+| `multi_language/japanese.py` | 518 | 日文字典 |
 | `multi_language/multi_language_wrapper.py` | 150 | `LanguageWrapper` 單例：註冊語言、切換、啟動語言決策 |
 | `multi_language/locale_match.py` | 116 | 系統語系 → 編輯器語言（含中文繁簡判定） |
 | `multi_language/retranslate_text.py` | 154 | 反查「這段文字是哪個鍵翻出來的」，用於換語言時就地換字 |
@@ -278,10 +279,10 @@ start_editor(debug_mode)                       je_editor/start_editor.py
 
 | 模組 | 行 | 功用 |
 | --- | ---: | --- |
-| `plaintext_code_edit/code_edit_plaintext.py` | **3,247** | `CodeEditor(QPlainTextEdit)`：整個編輯器的中樞。行號區 `LineNumber`、gutter（中斷點 / 書籤 / 折疊 / diff 標記）、自繪縮排參考線與 blame、jedi 背景補全 `_JediCompleteWorker`、括號配對、出現次數高亮、所有文字轉換動作、註解切換、縮放、快捷鍵註冊、LSP 訊號接線、右鍵選單 |
+| `plaintext_code_edit/code_edit_plaintext.py` | **3,266** | `CodeEditor(QPlainTextEdit)`：整個編輯器的中樞。行號區 `LineNumber`、gutter（中斷點 / 書籤 / 折疊 / diff 標記）、自繪縮排參考線與 blame、jedi 背景補全 `_JediCompleteWorker`、括號配對、出現次數高亮、所有文字轉換動作、註解切換、縮放、快捷鍵註冊、LSP 訊號接線、右鍵選單 |
 | `multi_cursor/multi_cursor_manager.py` | 530 | 額外游標的維護與批次套用（插入 / 刪除 / 移動 / 擴選 / 欄選取 / 下一個相同字） |
 | `snippets/snippet_manager.py` | 280 | 片段展開、定位點跳轉、複本同步；使用者片段存於 `.jeditor/snippets.json` |
-| `lsp/lsp_client.py` | 454 | 單一檔案這端的 LSP 連線：didOpen / didChange、completion / hover / rename / formatting / signature / references / codeAction / symbols / definition，回應以 Qt 訊號送出 |
+| `lsp/lsp_client.py` | 457 | 單一檔案這端的 LSP 連線：didOpen / didChange、completion / hover / rename / formatting / signature / references / codeAction / symbols / definition，回應以 Qt 訊號送出 |
 | `lsp/lsp_session.py` | 242 | `LspSession`（一個伺服器程序）與 `LspSessionRegistry`（同語言分頁共用、引用計數、關閉時 shutdown） |
 | `code_process/code_exec.py` | 236 | `ExecManager`：執行使用者程式（含插件 run_config），輸出導回面板 |
 | `shell_process/shell_exec.py` | 132 | `ShellManager`：執行 shell 指令 |
@@ -311,8 +312,8 @@ start_editor(debug_mode)                       je_editor/start_editor.py
 
 | 模組 | 行 | 功用 |
 | --- | ---: | --- |
-| `main_editor.py` | 624 | `EditorMain(QMainWindow)`：分頁容器、輸出重導計時器、狀態列更新、設定定期儲存、工作階段還原 / 儲存、關閉時收尾；`EDITOR_EXTEND_TAB` 掛載點 |
-| `editor/editor_widget.py` | 571 | `EditorWidget`：一個編輯分頁＝左側專案樹 + 上方 `CodeEditor` + 下方輸出分頁（執行結果 / 格式檢查 / 除錯 / 終端機 / 變數檢視 / Git），含拖放開檔、外部變更偵測、縮圖與分割檢視切換。所有開檔都經 `open_an_file()`：讀不了時 `report_open_failure()` 告訴使用者並撤掉「已開啟」紀錄；外部變更後重新載入用檔案自己的編碼 |
+| `main_editor.py` | 652 | `EditorMain(QMainWindow)`：分頁容器、輸出重導計時器、狀態列更新、設定定期儲存、工作階段還原 / 儲存、關閉時收尾；`EDITOR_EXTEND_TAB` 掛載點 |
+| `editor/editor_widget.py` | 604 | `EditorWidget`：一個編輯分頁＝左側專案樹 + 上方 `CodeEditor` + 下方輸出分頁（執行結果 / 格式檢查 / 除錯 / 終端機 / 變數檢視 / Git），含拖放開檔、外部變更偵測、縮圖與分割檢視切換。所有開檔都經 `open_an_file()`：讀不了時 `report_open_failure()` 告訴使用者並撤掉「已開啟」紀錄；外部變更後重新載入用檔案自己的編碼 |
 | `editor/editor_widget_dock.py` | 85 | `FullEditorWidget`：可停駐的單檔編輯器；關閉時只在有修改時，以檔案原本的編碼與行尾存回 |
 | `editor/process_input.py` | 104 | 對子程序（program / shell / debugger）送入標準輸入的視窗 |
 | `dock/destroy_dock.py` | 52 | `DestroyDock`：關閉時會真的銷毀內容的 `QDockWidget` |
@@ -325,7 +326,7 @@ start_editor(debug_mode)                       je_editor/start_editor.py
 | 模組 | 行 | 功用 |
 | --- | ---: | --- |
 | `set_menu_bar.py` | 69 | 依序組裝 10 個子選單；extend 模式不建插件選單 |
-| `file_menu/build_file_menu.py` | 297 | 檔案選單：開 / 存 / 另存、最近檔案（上限 10）、編碼、行尾、字型與大小 |
+| `file_menu/build_file_menu.py` | 316 | 檔案選單：開 / 存 / 另存、最近檔案（上限 10）、編碼、行尾、字型與大小 |
 | `file_menu/encoding_actions.py` | 186 | 實際套用編碼 / 行尾、存檔前格式化、儲存所有分頁（一個分頁存不了，其他照存並回報） |
 | `run_menu/build_run_menu.py` | 155 | 執行選單骨架、停止程式、清除輸出、說明 |
 | `run_menu/under_run_menu/build_program_menu.py` | 108 | 執行使用者程式（解析插件 run_config） |
@@ -349,14 +350,14 @@ start_editor(debug_mode)                       je_editor/start_editor.py
 
 | 模組 | 行 | 功用 |
 | --- | ---: | --- |
-| `problems_panel/problems_panel_widget.py` | 407 | 問題面板：診斷放在自己的 `DiagnosticStore`，依嚴重度（錯誤 / 警告 / 資訊 / 提示）與來源篩選且順序固定、跳到該行、整專案檢查、套用可自動修正項 |
-| `problems_panel/project_lint_worker.py` | 46 | `ProjectLintWorker(QThread)`：背景對整個目錄跑 ruff |
-| `todo_panel/todo_panel_widget.py` | 262 | TODO 面板：背景掃描（`TodoScanThread`）、依標籤篩選、雙擊開檔跳行 |
-| `test_panel/test_panel_widget.py` | 413 | 測試面板：組 pytest 指令（可含覆蓋率）、`PytestRunThread` 背景執行（600 秒逾時）、結果表、traceback、只跑選取 / 只跑失敗 |
+| `problems_panel/problems_panel_widget.py` | 410 | 問題面板：診斷放在自己的 `DiagnosticStore`，依嚴重度（錯誤 / 警告 / 資訊 / 提示）與來源篩選且順序固定、跳到該行、整專案檢查、套用可自動修正項 |
+| `problems_panel/project_lint_worker.py` | 59 | `ProjectLintWorker(QThread)`：背景對整個目錄跑 ruff |
+| `todo_panel/todo_panel_widget.py` | 296 | TODO 面板：背景掃描（`TodoScanThread`）、依標籤篩選、雙擊開檔跳行 |
+| `test_panel/test_panel_widget.py` | 410 | 測試面板：組 pytest 指令（可含覆蓋率）、`PytestRunThread` 背景執行（600 秒逾時）、結果表、traceback、只跑選取 / 只跑失敗 |
 | `outline_panel/outline_panel_widget.py` | 215 | 大綱面板：Python 用 `ast`，其他語言問語言伺服器，點擊跳行 |
 | `command_palette/command_palette_dialog.py` | 193 | 指令面板：模糊搜尋所有選單指令並執行 |
 | `command_palette/menu_command_collector.py` | 104 | 走訪選單列蒐集可觸發動作（深度上限 8、數量上限 4000） |
-| `command_palette/quick_open_dialog.py` | 205 | 快速開啟檔案（`FileIndexThread` 背景索引），輸入 `>` 切回指令模式 |
+| `command_palette/quick_open_dialog.py` | 214 | 快速開啟檔案（`FileIndexThread` 背景索引），輸入 `>` 切回指令模式 |
 | `command_palette/go_to_symbol_dialog.py` | 108 | 在目前檔案中以模糊搜尋跳到符號 |
 | `console_widget/console_gui.py` | 178 | 內嵌終端機 UI：指令歷史、切換工作目錄、輸出顯示 |
 | `console_widget/qprocess_adapter.py` | 120 | `QProcess` 包裝：啟動互動 shell、Windows 切 UTF-8 code page、送指令、停止 |
@@ -370,21 +371,28 @@ start_editor(debug_mode)                       je_editor/start_editor.py
 
 | 模組 | 行 | 功用 |
 | --- | ---: | --- |
-| `user_setting_file.py` | 66 | `user_setting_dict` 的定義與 `.jeditor/user_setting.json` 讀寫 |
+| `user_setting_file.py` | 68 | `user_setting_dict` 的定義與 `.jeditor/user_setting.json` 讀寫 |
 | `user_color_setting_file.py` | 96 | 顏色設定讀寫、RGB → `QColor` 換算、依樣式套用深 / 淺色組 |
 | `setting_utils.py` | 40 | 寫入前先備份（`.bak`）的 JSON 寫檔工具 |
+
+#### 工作區（`workspace/`）
+
+| 模組 | 行 | 功用 |
+| --- | ---: | --- |
+| `workspace/workspace_roots.py` | 119 | 從視窗取得工作區與根目錄：`window_workspace()`（視窗沒有 `services` 時退回「工作目錄，沒有就用目前目錄」）、`primary_root_path()`、`local_root_paths()`、`labelled_root_paths()`；各面板原本各寫一份的專案目錄判斷都改問這裡。另有把額外根目錄記進 / 讀出使用者設定的兩個函式 |
+| `workspace/workspace_actions.py` | 95 | 「將資料夾加入工作區」與「從工作區移除資料夾」；變更後立刻寫設定檔 |
 | `shortcut_setting.py` | 76 | 取得指令目前生效的按鍵、把 `QAction` 綁上去、設定改動後重新套用 |
 
 ### 5.8 `pyside_ui/dialog/`
 
 | 模組 | 行 | 功用 |
 | --- | ---: | --- |
-| `search_ui/search_replace_widget.py` | 602 | 搜尋與取代對話框：三種範圍（目前檔案 / 資料夾 / 整個專案），`_SearchWorker(QThread)` 背景搜尋、正規表示式、結果雙擊跳行、批次取代 |
+| `search_ui/search_replace_widget.py` | 640 | 搜尋與取代對話框：三種範圍（目前檔案 / 資料夾 / 整個專案），`_SearchWorker(QThread)` 背景搜尋、正規表示式、結果雙擊跳行、批次取代 |
 | `search_ui/search_text_box.py` | 49 | 簡易搜尋框元件 |
 | `search_ui/search_error_box.py` | 49 | 搜尋結果 / 錯誤提示框 |
 | `shortcut_dialog/shortcut_settings_dialog.py` | 179 | 列出所有指令、改按鍵、即時衝突提示、還原預設 |
 | `snippet_dialog/snippet_editor_dialog.py` | 148 | 使用者片段的新增 / 刪除 / 編輯，存檔後重載已開分頁 |
-| `file_dialog/open_file_dialog.py` | 102 | 開檔流程：選檔後交給目前分頁的 `EditorWidget.open_an_file()`（已開啟就切分頁、記下編碼與行尾）；另有選資料夾更新專案樹 |
+| `file_dialog/open_file_dialog.py` | 109 | 開檔流程：選檔後交給目前分頁的 `EditorWidget.open_an_file()`（已開啟就切分頁、記下編碼與行尾）；另有選資料夾更新專案樹 |
 | `file_dialog/save_file_dialog.py` | 157 | 另存新檔：依插件語言動態建立篩選器並依副檔名預選；寫檔失敗時分頁保留原路徑、不標已存；`report_save_failure()` 是各存檔路徑共用的失敗訊息 |
 | `file_dialog/create_file_dialog.py` | 77 | 建立新檔案 |
 | `ai_dialog/set_ai_dialog.py` | 127 | 依供應者設定位址、金鑰（輸入時遮蔽）、模型與系統提示詞；預設只套用到這次執行，勾選才寫入 `.jeditor/ai_config.json` |
@@ -412,7 +420,7 @@ start_editor(debug_mode)                       je_editor/start_editor.py
 | `browser_serach_lineedit.py` | 52 | 網址 / 搜尋輸入列 |
 | `browser_download_window.py` | 75 | 下載進度與狀態視窗 |
 
-### 5.11 `core/` — 核心服務層（16 模組 / 2,547 行）
+### 5.11 `core/` — 核心服務層（16 模組 / 2,643 行）
 
 下一代編輯器藍圖（`docs/roadmap/2026-editor-next.md`）的 M0：先把服務的介面與資料物件定下來，視窗層之後
 逐個里程碑改接過來。第一批使用者是診斷：編輯器的 `LintManager` 與問題面板都以統一模型保存診斷。整層不匯入 Qt 也不匯入 `pyside_ui/`；
@@ -425,7 +433,7 @@ start_editor(debug_mode)                       je_editor/start_editor.py
 | `events/event_hook.py` | 99 | `EventHook`：不靠 Qt 的訂閱與通知；在發出通知的執行緒上呼叫訂閱者，一個訂閱者出錯只記錄、不擋其他人 |
 | `registry/named_registry.py` | 116 | `NamedRegistry[T]`：名稱對應實作的登記表，AI 供應者、除錯轉接器、遠端傳輸、工作執行器共用 |
 | `uri/resource_uri.py` | 91 | 資源 URI：`to_uri` / `to_path`（沿用 `utils/lsp/lsp_protocol` 的轉換）、`uri_scheme`、`uri_key`（同一個本機檔案的不同寫法得到同一個鍵） |
-| `workspace/workspace_model.py` | 265 | `ProjectRoot`（以 URI 指認，可以不在本機；`resolve()` 擋住跑出根目錄的路徑）與 `Workspace`（零到多個根目錄、`root_for()` / `root_for_uri()` 取最深的那一個、`relative_path()`） |
+| `workspace/workspace_model.py` | 361 | `ProjectRoot`（以 URI 指認，可以不在本機；`resolve()` 擋住跑出根目錄的路徑）與 `Workspace`（零到多個根目錄、`set_roots()` 整組換掉、`root_for()` / `root_for_uri()` 取最深的那一個、`labelled_roots()` 給同名的根目錄不重複的顯示名稱、`display_path()` / `resolve_display_path()`） |
 | `document/document_model.py` | 224 | `Document` 協定、記憶體實作 `TextDocument`、以 URI 為鍵的 `DocumentStore`（`opened` / `changed` / `closed` 事件） |
 | `diagnostics/diagnostic_model.py` | 325 | 統一的診斷模型：`Severity`（數值同 LSP）、`Position` / `TextRange`（1 起算）、`RelatedInformation`、`TextEdit` / `QuickFix`、`Diagnostic`；`DiagnosticStore` 依「來源 × 資源」整組取代，`select()` 依嚴重度 / 來源 / 資源篩選且順序固定 |
 | `diagnostics/legacy_diagnostics.py` | 103 | 統一模型與 `utils/lint/ruff_diagnostics.Diagnostic`（ruff 解析器的輸出）之間的雙向轉換；`unify()` 把混著兩種形式的清單整理成統一模型，是視窗層接收診斷的入口 |
@@ -441,7 +449,7 @@ start_editor(debug_mode)                       je_editor/start_editor.py
 除錯、工作執行、遠端三項目前只有介面；既有的 pdb 除錯與 `BaseProcessManager` 仍然走原本的路徑。AI 的實作在
 `adapters/ai/`，對話面板已經改走 `AIProvider`。
 
-### 5.12 `adapters/` — 核心介面的實作（5 模組 / 539 行）
+### 5.12 `adapters/` — 核心介面的實作（5 模組 / 542 行）
 
 `core/` 只有介面；真正去連某一家服務的程式碼放在這裡。跟 `core/` 一樣不匯入 Qt 與 `pyside_ui/`
 （`test_core_architecture.py` 把它列進 UI 層以下的套件），第三方 SDK 都在用到的時候才匯入。
@@ -450,7 +458,7 @@ start_editor(debug_mode)                       je_editor/start_editor.py
 | --- | ---: | --- |
 | `__init__.py` | 58 | 套件說明 |
 | `default_services.py` | 52 | `build_default_services()`：建立 `EditorServices`、載入 AI 設定、登記內建的 AI 供應者；`EditorMain` 與沒有 `services` 的宿主視窗都用它 |
-| `ai/openai_provider.py` | 144 | `OpenAIProvider`：透過 LangChain 的 `ChatOpenAI` 呼叫 OpenAI 相容端點；回覆整份回來後去掉 `</think>` 之前的思考過程 |
+| `ai/openai_provider.py` | 147 | `OpenAIProvider`：透過 LangChain 的 `ChatOpenAI` 呼叫 OpenAI 相容端點；回覆整份回來後去掉 `</think>` 之前的思考過程 |
 | `ai/anthropic_provider.py` | 201 | `AnthropicProvider`：官方 `anthropic` SDK 的串流請求；可中途取消、回報 token 用量、把 SDK 的錯誤類別轉成給使用者看的說明；會拒絕請求的模型啟用伺服器端 fallback |
 | `ai/builtin_providers.py` | 50 | `register_builtin_ai_providers()`：每個供應者拿到「取得自己那組設定」的函式，所以改設定不必重新登記 |
 | `ai/settings_file.py` | 80 | `.jeditor/ai_config.json` 的讀寫；日誌只記路徑、從不記內容（裡面有 API 金鑰） |
@@ -483,7 +491,7 @@ UI 執行緒不做 I/O 是硬性規則，重活分成三類：
 
 | 檔案 | 內容 |
 | --- | --- |
-| `user_setting.json` | 字型、語言、樣式、編碼、縮排、最近檔案、開啟分頁與其游標 / 書籤 / 折疊狀態、快捷鍵覆寫 |
+| `user_setting.json` | 字型、語言、樣式、編碼、縮排、最近檔案、開啟分頁與其游標 / 書籤 / 折疊狀態、快捷鍵覆寫、另外加入工作區的資料夾（`workspace_roots`） |
 | `user_color_setting.json` | 編輯器自訂顏色 |
 | `snippets.json` | 使用者程式碼片段 |
 | `*.bak` | 每次寫入前的備份（`setting_utils.write_setting`） |
@@ -539,7 +547,7 @@ qt-material 負責視窗樣式；編輯器自身的顏色（語法高亮、diff 
 
 ## 7. 測試與 CI
 
-- `test/` 109 個測試檔、約 17,700 行，與模組大致一對一（`test_fold_regions.py`、`test_shortcut_registry.py`…）。
+- `test/` 110 個測試檔、約 18,100 行，與模組大致一對一（`test_fold_regions.py`、`test_shortcut_registry.py`…）。
 - `core/` 的測試是 `test_core_*.py` 七個檔。其中 `test_core_architecture.py` 守分層：以 `ast` 走訪 `core/` 的
   匯入關係（函式內的匯入也算）、列出 UI 層以下允許向上匯入的模組，並在子行程裡擋掉 Qt 的匯入後實際建立
   `EditorServices`。`test_public_api_contract.py` 釘住 `je_editor.__all__` 的既有名稱、PyBreeze 以模組路徑匯入的
@@ -592,8 +600,9 @@ qt-material 負責視窗樣式；編輯器自身的顏色（語法高亮、diff 
    讓「純邏輯層」的界線稍微模糊。
 6. **命名遺留**：`utils/logging/loggin_instance.py`、`browser/browser_serach_lineedit.py` 兩處拼字錯誤已成公開路徑，
    要改需同時處理下游 import。
-7. **`core/` 只接上了診斷**：編輯器的診斷與問題面板已經改用統一模型，ruff 解析器（`utils/lint`）仍然輸出舊形式、在 `LintManager` 與面板的入口以 `unify()` 轉換。工作區、文件、語言服務、除錯、工作執行、遠端與 AI 還沒有接上，
-   視窗層仍然各自持有這些狀態。
+7. **`core/` 接上了診斷、AI 與工作區**：編輯器的診斷與問題面板已經改用統一模型，ruff 解析器（`utils/lint`）仍然輸出舊形式、在 `LintManager` 與面板的入口以 `unify()` 轉換。文件、語言服務、除錯、工作執行與遠端還沒有接上，視窗層仍然
+   各自持有這些狀態。工作區只管「有哪些根目錄」：執行程式、測試面板、終端機、Git 工具列與直譯器仍然只認
+   主要的根目錄（工作目錄）。
 8. **`import je_editor.core` 仍會載入 Qt**：匯入任何子套件都會先執行 `je_editor/__init__.py`，而它匯入整個 Qt
    應用程式。服務本身不需要 Qt（測試在擋掉 Qt 的行程裡驗證過），但要讓「只用核心」的宿主程式完全不載入 Qt，
    得等可嵌入元件那個里程碑處理頂層 `__init__`。

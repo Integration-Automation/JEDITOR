@@ -18,6 +18,7 @@ from je_editor.utils.file_scan.ignore_rules import (
     IGNORED_DIRECTORY_NAMES as _SKIP_DIRS,
     is_binary_file as _is_binary,
 )
+from je_editor.pyside_ui.main_ui.workspace.workspace_roots import local_root_paths
 from je_editor.utils.multi_language.multi_language_wrapper import language_wrapper
 
 if TYPE_CHECKING:
@@ -32,13 +33,21 @@ class _SearchWorker(QThread):
     match_found = Signal(str, int, str)  # (file_path, line_number, line_text)
     finished_signal = Signal(int)  # total_matches
 
-    def __init__(self, root: str, pattern: str, case_sensitive: bool, use_regex: bool) -> None:
+    def __init__(self, root: str | list[str], pattern: str, case_sensitive: bool,
+                 use_regex: bool) -> None:
+        """
+        :param root: 要搜尋的目錄；工作區有好幾個根目錄時是一份清單
+            the directory to search, or a list of them when the workspace has several roots
+        :param pattern: 要找的文字或正規表示式 / the text or regular expression to find
+        :param case_sensitive: 是否區分大小寫 / whether case matters
+        :param use_regex: ``pattern`` 是否為正規表示式 / whether ``pattern`` is a regular expression
+        """
         super().__init__()
         # 具名執行緒：萬一它在執行中被銷毀，Qt 的中止訊息才說得出是哪一條
         # A named thread, so Qt's abort message says which one if it is ever
         # destroyed while still running
         self.setObjectName("SearchWorker")
-        self.root = root
+        self.roots = [root] if isinstance(root, str) else list(root)
         self.pattern = pattern
         self.case_sensitive = case_sensitive
         self.use_regex = use_regex
@@ -77,8 +86,13 @@ class _SearchWorker(QThread):
         if compiled is None:
             self.finished_signal.emit(0)
             return
+        total = sum(self._scan_root(root, compiled) for root in self.roots)
+        self.finished_signal.emit(total)
+
+    def _scan_root(self, root: str, compiled: re.Pattern) -> int:
+        """搜尋一個目錄底下的所有檔案，回傳匹配數 / Scan every file under one directory."""
         total = 0
-        for dirpath, dirnames, filenames in os.walk(self.root):
+        for dirpath, dirnames, filenames in os.walk(root):
             if self._stop:
                 break
             dirnames[:] = [d for d in dirnames if d not in _SKIP_DIRS]
@@ -89,7 +103,7 @@ class _SearchWorker(QThread):
                 if _is_binary(fpath):
                     continue
                 total += self._scan_file(fpath, compiled)
-        self.finished_signal.emit(total)
+        return total
 
 
 class SearchReplaceDialog(QDialog):
@@ -237,8 +251,7 @@ class SearchReplaceDialog(QDialog):
                 return
             self._search_in_directory(pattern, folder)
         elif scope == "project":
-            project_root = self._get_project_root()
-            self._search_in_directory(pattern, project_root)
+            self._search_in_directory(pattern, self._project_roots())
 
     def _search_in_current_file(self, pattern: str) -> None:
         """在目前檔案中搜尋 / Search in current file"""
@@ -272,8 +285,8 @@ class SearchReplaceDialog(QDialog):
         # 同時高亮第一個匹配 / Also highlight first match
         self.find_next()
 
-    def _search_in_directory(self, pattern: str, root: str) -> None:
-        """在資料夾中搜尋 / Search in directory"""
+    def _search_in_directory(self, pattern: str, root: str | list[str]) -> None:
+        """在一個或多個資料夾中搜尋 / Search in one directory, or in several"""
         self.result_tree.clear()
         self.status_label.setText(self._lang("search_replace_searching"))
 
@@ -414,8 +427,7 @@ class SearchReplaceDialog(QDialog):
                 return
             self._replace_all_in_directory(pattern, replacement, folder)
         elif scope == "project":
-            project_root = self._get_project_root()
-            self._replace_all_in_directory(pattern, replacement, project_root)
+            self._replace_all_in_directory(pattern, replacement, self._project_roots())
 
     def _replace_in_current_editor(self) -> None:
         """在編輯器中取代目前選取的匹配 / Replace currently selected match in editor"""
@@ -486,12 +498,11 @@ class SearchReplaceDialog(QDialog):
             # Rebuild the target path from the trusted project root plus a
             # validated relative component so user-controlled data never flows
             # directly into write_text() (SonarCloud S2083).
-            project_root = Path(self._get_project_root()).resolve()
-            try:
-                relative_part = Path(file_path).resolve().relative_to(project_root)
-            except ValueError:
+            located = self._locate_in_project(file_path)
+            if located is None:
                 self.status_label.setText(f"Error: invalid file path {file_path}")
                 return
+            project_root, relative_part = located
             p = project_root.joinpath(*relative_part.parts)
             if not p.is_file():
                 self.status_label.setText(f"Error: invalid file path {file_path}")
@@ -539,8 +550,10 @@ class SearchReplaceDialog(QDialog):
         except OSError:
             return 0
 
-    def _replace_all_in_directory(self, pattern: str, replacement: str, root: str) -> None:
-        """在整個目錄中全部取代 / Replace all matches inside every file under the directory."""
+    def _replace_all_in_directory(self, pattern: str, replacement: str,
+                                  root: str | list[str]) -> None:
+        """在一個或多個目錄中全部取代 / Replace all matches in every file under the directories."""
+        roots = [root] if isinstance(root, str) else list(root)
         case = self.chk_case.isChecked()
         use_regex = self.chk_regex.isChecked()
         flags = 0 if case else re.IGNORECASE
@@ -554,7 +567,7 @@ class SearchReplaceDialog(QDialog):
         confirm = QMessageBox.question(
             self,
             self._lang("search_replace_confirm_title"),
-            self._lang("search_replace_confirm_replace_all").format(root=root),
+            self._lang("search_replace_confirm_replace_all").format(root=", ".join(roots)),
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
         )
         if confirm != QMessageBox.StandardButton.Yes:
@@ -563,16 +576,11 @@ class SearchReplaceDialog(QDialog):
         total_files = 0
         total_replacements = 0
 
-        for dirpath, dirnames, filenames in os.walk(root):
-            dirnames[:] = [d for d in dirnames if d not in _SKIP_DIRS]
-            for fname in filenames:
-                fpath = Path(dirpath) / fname
-                if _is_binary(fpath):
-                    continue
-                count = self._replace_all_in_single_file(fpath, compiled, replacement)
-                if count > 0:
-                    total_files += 1
-                    total_replacements += count
+        for fpath in self._files_under(roots):
+            count = self._replace_all_in_single_file(fpath, compiled, replacement)
+            if count > 0:
+                total_files += 1
+                total_replacements += count
 
         self.status_label.setText(
             self._lang("search_replace_replaced_summary").format(
@@ -582,14 +590,44 @@ class SearchReplaceDialog(QDialog):
 
     # ---------- Helpers ----------
 
-    def _get_project_root(self) -> str:
-        """取得專案根目錄 / Get project root directory"""
-        # 使用 treeview 的根目錄，或者 cwd
-        if self.editor_widget.project_treeview_model:
-            root = self.editor_widget.project_treeview_model.rootPath()
-            if root:
-                return root
-        return os.getcwd()
+    @staticmethod
+    def _files_under(roots: list[str]):
+        """走訪這些目錄底下所有可以取代的文字檔 / Walk every text file under these directories."""
+        for root in roots:
+            for dirpath, dirnames, filenames in os.walk(root):
+                dirnames[:] = [d for d in dirnames if d not in _SKIP_DIRS]
+                for fname in filenames:
+                    fpath = Path(dirpath) / fname
+                    if not _is_binary(fpath):
+                        yield fpath
+
+    def _project_roots(self) -> list[str]:
+        """取得工作區的每個根目錄 / Every root of the workspace."""
+        return local_root_paths(getattr(self.editor_widget, "main_window", None))
+
+    def _locate_in_project(self, file_path: str) -> tuple[Path, Path] | None:
+        """
+        找出檔案屬於哪個根目錄，以及它在那個根目錄內的相對路徑
+        The root a file belongs to, and its path inside that root.
+
+        搜尋結果裡的路徑不直接拿來寫檔：只有落在工作區某個根目錄底下的檔案才會被
+        改寫，其餘一律拒絕。
+        A path from the search results is never written to as it stands: only a
+        file beneath one of the workspace's roots is rewritten, and anything else
+        is refused.
+
+        :param file_path: 搜尋結果裡的檔案路徑 / the file path from the search results
+        :return: ``(根目錄, 相對路徑)``，不在任何根目錄底下時為 ``None``
+            ``(root, relative path)``, or ``None`` outside every root
+        """
+        target = Path(file_path).resolve()
+        for root in self._project_roots():
+            resolved_root = Path(root).resolve()
+            try:
+                return resolved_root, target.relative_to(resolved_root)
+            except ValueError:
+                continue
+        return None
 
     def closeEvent(self, event: QCloseEvent) -> None:
         """關閉對話框時停止搜尋執行緒並清掉縮圖標記 / Stop the worker and clear the marks"""

@@ -24,6 +24,7 @@ from je_editor.pyside_ui.code.git_diff.blame_manager import BlameManager
 from je_editor.pyside_ui.code.git_diff.diff_marker_manager import DiffMarkerManager
 from je_editor.pyside_ui.code.lint.lint_manager import LintManager
 from je_editor.pyside_ui.code.lsp.lsp_client import LspClient
+from je_editor.pyside_ui.main_ui.workspace.workspace_roots import window_workspace
 from je_editor.pyside_ui.code.multi_cursor.multi_cursor_manager import MultiCursorManager
 from je_editor.pyside_ui.code.selection.smart_selection_manager import SmartSelectionManager
 from je_editor.pyside_ui.code.snippets.snippet_manager import SnippetManager
@@ -2342,10 +2343,28 @@ class CodeEditor(QPlainTextEdit):
         if self.current_file is None or Path(str(self.current_file)).suffix.lower() == ".py":
             self.lsp_client.stop()
             return False
-        if not self.lsp_client.start_for(str(self.current_file)):
+        if not self.lsp_client.start_for(str(self.current_file), root=self._workspace_root()):
             return False
         self.lsp_client.did_open(self.toPlainText())
         return True
+
+    def _workspace_root(self) -> str | None:
+        """
+        取得目前檔案所屬的工作區根目錄
+        The workspace root the current file belongs to.
+
+        語言伺服器要以專案的根目錄啟動才找得到專案設定；工作區有好幾個根目錄時，
+        每個檔案交給它自己那個根目錄的伺服器。
+        A language server has to start at the project's root to find the
+        project's configuration, and with several roots each file goes to the
+        server of its own root.
+
+        :return: 根目錄路徑；檔案不在任何根目錄底下時為 ``None``
+            the root's path, or ``None`` when the file is under no root
+        """
+        window = getattr(self.main_window, "main_window", None)
+        root = window_workspace(window).root_for(str(self.current_file))
+        return root.path if root is not None else None
 
     def request_language_server_completion(self) -> bool:
         """

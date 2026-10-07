@@ -31,6 +31,8 @@ user_setting_dict = {
     "indent_size": 4,  # 縮排空格數 / Indent size (spaces)
     "open_files": [],  # 上次關閉時開啟的分頁 / Tabs open at last shutdown
     "restore_session": True,  # 啟動時還原分頁 / Restore tabs on startup
+    # 工作目錄以外另外加入工作區的資料夾 / Folders added to the workspace beside the working directory
+    "workspace_roots": [],
     # 使用者改過的快捷鍵，只記與預設不同的 / Shortcuts the user changed, defaults omitted
     "shortcuts": {},
 }

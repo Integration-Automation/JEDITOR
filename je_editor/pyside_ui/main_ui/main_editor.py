@@ -20,6 +20,7 @@ from qt_material import QtStyleTools
 # 匯入專案內部模組 (自訂 UI 與功能)
 # Import project-specific modules (custom UI and features)
 from je_editor.adapters.default_services import build_default_services
+from je_editor.core.workspace.workspace_model import Workspace
 from je_editor.pyside_ui.browser.browser_widget import BrowserWidget
 from je_editor.pyside_ui.browser.main_browser_widget import MainBrowserWidget
 from je_editor.pyside_ui.code.auto_save.auto_save_manager import init_new_auto_save_thread, file_is_open_manager_dict
@@ -38,6 +39,9 @@ from je_editor.pyside_ui.main_ui.save_settings.user_setting_file import (
     write_user_setting
 )
 from je_editor.pyside_ui.main_ui.system_tray.extend_system_tray import ExtendSystemTray
+from je_editor.pyside_ui.main_ui.workspace.workspace_roots import (
+    remember_extra_roots, restore_extra_roots
+)
 from je_editor.utils.file.open.open_file import read_file
 from je_editor.utils.session.editor_state import editor_state, restore_editor_state
 from je_editor.utils.status.status_text import (
@@ -96,7 +100,7 @@ class EditorMain(QMainWindow, QtStyleTools):
         # 不屬於任何元件的狀態（工作區、診斷、AI 供應者與設定）；面板向它要，而不是各自保管
         # The state that belongs to no widget (workspace, diagnostics, AI providers
         # and settings); panels ask it instead of each keeping a copy
-        self.services = build_default_services()
+        self.services = build_default_services(Workspace.single_root(os.getcwd()))
         self.extend = extend  # 是否為擴充模式（如 PyBreeze）/ Whether in extend mode (e.g. PyBreeze)
 
         # 確保外部插件已載入（若尚未載入）
@@ -106,6 +110,14 @@ class EditorMain(QMainWindow, QtStyleTools):
         # 讀取使用者設定
         # Read user settings
         read_user_setting()
+
+        # 工作區：工作目錄是主要的根目錄，再加回上次另外加入的資料夾；之後根目錄有
+        # 增減就記進設定並更新每個分頁的檔案樹
+        # The workspace: the working directory is the primary root, and the
+        # folders added last time join it. Later changes to the roots are
+        # recorded in the settings and shown by every tab's file tree
+        restore_extra_roots(self.services.workspace)
+        self.services.workspace.changed.subscribe(self._on_workspace_changed)
 
         # 設定語言 (多語系支援)；第一次啟動時照系統語系挑一個
         # Set language (multi-language support), following the system on a first run
@@ -544,6 +556,22 @@ class EditorMain(QMainWindow, QtStyleTools):
             write_user_color_setting()
         except Exception as e:
             jeditor_logger.warning(f"Periodic settings save failed: {e}")
+
+    def _on_workspace_changed(self, workspace: Workspace) -> None:
+        """
+        工作區的根目錄變了：記進設定，並更新每個編輯分頁的檔案樹
+        The workspace's roots changed: record them, and update each editor tab's file tree.
+
+        :param workspace: 變動後的工作區 / the workspace after the change
+        """
+        remember_extra_roots(workspace)
+        tab_widget = getattr(self, "tab_widget", None)
+        if tab_widget is None:
+            return
+        for index in range(tab_widget.count()):
+            widget = tab_widget.widget(index)
+            if isinstance(widget, EditorWidget):
+                widget.refresh_project_roots()
 
     def closeEvent(self, event: QCloseEvent) -> None:
         """

@@ -408,6 +408,7 @@ yet. See the *Core Services* page of the [documentation](https://je-editor.readt
 
 - **Create, open, save** files with standard shortcuts (Ctrl+N, Ctrl+O, Ctrl+S).
 - **Open folders** (Ctrl+K) -- Navigate project directory structures.
+- **Multi-root workspace** -- Add more folders beside the project (File → Add Folder to Workspace). Quick open, the TODO and Problems panels, project search and language servers then cover every folder, and same-named files in different folders stay apart.
 - **Auto-save** -- Automatic periodic file saving to prevent data loss.
 - **Session restore** -- Reopens every file that was open at the last shutdown, not just the last one. Missing, duplicate and already-open files are skipped, the list is capped, and a corrupt or hand-edited settings file can never block startup. Disable by setting `restore_session` to `false` in `.jeditor/user_setting.json`.
 - **Multi-encoding** -- Seamlessly handle UTF-8, GBK, Latin-1, and other encodings with automatic detection.

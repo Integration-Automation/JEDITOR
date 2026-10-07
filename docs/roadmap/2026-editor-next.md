@@ -14,13 +14,14 @@
 | M0 — Foundation and compatibility boundary | Implemented: `je_editor/core/` | `docs/updates/2026-10.md`, U-20261008-01 |
 | M2 — diagnostics half | Implemented: one diagnostic model, severity and source filters | U-20261008-04 |
 | M2 — Tree-sitter half | Not started | `PROGRESS.md` |
+| M3 — Workspace + multi-root | Implemented; per-root environments and Git are left over | U-20261008-07, `PROGRESS.md` |
 | M5 — AI provider abstraction + Anthropic | Implemented: `je_editor/adapters/ai/` | U-20261008-05 |
-| M1, M3, M4, M6, M7, M8 | Not started | `PROGRESS.md` |
+| M1, M4, M6, M7, M8 | Not started | `PROGRESS.md` |
 
 M0 defines the service layer and proves it runs without Qt. What it left to later milestones:
 
-- the editor window consumes the services one area at a time: diagnostics and the AI chat panel
-  do so far;
+- the editor window consumes the services one area at a time: diagnostics, the AI chat panel and
+  the workspace do so far;
 - debugging, task execution and remote sessions are interfaces with no implementation yet (M4
   and M6 supply them), and the request-and-reply calls of a language service (completion, hover
   and the rest) take their shape with Tree-sitter in M2;

@@ -47,6 +47,8 @@ user_setting.json
      - 上次關閉時開啟的分頁
    * - ``restore_session``
      - 啟動時是否重新開啟這些分頁（預設：``true``）
+   * - ``workspace_roots``
+     - 工作目錄以外，另外加入工作區的資料夾
    * - ``shortcuts``
      - 使用者改過的快捷鍵；只記錄與預設值不同的項目
 

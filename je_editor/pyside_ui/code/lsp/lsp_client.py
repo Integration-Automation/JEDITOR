@@ -103,7 +103,8 @@ class LspClient(QObject):
         """
         return Path(self._server_command[0]).stem if self._server_command else ""
 
-    def start_for(self, file_path: str, servers: dict | None = None) -> bool:
+    def start_for(self, file_path: str, servers: dict | None = None,
+                  root: str | None = None) -> bool:
         """
         接上負責這個檔案的語言伺服器
         Attach to the language server that handles a file.
@@ -115,13 +116,15 @@ class LspClient(QObject):
 
         :param file_path: 檔案路徑 / the file to serve
         :param servers: 伺服器對照表 / the server mapping to consult
+        :param root: 檔案所屬的專案根目錄；沒給時用檔案所在的資料夾
+            the project root the file belongs to, its own folder when omitted
         :return: 有接上時為 ``True`` / ``True`` when a server was attached
         """
         command = server_command(Path(file_path).suffix, servers)
         if command is None:
             return False
         self.stop()
-        root = str(Path(file_path).parent)
+        root = root or str(Path(file_path).parent)
         session = session_registry.session_for(command, root, file_uri(root))
         if session is None:
             return False

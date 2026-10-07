@@ -47,6 +47,8 @@ The main settings file controls editor behavior and appearance:
      - The tabs that were open at the last shutdown
    * - ``restore_session``
      - Whether to reopen those tabs on launch (default: ``true``)
+   * - ``workspace_roots``
+     - The folders added to the workspace beside the working directory
    * - ``shortcuts``
      - Keys the user reassigned; only what differs from a default is stored
 

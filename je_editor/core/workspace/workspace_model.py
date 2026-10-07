@@ -165,6 +165,30 @@ class Workspace:
             self.changed.emit(self)
         return added
 
+    def set_roots(self, roots: Iterable[ProjectRoot | str | Path]) -> bool:
+        """
+        換掉所有的根目錄
+        Replace every root.
+
+        開啟另一個專案資料夾就是這件事：整個工作區換成新的，而不是多加一個根目錄。
+        This is what opening another project folder means: the whole workspace
+        becomes the new one, rather than gaining a root.
+
+        :param roots: 新的根目錄，或本機目錄路徑 / the new roots, or local directories
+        :return: 內容是否改變 / whether anything changed
+        """
+        replacement: list[ProjectRoot] = []
+        for root in roots:
+            candidate = root if isinstance(root, ProjectRoot) else ProjectRoot.from_path(root)
+            if all(uri_key(item.uri) != uri_key(candidate.uri) for item in replacement):
+                replacement.append(candidate)
+        with self._lock:
+            if tuple(replacement) == self._roots:
+                return False
+            self._roots = tuple(replacement)
+        self.changed.emit(self)
+        return True
+
     def remove_root(self, root: ProjectRoot | str | Path) -> bool:
         """
         移除一個根目錄
@@ -241,6 +265,78 @@ class Workspace:
             return None
         relative = os.path.relpath(os.path.abspath(str(path)), root.path)
         return root, Path(relative).as_posix()
+
+    def labelled_roots(self) -> list[tuple[str, ProjectRoot]]:
+        """
+        給每個根目錄一個不重複的顯示名稱
+        A display name for every root that no other root shares.
+
+        兩個根目錄可以同名（都叫 ``src``）。清單與相對路徑要分得出是哪一個，所以
+        後出現的同名根目錄會加上編號。
+        Two roots may share a name, both being ``src`` for instance. A list and
+        a relative path have to tell them apart, so a later root with a name
+        already taken gets a number.
+
+        :return: ``(顯示名稱, 根目錄)``，依加入順序 / ``(label, root)``, in the order added
+        """
+        seen: dict[str, int] = {}
+        labelled = []
+        for root in self._roots:
+            seen[root.name] = seen.get(root.name, 0) + 1
+            count = seen[root.name]
+            labelled.append((root.name if count == 1 else f"{root.name} ({count})", root))
+        return labelled
+
+    def display_path(self, path: str | Path) -> str:
+        """
+        取得給使用者看的路徑
+        The path to show the user.
+
+        只有一個根目錄時就是根目錄內的相對路徑，跟原本的單一專案一樣；有好幾個時
+        前面加上根目錄的顯示名稱，同名的檔案才分得開。
+        With one root it is the path inside that root, as a single project always
+        showed it. With several, the root's label goes in front, which keeps
+        files of the same name apart.
+
+        :param path: 檔案或目錄路徑 / the file or directory
+        :return: 顯示用的路徑；不屬於任何根目錄時是完整路徑
+            the path to show, or the full path outside every root
+        """
+        located = self.relative_path(path)
+        if located is None:
+            return Path(os.path.abspath(str(path))).as_posix()
+        root, relative = located
+        if not self.is_multi_root:
+            return relative
+        label = next(label for label, item in self.labelled_roots() if item is root)
+        return label if relative == "." else f"{label}/{relative}"
+
+    def resolve_display_path(self, display_path: str) -> str | None:
+        """
+        把 :meth:`display_path` 給的路徑轉回完整路徑
+        Turn a path from :meth:`display_path` back into a full path.
+
+        :param display_path: 顯示用的路徑 / the path as it was shown
+        :return: 完整的本機路徑；對不上任何根目錄，或會跑到根目錄外面時為 ``None``
+            the full local path, or ``None`` when it matches no root or would
+            leave its root
+        """
+        roots = self.labelled_roots()
+        if not roots:
+            return None
+        if len(roots) == 1:
+            return self._resolved(roots[0][1], display_path)
+        label, _separator, relative = display_path.partition("/")
+        owner = next((root for name, root in roots if name == label), None)
+        return None if owner is None else self._resolved(owner, relative or ".")
+
+    @staticmethod
+    def _resolved(root: ProjectRoot, relative: str) -> str | None:
+        """在根目錄內解析相對路徑，不合法時回傳 ``None`` / Resolve inside a root, ``None`` when refused."""
+        try:
+            return root.resolve(relative)
+        except JEditorServiceException:
+            return None
 
     def _insert(self, root: ProjectRoot) -> bool:
         """加入根目錄，重複的不加 / Add a root unless it is already there."""
