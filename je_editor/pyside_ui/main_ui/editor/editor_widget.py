@@ -127,7 +127,12 @@ class EditorWidget(QWidget):
         self.code_result = CodeRecord()
 
         # 監聽文字變更以標記未儲存狀態 / Track text changes for unsaved indicator
-        self.code_edit.textChanged.connect(self._on_text_changed)
+        # 用 contentsChange 而不是 textChanged：高亮器重畫時也會送出 textChanged，
+        # 開檔或換主題之後分頁就被標成「未儲存」；contentsChange 只在內容真的變了才送
+        # contentsChange rather than textChanged: a highlighter repainting sends
+        # textChanged too, which left a tab marked unsaved after opening a file or
+        # switching theme. contentsChange is sent only when the content changed
+        self.code_edit.document().contentsChange.connect(self._on_contents_change)
         self.code_result_cursor = self.code_result.textCursor()
 
         # 捲動區包裝編輯器與輸出 / Scroll areas for editor and result
@@ -376,6 +381,10 @@ class EditorWidget(QWidget):
         path = pathlib.Path(file_info.absoluteFilePath())
         if path.is_file():
             self.open_an_file(path)
+
+    def _on_contents_change(self, _position: int, _removed: int, _added: int) -> None:
+        """文件內容變了 / The document's content changed."""
+        self._on_text_changed()
 
     def _on_text_changed(self) -> None:
         """

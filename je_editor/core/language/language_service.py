@@ -10,39 +10,25 @@ understands a language is one and the same thing to the editor: tell it a
 document opened, changed or closed, and it offers what it can do. The registry
 passes each document's lifecycle on to every service that handles its language.
 
-補全、懸停說明這類「發問、等回覆」的呼叫形式由 Tree-sitter 與診斷那個里程碑決定，
-這裡先固定生命週期與能力查詢。
-The request-and-reply calls, completion and hover among them, take their shape
-in the Tree-sitter and diagnostics milestone; this fixes the lifecycle and the
-capability lookup first.
+補全、懸停說明、語法樹這類問題都走同一個 ``request()``：給一個收回覆的函式，拿回
+一個取消的函式。形式定義在 ``language_request.py``。
+Completion, hover, the syntax tree and every other question go through the one
+``request()``: hand over a function for the reply, get back a function to cancel
+with. The shape is defined in ``language_request.py``.
 """
 from __future__ import annotations
 
 from collections.abc import Callable
-from enum import Enum
 from typing import Protocol, runtime_checkable
 
 from je_editor.core.document.document_model import Document, DocumentStore
+from je_editor.core.language.language_capability import LanguageCapability
+from je_editor.core.language.language_request import (
+    CancelRequest, LanguageReply, LanguageRequest, ReplyHandler, ReplyOnce, nothing_to_cancel
+)
 from je_editor.core.registry.named_registry import NamedRegistry
 
-
-class LanguageCapability(Enum):
-    """
-    語言服務可以提供的功能
-    What a language service can offer.
-    """
-
-    DIAGNOSTICS = "diagnostics"
-    COMPLETION = "completion"
-    HOVER = "hover"
-    SIGNATURE_HELP = "signature_help"
-    DEFINITION = "definition"
-    REFERENCES = "references"
-    RENAME = "rename"
-    FORMATTING = "formatting"
-    CODE_ACTION = "code_action"
-    DOCUMENT_SYMBOLS = "document_symbols"
-    SYNTAX_TREE = "syntax_tree"
+__all__ = ["LanguageCapability", "LanguageService", "LanguageServiceRegistry"]
 
 
 @runtime_checkable
@@ -95,6 +81,24 @@ class LanguageService(Protocol):
         A document it handles was closed.
 
         :param document: 關閉的文件 / the document that closed
+        """
+
+    def request(self, request: LanguageRequest, on_reply: ReplyHandler) -> CancelRequest:
+        """
+        回答一個問題
+        Answer a question.
+
+        能當場回答的服務在回傳之前就呼叫 ``on_reply``；要等的服務之後再呼叫，可以從
+        自己的執行緒呼叫。不提供那個功能時回覆一個帶 ``error`` 的結果，不要丟例外。
+        A service that can answer at once calls ``on_reply`` before returning; one
+        that has to wait calls it later, and may do so from a thread of its own.
+        Asked for a capability it does not offer, it replies with an ``error``
+        rather than raising.
+
+        :param request: 問題 / the question
+        :param on_reply: 收回覆的函式，最多呼叫一次 / receives the reply, called at
+            most once
+        :return: 取消這個問題的函式 / a function that cancels the question
         """
 
     def shutdown(self) -> None:
@@ -176,6 +180,31 @@ class LanguageServiceRegistry:
             if service.handles(document)
             and (capability is None or capability in service.capabilities())
         ]
+
+    def request(self, request: LanguageRequest, on_reply: ReplyHandler) -> CancelRequest:
+        """
+        把一個問題交給第一個能回答它的服務
+        Put a question to the first service that can answer it.
+
+        「第一個」是登記順序裡第一個處理那份文件、又提供那個功能的服務。沒有這樣的
+        服務時，``on_reply`` 立刻收到一個帶 ``error`` 的回覆。
+        The first one is the earliest registered service that handles the
+        document and offers the capability. When there is none, ``on_reply`` gets
+        a reply carrying an ``error`` straight away.
+
+        :param request: 問題 / the question
+        :param on_reply: 收回覆的函式；最多呼叫一次，取消之後不會再呼叫
+            receives the reply: called at most once, and never after a cancel
+        :return: 取消這個問題的函式 / a function that cancels the question
+        """
+        reply_once = ReplyOnce(on_reply)
+        services = self.services_for(request.document, request.capability)
+        if not services:
+            reply_once(LanguageReply(
+                request, error=f"no language service offers {request.capability.value} "
+                               f"for {request.document.uri}"))
+            return nothing_to_cancel
+        return reply_once.attach(services[0].request(request, reply_once))
 
     def shutdown(self) -> None:
         """

@@ -19,16 +19,23 @@
 
 ### 下一代編輯器藍圖（`docs/roadmap/2026-editor-next.md`，PR #270）
 
-M0（`je_editor/core/` 服務層）、M2 的診斷那一半、M3（工作區與多根專案）、M5（AI 供應者）已完成，見 `docs/updates/2026-10.md`。
+M0（`je_editor/core/` 服務層）、M2（診斷模型與 Tree-sitter 語法引擎）、M3（工作區與多根專案）、M5（AI 供應者）已完成，見 `docs/updates/2026-10.md`。
 以下依相依關係排序。
 
 - **#9** M1（UI 重新設計、指令與快捷鍵、語系補齊）。可以先做不改變外觀的部分：每個指令有不隨翻譯
   變動的 ID。語系那一項大部分已經有了：四份字典的鍵與佔位符的 parity、空白值、退回英文都
   由 `test/test_languages.py` 在 CI 守著；還沒做的是「語系載入改成資料驅動」。〔決定〕UI 的版面方向
   （活動列、編輯區、側邊面板、底部面板）要先定，才能動視窗層。
-- **#10** M2 剩下 Tree-sitter 那一半（診斷那一半已完成，見 U-20261008-04）：不依賴 Qt 的解析服務、
-  以查詢檔決定語法分類與結構區塊、既有的高亮器改成轉接器；`LanguageService` 的「發問、等回覆」
-  呼叫形式也在這裡定。
+- **#23** M2 沒有涵蓋的部分（語法引擎與高亮已完成，見 U-20261008-08）：語法樹目前只用來上色。大綱
+  （`utils/symbols`）、折疊（`utils/code_folding`）與智慧選取（`utils/selection`）仍然用各自的分析，
+  還沒有改用 `SyntaxSession.regions()`；編輯器是直接向引擎要 session，沒有經過 `DocumentStore`，
+  所以 `SyntaxLanguageService` 只有宿主程式自己開文件時才用得到；`LspClient` 也還沒有包成
+  `LanguageService`。支援的語言只有 Python、JavaScript、JSON，其餘仍用關鍵字表。
+- **#24** 升級 `tree-sitter` 之前要重新確認：0.26.0 的 `Point.row` / `Point.column` 每讀一次就少算
+  那個整數一次參考（Python 3.11 上讀幾萬次後行程當掉），引擎因此一律以索引讀取位置，
+  `test_syntax_engine.py::TestTheBindingIsUsedSafely` 守著。這個問題還沒有回報給上游（這台機器沒有
+  `gh`）。另外 `tree-sitter-json` 0.24.8 自帶的高亮查詢是照「先寫的規則優先」排的，跟 Python、
+  JavaScript 的文法相反，所以 `queries/json/highlights.scm` 重新指定了鍵；文法升級後可能不再需要。
 - **#22** M3 沒有涵蓋的部分（工作區本身已完成，見 U-20261008-07）：執行程式、測試面板、終端機、Git
   工具列與 Python 直譯器（venv）仍然只認主要的根目錄，也就是工作目錄。藍圖要的「每個根目錄有自己的
   語言 / 工具設定與環境」還沒做；Git 面板也還沒有依根目錄切換。

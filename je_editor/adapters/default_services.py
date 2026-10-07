@@ -13,6 +13,8 @@ from pathlib import Path
 
 from je_editor.adapters.ai.builtin_providers import register_builtin_ai_providers
 from je_editor.adapters.ai.settings_file import ai_settings_path, load_ai_settings
+from je_editor.adapters.syntax.syntax_language_service import SyntaxLanguageService
+from je_editor.adapters.syntax.tree_sitter_engine import shared_syntax_engine
 from je_editor.core.services.editor_services import EditorServices
 from je_editor.core.workspace.workspace_model import Workspace
 
@@ -20,8 +22,9 @@ from je_editor.core.workspace.workspace_model import Workspace
 def build_default_services(workspace: Workspace | None = None,
                            settings_directory: str | Path | None = None) -> EditorServices:
     """
-    建立一組服務，載入 AI 設定並登記內建的 AI 供應者
-    Build the services, load the AI settings and register the built-in AI providers.
+    建立一組服務：接上語法引擎、載入 AI 設定並登記內建的 AI 供應者
+    Build the services: plug the syntax engine in, load the AI settings and
+    register the built-in AI providers.
 
     :param workspace: 要處理的工作區，沒給時從空的工作區開始
         the workspace to work on, an empty one when omitted
@@ -31,6 +34,8 @@ def build_default_services(workspace: Workspace | None = None,
         services ready for use; the owner calls ``shutdown()`` on them when it closes
     """
     services = EditorServices(workspace)
+    services.syntax = shared_syntax_engine()
+    services.languages.register(SyntaxLanguageService(services.syntax))
     reload_ai_settings(services, settings_directory)
 
     def current_settings():

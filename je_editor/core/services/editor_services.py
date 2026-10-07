@@ -22,6 +22,7 @@ from je_editor.core.language.language_service import LanguageServiceRegistry
 from je_editor.core.process.task_service import TaskRunner
 from je_editor.core.registry.named_registry import NamedRegistry
 from je_editor.core.remote.remote_session import RemoteTransport
+from je_editor.core.syntax.syntax_model import NoSyntaxEngine, SyntaxEngine
 from je_editor.core.workspace.workspace_model import Workspace
 
 
@@ -40,6 +41,9 @@ class EditorServices:
         self.documents = DocumentStore()
         self.diagnostics = DiagnosticStore()
         self.languages = LanguageServiceRegistry(self.documents)
+        # 語法引擎；預設什麼語言都不會，由擁有者換成真正的解析器
+        # The syntax engine: one that knows no language until the owner plugs a parser in
+        self.syntax: SyntaxEngine = NoSyntaxEngine()
         # 以轉接器的種類登記，例如 ``pdb`` / Registered by adapter type, such as ``pdb``
         self.debug_adapters: NamedRegistry[DebugSessionFactory] = NamedRegistry("debug adapter")
         # 以執行的地方登記，例如 ``local`` / Registered by where they run, such as ``local``

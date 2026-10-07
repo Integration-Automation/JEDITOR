@@ -58,6 +58,7 @@ In the same commit: delete the item from `progress.md`, add a `#done` entry here
 
 | ID | Date | Title | Tags | Batch |
 |---|---|---|---|---|
+| U-20261008-08 | 2026-10-08 | 藍圖 M2：Tree-sitter 語法引擎與高亮；語言服務的發問形式；四個既有問題 | #done #decision #roadmap #syntax | [2026-10](2026-10.md) |
 | U-20261008-07 | 2026-10-08 | 藍圖 M3：工作區與多根專案 | #done #roadmap #workspace | [2026-10](2026-10.md) |
 | U-20261008-06 | 2026-10-08 | M2 診斷與 M5 的 CI 結果；Codacy 三筆：一筆改掉、兩筆是誤判 | #decision #ci #roadmap | [2026-10](2026-10.md) |
 | U-20261008-05 | 2026-10-08 | 藍圖 M5：AI 對話面板改成可切換供應者，新增 Anthropic 後端 | #done #roadmap #ai #deps | [2026-10](2026-10.md) |
@@ -98,5 +99,5 @@ In the same commit: delete the item from `progress.md`, add a `#done` entry here
 
 | File | Period | Entries |
 |---|---|---:|
-| [2026-10.md](2026-10.md) | 2026-10 | 15 |
+| [2026-10.md](2026-10.md) | 2026-10 | 16 |
 | [2026-09.md](2026-09.md) | 2026-09 | 20 |

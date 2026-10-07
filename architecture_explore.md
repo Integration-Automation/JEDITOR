@@ -1,7 +1,7 @@
 # JEditor 架構導覽 / Architecture Exploration
 
 > 產出時間：2026-08-03　對應版本：`dev` 分支（commit `f17e07a`）；2026-10-08 加入 `core/` 並重算各套件規模。
-> 涵蓋範圍：`je_editor/` 全部 315 個 `.py`（192 個實作模組 + 123 個 `__init__.py`），共 34,989 行。
+> 涵蓋範圍：`je_editor/` 全部 326 個 `.py`（201 個實作模組 + 125 個 `__init__.py`），共 36,760 行。
 > 這份文件記錄「每個模組負責什麼」與「模組之間怎麼串起來」，不是使用手冊（使用說明見 `README.md`、插件說明見 `PLUGIN_GUIDE.md`）。
 
 ---
@@ -15,24 +15,24 @@ JEditor 是以 PySide6（Qt for Python）寫成的程式碼編輯器，功能涵
 | --- | --- |
 | 語言 / 版本 | Python 3.10+（CI 測 3.10 ～ 3.14） |
 | UI 框架 | PySide6 6.11.2 + qt-material 主題 |
-| 主要相依 | `jedi`（Python 補全）、`ruff`（診斷）、`yapf` / `pycodestyle`（格式化與檢查）、`gitpython`、`watchdog`、`qtconsole` + `IPython`、`langchain_openai` + `langchain_core`、`anthropic`、`frontengine` |
-| 測試 | pytest + pytest-qt，110 個測試檔、約 18,100 行 |
+| 主要相依 | `jedi`（Python 補全）、`ruff`（診斷）、`yapf` / `pycodestyle`（格式化與檢查）、`gitpython`、`watchdog`、`qtconsole` + `IPython`、`langchain_openai` + `langchain_core`、`anthropic`、`tree-sitter` 與三個文法套件（`tree-sitter-python` / `-javascript` / `-json`）、`frontengine` |
+| 測試 | pytest + pytest-qt，112 個測試檔、約 19,400 行 |
 | 靜態分析 | ruff、SonarCloud（`sonar.sources=je_editor`）、Codacy、bandit |
 
 ### 各套件規模
 
 | 套件 | 模組數 | 行數 | 定位 |
 | --- | ---: | ---: | --- |
-| `pyside_ui/` | 98 | 21,181 | View / Controller：所有 Qt 元件與選單 |
-| `utils/` | 60 | 9,009 | 純邏輯層（絕大多數不 import Qt，可單獨測試） |
-| `adapters/` | 5 | 542 | 核心介面的實作（同樣不 import Qt）：AI 供應者、設定檔讀寫、預設服務的組裝 |
-| `core/` | 16 | 2,643 | 核心服務層：工作區、文件、診斷的模型，以及語言服務、除錯、工作執行、遠端、AI 的介面（完全不 import Qt） |
+| `pyside_ui/` | 101 | 21,667 | View / Controller：所有 Qt 元件與選單 |
+| `utils/` | 60 | 9,011 | 純邏輯層（絕大多數不 import Qt，可單獨測試） |
+| `adapters/` | 8 | 1,355 | 核心介面的實作（同樣不 import Qt）：AI 供應者、設定檔讀寫、預設服務的組裝 |
+| `core/` | 19 | 3,113 | 核心服務層：工作區、文件、診斷的模型，以及語言服務、除錯、工作執行、遠端、AI 的介面（完全不 import Qt） |
 | `git_client/` | 6 | 777 | Git 操作（GitPython + git CLI 兩條路） |
 | `code_scan/` | 4 | 368 | ruff 執行與 watchdog 檔案監看 |
 | `plugins/` | 1 | 337 | 插件註冊表與外部插件載入器 |
 | 頂層 | 2 | 131 | `__main__.py`、`start_editor.py`（另有 `__init__.py` 匯出公開 API） |
 
-（行數含各層 `__init__.py`，合計 34,989 行。）
+（行數含各層 `__init__.py`，合計 36,760 行。）
 
 ---
 
@@ -81,7 +81,7 @@ JEditor 是以 PySide6（Qt for Python）寫成的程式碼編輯器，功能涵
 **設計慣例**：幾乎每個功能都拆成「純邏輯 + Qt 整合層」兩塊。
 例如折疊 = `utils/code_folding/fold_regions.py`（算區塊）+ `pyside_ui/code/folding/folding_manager.py`（藏行、重畫）；
 書籤 = `utils/bookmark/bookmark_navigation.py` + `pyside_ui/code/bookmark/bookmark_manager.py`。
-這讓大部分邏輯可以不開視窗就測試，也是 `test/` 能有 110 個測試檔的原因。
+這讓大部分邏輯可以不開視窗就測試，也是 `test/` 能有 112 個測試檔的原因。
 
 ---
 
@@ -127,11 +127,12 @@ start_editor(debug_mode)                       je_editor/start_editor.py
 | `session_registry` | `pyside_ui/code/lsp/lsp_session.py` | 語言伺服器程序池，同語言的分頁共用一個程序 |
 | `auto_save_manager_dict` / `file_is_open_manager_dict` | `pyside_ui/code/auto_save/auto_save_manager.py` | 自動儲存執行緒表、避免同檔重複開分頁 |
 | `syntax_rule_setting_dict` 等三個 | `pyside_ui/code/syntax/syntax_setting.py` | Python 高亮的規則、關鍵字與插件擴充位 |
+| `shared_syntax_engine()` | `adapters/syntax/tree_sitter_engine.py` | 整個行程共用的語法引擎（第一次呼叫時才建立）。裡面只有載入好的文法與編譯好的查詢，都是不會變的資料；每份文件自己的語法樹在 session 裡，不在這裡 |
 | `EDITOR_EXTEND_TAB` | `main_ui/main_editor.py` | 給下游專案（PyBreeze）塞自訂分頁的掛載點 |
 | `_plugin_metadata_list` 等 | `plugins/__init__.py` | 已註冊的語言 / 翻譯 / 執行設定 / 中繼資料 |
 
 `core/` 刻意沒有模組層級的單例：`EditorServices` 由建立它的人持有，所以同一個行程嵌入兩個編輯器時不會共用
-工作區與診斷。
+工作區與診斷。`adapters/` 唯一的例外是上表的語法引擎，共用的只有唯讀的文法。
 
 ---
 
@@ -147,7 +148,7 @@ start_editor(debug_mode)                       je_editor/start_editor.py
 
 ---
 
-### 5.2 `utils/` — 純邏輯層（60 模組 / 9,009 行）
+### 5.2 `utils/` — 純邏輯層（60 模組 / 9,011 行）
 
 #### 文字與行操作
 
@@ -220,7 +221,7 @@ start_editor(debug_mode)                       je_editor/start_editor.py
 | `minimap/minimap_layout.py` | 112 | 縮圖座標換算：取樣間隔、行↔像素、長條寬度、可視範圍方框 |
 | `shortcuts/shortcut_registry.py` | 329 | 快捷鍵正規化、`ShortcutRegistry` 衝突偵測、預設表 `WINDOW_SHORTCUTS` / `EDITOR_SHORTCUTS`、使用者覆寫清理 |
 | `status/status_text.py` | 71 | 狀態列文字：語言名稱、編碼、行尾、游標位置 |
-| `theme/theme_colors.py` | 135 | 深 / 淺色調色盤，換主題時保留使用者自訂的顏色 |
+| `theme/theme_colors.py` | 137 | 深 / 淺色調色盤，換主題時保留使用者自訂的顏色 |
 
 #### 多語系
 
@@ -279,7 +280,7 @@ start_editor(debug_mode)                       je_editor/start_editor.py
 
 | 模組 | 行 | 功用 |
 | --- | ---: | --- |
-| `plaintext_code_edit/code_edit_plaintext.py` | **3,266** | `CodeEditor(QPlainTextEdit)`：整個編輯器的中樞。行號區 `LineNumber`、gutter（中斷點 / 書籤 / 折疊 / diff 標記）、自繪縮排參考線與 blame、jedi 背景補全 `_JediCompleteWorker`、括號配對、出現次數高亮、所有文字轉換動作、註解切換、縮放、快捷鍵註冊、LSP 訊號接線、右鍵選單 |
+| `plaintext_code_edit/code_edit_plaintext.py` | **3,275** | `CodeEditor(QPlainTextEdit)`：整個編輯器的中樞。行號區 `LineNumber`、gutter（中斷點 / 書籤 / 折疊 / diff 標記）、自繪縮排參考線與 blame、jedi 背景補全 `_JediCompleteWorker`、括號配對、出現次數高亮、所有文字轉換動作、註解切換、縮放、快捷鍵註冊、LSP 訊號接線、右鍵選單 |
 | `multi_cursor/multi_cursor_manager.py` | 530 | 額外游標的維護與批次套用（插入 / 刪除 / 移動 / 擴選 / 欄選取 / 下一個相同字） |
 | `snippets/snippet_manager.py` | 280 | 片段展開、定位點跳轉、複本同步；使用者片段存於 `.jeditor/snippets.json` |
 | `lsp/lsp_client.py` | 457 | 單一檔案這端的 LSP 連線：didOpen / didChange、completion / hover / rename / formatting / signature / references / codeAction / symbols / definition，回應以 Qt 訊號送出 |
@@ -297,8 +298,11 @@ start_editor(debug_mode)                       je_editor/start_editor.py
 | `selection/smart_selection_manager.py` | 87 | 智慧選取的擴大 / 縮回堆疊 |
 | `minimap/minimap_widget.py` | 185 | 右側縮圖：長條繪製、搜尋命中標記、可視範圍方框、點擊捲動 |
 | `split_view/split_editor_view.py` | 55 | 同一份 `QTextDocument` 的第二個檢視 |
-| `syntax/python_syntax.py` | 107 | `PythonHighlighter`：Python 專用高亮（含插件規則） |
-| `syntax/generic_syntax.py` | 134 | `GenericHighlighter`：依 `language_rules` 的通用高亮，處理跨行區塊註解 |
+| `syntax/highlighter_factory.py` | 103 | `build_highlighter()`：依檔名與 `syntax_engine` 設定挑高亮器（語法引擎會的語言 → `TreeSitterHighlighter`，有關鍵字表的 → `GenericHighlighter`，其餘 → `PythonHighlighter`）；`dispose_highlighter()` 把換下來的高亮器從文件上拿掉並刪除；`syntax_engine_for()` 從視窗取得引擎 |
+| `syntax/tree_sitter_highlighter.py` | 217 | `TreeSitterHighlighter`：把 `SyntaxSession` 回報的分類依主題畫到文件上，不知道語法樹是什麼。自己的 slot 排在 Qt 重畫編輯行之前，先更新語法分析；編輯位置之後受影響的行以切換區塊狀態讓 Qt 在同一輪接著畫，之前的行在事件迴圈下一輪補畫 |
+| `syntax/highlight_rules.py` | 137 | 三個高亮器共用的正規表示式規則：`regex_rules()` / `word_rules()` / `plugin_rules()`（插件為副檔名登記的關鍵字，疊在任何一種高亮器之上）、`apply_rules()`，以及 `release_document()`（拿掉高亮器時擋住文件的訊號，不讓分頁被當成已編輯） |
+| `syntax/python_syntax.py` | 75 | `PythonHighlighter`：以正規表示式逐行比對的 Python 高亮；語法引擎不能用、使用者選了 `classic`，或副檔名沒有任何規則時使用 |
+| `syntax/generic_syntax.py` | 145 | `GenericHighlighter`：依 `language_rules` 的通用高亮，處理跨行區塊註解；插件的關鍵字排在註解之前套用 |
 | `syntax/syntax_setting.py` | 99 | 高亮規則 / 關鍵字 / 插件擴充三個字典 |
 | `code_format/pep8_format.py` | 124 | `PEP8FormatChecker`：pycodestyle Checker 子類，把檢查結果導到格式檢查面板 |
 | `textedit_code_result/code_record.py` | 89 | `CodeRecord(QTextEdit)`：輸出區，支援搜尋 |
@@ -313,7 +317,7 @@ start_editor(debug_mode)                       je_editor/start_editor.py
 | 模組 | 行 | 功用 |
 | --- | ---: | --- |
 | `main_editor.py` | 652 | `EditorMain(QMainWindow)`：分頁容器、輸出重導計時器、狀態列更新、設定定期儲存、工作階段還原 / 儲存、關閉時收尾；`EDITOR_EXTEND_TAB` 掛載點 |
-| `editor/editor_widget.py` | 604 | `EditorWidget`：一個編輯分頁＝左側專案樹 + 上方 `CodeEditor` + 下方輸出分頁（執行結果 / 格式檢查 / 除錯 / 終端機 / 變數檢視 / Git），含拖放開檔、外部變更偵測、縮圖與分割檢視切換。所有開檔都經 `open_an_file()`：讀不了時 `report_open_failure()` 告訴使用者並撤掉「已開啟」紀錄；外部變更後重新載入用檔案自己的編碼 |
+| `editor/editor_widget.py` | 613 | `EditorWidget`：一個編輯分頁＝左側專案樹 + 上方 `CodeEditor` + 下方輸出分頁（執行結果 / 格式檢查 / 除錯 / 終端機 / 變數檢視 / Git），含拖放開檔、外部變更偵測、縮圖與分割檢視切換。所有開檔都經 `open_an_file()`：讀不了時 `report_open_failure()` 告訴使用者並撤掉「已開啟」紀錄；外部變更後重新載入用檔案自己的編碼 |
 | `editor/editor_widget_dock.py` | 85 | `FullEditorWidget`：可停駐的單檔編輯器；關閉時只在有修改時，以檔案原本的編碼與行尾存回 |
 | `editor/process_input.py` | 104 | 對子程序（program / shell / debugger）送入標準輸入的視窗 |
 | `dock/destroy_dock.py` | 52 | `DestroyDock`：關閉時會真的銷毀內容的 `QDockWidget` |
@@ -344,7 +348,7 @@ start_editor(debug_mode)                       je_editor/start_editor.py
 | `python_env_menu/build_venv_menu.py` | 243 | 建立 venv、pip 安裝 / 升級、選擇直譯器 |
 | `plugin_menu/build_plugin_menu.py` | 162 | 依已註冊插件建立「關於 / 執行」子選單，並開啟插件瀏覽器 |
 | `help_menu/build_help_menu.py` | 100 | 說明連結（開內嵌瀏覽器分頁）與關於 |
-| `submenu_map.py` | 42 | 建立「動作 → 子選單」對照表（避免用 `QAction.menu()`） |
+| `submenu_map.py` | 72 | 建立「動作 → 子選單」對照表（避免用 `QAction.menu()`）。`menus_in()` 走訪應用程式的所有元件時會先停住循環垃圾回收：PySide 把 `allWidgets()` 的指標一個一個包成物件，中途若發生回收，會刪掉清單裡那些沒人參考的元件，接著包到它們時行程就壞掉 |
 
 #### 面板與對話框
 
@@ -371,7 +375,7 @@ start_editor(debug_mode)                       je_editor/start_editor.py
 
 | 模組 | 行 | 功用 |
 | --- | ---: | --- |
-| `user_setting_file.py` | 68 | `user_setting_dict` 的定義與 `.jeditor/user_setting.json` 讀寫 |
+| `user_setting_file.py` | 70 | `user_setting_dict` 的定義與 `.jeditor/user_setting.json` 讀寫 |
 | `user_color_setting_file.py` | 96 | 顏色設定讀寫、RGB → `QColor` 換算、依樣式套用深 / 淺色組 |
 | `setting_utils.py` | 40 | 寫入前先備份（`.bak`）的 JSON 寫檔工具 |
 
@@ -420,16 +424,16 @@ start_editor(debug_mode)                       je_editor/start_editor.py
 | `browser_serach_lineedit.py` | 52 | 網址 / 搜尋輸入列 |
 | `browser_download_window.py` | 75 | 下載進度與狀態視窗 |
 
-### 5.11 `core/` — 核心服務層（16 模組 / 2,643 行）
+### 5.11 `core/` — 核心服務層（19 模組 / 3,113 行）
 
 下一代編輯器藍圖（`docs/roadmap/2026-editor-next.md`）的 M0：先把服務的介面與資料物件定下來，視窗層之後
-逐個里程碑改接過來。第一批使用者是診斷：編輯器的 `LintManager` 與問題面板都以統一模型保存診斷。整層不匯入 Qt 也不匯入 `pyside_ui/`；
+逐個里程碑改接過來。目前診斷（`LintManager` 與問題面板）、AI 對話面板、工作區與語法高亮已經在用。整層不匯入 Qt 也不匯入 `pyside_ui/`；
 介面一律用 `typing.Protocol`，之後由 `QObject` 持有資源的轉接器才不會遇到中繼類別衝突。
 
 | 模組 | 行 | 功用 |
 | --- | ---: | --- |
 | `__init__.py` | 58 | 核心層的公開 API（`__all__`） |
-| `services/editor_services.py` | 81 | `EditorServices`：把下列服務組在一起，`shutdown()` 依序關閉語言服務與工作執行器、清掉診斷、關閉文件；沒有模組層級的實例 |
+| `services/editor_services.py` | 85 | `EditorServices`：把下列服務組在一起，`shutdown()` 依序關閉語言服務與工作執行器、清掉診斷、關閉文件；沒有模組層級的實例 |
 | `events/event_hook.py` | 99 | `EventHook`：不靠 Qt 的訂閱與通知；在發出通知的執行緒上呼叫訂閱者，一個訂閱者出錯只記錄、不擋其他人 |
 | `registry/named_registry.py` | 116 | `NamedRegistry[T]`：名稱對應實作的登記表，AI 供應者、除錯轉接器、遠端傳輸、工作執行器共用 |
 | `uri/resource_uri.py` | 91 | 資源 URI：`to_uri` / `to_path`（沿用 `utils/lsp/lsp_protocol` 的轉換）、`uri_scheme`、`uri_key`（同一個本機檔案的不同寫法得到同一個鍵） |
@@ -438,7 +442,10 @@ start_editor(debug_mode)                       je_editor/start_editor.py
 | `diagnostics/diagnostic_model.py` | 325 | 統一的診斷模型：`Severity`（數值同 LSP）、`Position` / `TextRange`（1 起算）、`RelatedInformation`、`TextEdit` / `QuickFix`、`Diagnostic`；`DiagnosticStore` 依「來源 × 資源」整組取代，`select()` 依嚴重度 / 來源 / 資源篩選且順序固定 |
 | `diagnostics/legacy_diagnostics.py` | 103 | 統一模型與 `utils/lint/ruff_diagnostics.Diagnostic`（ruff 解析器的輸出）之間的雙向轉換；`unify()` 把混著兩種形式的清單整理成統一模型，是視窗層接收診斷的入口 |
 | `diagnostics/lsp_diagnostics.py` | 82 | 把 `lsp_protocol.diagnostic_entries` 的字典轉成統一模型，保留伺服器給的嚴重度（含 Hint）與來源；伺服器沒給嚴重度時當成錯誤 |
-| `language/language_service.py` | 204 | `LanguageCapability`、`LanguageService` 協定，以及 `LanguageServiceRegistry`：把 `DocumentStore` 的開啟 / 變更 / 關閉轉給處理該文件的服務，晚登記的服務會補收已開文件的「開啟」 |
+| `language/language_capability.py` | 30 | `LanguageCapability`：語言服務可以提供的功能；獨立一個模組，發問的形式與服務的介面才能都引用它 |
+| `language/language_request.py` | 152 | 向語言服務發問的形式：`LanguageRequest`、`LanguageReply`，以及保證「回覆最多一次、取消之後不再送達」的 `ReplyOnce`（以鎖保護，服務可以從自己的執行緒回覆） |
+| `language/language_service.py` | 233 | `LanguageService` 協定（文件生命週期加上 `request()`）與 `LanguageServiceRegistry`：把 `DocumentStore` 的開啟 / 變更 / 關閉轉給處理該文件的服務，晚登記的服務會補收已開文件的「開啟」；`request()` 把問題交給第一個處理那份文件又提供那個功能的服務 |
+| `syntax/syntax_model.py` | 244 | 語法分析的模型與介面：`SyntaxCategory`、`SyntaxSpan`（一行裡的一段，欄號 1 起算、以 UTF-16 單位計）、`LineSpan`、`RegionKind` / `StructuralRegion`，`SyntaxSession` 與 `SyntaxEngine` 兩個協定，以及什麼語言都不會的 `NoSyntaxEngine`（`EditorServices.syntax` 的預設值） |
 | `debug/debug_session.py` | 205 | `DebugSession` 協定與資料物件（`DebugLaunchRequest`、`Breakpoint`、`StackFrame`、`Variable`、`DebugState`、`StepKind`），名稱對應 DAP 的概念 |
 | `process/task_service.py` | 169 | `TaskSpec`（指令只能是引數清單，建立後指令與環境變數都不能再改）、`TaskHandle` / `TaskRunner` 協定、`TaskState`、`OutputStream` |
 | `remote/remote_session.py` | 91 | `RemoteSession` 協定與 `RemoteState`；`task_runner()` 回傳與本機相同的 `TaskRunner` 介面 |
@@ -447,9 +454,10 @@ start_editor(debug_mode)                       je_editor/start_editor.py
 | `ai/chat_session.py` | 94 | `ChatSession`：保管一段對話、組出下一個請求；失敗或被取消的那一句不留在對話裡 |
 
 除錯、工作執行、遠端三項目前只有介面；既有的 pdb 除錯與 `BaseProcessManager` 仍然走原本的路徑。AI 的實作在
-`adapters/ai/`，對話面板已經改走 `AIProvider`。
+`adapters/ai/`，對話面板已經改走 `AIProvider`；語法分析的實作在 `adapters/syntax/`，編輯器的高亮已經改走
+`SyntaxEngine`。
 
-### 5.12 `adapters/` — 核心介面的實作（5 模組 / 542 行）
+### 5.12 `adapters/` — 核心介面的實作（8 模組 / 1,355 行）
 
 `core/` 只有介面；真正去連某一家服務的程式碼放在這裡。跟 `core/` 一樣不匯入 Qt 與 `pyside_ui/`
 （`test_core_architecture.py` 把它列進 UI 層以下的套件），第三方 SDK 都在用到的時候才匯入。
@@ -457,11 +465,15 @@ start_editor(debug_mode)                       je_editor/start_editor.py
 | 模組 | 行 | 功用 |
 | --- | ---: | --- |
 | `__init__.py` | 58 | 套件說明 |
-| `default_services.py` | 52 | `build_default_services()`：建立 `EditorServices`、載入 AI 設定、登記內建的 AI 供應者；`EditorMain` 與沒有 `services` 的宿主視窗都用它 |
+| `default_services.py` | 57 | `build_default_services()`：建立 `EditorServices`、接上共用的語法引擎並登記 `SyntaxLanguageService`、載入 AI 設定、登記內建的 AI 供應者；`EditorMain` 與沒有 `services` 的宿主視窗都用它 |
 | `ai/openai_provider.py` | 147 | `OpenAIProvider`：透過 LangChain 的 `ChatOpenAI` 呼叫 OpenAI 相容端點；回覆整份回來後去掉 `</think>` 之前的思考過程 |
 | `ai/anthropic_provider.py` | 201 | `AnthropicProvider`：官方 `anthropic` SDK 的串流請求；可中途取消、回報 token 用量、把 SDK 的錯誤類別轉成給使用者看的說明；會拒絕請求的模型啟用伺服器端 fallback |
 | `ai/builtin_providers.py` | 50 | `register_builtin_ai_providers()`：每個供應者拿到「取得自己那組設定」的函式，所以改設定不必重新登記 |
 | `ai/settings_file.py` | 80 | `.jeditor/ai_config.json` 的讀寫；日誌只記路徑、從不記內容（裡面有 API 金鑰） |
+| `syntax/grammar_table.py` | 130 | 內建文法的表（`GrammarSpec`：語言 ID、副檔名、匯入文法套件的函式）、查詢名稱到 `SyntaxCategory` 的對照（`function.builtin` 找不到時退回 `function`），以及讀專案自己查詢檔的 `own_query()`。多支援一種語言就是加一列與一組查詢檔 |
+| `syntax/tree_sitter_engine.py` | 536 | `TreeSitterEngine` 與 `TreeSitterSession`，唯一知道 Tree-sitter 的地方。更新時找出新舊文字不同的最小一段（對齊到字元邊界）告訴舊的樹，只重新解析受影響的部分，並回報語法變了的行；分類以 64 行為一塊、用到才算；同一個節點被多條規則抓到時取查詢裡寫在後面的那一條；位元組欄換算成 UTF-16 欄；超過 2 MB 不解析。文法或查詢載不起來時那個語言變成不支援，不丟例外。讀 Tree-sitter 的位置一律用索引（原因寫在模組裡：0.26.0 的 `.row` / `.column` 會弄壞參考計數） |
+| `syntax/syntax_language_service.py` | 142 | `SyntaxLanguageService`：把語法引擎接成語言服務，文件一開就有語法樹、一變就更新；回答 `SYNTAX_TREE`（那份文件的 session）與 `DOCUMENT_SYMBOLS`（有名稱的結構區塊） |
+| `syntax/queries/<語言>/*.scm` | — | Tree-sitter 查詢檔：`highlights.scm` 接在文法自帶的高亮查詢之後，`regions.scm` 指出結構區塊（`@region.class` / `function` / `block` / `collection`）。不是 `.py`，靠 `pyproject.toml` 與 `dev.toml` 的 `package-data` 才會進 wheel |
 
 ---
 
@@ -491,7 +503,7 @@ UI 執行緒不做 I/O 是硬性規則，重活分成三類：
 
 | 檔案 | 內容 |
 | --- | --- |
-| `user_setting.json` | 字型、語言、樣式、編碼、縮排、最近檔案、開啟分頁與其游標 / 書籤 / 折疊狀態、快捷鍵覆寫、另外加入工作區的資料夾（`workspace_roots`） |
+| `user_setting.json` | 字型、語言、樣式、編碼、縮排、最近檔案、開啟分頁與其游標 / 書籤 / 折疊狀態、快捷鍵覆寫、另外加入工作區的資料夾（`workspace_roots`）、語法高亮用哪個引擎（`syntax_engine`） |
 | `user_color_setting.json` | 編輯器自訂顏色 |
 | `snippets.json` | 使用者程式碼片段 |
 | `*.bak` | 每次寫入前的備份（`setting_utils.write_setting`） |
@@ -522,9 +534,12 @@ qt-material 負責視窗樣式；編輯器自身的顏色（語法高亮、diff 
 換算結果放在 `actually_color_dict`。
 
 `update_actually_color_dict` 的鍵與備用值直接取自 `DARK_COLORS`，所以調色盤加新顏色不必動它。
-兩個高亮器都只認顏色鍵：`syntax_setting.py` 的內建規則存的是鍵名而非寫死的 `QColor`（插件仍可直接給 `QColor`），
-`generic_syntax.py` 亦然。高亮器在建立時就把顏色取走，因此 `build_style_menu._repaint_editors` 換主題時會呼叫
+三個高亮器都只認顏色鍵：`syntax_setting.py` 的內建規則存的是鍵名而非寫死的 `QColor`（插件仍可直接給 `QColor`），
+`generic_syntax.py` 亦然，`tree_sitter_highlighter.py` 則以 `CATEGORY_COLOURS` 把語法分類對到顏色鍵（函式名稱用新增的 `syntax_function_color`）。
+高亮器在建立時就把顏色取走，因此 `build_style_menu._repaint_editors` 換主題時會呼叫
 `reset_highlighter()` 重建，否則語法顏色會停在上一個主題。
+
+Qt 的高亮器重畫時會送出 `textChanged`（不是 `contentsChange`），拿掉高亮器時則會送出 `contentsChange`。所以分頁的未儲存標記聽的是文件的 `contentsChange`，而換高亮器時由 `release_document()` 擋住文件的訊號；兩者缺一，開檔或換主題之後分頁就會被標成已修改。
 
 ### 6.6 插件系統
 
@@ -547,7 +562,7 @@ qt-material 負責視窗樣式；編輯器自身的顏色（語法高亮、diff 
 
 ## 7. 測試與 CI
 
-- `test/` 110 個測試檔、約 18,100 行，與模組大致一對一（`test_fold_regions.py`、`test_shortcut_registry.py`…）。
+- `test/` 112 個測試檔、約 19,400 行，與模組大致一對一（`test_fold_regions.py`、`test_shortcut_registry.py`…）。
 - `core/` 的測試是 `test_core_*.py` 七個檔。其中 `test_core_architecture.py` 守分層：以 `ast` 走訪 `core/` 的
   匯入關係（函式內的匯入也算）、列出 UI 層以下允許向上匯入的模組，並在子行程裡擋掉 Qt 的匯入後實際建立
   `EditorServices`。`test_public_api_contract.py` 釘住 `je_editor.__all__` 的既有名稱、PyBreeze 以模組路徑匯入的
@@ -600,8 +615,8 @@ qt-material 負責視窗樣式；編輯器自身的顏色（語法高亮、diff 
    讓「純邏輯層」的界線稍微模糊。
 6. **命名遺留**：`utils/logging/loggin_instance.py`、`browser/browser_serach_lineedit.py` 兩處拼字錯誤已成公開路徑，
    要改需同時處理下游 import。
-7. **`core/` 接上了診斷、AI 與工作區**：編輯器的診斷與問題面板已經改用統一模型，ruff 解析器（`utils/lint`）仍然輸出舊形式、在 `LintManager` 與面板的入口以 `unify()` 轉換。文件、語言服務、除錯、工作執行與遠端還沒有接上，視窗層仍然
-   各自持有這些狀態。工作區只管「有哪些根目錄」：執行程式、測試面板、終端機、Git 工具列與直譯器仍然只認
+7. **`core/` 接上了診斷、AI、工作區與語法高亮**：編輯器的診斷與問題面板已經改用統一模型，ruff 解析器（`utils/lint`）仍然輸出舊形式、在 `LintManager` 與面板的入口以 `unify()` 轉換。文件、語言服務、除錯、工作執行與遠端還沒有接上，視窗層仍然
+   各自持有這些狀態。語法引擎目前只用來上色：編輯器直接向引擎要 session，沒有經過 `DocumentStore`，大綱、折疊與智慧選取也還在用各自的分析（`utils/symbols`、`utils/code_folding`、`utils/selection`）。工作區只管「有哪些根目錄」：執行程式、測試面板、終端機、Git 工具列與直譯器仍然只認
    主要的根目錄（工作目錄）。
 8. **`import je_editor.core` 仍會載入 Qt**：匯入任何子套件都會先執行 `je_editor/__init__.py`，而它匯入整個 Qt
    應用程式。服務本身不需要 Qt（測試在擋掉 Qt 的行程裡驗證過），但要讓「只用核心」的宿主程式完全不載入 Qt，

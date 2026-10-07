@@ -25,6 +25,9 @@ from je_editor.core.diagnostics.diagnostic_model import (
 )
 from je_editor.core.document.document_model import Document, DocumentStore, TextDocument
 from je_editor.core.events.event_hook import EventHook
+from je_editor.core.language.language_request import (
+    CancelRequest, LanguageReply, LanguageRequest, ReplyHandler
+)
 from je_editor.core.language.language_service import (
     LanguageCapability, LanguageService, LanguageServiceRegistry
 )
@@ -34,6 +37,10 @@ from je_editor.core.process.task_service import (
 from je_editor.core.registry.named_registry import NamedRegistry
 from je_editor.core.remote.remote_session import RemoteSession, RemoteState, RemoteTransport
 from je_editor.core.services.editor_services import EditorServices
+from je_editor.core.syntax.syntax_model import (
+    LineSpan, NoSyntaxEngine, RegionKind, StructuralRegion, SyntaxCategory, SyntaxEngine,
+    SyntaxSession, SyntaxSpan
+)
 from je_editor.core.uri.resource_uri import is_local_uri, to_path, to_uri, uri_key, uri_scheme
 from je_editor.core.workspace.workspace_model import ProjectRoot, Workspace
 from je_editor.utils.exception.exceptions import JEditorServiceException
@@ -52,6 +59,10 @@ __all__ = [
     "RelatedInformation", "TextEdit", "QuickFix", "filter_diagnostics",
     # Language services
     "LanguageService", "LanguageServiceRegistry", "LanguageCapability",
+    "LanguageRequest", "LanguageReply", "ReplyHandler", "CancelRequest",
+    # Syntax analysis
+    "SyntaxEngine", "SyntaxSession", "SyntaxSpan", "SyntaxCategory", "LineSpan",
+    "StructuralRegion", "RegionKind", "NoSyntaxEngine",
     # Debugging
     "DebugSession", "DebugSessionFactory", "DebugState", "DebugLaunchRequest",
     "Breakpoint", "StackFrame", "Variable", "StepKind",

@@ -20,7 +20,9 @@ license-files = ["LICENSE"]
 dependencies = [
     "PySide6==6.11.2", "qt-material", "yapf", "frontengine", "pycodestyle", "jedi",
     "qtconsole", "langchain_openai==1.6.2", "langchain_core", "anthropic==1.11.0", "pydantic",
-    "watchdog", "ruff", "gitpython>=3.1.59"
+    "watchdog", "ruff", "gitpython>=3.1.59",
+    "tree-sitter==0.26.0", "tree-sitter-python==0.25.0", "tree-sitter-javascript==0.25.0",
+    "tree-sitter-json==0.24.8"
 ]
 classifiers = [
     "Programming Language :: Python :: 3.10",
@@ -66,3 +68,9 @@ select = ["E4", "E7", "E9", "F"]
 # 只收 je_editor：test/ 有 __init__.py，不寫 include 會被一起裝進 site-packages。
 # Ship je_editor only: test/ has an __init__.py and would be installed too without include.
 find = { include = ["je_editor", "je_editor.*"], namespaces = false }
+
+[tool.setuptools.package-data]
+# Tree-sitter 的查詢檔不是 .py，不寫在這裡就不會進 wheel，裝好的編輯器會沒有結構區塊。
+# The Tree-sitter query files are not .py: unlisted, they stay out of the wheel and an installed
+# editor has no structural regions.
+"je_editor.adapters.syntax" = ["queries/*/*.scm"]

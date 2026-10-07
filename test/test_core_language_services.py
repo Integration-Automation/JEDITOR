@@ -3,7 +3,13 @@ from __future__ import annotations
 
 import pytest
 
+import threading
+
+from je_editor.core.diagnostics.diagnostic_model import Position
 from je_editor.core.document.document_model import Document, DocumentStore, TextDocument
+from je_editor.core.language.language_request import (
+    LanguageReply, LanguageRequest, ReplyOnce, nothing_to_cancel
+)
 from je_editor.core.language.language_service import (
     LanguageCapability, LanguageService, LanguageServiceRegistry
 )
@@ -15,11 +21,15 @@ class RecordingService:
     """A language service that writes down everything it is told."""
 
     def __init__(self, name: str, language_id: str,
-                 capabilities: frozenset[LanguageCapability] = frozenset()) -> None:
+                 capabilities: frozenset[LanguageCapability] = frozenset(),
+                 answer_at_once: bool = True) -> None:
         self.name = name
         self._language_id = language_id
         self._capabilities = capabilities
+        self._answer_at_once = answer_at_once
         self.events: list[tuple[str, str]] = []
+        self.pending: list = []
+        self.cancelled = 0
 
     def capabilities(self) -> frozenset[LanguageCapability]:
         return self._capabilities
@@ -35,6 +45,21 @@ class RecordingService:
 
     def document_closed(self, document: Document) -> None:
         self.events.append(("closed", document.uri))
+
+    def request(self, request, on_reply):
+        self.events.append(("request", request.capability.value))
+        if self._answer_at_once:
+            on_reply(LanguageReply(request, self.name, value=f"{self.name} answers"))
+            return nothing_to_cancel
+        self.pending.append((request, on_reply))
+        return self._cancel
+
+    def _cancel(self) -> None:
+        self.cancelled += 1
+
+    def answer_pending(self) -> None:
+        for request, on_reply in self.pending:
+            on_reply(LanguageReply(request, self.name, value=f"{self.name} answers late"))
 
     def shutdown(self) -> None:
         self.events.append(("shutdown", ""))
@@ -175,3 +200,140 @@ class TestShutdown:
         registry.shutdown()
         assert listening_before == (1, 1, 1)
         assert (len(documents.opened), len(documents.changed), len(documents.closed)) == (0, 0, 0)
+
+
+
+class TestAskingAQuestion:
+    """
+    A question goes to the first service that can answer it, and the reply comes
+    back through one function whether the service answers at once or later.
+    """
+
+    @pytest.fixture()
+    def document(self, documents, python_uri):
+        opened = TextDocument(python_uri, "x = 1\n", "python")
+        documents.open(opened)
+        return opened
+
+    @staticmethod
+    def _hover(document) -> LanguageRequest:
+        return LanguageRequest(LanguageCapability.HOVER, document, Position(1, 1))
+
+    def test_a_service_that_answers_at_once_replies_before_the_call_returns(
+            self, registry, document):
+        registry.register(RecordingService("jedi", "python", frozenset({LanguageCapability.HOVER})))
+        replies: list[LanguageReply] = []
+        registry.request(self._hover(document), replies.append)
+        assert [(reply.ok, reply.service, reply.value) for reply in replies] == [
+            (True, "jedi", "jedi answers")]
+
+    def test_the_reply_names_the_question_it_answers(self, registry, document):
+        registry.register(RecordingService("jedi", "python", frozenset({LanguageCapability.HOVER})))
+        replies: list[LanguageReply] = []
+        question = self._hover(document)
+        registry.request(question, replies.append)
+        assert replies[0].request is question
+
+    def test_the_first_registered_service_that_can_answer_is_asked(self, registry, document):
+        first = RecordingService("first", "python", frozenset({LanguageCapability.HOVER}))
+        second = RecordingService("second", "python", frozenset({LanguageCapability.HOVER}))
+        registry.register(first)
+        registry.register(second)
+        replies: list[LanguageReply] = []
+        registry.request(self._hover(document), replies.append)
+        assert replies[0].service == "first"
+        assert ("request", "hover") not in second.events
+
+    def test_a_service_without_the_capability_is_passed_over(self, registry, document):
+        registry.register(RecordingService("lint", "python",
+                                           frozenset({LanguageCapability.DIAGNOSTICS})))
+        registry.register(RecordingService("jedi", "python", frozenset({LanguageCapability.HOVER})))
+        replies: list[LanguageReply] = []
+        registry.request(self._hover(document), replies.append)
+        assert replies[0].service == "jedi"
+
+    def test_nobody_to_ask_is_an_error_reply_not_an_exception(self, registry, document):
+        replies: list[LanguageReply] = []
+        cancel = registry.request(self._hover(document), replies.append)
+        assert (replies[0].ok, replies[0].service, replies[0].value) == (False, "", None)
+        assert "hover" in replies[0].error
+        cancel()
+
+    def test_a_service_that_waits_replies_later(self, registry, document):
+        slow = RecordingService("server", "python", frozenset({LanguageCapability.HOVER}),
+                                answer_at_once=False)
+        registry.register(slow)
+        replies: list[LanguageReply] = []
+        registry.request(self._hover(document), replies.append)
+        assert replies == []
+        slow.answer_pending()
+        assert [reply.value for reply in replies] == ["server answers late"]
+
+    def test_a_cancelled_question_is_never_answered(self, registry, document):
+        slow = RecordingService("server", "python", frozenset({LanguageCapability.HOVER}),
+                                answer_at_once=False)
+        registry.register(slow)
+        replies: list[LanguageReply] = []
+        cancel = registry.request(self._hover(document), replies.append)
+        cancel()
+        slow.answer_pending()
+        assert (replies, slow.cancelled) == ([], 1)
+
+    def test_cancelling_twice_tells_the_service_once(self, registry, document):
+        slow = RecordingService("server", "python", frozenset({LanguageCapability.HOVER}),
+                                answer_at_once=False)
+        registry.register(slow)
+        cancel = registry.request(self._hover(document), lambda _reply: None)
+        cancel()
+        cancel()
+        assert slow.cancelled == 1
+
+    def test_cancelling_after_the_reply_does_not_reach_the_service(self, registry, document):
+        slow = RecordingService("server", "python", frozenset({LanguageCapability.HOVER}),
+                                answer_at_once=False)
+        registry.register(slow)
+        cancel = registry.request(self._hover(document), lambda _reply: None)
+        slow.answer_pending()
+        cancel()
+        assert slow.cancelled == 0
+
+    def test_a_service_that_replies_twice_is_heard_once(self, registry, document):
+        slow = RecordingService("server", "python", frozenset({LanguageCapability.HOVER}),
+                                answer_at_once=False)
+        registry.register(slow)
+        replies: list[LanguageReply] = []
+        registry.request(self._hover(document), replies.append)
+        slow.answer_pending()
+        slow.answer_pending()
+        assert len(replies) == 1
+
+    def test_a_question_without_a_position_and_with_options(self, document):
+        question = LanguageRequest(LanguageCapability.FORMATTING, document,
+                                   options={"tab_size": 4})
+        assert (question.position, question.options["tab_size"]) == (None, 4)
+
+
+class TestReplyOnce:
+    def test_replies_racing_from_many_threads_deliver_one(self, documents, python_uri):
+        document = TextDocument(python_uri, "", "python")
+        question = LanguageRequest(LanguageCapability.HOVER, document)
+        delivered: list[LanguageReply] = []
+        reply_once = ReplyOnce(delivered.append)
+        start = threading.Event()
+
+        def reply() -> None:
+            start.wait()
+            reply_once(LanguageReply(question, "racer"))
+
+        threads = [threading.Thread(target=reply) for _ in range(8)]
+        for thread in threads:
+            thread.start()
+        start.set()
+        for thread in threads:
+            thread.join()
+        assert (len(delivered), reply_once.settled) == (1, True)
+
+    def test_an_error_reply_is_not_ok(self, python_uri):
+        question = LanguageRequest(LanguageCapability.HOVER, TextDocument(python_uri, ""))
+        assert LanguageReply(question, error="not available").ok is False
+        assert LanguageReply(question, "jedi", value=None).ok is True

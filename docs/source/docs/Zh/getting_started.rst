@@ -62,7 +62,11 @@ JEditor 會自動安裝以下依賴套件：
    * - gitpython
      - Git 操作
    * - langchain_openai / langchain_core
-     - AI 助手（LLM 整合）
+     - AI 助理：OpenAI 相容的供應者
+   * - anthropic
+     - AI 助理：Anthropic 供應者
+   * - tree-sitter / tree-sitter-python / tree-sitter-javascript / tree-sitter-json
+     - 語法高亮用的語法解析
    * - watchdog
      - 檔案系統監控
    * - pycodestyle

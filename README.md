@@ -298,6 +298,7 @@ Core dependencies are installed automatically:
 | gitpython | Git repository operations |
 | langchain_openai + langchain_core | OpenAI-compatible AI provider |
 | anthropic | Anthropic AI provider |
+| tree-sitter + tree-sitter-python / -javascript / -json | Syntax parsing for highlighting |
 | watchdog | File system monitoring |
 | pycodestyle | PEP8 style checking |
 | qtconsole | Jupyter/IPython console widget |
@@ -348,7 +349,7 @@ yet. See the *Core Services* page of the [documentation](https://je-editor.readt
 ### Code Editing
 
 - **Multi-tab editor** -- Work on multiple files simultaneously with closable tabs.
-- **Syntax highlighting** -- Built-in Python highlighting with extensible plugin support for additional languages.
+- **Syntax highlighting** -- Python, JavaScript and JSON are coloured from a real parse (Tree-sitter) that follows each edit, so function and type names, f-string expressions and multi-line strings come out right. Other languages use keyword tables, and plugins add more.
 - **Auto-completion** -- Context-aware code suggestions powered by Jedi.
 - **Line numbers** -- Displayed alongside the editor with current line highlighting.
 - **Search & Replace** -- Search within the current file, across folders, or project-wide with regex and case-sensitive options. Runs in background threads for large projects.
@@ -571,7 +572,8 @@ je_editor/
 │   └── main_ui/        Main window, menus, toolbar, panels, settings, AI, console
 ├── core/               Service layer, no Qt: workspace, documents, diagnostics, and the
 │                       interfaces for language services, debugging, tasks, remote and AI
-├── adapters/           Implementations of those interfaces, no Qt: the AI providers
+├── adapters/           Implementations of those interfaces, no Qt: the AI providers and
+│                       the Tree-sitter syntax engine
 ├── code_scan/          Ruff execution and watchdog file monitoring
 ├── git_client/         Git operations (GitPython + git CLI)
 ├── plugins/            Plugin registry and loader

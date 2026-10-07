@@ -51,17 +51,30 @@ JEditor 內建自動儲存功能，定期儲存您的工作：
 語法高亮
 ---------
 
-JEditor 內建 Python 語法高亮，並透過插件系統支援其他程式語言。
+JEditor 以真正的語法解析為 Python、JavaScript 與 JSON 上色，其他常見語言使用關鍵字表，更多語言
+則透過插件支援。
 
-**內建 Python 高亮** 包括：
+**解析式的語言** 有 Python（ ``.py`` 、 ``.pyw`` 、 ``.pyi`` ）、JavaScript（ ``.js`` 、 ``.mjs`` 、
+``.cjs`` 、 ``.jsx`` ）與 JSON（ ``.json`` ）。它們以 Tree-sitter 解析，因此有：
 
-- 關鍵字（``if``、``else``、``for``、``while``、``def``、``class`` 等）
-- 內建函式（``print``、``len``、``range`` 等）
-- 字串（單行與多行）
-- 註解
+- 關鍵字（ ``if`` 、 ``else`` 、 ``for`` 、 ``while`` 、 ``def`` 、 ``class`` 等）、字串、註解與數字
+- 函式與方法的名稱，以及類別與型別的名稱
+- 內建函式（ ``print`` 、 ``len`` 、 ``range`` 等），以及 ``self`` / ``this``
+- 跳脫字元，以及 f-string 與樣板字串裡的運算式
+- JSON 的鍵與字串值分得開
+- 跨好幾行的字串與註解會一路上色到結尾；打開或關上一個時，受影響的每一行都會重新上色
 - 裝飾器
-- 數字
 - 可透過色彩設定自訂顏色
+
+解析會跟著每一次編輯更新，而且只重讀編輯影響到的部分。還沒有檔名的新分頁以 Python 上色。
+超過 2 MB 的檔案不上色。
+
+要換回原本以樣式比對的高亮，請在 ``.jeditor/user_setting.json`` 設定
+``"syntax_engine": "classic"`` （見 :doc:`configuration` ）。沒有安裝 Tree-sitter 或某個文法時，
+編輯器也會自己退回去。
+
+**使用關鍵字表的語言** 有 TypeScript、C、C++、Go、Java、Rust、shell、SQL、TOML 與 YAML：關鍵字、
+字串、註解與數字會上色。
 
 **透過插件支援更多語言：**
 
@@ -72,6 +85,9 @@ JEditor 內建 Python 語法高亮，並透過插件系統支援其他程式語�
 - Go（``.go``）
 - Java（``.java``）
 - Rust（``.rs``）
+
+插件為某個副檔名登記的關鍵字，會疊在為那個副檔名上色的高亮器之上，所以插件也可以替 JSON 或
+YAML 檔案加上自己的關鍵字。
 
 詳情請參閱 :doc:`plugins`。
 

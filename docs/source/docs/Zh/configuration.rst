@@ -49,6 +49,9 @@ user_setting.json
      - 啟動時是否重新開啟這些分頁（預設：``true``）
    * - ``workspace_roots``
      - 工作目錄以外，另外加入工作區的資料夾
+   * - ``syntax_engine``
+     - 語法由誰上色： ``tree_sitter`` （預設）會解析 Python、JavaScript 與 JSON；
+       ``classic`` 則每一種語言都用原本以樣式比對的高亮器
    * - ``shortcuts``
      - 使用者改過的快捷鍵；只記錄與預設值不同的項目
 
@@ -73,7 +76,9 @@ user_color_setting.json
      - 輸出面板文字
    * - ``syntax_keyword_color`` / ``syntax_string_color`` /
        ``syntax_comment_color`` / ``syntax_number_color``
-     - 語法高亮
+     - 語法高亮：關鍵字、字串、註解、數字
+   * - ``syntax_function_color`` / ``syntax_builtin_color`` / ``syntax_self_color``
+     - 語法高亮：函式名稱、內建名稱與型別名稱、 ``self`` / ``this``
    * - ``diff_added_marker_color`` / ``diff_modified_marker_color`` /
        ``diff_removed_marker_color``
      - 行號區的 Git 變更標記

@@ -49,6 +49,9 @@ The main settings file controls editor behavior and appearance:
      - Whether to reopen those tabs on launch (default: ``true``)
    * - ``workspace_roots``
      - The folders added to the workspace beside the working directory
+   * - ``syntax_engine``
+     - What colours the syntax: ``tree_sitter`` (default) parses Python, JavaScript and JSON;
+       ``classic`` uses the earlier pattern-based highlighters for every language
    * - ``shortcuts``
      - Keys the user reassigned; only what differs from a default is stored
 
@@ -73,7 +76,9 @@ Controls the color scheme for the editor and output:
      - Output panel text
    * - ``syntax_keyword_color`` / ``syntax_string_color`` /
        ``syntax_comment_color`` / ``syntax_number_color``
-     - Syntax highlighting
+     - Syntax highlighting: keywords, strings, comments, numbers
+   * - ``syntax_function_color`` / ``syntax_builtin_color`` / ``syntax_self_color``
+     - Syntax highlighting: function names, built-ins and type names, ``self`` / ``this``
    * - ``diff_added_marker_color`` / ``diff_modified_marker_color`` /
        ``diff_removed_marker_color``
      - Git change markers in the gutter

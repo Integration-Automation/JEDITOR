@@ -51,6 +51,7 @@ DARK_COLORS: Palette = {
     "syntax_number_color": [181, 206, 168],
     "syntax_builtin_color": [78, 201, 176],
     "syntax_self_color": [197, 134, 192],
+    "syntax_function_color": [220, 220, 170],
     "trailing_whitespace_color": [120, 70, 70],
 }
 
@@ -82,6 +83,7 @@ LIGHT_COLORS: Palette = {
     "syntax_number_color": [9, 134, 88],
     "syntax_builtin_color": [38, 127, 153],
     "syntax_self_color": [154, 0, 154],
+    "syntax_function_color": [121, 94, 38],
     "trailing_whitespace_color": [255, 205, 205],
 }
 

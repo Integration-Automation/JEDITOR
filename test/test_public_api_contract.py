@@ -90,3 +90,20 @@ class TestTheMainWindowConstructor:
     def test_the_arguments_can_be_passed_by_position_or_by_name(self, parameters):
         assert {parameter.kind for parameter in parameters} == {
             inspect.Parameter.POSITIONAL_OR_KEYWORD}
+
+
+class TestTheShapesPyBreezePins:
+    """
+    PyBreeze keeps contract tests of its own (``test/test_utils/test_jeditor_contract.py``
+    there) that pin parameter lists and even fragments of source. These are the
+    ones a change here has broken before; the full set has to be run from PyBreeze.
+    """
+
+    def test_a_highlight_colour_may_be_a_theme_colour_key(self):
+        from je_editor.pyside_ui.code.syntax.python_syntax import PythonHighlighter
+        assert "actually_color_dict.get(color)" in inspect.getsource(PythonHighlighter._make_format)
+
+    def test_the_editor_methods_pybreeze_calls_after_renaming_a_file(self):
+        from je_editor.pyside_ui.code.plaintext_code_edit.code_edit_plaintext import CodeEditor
+        for method in ("reset_highlighter", "load_git_baseline", "start_language_server"):
+            assert list(inspect.signature(getattr(CodeEditor, method)).parameters) == ["self"]

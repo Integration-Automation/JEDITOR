@@ -62,7 +62,11 @@ JEditor will automatically install the following dependencies:
    * - gitpython
      - Git operations
    * - langchain_openai / langchain_core
-     - AI assistant (LLM integration)
+     - AI assistant: OpenAI-compatible provider
+   * - anthropic
+     - AI assistant: Anthropic provider
+   * - tree-sitter / tree-sitter-python / tree-sitter-javascript / tree-sitter-json
+     - Syntax parsing for highlighting
    * - watchdog
      - File system monitoring
    * - pycodestyle

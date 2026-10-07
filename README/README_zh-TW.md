@@ -264,6 +264,7 @@ pip install .
 | gitpython | Git 倉庫操作 |
 | langchain_openai + langchain_core | OpenAI 相容的 AI 供應者 |
 | anthropic | Anthropic 的 AI 供應者 |
+| tree-sitter + tree-sitter-python / -javascript / -json | 語法高亮用的語法解析 |
 | watchdog | 檔案系統監控 |
 | pycodestyle | PEP8 風格檢查 |
 | qtconsole | Jupyter/IPython 主控台元件 |
@@ -311,7 +312,7 @@ services.shutdown()
 ### 程式碼編輯
 
 - **多分頁編輯器** -- 同時處理多個檔案，支援關閉分頁。
-- **語法高亮** -- 內建 Python 語法高亮，可透過外掛擴展支援更多語言。
+- **語法高亮** -- Python、JavaScript 與 JSON 以真正的語法解析（Tree-sitter）上色，並跟著每一次編輯更新，所以函式與型別名稱、f-string 裡的運算式、跨行字串都分得對。其他語言使用關鍵字表，外掛可以再加。
 - **自動補全** -- 由 Jedi 驅動的上下文感知程式碼建議。
 - **行號顯示** -- 編輯器旁顯示行號，並高亮目前行。
 - **搜尋與取代** -- 支援在目前檔案、資料夾或整個專案中搜尋，提供正則表達式與區分大小寫選項。大型專案使用背景執行緒處理。
@@ -526,7 +527,8 @@ je_editor/
 │   └── main_ui/        主視窗、選單、工具列、面板、設定、AI、主控台
 ├── core/               服務層，不依賴 Qt：工作區、文件、診斷，以及語言服務、
 │                       除錯、工作執行、遠端與 AI 的介面
-├── adapters/           上述介面的實作，不依賴 Qt：AI 供應者
+├── adapters/           上述介面的實作，不依賴 Qt：AI 供應者與
+│                       Tree-sitter 語法引擎
 ├── code_scan/          Ruff 執行與 watchdog 檔案監控
 ├── git_client/         Git 操作（GitPython + git CLI）
 ├── plugins/            外掛註冊表與載入器

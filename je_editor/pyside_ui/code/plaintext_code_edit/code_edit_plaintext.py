@@ -59,8 +59,9 @@ from je_editor.utils.occurrence.word_occurrences import (
     find_occurrences, lines_containing, replace_whole_word, word_at
 )
 from je_editor.utils.text_cleanup.text_cleanup import trim_trailing_whitespace
-from je_editor.pyside_ui.code.syntax.generic_syntax import highlighter_for
-from je_editor.pyside_ui.code.syntax.python_syntax import PythonHighlighter
+from je_editor.pyside_ui.code.syntax.highlighter_factory import (
+    build_highlighter, dispose_highlighter, syntax_engine_for
+)
 from je_editor.pyside_ui.dialog.search_ui.search_text_box import SearchBox
 from je_editor.pyside_ui.dialog.search_ui.search_replace_widget import SearchReplaceDialog
 from je_editor.pyside_ui.main_ui.save_settings.user_color_setting_file import actually_color_dict
@@ -289,9 +290,10 @@ class CodeEditor(QPlainTextEdit):
             QtGui.QFontMetricsF(self.font()).horizontalAdvance("        ")
         )
 
-        # Python 語法高亮
-        self.highlighter = PythonHighlighter(self.document(), main_window=self)
-        self.highlight_current_line()
+        # 語法高亮；依檔名挑選，新分頁先當成 Python
+        # Syntax highlighting, chosen by file name; a new tab counts as Python for now
+        self.highlighter: QtGui.QSyntaxHighlighter | None = None
+        self.reset_highlighter()
 
         # 關閉自動換行，改為單行顯示
         self.setLineWrapMode(self.LineWrapMode.NoWrap)
@@ -416,17 +418,24 @@ class CodeEditor(QPlainTextEdit):
         依目前檔案的副檔名重設語法高亮
         Reset the syntax highlighter to match the current file's suffix.
 
-        Python 用專屬的高亮器；其他有規則的語言用通用高亮器；都不符合時仍套用
+        語法引擎認得的語言由它上色；其他有規則的語言用通用高亮器；都不符合時仍套用
         Python 的（新檔案還沒有副檔名，多半就是要寫 Python）。
-        Python gets its own highlighter, another language with rules gets the
-        generic one, and anything else still gets Python's — a new file has no
-        suffix yet and is usually about to become Python.
+        A language the syntax engine knows is coloured by it, another language
+        with rules gets the generic highlighter, and anything else still gets
+        Python's — a new file has no suffix yet and is usually about to become
+        Python.
+
+        舊的高亮器要先從文件上拿掉；它是文件的子物件，只換掉參照的話會留在那裡
+        繼續上色。
+        The old highlighter is taken off the document first: it is a child of the
+        document, and replacing only the reference would leave it there, still
+        colouring.
         """
         jeditor_logger.info("CodeEditor reset_highlighter")
-        suffix = Path(str(self.current_file)).suffix if self.current_file else ""
-        generic = highlighter_for(self.document(), suffix) if suffix else None
-        self.highlighter = generic if generic is not None else PythonHighlighter(
-            self.document(), main_window=self)
+        dispose_highlighter(self.highlighter)
+        file_path = str(self.current_file) if self.current_file else None
+        engine = syntax_engine_for(getattr(self.main_window, "main_window", None))
+        self.highlighter = build_highlighter(self.document(), file_path, engine)
         self.highlight_current_line()
 
     def check_env(self) -> None:

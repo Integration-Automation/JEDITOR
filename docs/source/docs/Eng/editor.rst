@@ -51,17 +51,31 @@ JEditor includes an automatic save feature that periodically saves your work:
 Syntax Highlighting
 --------------------
 
-JEditor provides built-in Python syntax highlighting and supports additional languages through plugins.
+JEditor colours Python, JavaScript and JSON from a real parse of the file, other common languages
+from keyword tables, and further languages through plugins.
 
-**Built-in Python Highlighting** includes:
+**Parsed languages** are Python (``.py``, ``.pyw``, ``.pyi``), JavaScript (``.js``, ``.mjs``,
+``.cjs``, ``.jsx``) and JSON (``.json``). They are parsed with Tree-sitter, which gives:
 
-- Keywords (``if``, ``else``, ``for``, ``while``, ``def``, ``class``, etc.)
-- Built-in functions (``print``, ``len``, ``range``, etc.)
-- Strings (single-line and multi-line)
-- Comments
+- Keywords (``if``, ``else``, ``for``, ``while``, ``def``, ``class``, etc.), strings, comments and numbers
+- Function and method names, and class and type names
+- Built-in functions (``print``, ``len``, ``range``, etc.), and ``self`` / ``this``
+- Escape sequences, and the expressions inside f-strings and template strings
+- JSON keys told apart from string values
+- Strings and comments over several lines stay coloured to their end, and opening or closing one
+  recolours every line it affects
 - Decorators
-- Numbers
 - Customizable colors via the color settings
+
+The parse follows each edit and re-reads only what the edit touched. A new tab that has no file
+name yet is coloured as Python. A file larger than 2 MB is left uncoloured.
+
+To go back to the earlier, pattern-based highlighting, set ``"syntax_engine": "classic"`` in
+``.jeditor/user_setting.json`` (see :doc:`configuration`). The editor also falls back to it by
+itself when Tree-sitter or a grammar is not installed.
+
+**Keyword-table languages** are TypeScript, C, C++, Go, Java, Rust, shell, SQL, TOML and YAML:
+keywords, strings, comments and numbers are coloured.
 
 **Plugin-based Language Support:**
 
@@ -72,6 +86,9 @@ Additional languages can be added through the plugin system. Pre-built plugins a
 - Go (``.go``)
 - Java (``.java``)
 - Rust (``.rs``)
+
+Keywords a plugin registers for a suffix are laid over whichever highlighter colours that suffix,
+so a plugin can add its own words to JSON or YAML files too.
 
 See :doc:`plugins` for details on creating language plugins.
 

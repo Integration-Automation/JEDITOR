@@ -22,7 +22,7 @@ window, and plugins extend it through a small registry API.
 | `je_editor/pyside_ui/code/` | `CodeEditor` (`plaintext_code_edit/`) plus its managers (folding, bookmarks, lint, LSP, diff/blame, snippets, multi-cursor), highlighters (`syntax/`), process runners (`code_process/`, `shell_process/`, `base_process_manager.py`) |
 | `je_editor/pyside_ui/dialog/`, `git_ui/`, `browser/` | Search/replace, shortcut, snippet and file dialogs; Git panel, commit graph, diff viewers; embedded QtWebEngine browser |
 | `je_editor/core/` | Service layer with no Qt import: `EditorServices` (`services/`) bundles the workspace model (`workspace/`), open documents (`document/`), the unified diagnostic model and store (`diagnostics/`), the language service registry (`language/`), and the interfaces for debug sessions (`debug/`), task execution (`process/`), remote sessions (`remote/`) and AI providers (`ai/`). `events/` and `registry/` replace Qt signals and per-feature registries. The window consumes the diagnostics part so far: the editor's `LintManager` and the Problems panel hold their findings in the unified model (roadmap `docs/roadmap/2026-editor-next.md`) |
-| `je_editor/adapters/` | Implementations of the `core/` interfaces, also Qt-free; third-party SDKs are imported at the point of use. `ai/`: `OpenAIProvider` (LangChain `ChatOpenAI`), `AnthropicProvider` (official `anthropic` SDK, streamed), the built-in registration and the `.jeditor/ai_config.json` reader/writer (which never logs the content). `default_services.py` builds an `EditorServices` with these registered |
+| `je_editor/adapters/` | Implementations of the `core/` interfaces, also Qt-free; third-party SDKs are imported at the point of use. `ai/`: `OpenAIProvider` (LangChain `ChatOpenAI`), `AnthropicProvider` (official `anthropic` SDK, streamed), the built-in registration and the `.jeditor/ai_config.json` reader/writer (which never logs the content). `default_services.py` builds an `EditorServices` with these registered `syntax/`: the Tree-sitter `SyntaxEngine` (`tree_sitter_engine.py`), its grammar table and query files (`grammar_table.py`, `queries/<language>/*.scm`), and `SyntaxLanguageService` |
 | `je_editor/utils/` | Pure logic with no widgets (only `multi_language/locale_match.py` imports Qt): text operations, encodings, sessions, diffs, symbols, LSP protocol, shortcut registry, theme colors, translations (`multi_language/`), logging, stdout/stderr redirect |
 | `je_editor/code_scan/` | ruff runner and watchdog file monitor, run on worker threads |
 | `je_editor/git_client/` | Git access: `GitService` (GitPython) and `GitCLI` (subprocess), blame, HEAD baseline, hunk staging |
@@ -103,6 +103,20 @@ Run menu → run_program() (menu/run_menu/under_run_menu/build_program_menu.py) 
   → BaseProcessManager reader threads → queues → QTimer pull_text() → CodeRecord output pane
 ```
 
+**Syntax highlighting**
+
+```
+CodeEditor.reset_highlighter() → dispose_highlighter(old) → build_highlighter(document, file, engine)
+  (pyside_ui/code/syntax/highlighter_factory.py; engine = EditorMain.services.syntax)
+  → engine.language_for(file) → engine.open_session(language) → TreeSitterHighlighter
+    | no session (unknown language, grammar missing, "syntax_engine": "classic")
+      → GenericHighlighter (keyword table) | PythonHighlighter
+edit → document.contentsChange → TreeSitterHighlighter._analyse_again()
+  → session.update(text) [smallest changed span → tree.edit → reparse → changed lines]
+  → Qt repaints the edited lines → highlightBlock() → session.spans(line) → theme colours
+  → lines after the edit: block state toggled so Qt carries on; lines before it: next event-loop turn
+```
+
 **Plugin install and load**
 
 ```
@@ -126,7 +140,12 @@ Plugin browser (pyside_ui/main_ui/plugin_browser/) → github_api.fetch_repo_tre
 - **Host-app mode**: `EditorMain(extend=True)`. In this mode `pyside_ui/main_ui/menu/set_menu_bar.py`
   skips the built-in Plugins menu (`menu/plugin_menu/build_plugin_menu.py`).
 - **Python highlighting rules**: `pyside_ui/code/syntax/syntax_setting.py`
-  (`syntax_rule_setting_dict`, `syntax_extend_setting_dict`).
+  (`syntax_rule_setting_dict`, `syntax_extend_setting_dict`). They drive the pattern-based
+  highlighters; keywords registered for a suffix are also laid over the Tree-sitter highlighter.
+- **Parsed languages**: one `GrammarSpec` row in `adapters/syntax/grammar_table.py` (language ID,
+  suffixes, a function importing the grammar package) plus `queries/<language>/highlights.scm` and
+  `regions.scm`. The grammar package becomes a pinned dependency in `pyproject.toml`, `dev.toml`
+  and both requirements files.
 - **Language servers**: `je_editor/utils/lsp/language_servers.py` maps a file suffix to a server
   command and merges in user settings.
 - **Shortcuts / colors / UI strings**: single sources in `utils/shortcuts/shortcut_registry.py`,
@@ -135,7 +154,10 @@ Plugin browser (pyside_ui/main_ui/plugin_browser/) → github_api.fetch_repo_tre
   its `NamedRegistry` attributes — `ai_providers`, `debug_adapters` (session factories),
   `task_runners`, `remote_transports` (by URI scheme) — and language services through
   `languages.register()`. Any source reports findings with `diagnostics.publish(source, uri, ...)`.
-  Implementations live in `adapters/`: the AI providers `openai` and `anthropic` so far. A plugin
+  Implementations live in `adapters/`: the AI providers `openai` and `anthropic`, and the
+  Tree-sitter syntax engine, which `build_default_services()` sets as `services.syntax` and
+  registers as the `syntax` language service. Questions to language services go through
+  `languages.request(LanguageRequest, on_reply)`, which returns a cancel function. A plugin
   adds another AI provider with `window.services.ai_providers.register(name, provider)`, and the
   chat panel lists it with no change to the panel.
 
@@ -152,7 +174,10 @@ Plugin browser (pyside_ui/main_ui/plugin_browser/) → github_api.fetch_repo_tre
   before you move or rename a module. It merges its UI strings by mutating the exported
   `english_word_dict` and `traditional_chinese_word_dict` in place. Treat these names,
   `EditorMain`'s constructor and the attributes PyBreeze uses (`tab_widget`, `menu`, `help_menu`)
-  as a contract. `EditorMain` also sets `services`; PyBreeze does not use that name today. `test/test_public_api_contract.py` pins the exported names, those module paths
+  as a contract. PyBreeze calls `CodeEditor.reset_highlighter()` after changing a tab's file and
+  after `register_programming_language()`; the keywords it registers for `.json` and YAML suffixes
+  are laid over whichever highlighter colours those files. `EditorMain` also sets `services`;
+  PyBreeze does not use that name today. `test/test_public_api_contract.py` pins the exported names, those module paths
   and the constructor's arguments; it cannot see behaviour or attributes, and its list is a copy
   that has to be updated when PyBreeze starts importing something new.
 - **Translations**: a JEditor translation change must keep PyBreeze's

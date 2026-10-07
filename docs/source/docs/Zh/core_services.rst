@@ -1,14 +1,14 @@
 核心服務
 ========
 
-``je_editor.core`` 放的是編輯器裡不屬於元件的部分：工作區、開著的文件、診斷，以及語言服務、
-除錯、工作執行、遠端工作階段與 AI 供應者的介面。這一層完全不匯入 Qt，所以測試、命令列工具，
+``je_editor.core`` 放的是編輯器裡不屬於元件的部分：工作區、開著的文件、診斷、語法分析，以及
+語言服務、除錯、工作執行、遠端工作階段與 AI 供應者的介面。這一層完全不匯入 Qt，所以測試、命令列工具，
 或從不建立 JEditor 視窗的宿主程式都可以使用。
 
 .. note::
 
-   這一層是下一代編輯器藍圖的基礎。資料模型現在就能用，但編輯器視窗還沒有改用它們：各個面板
-   仍然各自連到自己的後端，之後會隨著每個里程碑逐一改接到這些服務上。
+   這一層是下一代編輯器藍圖的基礎。編輯器視窗一次改接一個部分：目前診斷、AI 對話面板、工作區
+   與語法高亮已經在用它，除錯、工作執行與遠端工作階段還只有介面。
 
 快速範例
 --------
@@ -56,6 +56,9 @@ EditorServices
      - ``DiagnosticStore``：每個來源回報的診斷
    * - ``languages``
      - ``LanguageServiceRegistry``，文件事件來自 ``documents``
+   * - ``syntax``
+     - ``SyntaxEngine``。接上解析器之前它什麼語言都不會； ``build_default_services()`` 會接上
+       Tree-sitter
    * - ``debug_adapters``
      - 除錯工作階段的建立函式，以轉接器種類登記
    * - ``task_runners``
@@ -154,7 +157,8 @@ EditorServices
 .. code-block:: python
 
    from je_editor.core import (
-       Diagnostic, EditorServices, LanguageCapability, Severity, TextDocument, TextRange, to_uri
+       Diagnostic, EditorServices, LanguageCapability, LanguageReply, Severity, TextDocument,
+       TextRange, to_uri
    )
 
 
@@ -181,6 +185,10 @@ EditorServices
        def document_closed(self, document):
            self._services.diagnostics.publish(self.name, document.uri, [])
 
+       def request(self, request, on_reply):
+           on_reply(LanguageReply(request, self.name, error="todo-finder answers no questions"))
+           return lambda: None
+
        def shutdown(self):
            self._services.diagnostics.clear(source=self.name)
 
@@ -200,6 +208,100 @@ EditorServices
 
 在文件已經開著之後才登記的服務，會收到它處理的每一份文件的「開啟」通知，所以晚啟動的伺服器仍然
 知道有哪些文件開著。``services_for(document, capability)`` 用來找出處理某份文件的服務。
+
+向語言服務發問
+~~~~~~~~~~~~~~
+
+補全、懸停說明、符號，以及其他任何問題都走同一個呼叫：給一個收回覆的函式，拿回一個取消的函式。
+``services.languages.request()`` 會把問題交給登記順序裡第一個處理那份文件、又提供那個功能的服務。
+
+.. code-block:: python
+
+   from je_editor.adapters.default_services import build_default_services
+   from je_editor.core import LanguageCapability, LanguageRequest, TextDocument, to_uri
+
+   services = build_default_services()
+   document = TextDocument(to_uri("greeter.py"),
+                           "class Greeter:\n    def greet(self):\n        return 'hi'\n")
+   services.documents.open(document)
+
+
+   def show(reply):
+       if reply.ok:
+           print(reply.service, [(region.kind.value, region.name) for region in reply.value])
+       else:
+           print(reply.error)
+
+
+   cancel = services.languages.request(
+       LanguageRequest(LanguageCapability.DOCUMENT_SYMBOLS, document), show)
+   # syntax [('class', 'Greeter'), ('function', 'greet')]
+   services.languages.request(LanguageRequest(LanguageCapability.HOVER, document), show)
+   # no language service offers hover for file:///.../greeter.py
+   services.shutdown()
+
+不論服務是當場回答還是過一陣子才回答，呼叫的方式都一樣：
+
+- 手上就有答案的服務（例如語法服務）會在 ``request()`` 回傳之前呼叫那個函式。
+- 要等的服務（例如語言伺服器）之後才呼叫，而且可能從自己的執行緒呼叫。要更新畫面的呼叫端得
+  自己把回覆轉回畫面執行緒。
+- 回覆最多只會送達一次，呼叫取消函式之後不會再送達。這兩點由登記表保證，服務不必自己處理。
+- 沒有人能回答時，回覆會帶著 ``error`` ，而且 ``reply.ok`` 是 ``False`` 。不會丟出例外。
+
+``reply.value`` 的內容依功能而定：
+
+.. list-table::
+   :header-rows: 1
+   :widths: 30 70
+
+   * - 功能
+     - ``reply.value``
+   * - ``SYNTAX_TREE``
+     - 那份文件的 ``SyntaxSession`` （見下一節）
+   * - ``DOCUMENT_SYMBOLS``
+     - 有名稱的 ``StructuralRegion`` 組成的 tuple：類別、函式與方法
+   * - 其他
+     - 等第一個提供它的服務出現時決定
+
+語法分析
+--------
+
+``SyntaxEngine`` 把文字變成編輯器需要解析器提供的兩樣東西：一行裡哪幾段是關鍵字、字串或函式
+名稱，以及一份文件有哪些類別、函式與區塊。語法樹本身不會離開引擎，所以畫面層不依賴解析器。
+
+.. code-block:: python
+
+   from je_editor.adapters.syntax.tree_sitter_engine import TreeSitterEngine
+
+   engine = TreeSitterEngine()
+   print(engine.language_ids())                 # ('python', 'javascript', 'json')
+   session = engine.open_session(engine.language_for("main.py"))
+
+   print(session.update("def greet(name):\n    return name\n"))
+   # LineSpan(first=1, last=3)
+   print([(span.column, span.length, span.category.value) for span in session.spans(1)])
+   # [(1, 3, 'keyword'), (5, 5, 'function'), (11, 4, 'variable')]
+
+   print(session.update("def greet(name):\n    return name.upper()\n"))
+   # LineSpan(first=2, last=2)
+   print([(region.kind.value, region.name, region.is_multiline) for region in session.regions()])
+   # [('function', 'greet', True)]
+
+- ``open_session(language_id)`` 為一份文件開一個自己的 ``SyntaxSession`` ；引擎不能分析那個語言
+  時回傳 ``None`` 。
+- ``update(text)`` 接收整份文字，回傳分類可能變了的 ``LineSpan`` ；文字沒變時回傳 ``None`` 。
+  只有編輯影響到的部分會重新解析，而回傳的範圍可以超出被編輯的那一行：打開一個字串會改變它
+  之後的每一行。
+- ``spans(line)`` 回傳一行的 ``SyntaxSpan`` ，外層的在前、內層的在後，所以照順序套用時，插值會
+  蓋過包住它的字串。
+- ``regions()`` 回傳 ``StructuralRegion`` ，外層的在前。 ``kind`` 是 ``RegionKind.CLASS`` 、
+  ``FUNCTION`` 、 ``BLOCK`` 與 ``COLLECTION`` 其中之一。
+- 行號與欄號跟診斷一樣從 1 起算。欄號以 UTF-16 的單位計，也就是 Qt 與語言伺服器協定用的單位。
+
+``je_editor.adapters.syntax`` 以 Tree-sitter 實作這個引擎，支援 Python、JavaScript 與 JSON。
+一種語言就是 ``grammar_table.py`` 裡的一列 ``GrammarSpec`` ，加上 ``queries/<語言>/`` 底下的查詢檔：
+``highlights.scm`` 會接在文法自帶的高亮查詢之後， ``regions.scm`` 則指出結構區塊。文法沒有安裝、
+或查詢檔編譯不過時，那個語言只是變成不支援，不會丟出例外，編輯器會退回以樣式比對的高亮器。
 
 除錯、工作執行、遠端工作階段與 AI 供應者
 ----------------------------------------
