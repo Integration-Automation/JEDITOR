@@ -547,6 +547,9 @@ qt-material 負責視窗樣式；編輯器自身的顏色（語法高亮、diff 
   `dev.toml` 的下限調高時要重新產生 `publish.txt`；`test_workflow_actions.py` 守著這兩件事。
 - 兩種發佈檔都不帶 `test/`：wheel 靠套件探索的 `include`（只收 `je_editor`），sdist 靠 `MANIFEST.in` 的
   `prune test`（setuptools 預設會把 `test*/test*.py` 收進 sdist）。兩項都由 `test_dev_toml_parity.py` 守著。
+- ruff 的規則寫明在 `pyproject.toml` 與 `dev.toml` 的 `[tool.ruff.lint]`（`E4`、`E7`、`E9`、`F`，也就是 ruff 0.15 以前的
+  預設）。ruff 0.16 把預設規則從 118 條擴到 826 條，不寫明的話「`ruff check` 乾淨」會隨安裝到的版本改變；
+  `test_dev_toml_parity.py` 守著這組規則與兩個檔的一致。
 
 ---
 

@@ -110,8 +110,11 @@ class TestIndexProjectFiles:
 
     def test_depth_limit_prunes_deep_trees(self, tmp_path):
         deep = tmp_path
-        for level in range(MAX_INDEX_DEPTH + 3):
-            deep = deep / f"level_{level}"
+        # One-letter names: the tree has to be deeper than the limit without
+        # being longer than the 260 characters a Windows path may have when
+        # long paths are switched off.
+        for _level in range(MAX_INDEX_DEPTH + 3):
+            deep = deep / "d"
             deep.mkdir()
         (deep / "buried.py").write_text("x = 1\n", encoding="utf-8")
         assert "buried.py" not in [path.rsplit("/", 1)[-1] for path in index_project_files(tmp_path)]

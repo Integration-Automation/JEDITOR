@@ -58,6 +58,7 @@ In the same commit: delete the item from `progress.md`, add a `#done` entry here
 
 | ID | Date | Title | Tags | Batch |
 |---|---|---|---|---|
+| U-20261008-03 | 2026-10-08 | PROGRESS #18、#19、#20：寫明 ruff 規則、長路徑測試、fixture 寫法 | #done #decision #tests | [2026-10](2026-10.md) |
 | U-20261008-02 | 2026-10-08 | M0 在 PR #270 的 CI 結果；Codacy 的動態匯入警告是誤判 | #decision #ci #roadmap | [2026-10](2026-10.md) |
 | U-20261008-01 | 2026-10-08 | 藍圖 M0：不依賴 Qt 的核心服務層 je_editor/core | #migration #roadmap #core | [2026-10](2026-10.md) |
 | U-20261001-08 | 2026-10-01 | 發佈鎖檔改用和其他鎖檔一樣的七天截止日解析 | #ci #security #X-13 | [2026-10](2026-10.md) |
@@ -93,5 +94,5 @@ In the same commit: delete the item from `progress.md`, add a `#done` entry here
 
 | File | Period | Entries |
 |---|---|---:|
-| [2026-10.md](2026-10.md) | 2026-10 | 10 |
+| [2026-10.md](2026-10.md) | 2026-10 | 11 |
 | [2026-09.md](2026-09.md) | 2026-09 | 20 |

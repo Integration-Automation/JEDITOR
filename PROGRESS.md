@@ -11,18 +11,6 @@
   `# 初始化並記錄日誌` 被當成「註解掉的程式碼」。這是本專案雙語註解的正常寫法，不該刪。
   要清掉這一項得在 SonarCloud 把 issue 轉成 False Positive（用 API 改狀態需要 Administer
   Issues 權限）。
-- **#18** 〔決定〕`ruff` 沒有釘版本、repo 也沒有 ruff 設定，而 ruff 0.16 的預設規則從 118 條變成
-  826 條。2026-10-08 用 ruff 0.16.10 跑 `ruff check`：全 repo 526 筆（`I001` 匯入排序 276、`UP006` 93、
-  `UP035` 35、`RUF100` 27、`UP045` 23、`BLE001` 22…，449 筆可自動修正）；同一份程式碼用 ruff 0.15.8，
-  或用 0.16.10 加 `--select E4,E7,E9,F`（舊的預設），都是乾淨的。要選一個：釘 `ruff<0.16`、在
-  `pyproject.toml` 寫明規則，或整個 repo 照新規則修一輪。`je_editor/core/` 與它的測試在新規則下只剩
-  `I001`（9 筆，寫法跟現有程式碼一致）與 `RUF022`（1 筆，`__all__` 依主題分組）。
-- **#19** 〔未確認〕`test_file_scan.py::TestIndexProjectFiles::test_depth_limit_prunes_deep_trees` 在沒有
-  開啟長路徑的 Windows（`LongPathsEnabled = 0`）上失敗：`deep.mkdir()` 丟 `WinError 206`，建出來的目錄樹
-  超過 260 字元。2026-10-08 在 `da90c4f` 的乾淨工作樹上同樣失敗，所以跟當時的修改無關；CI 與原本的
-  開發機沒有這個問題。要不要讓測試不依賴長路徑設定，還沒看。
-- **#20** 〔未確認〕pytest 9.1 對「class 範圍的 fixture 寫成實例方法」發出 `PytestRemovedIn10Warning`，
-  `test_logging_hygiene.py` 的 `probe_result` 是這種寫法，pytest 10 會變成錯誤。
 
 ### 下一代編輯器藍圖（`docs/roadmap/2026-editor-next.md`，PR #270）
 
