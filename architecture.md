@@ -177,7 +177,13 @@ Plugin browser (pyside_ui/main_ui/plugin_browser/) → github_api.fetch_repo_tre
   as a contract. PyBreeze calls `CodeEditor.reset_highlighter()` after changing a tab's file and
   after `register_programming_language()`; the keywords it registers for `.json` and YAML suffixes
   are laid over whichever highlighter colours those files. `EditorMain` also sets `services`;
-  PyBreeze does not use that name today. `test/test_public_api_contract.py` pins the exported names, those module paths
+  PyBreeze does not use that name today. **PyBreeze keeps contract tests of its own**,
+  `test/test_utils/test_jeditor_contract.py` in its repository: they pin parameter lists
+  (`LspClient.start_for(file_path, servers)`, `EditorMain.close_tab(index)`,
+  `FullEditorWidget.__init__`, `server_command(suffix, servers)`), private names
+  (`PythonHighlighter._make_format`) and even fragments of source. An optional parameter added
+  here fails them, so run that file against this tree after any change PyBreeze could see:
+  `PYTHONPATH=<this repository> pytest test/test_utils/test_jeditor_contract.py` from PyBreeze. `test/test_public_api_contract.py` pins the exported names, those module paths
   and the constructor's arguments; it cannot see behaviour or attributes, and its list is a copy
   that has to be updated when PyBreeze starts importing something new.
 - **Translations**: a JEditor translation change must keep PyBreeze's

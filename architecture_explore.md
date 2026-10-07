@@ -1,7 +1,7 @@
 # JEditor 架構導覽 / Architecture Exploration
 
 > 產出時間：2026-08-03　對應版本：`dev` 分支（commit `f17e07a`）；2026-10-08 加入 `core/` 並重算各套件規模。
-> 涵蓋範圍：`je_editor/` 全部 326 個 `.py`（201 個實作模組 + 125 個 `__init__.py`），共 36,760 行。
+> 涵蓋範圍：`je_editor/` 全部 326 個 `.py`（201 個實作模組 + 125 個 `__init__.py`），共 36,784 行。
 > 這份文件記錄「每個模組負責什麼」與「模組之間怎麼串起來」，不是使用手冊（使用說明見 `README.md`、插件說明見 `PLUGIN_GUIDE.md`）。
 
 ---
@@ -23,7 +23,7 @@ JEditor 是以 PySide6（Qt for Python）寫成的程式碼編輯器，功能涵
 
 | 套件 | 模組數 | 行數 | 定位 |
 | --- | ---: | ---: | --- |
-| `pyside_ui/` | 101 | 21,667 | View / Controller：所有 Qt 元件與選單 |
+| `pyside_ui/` | 101 | 21,691 | View / Controller：所有 Qt 元件與選單 |
 | `utils/` | 60 | 9,011 | 純邏輯層（絕大多數不 import Qt，可單獨測試） |
 | `adapters/` | 8 | 1,355 | 核心介面的實作（同樣不 import Qt）：AI 供應者、設定檔讀寫、預設服務的組裝 |
 | `core/` | 19 | 3,113 | 核心服務層：工作區、文件、診斷的模型，以及語言服務、除錯、工作執行、遠端、AI 的介面（完全不 import Qt） |
@@ -32,7 +32,7 @@ JEditor 是以 PySide6（Qt for Python）寫成的程式碼編輯器，功能涵
 | `plugins/` | 1 | 337 | 插件註冊表與外部插件載入器 |
 | 頂層 | 2 | 131 | `__main__.py`、`start_editor.py`（另有 `__init__.py` 匯出公開 API） |
 
-（行數含各層 `__init__.py`，合計 36,760 行。）
+（行數含各層 `__init__.py`，合計 36,784 行。）
 
 ---
 
@@ -280,10 +280,10 @@ start_editor(debug_mode)                       je_editor/start_editor.py
 
 | 模組 | 行 | 功用 |
 | --- | ---: | --- |
-| `plaintext_code_edit/code_edit_plaintext.py` | **3,275** | `CodeEditor(QPlainTextEdit)`：整個編輯器的中樞。行號區 `LineNumber`、gutter（中斷點 / 書籤 / 折疊 / diff 標記）、自繪縮排參考線與 blame、jedi 背景補全 `_JediCompleteWorker`、括號配對、出現次數高亮、所有文字轉換動作、註解切換、縮放、快捷鍵註冊、LSP 訊號接線、右鍵選單 |
+| `plaintext_code_edit/code_edit_plaintext.py` | **3,287** | `CodeEditor(QPlainTextEdit)`：整個編輯器的中樞。行號區 `LineNumber`、gutter（中斷點 / 書籤 / 折疊 / diff 標記）、自繪縮排參考線與 blame、jedi 背景補全 `_JediCompleteWorker`、括號配對、出現次數高亮、所有文字轉換動作、註解切換、縮放、快捷鍵註冊、LSP 訊號接線、右鍵選單 |
 | `multi_cursor/multi_cursor_manager.py` | 530 | 額外游標的維護與批次套用（插入 / 刪除 / 移動 / 擴選 / 欄選取 / 下一個相同字） |
 | `snippets/snippet_manager.py` | 280 | 片段展開、定位點跳轉、複本同步；使用者片段存於 `.jeditor/snippets.json` |
-| `lsp/lsp_client.py` | 457 | 單一檔案這端的 LSP 連線：didOpen / didChange、completion / hover / rename / formatting / signature / references / codeAction / symbols / definition，回應以 Qt 訊號送出 |
+| `lsp/lsp_client.py` | 469 | 單一檔案這端的 LSP 連線：didOpen / didChange、completion / hover / rename / formatting / signature / references / codeAction / symbols / definition，回應以 Qt 訊號送出。伺服器以 `root_resolver`（編輯器設定：檔案 → 所屬的工作區根目錄）回答的根目錄啟動，問不到時用檔案所在的資料夾；`start_for(file_path, servers)` 的參數清單是 PyBreeze 釘住的契約 |
 | `lsp/lsp_session.py` | 242 | `LspSession`（一個伺服器程序）與 `LspSessionRegistry`（同語言分頁共用、引用計數、關閉時 shutdown） |
 | `code_process/code_exec.py` | 236 | `ExecManager`：執行使用者程式（含插件 run_config），輸出導回面板 |
 | `shell_process/shell_exec.py` | 132 | `ShellManager`：執行 shell 指令 |

@@ -377,17 +377,36 @@ class TestTheLanguageServerRoot:
         editor_tab.code_edit.current_file = str(tmp_path / "elsewhere" / "lib.rs")
         assert editor_tab.code_edit._workspace_root() is None
 
-    @pytest.mark.parametrize("given, expected_parent", [(True, False), (False, True)])
-    def test_the_session_is_started_at_the_given_root_or_the_files_folder(
-            self, qapp, two_roots, given, expected_parent):
+    @staticmethod
+    def _started_at(file_path: str, resolver) -> str:
         from je_editor.pyside_ui.code.lsp import lsp_client
-        file_path = str(two_roots[1] / "src" / "lib.rs")
         client = lsp_client.LspClient()
+        client.root_resolver = resolver
         with patch.object(lsp_client, "server_command", return_value=["rust-analyzer"]), \
                 patch.object(lsp_client.session_registry, "session_for",
                              return_value=MagicMock()) as session_for:
-            client.start_for(file_path, root=norm(two_roots[1]) if given else None)
-        started_at = session_for.call_args.args[1]
-        assert (norm(started_at) == norm(two_roots[1] / "src")) is expected_parent
+            client.start_for(file_path)
         client._session = None
         client.deleteLater()
+        return norm(session_for.call_args.args[1])
+
+    def test_the_session_is_started_at_the_root_the_resolver_names(self, qapp, two_roots):
+        file_path = str(two_roots[1] / "src" / "lib.rs")
+        asked: list[str] = []
+
+        def resolver(path: str) -> str:
+            asked.append(path)
+            return norm(two_roots[1])
+
+        assert self._started_at(file_path, resolver) == norm(two_roots[1])
+        assert asked == [file_path]
+
+    @pytest.mark.parametrize("resolver", [None, lambda _path: None, lambda _path: ""])
+    def test_without_an_answer_it_starts_at_the_files_own_folder(self, qapp, two_roots, resolver):
+        file_path = str(two_roots[1] / "src" / "lib.rs")
+        assert self._started_at(file_path, resolver) == norm(two_roots[1] / "src")
+
+    def test_the_editor_gives_its_client_the_workspace_as_resolver(self, editor_tab, two_roots):
+        resolver = editor_tab.code_edit.lsp_client.root_resolver
+        assert resolver(str(two_roots[0] / "main.rs")) == norm(two_roots[0])
+        assert resolver(str(two_roots[1] / "deep" / "lib.rs")) == norm(two_roots[1])

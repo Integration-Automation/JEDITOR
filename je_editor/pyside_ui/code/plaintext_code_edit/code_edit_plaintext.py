@@ -254,6 +254,7 @@ class CodeEditor(QPlainTextEdit):
         # The language server connection: the lint pass asks whether it is
         # supplying diagnostics, so it has to exist by then too
         self.lsp_client = LspClient(self)
+        self.lsp_client.root_resolver = self._workspace_root_of
 
         # 定義哪些按鍵不會觸發補全視窗
         self.skip_popup_behavior_list = [
@@ -2352,7 +2353,7 @@ class CodeEditor(QPlainTextEdit):
         if self.current_file is None or Path(str(self.current_file)).suffix.lower() == ".py":
             self.lsp_client.stop()
             return False
-        if not self.lsp_client.start_for(str(self.current_file), root=self._workspace_root()):
+        if not self.lsp_client.start_for(str(self.current_file)):
             return False
         self.lsp_client.did_open(self.toPlainText())
         return True
@@ -2371,8 +2372,19 @@ class CodeEditor(QPlainTextEdit):
         :return: 根目錄路徑；檔案不在任何根目錄底下時為 ``None``
             the root's path, or ``None`` when the file is under no root
         """
+        return self._workspace_root_of(str(self.current_file))
+
+    def _workspace_root_of(self, file_path: str) -> str | None:
+        """
+        取得某個檔案所屬的工作區根目錄
+        The workspace root a file belongs to.
+
+        :param file_path: 檔案路徑 / the file's path
+        :return: 根目錄路徑；檔案不在任何根目錄底下時為 ``None``
+            the root's path, or ``None`` when the file is under no root
+        """
         window = getattr(self.main_window, "main_window", None)
-        root = window_workspace(window).root_for(str(self.current_file))
+        root = window_workspace(window).root_for(file_path)
         return root.path if root is not None else None
 
     def request_language_server_completion(self) -> bool:

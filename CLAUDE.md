@@ -193,3 +193,10 @@ Workspace rule shared by every repository under `D:\Codes` (full text: `D:\Codes
 
 - Run PyBreeze's tests as `pytest test/test_utils`. A bare `pytest` or `pytest test` also collects
   `test/unit_test/start_automation`, which launches the app and ends in "no output, exit 0".
+- **PyBreeze pins JEditor's shapes in its own `test/test_utils/test_jeditor_contract.py`**: parameter
+  lists, private names and fragments of source. Adding even an optional parameter to a method it
+  pins fails there, and nothing in this repository notices. After any change to a class or function
+  PyBreeze could see, run that file against this tree — from PyBreeze,
+  `PYTHONPATH=<this repository> pytest test/test_utils/test_jeditor_contract.py` — and judge the
+  result against the same run on the commit before, since PyBreeze's own environment has failures
+  of its own.

@@ -103,6 +103,17 @@ class TestTheShapesPyBreezePins:
         from je_editor.pyside_ui.code.syntax.python_syntax import PythonHighlighter
         assert "actually_color_dict.get(color)" in inspect.getsource(PythonHighlighter._make_format)
 
+    def test_the_language_server_is_started_from_a_file_and_a_server_table(self):
+        # PyBreeze puts its own server in the table and has the editors look again
+        from je_editor.pyside_ui.code.lsp.lsp_client import LspClient
+        from je_editor.utils.lsp import language_servers
+        assert list(inspect.signature(LspClient.start_for).parameters) == [
+            "self", "file_path", "servers"]
+        assert "server_command(" in inspect.getsource(LspClient.start_for)
+        assert list(inspect.signature(language_servers.server_command).parameters) == [
+            "suffix", "servers"]
+        assert inspect.signature(language_servers.server_command).parameters["servers"].default is None
+
     def test_the_editor_methods_pybreeze_calls_after_renaming_a_file(self):
         from je_editor.pyside_ui.code.plaintext_code_edit.code_edit_plaintext import CodeEditor
         for method in ("reset_highlighter", "load_git_baseline", "start_language_server"):
