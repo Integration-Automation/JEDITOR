@@ -1,6 +1,7 @@
 """Tests for the syntax model, the Tree-sitter engine and the syntax language service."""
 from __future__ import annotations
 
+import gc
 import sys
 from types import SimpleNamespace
 
@@ -433,6 +434,9 @@ class TestTheBindingIsUsedSafely:
         text = "\n".join(f"def function_{index}(value):\n    return value + {index}"
                          for index in range(400))
         watched = (0, 1, 4)
+        # Earlier tests leave cycles holding small integers. Their collection during
+        # this loop must not look like the binding dropped references on Python 3.10.
+        gc.collect()
         before = [sys.getrefcount(value) for value in watched]
         for round_number in range(3):
             session.update(text + f"\n# round {round_number}\n")
