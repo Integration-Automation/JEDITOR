@@ -9,6 +9,9 @@ from typing import TYPE_CHECKING
 # 匯入使用者設定字典，用來保存 UI 設定
 # Import user settings dictionary for saving UI preferences
 from je_editor.pyside_ui.main_ui.save_settings.shortcut_setting import bind
+from je_editor.pyside_ui.main_ui.workspace.workspace_actions import (
+    add_folder_to_workspace, remove_folder_from_workspace
+)
 from je_editor.pyside_ui.main_ui.save_settings.user_setting_file import user_setting_dict
 # 匯入 Python 編碼清單 (例如 utf-8, gbk 等)
 # Import list of Python encodings (e.g., utf-8, gbk, etc.)
@@ -87,6 +90,22 @@ def set_file_menu(ui_we_want_to_set: EditorMain) -> None:
         lambda: choose_dir_get_dir_path(parent_qt_instance=ui_we_want_to_set)
     )
     ui_we_want_to_set.file_menu.addAction(ui_we_want_to_set.file_menu.open_folder_action)
+
+    # 工作區：在目前的專案旁邊多放一個資料夾，或把它拿掉
+    # Workspace: put another folder beside the current project, or take one away
+    ui_we_want_to_set.file_menu.add_workspace_folder_action = QAction(
+        language_wrapper.language_word_dict.get("file_menu_add_workspace_folder_label"))
+    ui_we_want_to_set.file_menu.add_workspace_folder_action.triggered.connect(
+        lambda: add_folder_to_workspace(ui_we_want_to_set)
+    )
+    ui_we_want_to_set.file_menu.addAction(ui_we_want_to_set.file_menu.add_workspace_folder_action)
+    ui_we_want_to_set.file_menu.remove_workspace_folder_action = QAction(
+        language_wrapper.language_word_dict.get("file_menu_remove_workspace_folder_label"))
+    ui_we_want_to_set.file_menu.remove_workspace_folder_action.triggered.connect(
+        lambda: remove_folder_from_workspace(ui_we_want_to_set)
+    )
+    ui_we_want_to_set.file_menu.addAction(
+        ui_we_want_to_set.file_menu.remove_workspace_folder_action)
 
     # 儲存檔案動作
     # Save File action

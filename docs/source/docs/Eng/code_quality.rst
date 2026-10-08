@@ -50,7 +50,18 @@ Problems Panel
 
 Every diagnostic — from ruff for Python, and from the language server for other
 languages — is underlined in the editor and listed in the Problems dock panel with its
-rule, message and line. Double-click a row to jump to it.
+rule, message, line, file, severity and source. Double-click a row to jump to it.
+
+Both kinds of finding go through one model, so the two filters treat them alike:
+
+- **Severity**: All severities, Error, Warning, Information or Hint. A language server's
+  severity is shown as the server gave it; ruff's is worked out from the rule code.
+- **Source**: All sources, or one of the tools that currently has findings, such as
+  ``ruff`` or the language server's name.
+
+The list always comes out in the same order: by file, then position, then severity.
+**Whole project** checks every file with ruff on a worker thread, and **Apply Fixes**
+applies everything ruff can fix by itself.
 
 Test Panel
 -----------

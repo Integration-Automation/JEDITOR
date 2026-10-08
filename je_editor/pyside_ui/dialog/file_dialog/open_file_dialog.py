@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 from je_editor.pyside_ui.main_ui.save_settings.user_setting_file import user_setting_dict, read_user_setting
+from je_editor.pyside_ui.main_ui.workspace.workspace_roots import restore_extra_roots, window_workspace
 from je_editor.utils.logging.loggin_instance import jeditor_logger
 from je_editor.utils.multi_language.multi_language_wrapper import language_wrapper
 from je_editor.utils.venv_check.check_venv import check_and_choose_venv
@@ -78,6 +79,10 @@ def choose_dir_get_dir_path(parent_qt_instance: EditorMain) -> None:
         # 更新工作目錄 / Update working directory
         parent_qt_instance.working_dir = dir_path
         os.chdir(dir_path)
+        # 換了專案：整個工作區換成這個資料夾，原本另外加入的資料夾屬於上一個專案
+        # Another project: the whole workspace becomes this folder, since the
+        # folders added before belonged to the previous project
+        window_workspace(parent_qt_instance).set_roots([dir_path])
 
         # 更新所有編輯器的專案樹與環境檢查 / Update project tree and check env for all editors
         for code_editor in range(parent_qt_instance.tab_widget.count()):
@@ -96,6 +101,8 @@ def choose_dir_get_dir_path(parent_qt_instance: EditorMain) -> None:
 
         # 重新讀取使用者設定並套用啟動設定 / Reload user settings and apply startup settings
         read_user_setting()
+        # 這個專案上次另外加入的資料夾 / The folders this project had added last time
+        restore_extra_roots(window_workspace(parent_qt_instance))
         parent_qt_instance.startup_setting()
 
         # 重設語言設定 / Reset language

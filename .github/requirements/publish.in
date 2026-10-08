@@ -1,0 +1,24 @@
+# 發佈工作（dev.yml 的 publish-dev、stable.yml 的 publish_to_pypi）拿得到 PyPI token，所以它們的工具
+# 只照 publish.txt 的版本與雜湊安裝。這裡只列工作真的用到的工具；改了之後要重新產生 publish.txt：
+# The publish jobs (publish-dev in dev.yml, publish_to_pypi in stable.yml) hold the PyPI token, so
+# their tools are installed from publish.txt, pinned by version and hash. List only what the jobs
+# run, then regenerate publish.txt:
+#   uv pip compile .github/requirements/publish.in --generate-hashes --python-version 3.12 \
+#     --python-platform x86_64-manylinux_2_28 --only-binary :all: --exclude-newer 2026-09-24 \
+#     -o .github/requirements/publish.txt
+# --exclude-newer 對齊 Dependabot 的七天等待；重新產生時把日期往後挪。
+# --exclude-newer keeps the 7-day wait Dependabot applies; move the date when regenerating.
+# build：兩個工作都跑 python -m build。twine：publish-dev 的 twine check 與 twine upload。
+# tomli、tomli-w：stable.yml 升版號的步驟 import 它們。
+# build: both jobs run python -m build. twine: twine check and twine upload in publish-dev.
+# tomli, tomli-w: the version-bump step of stable.yml imports them.
+build
+twine
+tomli
+tomli-w
+# 建置後端。兩個工作跑的是 python -m build --no-isolation，所以用的是這裡鎖定的 setuptools，不是工作
+# 執行當下 PyPI 上最新的那一版。它必須滿足 pyproject.toml 與 dev.toml 的 build-system.requires。
+# The build backend. Both jobs run python -m build --no-isolation, so the backend is the setuptools
+# locked here and not whatever is newest on PyPI when the job runs. It must satisfy
+# build-system.requires in pyproject.toml and dev.toml.
+setuptools

@@ -4,7 +4,6 @@ TODO panel: list every TODO / FIXME comment in the project.
 """
 from __future__ import annotations
 
-import os
 from pathlib import Path
 
 from PySide6.QtCore import Qt, QThread, Signal
@@ -13,7 +12,13 @@ from PySide6.QtWidgets import (
     QVBoxLayout, QWidget
 )
 
-from je_editor.utils.file_scan.todo_scanner import DEFAULT_TAGS, TodoItem, scan_project_todos
+from je_editor.pyside_ui.main_ui.workspace.workspace_roots import (
+    labelled_root_paths, primary_root_path
+)
+from je_editor.utils.file_scan.todo_scanner import DEFAULT_TAGS, TodoItem
+from je_editor.utils.file_scan.workspace_scan import (
+    FoundTodo, LabelledRoot, as_labelled_roots, scan_workspace_todos
+)
 from je_editor.utils.logging.loggin_instance import jeditor_logger
 from je_editor.utils.multi_language.multi_language_wrapper import language_wrapper
 
@@ -36,17 +41,22 @@ class TodoScanThread(QThread):
 
     scanned = Signal(list)  # list[TodoItem]
 
-    def __init__(self, root: str) -> None:
+    def __init__(self, root: str | list[LabelledRoot]) -> None:
         """
-        :param root: 要掃描的專案根目錄 / The project root to scan
+        :param root: 要掃描的專案根目錄；工作區有好幾個根目錄時是「顯示名稱與路徑」的清單
+            / The project root to scan, or each root's label and path when the
+            workspace has several
         """
         super().__init__()
         # 具名執行緒：萬一它在執行中被銷毀，Qt 的中止訊息才說得出是哪一條
         # A named thread, so Qt's abort message says which one if it is ever
         # destroyed while still running
         self.setObjectName("TodoScanThread")
-        self._root = root
+        self._roots = as_labelled_roots(root)
         self._stop_requested = False
+        # 掃描結果，含開檔用的完整路徑；在送出 scanned 之前就填好
+        # What the scan found, full paths included; filled before scanned is emitted
+        self.found: list[FoundTodo] = []
 
     def stop(self) -> None:
         """要求提前結束掃描 / Ask the scan to finish early."""
@@ -55,12 +65,13 @@ class TodoScanThread(QThread):
     def run(self) -> None:
         """執行掃描並送出結果 / Run the scan and emit the result."""
         try:
-            items = scan_project_todos(
-                self._root, should_stop=lambda: self._stop_requested)
+            found = scan_workspace_todos(
+                self._roots, should_stop=lambda: self._stop_requested)
         except OSError as error:
             jeditor_logger.error(f"todo_panel_widget.py scan failed: {error!r}")
-            items = []
-        self.scanned.emit(items)
+            found = []
+        self.found = found
+        self.scanned.emit([entry.item for entry in found])
 
 
 class TodoPanelWidget(QWidget):
@@ -75,13 +86,17 @@ class TodoPanelWidget(QWidget):
     def __init__(self, main_window=None, root: str | None = None) -> None:
         """
         :param main_window: 用來開檔的主視窗 / The window used to open files
-        :param root: 專案根目錄，``None`` 時自動判斷 / The project root; ``None`` auto-detects
+        :param root: 專案根目錄，``None`` 時掃描視窗工作區的每個根目錄
+            / The project root; ``None`` scans every root of the window's workspace
         """
         super().__init__()
         word = language_wrapper.language_word_dict
         self._main_window = main_window
-        self._root = root if root is not None else resolve_todo_root(main_window)
+        self._root = root
         self._items: list[TodoItem] = []
+        # 每筆項目開檔用的完整路徑，以（顯示路徑, 行號）為鍵
+        # The full path to open each item by, keyed by (shown path, line)
+        self._full_paths: dict[tuple[str, int], str] = {}
         self._scan_thread: TodoScanThread | None = None
 
         self.refresh_button = QPushButton(word.get("todo_panel_refresh"))
@@ -132,7 +147,11 @@ class TodoPanelWidget(QWidget):
             return
         self.refresh_button.setEnabled(False)
         self.status_label.setText(language_wrapper.language_word_dict.get("todo_panel_scanning"))
-        self._scan_thread = TodoScanThread(self._root)
+        # 沒有指定根目錄時每次掃描都重新問工作區，之後加進來的根目錄才掃得到
+        # With no root given, the workspace is asked afresh for each scan, so a
+        # root added later is scanned too
+        roots = self._root if self._root is not None else labelled_root_paths(self._main_window)
+        self._scan_thread = TodoScanThread(roots)
         self._scan_thread.scanned.connect(self._on_scanned)
         self._scan_thread.start()
 
@@ -152,6 +171,9 @@ class TodoPanelWidget(QWidget):
         """掃描完成後更新畫面 / Update the view once the scan finishes."""
         jeditor_logger.info(f"todo_panel_widget.py scanned {len(items)} todo items")
         self._items = items
+        found = self._scan_thread.found if self._scan_thread is not None else []
+        self._full_paths = {
+            (entry.item.path, entry.item.line): entry.full_path for entry in found}
         self.refresh_button.setEnabled(True)
         self._render_items()
 
@@ -193,7 +215,9 @@ class TodoPanelWidget(QWidget):
         item = row.data(COLUMN_TAG, Qt.ItemDataRole.UserRole)
         if item is None:
             return
-        open_todo_item(self._main_window, self._root, item)
+        full_path = self._full_paths.get((item.path, item.line))
+        if full_path is not None:
+            open_todo_at(self._main_window, full_path, item.line)
 
     def closeEvent(self, event) -> None:
         """
@@ -220,10 +244,7 @@ def resolve_todo_root(main_window) -> str:
     :param main_window: 主編輯器視窗，可為 ``None`` / The main window, may be ``None``
     :return: 專案根目錄路徑 / The project root path
     """
-    working_dir = getattr(main_window, "working_dir", None)
-    if working_dir and Path(working_dir).is_dir():
-        return str(working_dir)
-    return os.getcwd()
+    return primary_root_path(main_window)
 
 
 def open_todo_item(main_window, root: str, item: TodoItem) -> bool:
@@ -236,10 +257,23 @@ def open_todo_item(main_window, root: str, item: TodoItem) -> bool:
     :param item: 要開啟的項目 / The item to open
     :return: 成功要求開檔時為 ``True`` / ``True`` when the open was requested
     """
+    return open_todo_at(main_window, Path(root) / item.path, item.line)
+
+
+def open_todo_at(main_window, full_path: str | Path, line: int) -> bool:
+    """
+    在編輯器中開啟某個檔案的某一行
+    Open one line of a file in the editor.
+
+    :param main_window: 用來開檔的主視窗 / The window used to open files
+    :param full_path: 檔案的完整路徑 / The file's full path
+    :param line: 1 起算的行號 / The 1-based line number
+    :return: 成功要求開檔時為 ``True`` / ``True`` when the open was requested
+    """
     if main_window is None or not hasattr(main_window, "go_to_new_tab"):
         return False
-    main_window.go_to_new_tab(Path(root) / item.path)
-    jump_to_item_line(main_window, item.line)
+    main_window.go_to_new_tab(Path(full_path))
+    jump_to_item_line(main_window, line)
     return True
 
 

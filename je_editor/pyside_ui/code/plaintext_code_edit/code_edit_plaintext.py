@@ -14,6 +14,10 @@ from PySide6.QtWidgets import (
     QPlainTextEdit, QWidget, QTextEdit, QCompleter, QInputDialog, QMenu
 )
 
+from je_editor.core.diagnostics.diagnostic_model import Diagnostic
+from je_editor.core.debug.debug_session import Breakpoint, StepKind
+from je_editor.core.diagnostics.lsp_diagnostics import from_lsp_entries
+from je_editor.core.uri.resource_uri import to_uri
 from je_editor.pyside_ui.code.bookmark.bookmark_manager import BookmarkManager
 from je_editor.pyside_ui.code.breakpoint.breakpoint_manager import BreakpointManager
 from je_editor.pyside_ui.code.folding.folding_manager import FoldingManager
@@ -21,6 +25,7 @@ from je_editor.pyside_ui.code.git_diff.blame_manager import BlameManager
 from je_editor.pyside_ui.code.git_diff.diff_marker_manager import DiffMarkerManager
 from je_editor.pyside_ui.code.lint.lint_manager import LintManager
 from je_editor.pyside_ui.code.lsp.lsp_client import LspClient
+from je_editor.pyside_ui.main_ui.workspace.workspace_roots import window_workspace
 from je_editor.pyside_ui.code.multi_cursor.multi_cursor_manager import MultiCursorManager
 from je_editor.pyside_ui.code.selection.smart_selection_manager import SmartSelectionManager
 from je_editor.pyside_ui.code.snippets.snippet_manager import SnippetManager
@@ -42,7 +47,6 @@ from je_editor.utils.debugger.pdb_commands import (
 )
 from je_editor.utils.file_diff.line_status import apply_hunk
 from je_editor.utils.file_diff.unified import unified_diff_text
-from je_editor.utils.lint.ruff_diagnostics import diagnostics_from_entries
 from je_editor.utils.macro.keystroke_macro import KeystrokeMacro
 from je_editor.utils.selection.surround import SURROUND_PAIRS, surround
 from je_editor.pyside_ui.main_ui.save_settings.shortcut_setting import bind, shortcut_for
@@ -56,8 +60,9 @@ from je_editor.utils.occurrence.word_occurrences import (
     find_occurrences, lines_containing, replace_whole_word, word_at
 )
 from je_editor.utils.text_cleanup.text_cleanup import trim_trailing_whitespace
-from je_editor.pyside_ui.code.syntax.generic_syntax import highlighter_for
-from je_editor.pyside_ui.code.syntax.python_syntax import PythonHighlighter
+from je_editor.pyside_ui.code.syntax.highlighter_factory import (
+    build_highlighter, dispose_highlighter, syntax_engine_for
+)
 from je_editor.pyside_ui.dialog.search_ui.search_text_box import SearchBox
 from je_editor.pyside_ui.dialog.search_ui.search_replace_widget import SearchReplaceDialog
 from je_editor.pyside_ui.main_ui.save_settings.user_color_setting_file import actually_color_dict
@@ -250,6 +255,7 @@ class CodeEditor(QPlainTextEdit):
         # The language server connection: the lint pass asks whether it is
         # supplying diagnostics, so it has to exist by then too
         self.lsp_client = LspClient(self)
+        self.lsp_client.root_resolver = self._workspace_root_of
 
         # 定義哪些按鍵不會觸發補全視窗
         self.skip_popup_behavior_list = [
@@ -286,9 +292,14 @@ class CodeEditor(QPlainTextEdit):
             QtGui.QFontMetricsF(self.font()).horizontalAdvance("        ")
         )
 
-        # Python 語法高亮
-        self.highlighter = PythonHighlighter(self.document(), main_window=self)
-        self.highlight_current_line()
+        # 除錯時程式停在的那一行；要在第一次畫目前行之前就有值
+        # The line the program being debugged has stopped on; it has to exist
+        # before the current line is first painted
+        self._execution_cursor: QTextCursor | None = None
+        # 語法高亮；依檔名挑選，新分頁先當成 Python
+        # Syntax highlighting, chosen by file name; a new tab counts as Python for now
+        self.highlighter: QtGui.QSyntaxHighlighter | None = None
+        self.reset_highlighter()
 
         # 關閉自動換行，改為單行顯示
         self.setLineWrapMode(self.LineWrapMode.NoWrap)
@@ -413,17 +424,24 @@ class CodeEditor(QPlainTextEdit):
         依目前檔案的副檔名重設語法高亮
         Reset the syntax highlighter to match the current file's suffix.
 
-        Python 用專屬的高亮器；其他有規則的語言用通用高亮器；都不符合時仍套用
+        語法引擎認得的語言由它上色；其他有規則的語言用通用高亮器；都不符合時仍套用
         Python 的（新檔案還沒有副檔名，多半就是要寫 Python）。
-        Python gets its own highlighter, another language with rules gets the
-        generic one, and anything else still gets Python's — a new file has no
-        suffix yet and is usually about to become Python.
+        A language the syntax engine knows is coloured by it, another language
+        with rules gets the generic highlighter, and anything else still gets
+        Python's — a new file has no suffix yet and is usually about to become
+        Python.
+
+        舊的高亮器要先從文件上拿掉；它是文件的子物件，只換掉參照的話會留在那裡
+        繼續上色。
+        The old highlighter is taken off the document first: it is a child of the
+        document, and replacing only the reference would leave it there, still
+        colouring.
         """
         jeditor_logger.info("CodeEditor reset_highlighter")
-        suffix = Path(str(self.current_file)).suffix if self.current_file else ""
-        generic = highlighter_for(self.document(), suffix) if suffix else None
-        self.highlighter = generic if generic is not None else PythonHighlighter(
-            self.document(), main_window=self)
+        dispose_highlighter(self.highlighter)
+        file_path = str(self.current_file) if self.current_file else None
+        engine = syntax_engine_for(getattr(self.main_window, "main_window", None))
+        self.highlighter = build_highlighter(self.document(), file_path, engine)
         self.highlight_current_line()
 
     def check_env(self) -> None:
@@ -1056,13 +1074,17 @@ class CodeEditor(QPlainTextEdit):
         Show the diagnostics a language server reported.
 
         與 ruff 的診斷走同一條顯示路徑，因此非 Python 檔也有波浪底線與問題面板。
+        伺服器給的嚴重度與來源都保留；伺服器沒說來源時用它自己的名稱。
         These take the same path as ruff's, so a non-Python file gets the same
-        underlines and the same problems panel.
+        underlines and the same problems panel. The server's severity and source
+        are kept, and its own name stands in when it names no source.
 
         :param entries: 伺服器回報的診斷 / the diagnostics the server reported
         :return: 顯示內容有變時為 ``True`` / ``True`` when the display changed
         """
-        if not self.lint_manager.set_diagnostics(diagnostics_from_entries(entries)):
+        uri = to_uri(self.current_file) if self.current_file else ""
+        diagnostics = from_lsp_entries(entries, uri, self.lsp_client.server_name)
+        if not self.lint_manager.set_diagnostics(diagnostics):
             return False
         self.refresh_lint_display()
         return True
@@ -1093,18 +1115,19 @@ class CodeEditor(QPlainTextEdit):
 
     @staticmethod
     def _diagnostic_cursor(
-            document: QTextDocument, diagnostic) -> QTextCursor | None:
+            document: QTextDocument, diagnostic: Diagnostic) -> QTextCursor | None:
         """
         取得診斷範圍的游標，範圍不存在時回傳 ``None``
         Return a cursor spanning a diagnostic, or ``None`` when it is out of range.
         """
-        block = document.findBlockByNumber(diagnostic.line - 1)
+        span = diagnostic.range
+        block = document.findBlockByNumber(span.start.line - 1)
         if not block.isValid():
             return None
-        start = block.position() + max(0, diagnostic.column - 1)
-        end_block = document.findBlockByNumber(diagnostic.end_line - 1)
+        start = block.position() + max(0, span.start.column - 1)
+        end_block = document.findBlockByNumber(span.end.line - 1)
         if end_block.isValid():
-            end = end_block.position() + max(0, diagnostic.end_column - 1)
+            end = end_block.position() + max(0, span.end.column - 1)
         else:
             end = block.position() + block.length() - 1
         # 零寬度的範圍看不見，至少標一個字元
@@ -1445,8 +1468,50 @@ class CodeEditor(QPlainTextEdit):
             selections.append(selection)
             selection.format.setBackground(color_of_the_line)
             selection.format.setProperty(QTextFormat.FullWidthSelection, True)
+        self._append_execution_selection(selections)
         self._append_lint_selections(selections)
         self.setExtraSelections(selections)
+
+    def _append_execution_selection(self, selections: list) -> None:
+        """把「程式停在這一行」的底色加進去 / Add the background of the line the program stopped on."""
+        if self._execution_cursor is None:
+            return
+        selection = QTextEdit.ExtraSelection()
+        selection.format.setBackground(actually_color_dict.get("debug_execution_line_color"))
+        selection.format.setProperty(QTextFormat.FullWidthSelection, True)
+        selection.cursor = QTextCursor(self._execution_cursor)
+        selection.cursor.clearSelection()
+        selections.append(selection)
+
+    def set_execution_line(self, line: int | None) -> bool:
+        """
+        標出（或取消）除錯時程式停在的那一行
+        Mark, or unmark, the line the program being debugged has stopped on.
+
+        :param line: 1 起算的行號，``None`` 表示取消 / the 1-based line, or ``None`` to unmark
+        :return: 有標出來時為 ``True`` / ``True`` when a line is now marked
+        """
+        block = self.document().findBlockByNumber(line - 1) if line is not None else None
+        if block is None or not block.isValid():
+            changed = self._execution_cursor is not None
+            self._execution_cursor = None
+            if changed:
+                self.highlight_current_line()
+            return False
+        self._execution_cursor = QTextCursor(block)
+        self.setTextCursor(QTextCursor(block))
+        self.centerCursor()
+        self.highlight_current_line()
+        return True
+
+    def execution_line(self) -> int | None:
+        """
+        目前標著的執行行
+        The execution line that is marked.
+
+        :return: 1 起算的行號，沒有標時為 ``None`` / the 1-based line, or ``None`` when none is marked
+        """
+        return None if self._execution_cursor is None else self._execution_cursor.blockNumber() + 1
 
     def _highlight_matching_bracket(self) -> None:
         """
@@ -1487,6 +1552,7 @@ class CodeEditor(QPlainTextEdit):
                     selections.append(sel)
 
         self._append_occurrence_selections(selections, text, pos)
+        self._append_execution_selection(selections)
         self._append_lint_selections(selections)
         self.setExtraSelections(selections)
         self._show_lint_message_for_caret()
@@ -2340,6 +2406,35 @@ class CodeEditor(QPlainTextEdit):
         self.lsp_client.did_open(self.toPlainText())
         return True
 
+    def _workspace_root(self) -> str | None:
+        """
+        取得目前檔案所屬的工作區根目錄
+        The workspace root the current file belongs to.
+
+        語言伺服器要以專案的根目錄啟動才找得到專案設定；工作區有好幾個根目錄時，
+        每個檔案交給它自己那個根目錄的伺服器。
+        A language server has to start at the project's root to find the
+        project's configuration, and with several roots each file goes to the
+        server of its own root.
+
+        :return: 根目錄路徑；檔案不在任何根目錄底下時為 ``None``
+            the root's path, or ``None`` when the file is under no root
+        """
+        return self._workspace_root_of(str(self.current_file))
+
+    def _workspace_root_of(self, file_path: str) -> str | None:
+        """
+        取得某個檔案所屬的工作區根目錄
+        The workspace root a file belongs to.
+
+        :param file_path: 檔案路徑 / the file's path
+        :return: 根目錄路徑；檔案不在任何根目錄底下時為 ``None``
+            the root's path, or ``None`` when the file is under no root
+        """
+        window = getattr(self.main_window, "main_window", None)
+        root = window_workspace(window).root_for(file_path)
+        return root.path if root is not None else None
+
     def request_language_server_completion(self) -> bool:
         """
         向語言伺服器要求游標位置的補全
@@ -2389,7 +2484,42 @@ class CodeEditor(QPlainTextEdit):
         result = self.breakpoint_manager.toggle(line)
         self.line_number.update()
         self.send_breakpoint_change(line, result)
+        self.sync_debug_breakpoints()
         return result
+
+    def debug_breakpoints(self) -> list[Breakpoint]:
+        """
+        取得這個檔案的中斷點，給除錯工作階段用
+        This file's breakpoints, for a debug session.
+
+        :return: 中斷點；還沒有檔名的分頁沒有 / the breakpoints, none for a tab with no file yet
+        """
+        if self.current_file is None:
+            return []
+        uri = to_uri(str(self.current_file))
+        return [Breakpoint(uri, line + 1, condition)
+                for line, condition in self.breakpoint_manager.breakpoints()]
+
+    def _debug_controller(self):
+        """取得視窗的除錯控制，沒有時為 ``None`` / The window's debugging control, or ``None``."""
+        from je_editor.pyside_ui.main_ui.debug_panel.debug_controller import DebugController
+
+        window = getattr(self.main_window, "main_window", None)
+        controller = getattr(window, "debug_controller", None)
+        return controller if isinstance(controller, DebugController) else None
+
+    def sync_debug_breakpoints(self) -> bool:
+        """
+        除錯中途把這個檔案的中斷點重新交給除錯工作階段
+        Hand this file's breakpoints to the debug session again while debugging.
+
+        :return: 有送出時為 ``True`` / ``True`` when they were sent
+        """
+        controller = self._debug_controller()
+        if controller is None or not controller.is_active() or self.current_file is None:
+            return False
+        controller.set_breakpoints(to_uri(str(self.current_file)), self.debug_breakpoints())
+        return True
 
     def send_breakpoint_change(self, line: int, is_set: bool) -> bool:
         """
@@ -2428,10 +2558,28 @@ class CodeEditor(QPlainTextEdit):
             the action's name
         :return: 有送出時為 ``True`` / ``True`` when the command was sent
         """
+        if self._send_to_debug_session(action):
+            return True
         command = step_command(action)
         if command is None:
             return False
         return self._write_debugger_line(command)
+
+    def _send_to_debug_session(self, action: str) -> bool:
+        """把動作交給除錯工作階段；沒有在除錯時回傳 ``False`` / Hand an action to the debug session, or return ``False``."""
+        controller = self._debug_controller()
+        if controller is None or not controller.is_active():
+            return False
+        steps = {"over": StepKind.OVER, "into": StepKind.INTO, "out": StepKind.OUT}
+        if action in steps:
+            controller.step(steps[action])
+        elif action == "continue":
+            controller.resume()
+        elif action == "quit":
+            controller.stop()
+        else:
+            return False
+        return True
 
     def send_breakpoints_to_debugger(self) -> int:
         """

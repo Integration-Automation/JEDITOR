@@ -53,7 +53,7 @@ docs/            Sphinx documentation
 pip install -r requirements.txt        # runtime deps
 pip install -r dev_requirements.txt    # dev deps
 pytest                                 # tests (Qt UI scripts excluded)
-python -m build                        # build (swap pyproject.toml <-> dev.toml for the dev package)
+python -m build                        # build je_editor (CI builds je_editor_dev from dev.toml)
 ```
 
 - **Run tooling through the project venv** (`.venv/Scripts/python.exe` on Windows). Git Bash here has
@@ -83,15 +83,20 @@ python -m build                        # build (swap pyproject.toml <-> dev.toml
 
 ## CI
 
-- The matrix is **Python 3.10 / 3.11 / 3.12** on Windows. To reproduce a 3.10-only failure locally,
+- The matrix is **Python 3.10 to 3.14** on Windows. To reproduce a 3.10-only failure locally,
   use `uv python install 3.10` plus `uv venv`.
 - Watch a run with `gh run watch <run-id> --exit-status`, or `gh pr checks <PR> --watch` for a PR.
-- For analyser detail, the tokens live in the environment:
-  - Codacy — header `project-token: $CODACY_PROJECT_TOKEN` against
+- For analyser detail:
+  - Codacy — query
     `https://app.codacy.com/api/v3/analysis/organizations/gh/Integration-Automation/repositories/<repo>/pull-requests/<PR>/issues`
-    lists file:line and rule id directly.
-  - SonarCloud — `$SonarCloudToken` against
+    **without** a key (the repository is public); it lists file:line and rule id directly. The
+    `CODACY_PROJECT_TOKEN` in the environment is a project token valid only for its own project:
+    sent as `project-token` for this repository it answers "Bad credentials".
+  - SonarCloud — `curl -s -u "$SonarCloudToken:"` against
     `https://sonarcloud.io/api/issues/search?componentKeys=<key>&pullRequest=<PR>`.
+  - **Never reveal a key or any personal credential while doing so**: refer to the variables by
+    name only, never echo or print their values, and never put them in files, commit messages, PR
+    or issue text, logs, or any output that leaves the machine.
 - Treat an analyser finding as a claim to verify, not an order. Where a finding is wrong (a
   bilingual comment read as commented-out code) or where following it would make the code more
   fragile, leave the code correct and record why.
@@ -173,6 +178,10 @@ Workspace rule shared by every repository under `D:\Codes` (full text: `D:\Codes
 - English, imperative, one logical change per commit (e.g. "Add plugin hot-reload support").
   Stage deliberately — `git add -u` bundles unrelated work into the wrong commit.
 - `main` = stable, `dev` = active development.
+- Both branches publish to PyPI from CI: a push to `main` releases `je_editor` (`stable.yml`), and a
+  push to `dev` that passes the tests and changes what the package ships releases `je_editor_dev`
+  (the `publish-dev` job of `dev.yml`, `scripts/dev_release.py`). Never bump a version by hand; the
+  version in `dev.toml` is only a floor.
 - **Merge PRs with a merge commit** (`gh pr merge <PR> --merge`), never squash. This holds for both
   this repo and PyBreeze.
 - After a merge, `dev`'s `pyproject.toml` version lags `main`. That is the existing flow, not a bug.
@@ -184,3 +193,10 @@ Workspace rule shared by every repository under `D:\Codes` (full text: `D:\Codes
 
 - Run PyBreeze's tests as `pytest test/test_utils`. A bare `pytest` or `pytest test` also collects
   `test/unit_test/start_automation`, which launches the app and ends in "no output, exit 0".
+- **PyBreeze pins JEditor's shapes in its own `test/test_utils/test_jeditor_contract.py`**: parameter
+  lists, private names and fragments of source. Adding even an optional parameter to a method it
+  pins fails there, and nothing in this repository notices. After any change to a class or function
+  PyBreeze could see, run that file against this tree — from PyBreeze,
+  `PYTHONPATH=<this repository> pytest test/test_utils/test_jeditor_contract.py` — and judge the
+  result against the same run on the commit before, since PyBreeze's own environment has failures
+  of its own.

@@ -29,7 +29,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.10", "3.11", "3.12"]
+        python-version: ["3.10", "3.11", "3.12", "3.13", "3.14"]
 
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
@@ -63,6 +63,7 @@ jobs:
     needs: build_stable_version
     if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
+    timeout-minutes: 30  # about 3x the slowest recent run, at least 15
     permissions:
       contents: write
     steps:
@@ -78,10 +79,14 @@ jobs:
         with:
           python-version: "3.12"
 
+      # 這個工作拿得到 PyPI token，所以工具只照雜湊鎖定的清單裝、只收 wheel，也不另外升級 pip。
+      # 清單與重新產生它的指令在 .github/requirements/publish.in。
+      # This job holds the PyPI token, so its tools come from a hash-locked, wheels-only list and pip
+      # is not upgraded on the side. The list and the command that regenerates it are in
+      # .github/requirements/publish.in.
       - name: Install build tooling
         run: |
-          python -m pip install --upgrade pip
-          pip install build tomli tomli-w
+          python -m pip install --require-hashes --only-binary :all: -r .github/requirements/publish.txt
 
       - name: Bump version in pyproject.toml
         id: bump
@@ -133,8 +138,11 @@ jobs:
           git push origin main
           git push origin "v${{ steps.bump.outputs.new_version }}"
 
+      # --no-isolation：用 publish.txt 鎖定的 setuptools 建置；隔離建置會另外下載當下最新的那一版。
+      # --no-isolation: build with the setuptools locked in publish.txt; an isolated build downloads
+      # whatever is newest at that moment instead.
       - name: Build distribution
-        run: python -m build
+        run: python -m build --no-isolation
 
       - name: Publish to PyPI
         # Pinned to full SHA of pypa/gh-action-pypi-publish release/v1

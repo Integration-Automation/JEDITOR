@@ -274,4 +274,11 @@ JEditor 定義了一套自訂例外類別階層：
        JEditorContentFileException,   # 檔案��容錯誤
        JEditorCantFindLanguageException,  # 找不到語言
        JEditorJsonException,          # JSON 解析錯誤
+       JEditorServiceException,       # 核心服務錯誤
    )
+
+核心服務
+---------
+
+工作區、文件、診斷、語言服務、除錯、工作執行、遠端與 AI 供應者的介面都在 ``je_editor.core``，
+不需要視窗就能使用。請見 :doc:`core_services`。

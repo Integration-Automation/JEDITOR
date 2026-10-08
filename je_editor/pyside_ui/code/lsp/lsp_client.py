@@ -14,6 +14,7 @@ completions; editing carries on.
 """
 from __future__ import annotations
 
+from collections.abc import Callable
 from pathlib import Path
 
 from PySide6.QtCore import QObject, Signal
@@ -59,6 +60,14 @@ class LspClient(QObject):
         super().__init__(parent)
         self._session: LspSession | None = None
         self._file_path: str | None = None
+        # 由擁有者設定：給檔案路徑，回傳它所屬的專案根目錄（沒有就回傳 None）。
+        # 這不是 start_for 的參數，因為 PyBreeze 的契約測試釘住了那個方法的參數清單。
+        # Set by the owner: given a file path, the project root it belongs to, or
+        # None. It is not a parameter of start_for because PyBreeze's contract
+        # test pins that method's parameter list.
+        self.root_resolver: Callable[[str], str | None] | None = None
+        # 目前接上的伺服器指令 / The command of the server attached right now
+        self._server_command: list[str] = []
         self._version = 0
         self._pending_completion_id: int | None = None
         self._pending_definition_id: int | None = None
@@ -89,15 +98,30 @@ class LspClient(QObject):
         """伺服器是否正在執行 / Whether the server is running."""
         return self._session is not None and self._session.running
 
+    @property
+    def server_name(self) -> str:
+        """
+        目前接上的伺服器名稱，沒接上時為空字串
+        The name of the attached server, empty when none is attached.
+
+        伺服器自己沒有說明診斷來源時，問題面板用這個名稱當作來源。
+        When a server names no source for a diagnostic, the problems panel shows
+        this as the source.
+        """
+        return Path(self._server_command[0]).stem if self._server_command else ""
+
     def start_for(self, file_path: str, servers: dict | None = None) -> bool:
         """
         接上負責這個檔案的語言伺服器
         Attach to the language server that handles a file.
 
         同一個指令與專案根目錄底下的檔案共用一個伺服器程序，因此開第二個同語言的
-        檔案不會再啟動一個。
+        檔案不會再啟動一個。根目錄由 ``root_resolver`` 決定，沒有設定或它回答不出來
+        時用檔案所在的資料夾。
         Files under the same command and project root share one process, so
-        opening a second file of that language does not start another.
+        opening a second file of that language does not start another. The root
+        comes from ``root_resolver``, and is the file's own folder when none is
+        set or it has no answer.
 
         :param file_path: 檔案路徑 / the file to serve
         :param servers: 伺服器對照表 / the server mapping to consult
@@ -107,14 +131,20 @@ class LspClient(QObject):
         if command is None:
             return False
         self.stop()
-        root = str(Path(file_path).parent)
+        root = self._root_for(file_path)
         session = session_registry.session_for(command, root, file_uri(root))
         if session is None:
             return False
         self._session = session
         self._file_path = file_path
+        self._server_command = list(command)
         session.register_document(file_uri(file_path), self)
         return True
+
+    def _root_for(self, file_path: str) -> str:
+        """檔案的專案根目錄，問不到時是它所在的資料夾 / A file's project root, or its own folder."""
+        resolved = self.root_resolver(file_path) if self.root_resolver is not None else None
+        return resolved or str(Path(file_path).parent)
 
     def _send(self, payload: dict) -> bool:
         """把訊息寫給伺服器 / Write a message to the server."""
@@ -406,6 +436,7 @@ class LspClient(QObject):
         process is shut down once no editor is using that server any more.
         """
         session, self._session = self._session, None
+        self._server_command = []
         self._pending_completion_id = None
         self._pending_definition_id = None
         self._pending_hover_id = None
