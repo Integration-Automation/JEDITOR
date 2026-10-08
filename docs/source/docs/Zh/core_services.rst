@@ -8,7 +8,7 @@
 .. note::
 
    這一層是下一代編輯器藍圖的基礎。編輯器視窗一次改接一個部分：目前診斷、AI 對話面板、工作區
-   與語法高亮已經在用它。除錯與工作執行已經有實作，但視窗還沒有改用；遠端工作階段還只有介面。
+   與語法高亮已經在用它。除錯也已經在用。工作執行與遠端工作階段已經有實作，但視窗還沒有改用。
 
 快速範例
 --------
@@ -65,6 +65,8 @@ EditorServices
      - 工作執行器，以執行的地方登記
    * - ``remote_transports``
      - 遠端工作階段的建立函式，以 URI 的 scheme 登記
+   * - ``remotes``
+     - ``RemoteSessionPool`` ：開著的遠端工作階段，一台機器一條
    * - ``ai_providers``
      - AI 供應者，以名稱登記
 
@@ -366,12 +368,60 @@ Python 的轉接器 ``debugpy`` 。
 就成了遠端除錯。別的轉接器就是一個帶著自己的指令與啟動引數的 ``DapSession`` ，以名稱登記在
 ``services.debug_adapters`` 。
 
-工作執行、遠端工作階段與 AI 供應者
-----------------------------------
+遠端工作階段
+------------
+
+``RemoteSession`` 是一條到另一台機器的連線：連線、讀寫它的檔案、在它上面執行工作、轉送它的
+連接埠，以及找出它的 Python 直譯器。介面裡沒有任何名稱提到傳輸方式。 ``je_editor.adapters.remote``
+以系統的 ``ssh`` 指令實作它， ``build_default_services()`` 會把它登記給 ``ssh://`` 的 URI。
+
+.. code-block:: python
+
+   from je_editor.adapters.default_services import build_default_services
+   from je_editor.core import TaskSpec
+
+   services = build_default_services()
+   session = services.remotes.session_for("ssh://me@build-box/home/me/project")
+   if session.connect():
+       files = session.file_system()
+       for entry in files.list_directory("/home/me/project"):
+           print("dir " if entry.is_directory else "file", entry.name)
+       text = files.read_bytes("/home/me/project/main.py").decode("utf-8")
+       files.write_bytes("/home/me/project/main.py", text.encode("utf-8"))
+
+       task = session.task_runner().create(
+           TaskSpec(("python3", "main.py"), working_directory="/home/me/project"))
+       task.output.subscribe(lambda stream, text: print(stream.value, text, end=""))
+       task.start()
+
+       forward = session.forward_port(5678)      # the remote port 5678, on a free local port
+       print(forward.local_port)
+       print(session.interpreters("/home/me/project"))
+   else:
+       print(session.state().value, session.last_error())
+   services.shutdown()
+
+- ``services.remotes.session_for(uri)`` 回傳某個 URI 所在機器的工作階段；不管那台機器上有幾個
+  根目錄或檔案，一台機器只有一條。它不會連線。
+- 連不上時 ``connect()`` 回傳 ``False`` 而不是丟例外；這時 ``state()`` 是 ``RemoteState.FAILED`` ，
+  ``last_error()`` 說明原因。連線斷了之後用 ``reconnect()`` 再試， ``state_changed`` 會通知每一步。
+- ``task_runner()`` 跟本機的是同一個 ``TaskRunner`` 。透過它啟動的語言伺服器或除錯轉接器就在遠端
+  機器上執行，其他什麼都不用改：把遠端的執行器交給 ``DapSession`` ，除錯的就是遠端的程式。
+- ``file_system()`` 可以讀、寫、列目錄與查詢路徑。這些呼叫、 ``interpreters()`` 與 ``connect()``
+  都會等對方回答，所以要從工作執行緒呼叫。
+- ``forward_port(remote_port)`` 讓遠端的連接埠在這台機器上連得到，回傳的把手有 ``local_port`` 、
+  ``is_open()`` 與 ``close()`` 。
+
+SSH 傳輸從不問任何問題（ ``BatchMode`` ）：金鑰登入必須事先設定好，就跟在終端機裡用 ``ssh`` 一樣，
+``~/.ssh/config`` 也照樣生效。遠端機器要有 ``python3`` 或 ``python`` ；每一個遠端操作都是由那個
+直譯器執行同一支小程式，所以不必在遠端安裝任何東西，也從不在遠端的 shell 裡組指令。
+
+工作執行與 AI 供應者
+--------------------
 
 這幾項是介面加上各自的資料物件。實作放在這一層之外的 ``je_editor.adapters`` ：兩個 AI 供應者
 （ ``openai`` 與 ``anthropic`` ，見 :doc:`ai_assistant` ）與這台機器的 ``TaskRunner``
-（登記名稱是 ``local`` ）。遠端工作階段還沒有實作，由宿主程式或外掛自行登記。
+（登記名稱是 ``local`` ）。
 
 .. list-table::
    :header-rows: 1
@@ -383,9 +433,6 @@ Python 的轉接器 ``debugpy`` 。
    * - 工作執行
      - ``TaskRunner``、``TaskHandle``
      - ``TaskSpec``、``TaskState``、``OutputStream``
-   * - 遠端工作階段
-     - ``RemoteSession``
-     - ``RemoteState``
    * - AI 供應者
      - ``AIProvider``
      - ``ChatRequest``、``ChatMessage``、``ChatRole``、``ChatResponse``、``ModelInfo``、
@@ -396,8 +443,7 @@ Python 的轉接器 ``debugpy`` 。
   再呼叫 ``start()``，才不會漏掉一開始的輸出。
 - ``TaskSpec`` 設了 ``binary=True`` 時，輸出以讀到的位元組原樣送出， ``write()`` 也收位元組。
   以位元組組框的協定（除錯轉接器的就是）需要這個。
-- ``RemoteSession.task_runner()`` 回傳的是同一個 ``TaskRunner`` 介面，所以呼叫端不必分辨程序在哪裡
-  執行。
+- ``TaskHandle.close_input()`` 會關上程序的標準輸入，給讀到輸入結束才動作的程式用。
 - ``AIProvider.complete(request, on_text, cancel)`` 會等到回覆完成才返回，請在背景執行緒呼叫。
   ``on_text`` 會一段一段收到回覆，``CancelToken`` 可以中途取消。
 

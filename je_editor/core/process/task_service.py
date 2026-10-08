@@ -152,6 +152,16 @@ class TaskHandle(Protocol):
         :return: 有寫入時為 ``True`` / ``True`` when it was written
         """
 
+    def close_input(self) -> None:
+        """
+        關上程序的標準輸入，讓它知道不會再有輸入
+        Close the process's standard input, telling it no more input is coming.
+
+        讀到輸入結束才動作的程式需要這個；之後 :meth:`write` 一律回傳 ``False``。
+        A program that acts only once its input ends needs this; :meth:`write`
+        returns ``False`` from then on.
+        """
+
     def cancel(self) -> None:
         """
         結束程序

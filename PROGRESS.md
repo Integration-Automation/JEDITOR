@@ -49,8 +49,12 @@ M0（`je_editor/core/` 服務層）、M2（診斷模型與 Tree-sitter 語法引
   都帶得到 debugpy 之後才能拿掉；例外中斷目前固定只停在未捕捉的例外，沒有做設定；沒有監看式、
   沒有滑鼠停在變數上顯示值；中斷點的條件與 `BreakpointStatus`（轉接器說某個中斷點沒設上）還沒有顯示在
   行號區；執行程式（非除錯）仍然走 `BaseProcessManager`，還沒有改用 `TaskRunner`。
-- **#14** M6（遠端開發）。實作 `RemoteSession`，並補上遠端檔案系統、連接埠轉送、直譯器探索的介面。
-  〔決定〕第一個傳輸是不是 SSH（PR #270 的審查問題 3）。
+- **#14** M6（遠端開發）剩下視窗這一半。服務這一半已完成（U-20261008-13）：`RemoteSession` 補齊
+  （檔案系統、連接埠轉送、直譯器探索、重連）、以系統 `ssh` 實作的 `SshRemoteSession`、`services.remotes`。
+  還沒做的：從視窗開啟遠端的檔案或資料夾、遠端的檔案樹、在遠端執行 / 除錯 / 啟動語言伺服器的畫面入口
+  （除錯要處理本機與遠端的路徑對應；`LspSession` 目前自己開子程序，要先改成經由 `TaskRunner`）。
+  另外沒有對真正的 SSH 伺服器測過（這台機器與 CI 都沒有），測試用的是一支頂替 `ssh` 的程式；
+  遠端是 Windows 的情況沒有考慮（遠端指令以 POSIX 的規則加引號）；不支援密碼登入（`BatchMode`）。
 - **#15** M7（可嵌入元件）。`import je_editor.core` 不再載入 Qt（頂層 `__init__` 要改成延後匯入）；
   搬動 `pyside_ui/` 底下不含 Qt 的模組時，保留 PyBreeze 以模組路徑匯入的名稱
   （`test/test_public_api_contract.py` 列著）。

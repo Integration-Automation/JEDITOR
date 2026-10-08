@@ -52,6 +52,9 @@ class FakeTask:
         self.written.append(text)
         return True
 
+    def close_input(self) -> None:
+        self.written.append(None)
+
     def cancel(self) -> None:
         if self._state in (TaskState.PENDING, TaskState.RUNNING):
             self._finish(TaskState.CANCELLED, -1)
@@ -157,12 +160,27 @@ class FakeRemoteSession:
         self.state_changed.emit(self._state)
         return True
 
+    def last_error(self) -> str:
+        return ""
+
+    def reconnect(self) -> bool:
+        return self.connect()
+
     def disconnect(self) -> None:
         self._state = RemoteState.DISCONNECTED
         self.state_changed.emit(self._state)
 
     def task_runner(self) -> FakeRunner:
         return self._runner
+
+    def file_system(self):
+        return None
+
+    def forward_port(self, remote_port: int, remote_host: str = "127.0.0.1", local_port: int = 0):
+        return None
+
+    def interpreters(self, root: str = "") -> tuple:
+        return ()
 
 
 class EchoProvider:

@@ -21,6 +21,7 @@ from je_editor.core.document.document_model import DocumentStore
 from je_editor.core.language.language_service import LanguageServiceRegistry
 from je_editor.core.process.task_service import TaskRunner
 from je_editor.core.registry.named_registry import NamedRegistry
+from je_editor.core.remote.remote_pool import RemoteSessionPool
 from je_editor.core.remote.remote_session import RemoteTransport
 from je_editor.core.syntax.syntax_model import NoSyntaxEngine, SyntaxEngine
 from je_editor.core.workspace.workspace_model import Workspace
@@ -50,6 +51,8 @@ class EditorServices:
         self.task_runners: NamedRegistry[TaskRunner] = NamedRegistry("task runner")
         # 以 URI 的 scheme 登記，例如 ``ssh`` / Registered by URI scheme, such as ``ssh``
         self.remote_transports: NamedRegistry[RemoteTransport] = NamedRegistry("remote transport")
+        # 開著的遠端工作階段，一台機器一條 / The remote sessions that are open, one per machine
+        self.remotes = RemoteSessionPool(self.remote_transports)
         # 以供應者名稱登記 / Registered by provider name
         self.ai_providers: NamedRegistry[AIProvider] = NamedRegistry("AI provider")
         # 每個供應者各一組的設定；從檔案載入是擁有者的事
@@ -76,6 +79,7 @@ class EditorServices:
             return
         self._shut_down = True
         self.languages.shutdown()
+        self.remotes.shutdown()
         for name in self.task_runners.names():
             runner = self.task_runners.unregister(name)
             if runner is not None:

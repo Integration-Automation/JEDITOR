@@ -36,7 +36,11 @@ from je_editor.core.process.task_service import (
     OutputStream, TaskHandle, TaskRunner, TaskSpec, TaskState
 )
 from je_editor.core.registry.named_registry import NamedRegistry
-from je_editor.core.remote.remote_session import RemoteSession, RemoteState, RemoteTransport
+from je_editor.core.remote.remote_pool import RemoteSessionPool, split_remote_uri
+from je_editor.core.remote.remote_session import (
+    PortForward, RemoteEntry, RemoteFileSystem, RemoteInterpreter, RemoteSession, RemoteState,
+    RemoteTransport
+)
 from je_editor.core.services.editor_services import EditorServices
 from je_editor.core.syntax.syntax_model import (
     LineSpan, NoSyntaxEngine, RegionKind, StructuralRegion, SyntaxCategory, SyntaxEngine,
@@ -72,7 +76,8 @@ __all__ = [
     # Task execution
     "TaskRunner", "TaskHandle", "TaskSpec", "TaskState", "OutputStream",
     # Remote sessions
-    "RemoteSession", "RemoteState", "RemoteTransport",
+    "RemoteSession", "RemoteState", "RemoteTransport", "RemoteFileSystem", "RemoteEntry",
+    "RemoteInterpreter", "PortForward", "RemoteSessionPool", "split_remote_uri",
     # AI providers
     "AIProvider", "ChatRequest", "ChatResponse", "ChatMessage", "ChatRole",
     "ModelInfo", "CancelToken", "ChatSession", "AISettings", "ProviderSettings",

@@ -129,6 +129,8 @@ class LocalTask:
         process = self._process
         if process is None or process.stdin is None or self._state is not TaskState.RUNNING:
             return False
+        if process.stdin.closed:
+            return False
         data = text.encode(_ENCODING) if isinstance(text, str) else text
         try:
             with self._lock:
@@ -139,6 +141,20 @@ class LocalTask:
             jeditor_logger.debug("write to task %s failed: %s", self._spec.command[0], error)
             return False
         return True
+
+    def close_input(self) -> None:
+        """
+        關上程序的標準輸入，讓它知道不會再有輸入
+        Close the process's standard input, telling it no more input is coming.
+        """
+        process = self._process
+        if process is None or process.stdin is None or process.stdin.closed:
+            return
+        try:
+            with self._lock:
+                process.stdin.close()
+        except OSError as error:
+            jeditor_logger.debug("closing the input of task %s: %s", self._spec.command[0], error)
 
     def cancel(self) -> None:
         """
@@ -201,11 +217,7 @@ class LocalTask:
         code = process.wait()
         for reader in self._readers:
             reader.join()
-        if process.stdin is not None:
-            try:
-                process.stdin.close()
-            except OSError as error:
-                jeditor_logger.debug("closing the input of task %s: %s", self._spec.command[0], error)
+        self.close_input()
         self._exit_code = code
         if self._state is TaskState.RUNNING:
             self._state = TaskState.FINISHED

@@ -15,6 +15,8 @@ from je_editor.adapters.ai.builtin_providers import register_builtin_ai_provider
 from je_editor.adapters.ai.settings_file import ai_settings_path, load_ai_settings
 from je_editor.adapters.debug.debugpy_adapter import register_builtin_debug_adapters
 from je_editor.adapters.process.local_task_runner import LocalTaskRunner
+from je_editor.adapters.remote.ssh_session import SCHEME as SSH_SCHEME
+from je_editor.adapters.remote.ssh_session import SshRemoteSession
 from je_editor.adapters.syntax.syntax_language_service import SyntaxLanguageService
 from je_editor.adapters.syntax.tree_sitter_engine import shared_syntax_engine
 from je_editor.core.services.editor_services import EditorServices
@@ -28,10 +30,11 @@ LOCAL_RUNNER = "local"
 def build_default_services(workspace: Workspace | None = None,
                            settings_directory: str | Path | None = None) -> EditorServices:
     """
-    建立一組服務：接上語法引擎、本機工作執行器與除錯轉接器，載入 AI 設定並登記
-    內建的 AI 供應者
-    Build the services: plug in the syntax engine, the local task runner and the
-    debug adapters, load the AI settings and register the built-in AI providers.
+    建立一組服務：接上語法引擎、本機工作執行器、除錯轉接器與遠端傳輸，載入 AI
+    設定並登記內建的 AI 供應者
+    Build the services: plug in the syntax engine, the local task runner, the
+    debug adapters and the remote transport, load the AI settings and register
+    the built-in AI providers.
 
     :param workspace: 要處理的工作區，沒給時從空的工作區開始
         the workspace to work on, an empty one when omitted
@@ -46,6 +49,9 @@ def build_default_services(workspace: Workspace | None = None,
     services.task_runners.register(LOCAL_RUNNER, LocalTaskRunner())
     register_builtin_debug_adapters(
         services.debug_adapters, lambda: services.task_runners.require(LOCAL_RUNNER))
+    services.remote_transports.register(
+        SSH_SCHEME,
+        lambda authority: SshRemoteSession(authority, services.task_runners.require(LOCAL_RUNNER)))
     reload_ai_settings(services, settings_directory)
 
     def current_settings():

@@ -17,7 +17,8 @@
 | M3 — Workspace + multi-root | Implemented; per-root environments and Git are left over | U-20261008-07, `PROGRESS.md` |
 | M5 — AI provider abstraction + Anthropic | Implemented: `je_editor/adapters/ai/` | U-20261008-05 |
 | M4 — Debugger migration to DAP | Implemented: `je_editor/adapters/debug/` and the Debugger panel; the pdb console remains as the fallback without debugpy | U-20261008-11, U-20261008-12, `PROGRESS.md` |
-| M1, M6, M7, M8 | Not started | `PROGRESS.md` |
+| M6 — Remote development | Service implemented: `je_editor/adapters/remote/` (SSH), tested through a stand-in ssh program; the window does not open remote files yet | U-20261008-13, `PROGRESS.md` |
+| M1, M7, M8 | Not started | `PROGRESS.md` |
 
 M0 defines the service layer and proves it runs without Qt. What it left to later milestones:
 

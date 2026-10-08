@@ -456,13 +456,14 @@ start_editor(debug_mode)                       je_editor/start_editor.py
 | `language/language_service.py` | 233 | `LanguageService` 協定（文件生命週期加上 `request()`）與 `LanguageServiceRegistry`：把 `DocumentStore` 的開啟 / 變更 / 關閉轉給處理該文件的服務，晚登記的服務會補收已開文件的「開啟」；`request()` 把問題交給第一個處理那份文件又提供那個功能的服務 |
 | `syntax/syntax_model.py` | 244 | 語法分析的模型與介面：`SyntaxCategory`、`SyntaxSpan`（一行裡的一段，欄號 1 起算、以 UTF-16 單位計）、`LineSpan`、`RegionKind` / `StructuralRegion`，`SyntaxSession` 與 `SyntaxEngine` 兩個協定，以及什麼語言都不會的 `NoSyntaxEngine`（`EditorServices.syntax` 的預設值） |
 | `debug/debug_session.py` | 477 | `DebugSession` 協定與資料物件，名稱對應 DAP 的概念：啟動（`DebugLaunchRequest`）與接上（`DebugAttachRequest`）、中斷點（可帶條件）與轉接器的回報（`BreakpointStatus`）、控制指令（繼續 / 暫停 / 逐步，可指定執行緒）、查詢（執行緒、堆疊、變數群組、變數、求值、例外資訊；給一個收回覆的函式，回覆是 `DebugReply`）、事件（`state_changed`、`stopped`、`output`、`breakpoints_reported`） |
-| `process/task_service.py` | 182 | `TaskSpec`（指令只能是引數清單，建立後指令與環境變數都不能再改）、`TaskHandle` / `TaskRunner` 協定、`TaskState`、`OutputStream`；`TaskSpec.binary` 讓輸出與寫入都以位元組進行，給除錯轉接器這類以位元組組框的協定用 |
-| `remote/remote_session.py` | 91 | `RemoteSession` 協定與 `RemoteState`；`task_runner()` 回傳與本機相同的 `TaskRunner` 介面 |
+| `process/task_service.py` | 182 | `TaskSpec`（指令只能是引數清單，建立後指令與環境變數都不能再改）、`TaskHandle` / `TaskRunner` 協定、`TaskState`、`OutputStream`；`TaskSpec.binary` 讓輸出與寫入都以位元組進行，給除錯轉接器這類以位元組組框的協定用；`close_input()` 關上標準輸入 |
+| `remote/remote_session.py` | 91 | `RemoteSession` 協定與資料物件：連線的生命週期（含 `reconnect()` 與 `last_error()`）、`task_runner()`（跟本機相同的 `TaskRunner` 介面）、`file_system()`（`RemoteFileSystem`：讀、寫、列目錄、查詢）、`forward_port()`（`PortForward`）、`interpreters()`（`RemoteInterpreter`）。沒有任何名稱提到 SSH |
+| `remote/remote_pool.py` | 0 | `RemoteSessionPool`：依 scheme 與 authority 保管遠端工作階段，一台機器一條；`split_remote_uri()` 把遠端資源的 URI 拆開 |
 | `ai/ai_provider.py` | 167 | `AIProvider` 協定與資料物件（`ChatRequest`、`ChatMessage`、`ChatRole`、`ChatResponse`、`ModelInfo`、`CancelToken`） |
 | `ai/ai_settings.py` | 166 | `ProviderSettings` 與 `AISettings`：依供應者分組的設定（金鑰、位址、模型、系統提示詞）與目前選用的供應者；舊格式的 `AI_model` 會被讀成 `openai` 那一組 |
 | `ai/chat_session.py` | 94 | `ChatSession`：保管一段對話、組出下一個請求；失敗或被取消的那一句不留在對話裡 |
 
-遠端目前只有介面。除錯已經改走 `adapters/debug/` 的 DAP 工作階段（視窗的 `DebugController` 與除錯面板），pdb 主控台只在 debugpy 沒有登記時當退路；執行程式仍然走 `BaseProcessManager`，還沒有改用 `TaskRunner`。AI 的實作在
+遠端已經有 SSH 的實作（`adapters/remote/`），但視窗還沒有用到。除錯已經改走 `adapters/debug/` 的 DAP 工作階段（視窗的 `DebugController` 與除錯面板），pdb 主控台只在 debugpy 沒有登記時當退路；執行程式仍然走 `BaseProcessManager`，還沒有改用 `TaskRunner`。AI 的實作在
 `adapters/ai/`，對話面板已經改走 `AIProvider`；語法分析的實作在 `adapters/syntax/`，編輯器的高亮已經改走
 `SyntaxEngine`。
 
@@ -474,7 +475,7 @@ start_editor(debug_mode)                       je_editor/start_editor.py
 | 模組 | 行 | 功用 |
 | --- | ---: | --- |
 | `__init__.py` | 58 | 套件說明 |
-| `default_services.py` | 67 | `build_default_services()`：建立 `EditorServices`、接上共用的語法引擎並登記 `SyntaxLanguageService`、登記本機工作執行器（`local`）與內建的除錯轉接器（`debugpy`）、載入 AI 設定、登記內建的 AI 供應者；`EditorMain` 與沒有 `services` 的宿主視窗都用它 |
+| `default_services.py` | 67 | `build_default_services()`：建立 `EditorServices`、接上共用的語法引擎並登記 `SyntaxLanguageService`、登記本機工作執行器（`local`）、內建的除錯轉接器（`debugpy`）與遠端傳輸（`ssh`）、載入 AI 設定、登記內建的 AI 供應者；`EditorMain` 與沒有 `services` 的宿主視窗都用它 |
 | `ai/openai_provider.py` | 147 | `OpenAIProvider`：透過 LangChain 的 `ChatOpenAI` 呼叫 OpenAI 相容端點；回覆整份回來後去掉 `</think>` 之前的思考過程 |
 | `ai/anthropic_provider.py` | 201 | `AnthropicProvider`：官方 `anthropic` SDK 的串流請求；可中途取消、回報 token 用量、把 SDK 的錯誤類別轉成給使用者看的說明；會拒絕請求的模型啟用伺服器端 fallback |
 | `ai/builtin_providers.py` | 50 | `register_builtin_ai_providers()`：每個供應者拿到「取得自己那組設定」的函式，所以改設定不必重新登記 |
@@ -483,6 +484,8 @@ start_editor(debug_mode)                       je_editor/start_editor.py
 | `debug/dap_session.py` | 439 | `DapSession`：以 DAP 實作的 `DebugSession`。啟動轉接器後照協定的順序打招呼（`initialize` → `launch` / `attach` → 等 `initialized` 事件 → 送中斷點 → `configurationDone`），把回應與事件轉成核心層的資料物件；不知道被除錯的是哪種語言，轉接器的指令、啟動引數與接上既有程式時的通道都由外面給 |
 | `debug/socket_channel.py` | 158 | `SocketChannel`：把一條 TCP 連線包成跟位元組模式的工作一樣的形狀。接上已經帶著轉接器在連接埠等待的程式時用它，之後經 SSH 轉送的遠端除錯也是 |
 | `debug/debugpy_adapter.py` | 132 | Python 的轉接器 debugpy：轉接器的指令（編輯器自己的直譯器）、`launch` / `attach` 引數、接上時直接連到連接埠；`register_builtin_debug_adapters()` 在 debugpy 有安裝時才登記 |
+| `remote/ssh_session.py` | 0 | `SshRemoteSession`：以系統的 `ssh` 指令實作的遠端工作階段。每個遠端操作都是本機的一個 `ssh` 程序（經由本機的 `TaskRunner` 啟動），所以遠端的工作在本機看起來跟本機的工作一樣。一律 `BatchMode`，從不停下來問問題；authority 只收固定的字元且不能以 `-` 開頭，目的地前面一律加 `--`，擋住把主機名稱當成選項的注入 |
+| `remote/remote_helper.py` | 0 | 在遠端機器上執行的小幫手程式（原始碼字串，以 `python -c` 送過去）：讀寫檔案、列目錄、找直譯器、在某個目錄與環境下執行指令。送到遠端的永遠是單純的引數清單，不在遠端的 shell 裡組指令；回來的是 JSON |
 | `syntax/grammar_table.py` | 130 | 內建文法的表（`GrammarSpec`：語言 ID、副檔名、匯入文法套件的函式）、查詢名稱到 `SyntaxCategory` 的對照（`function.builtin` 找不到時退回 `function`），以及讀專案自己查詢檔的 `own_query()`。多支援一種語言就是加一列與一組查詢檔 |
 | `syntax/tree_sitter_engine.py` | 536 | `TreeSitterEngine` 與 `TreeSitterSession`，唯一知道 Tree-sitter 的地方。更新時找出新舊文字不同的最小一段（對齊到字元邊界）告訴舊的樹，只重新解析受影響的部分，並回報語法變了的行；分類以 64 行為一塊、用到才算；同一個節點被多條規則抓到時取查詢裡寫在後面的那一條；位元組欄換算成 UTF-16 欄；超過 2 MB 不解析。文法或查詢載不起來時那個語言變成不支援，不丟例外。讀 Tree-sitter 的位置一律用索引（原因寫在模組裡：0.26.0 的 `.row` / `.column` 會弄壞參考計數） |
 | `syntax/syntax_language_service.py` | 142 | `SyntaxLanguageService`：把語法引擎接成語言服務，文件一開就有語法樹、一變就更新；回答 `SYNTAX_TREE`（那份文件的 session）與 `DOCUMENT_SYMBOLS`（有名稱的結構區塊） |

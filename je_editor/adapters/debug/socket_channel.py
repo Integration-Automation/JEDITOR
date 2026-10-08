@@ -123,6 +123,19 @@ class SocketChannel:
             return False
         return True
 
+    def close_input(self) -> None:
+        """
+        告訴對方不會再送資料，但繼續接收
+        Tell the other side nothing more will be sent, while still receiving.
+        """
+        connection = self._socket
+        if connection is None or self._state is not TaskState.RUNNING:
+            return
+        try:
+            connection.shutdown(socket.SHUT_WR)
+        except OSError as error:
+            jeditor_logger.debug("closing the sending side of %s: %s", self._spec.name, error)
+
     def cancel(self) -> None:
         """
         關閉連線

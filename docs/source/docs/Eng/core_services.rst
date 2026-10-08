@@ -10,8 +10,8 @@ command-line tool or a host application that never builds the JEditor window.
 
    This layer is the foundation of the next-generation editor roadmap. The editor window moves
    onto it one area at a time: diagnostics, the AI chat panel, the workspace and syntax
-   highlighting use it so far. Debugging and task execution have implementations the window
-   does not use yet, and remote sessions are an interface only.
+   highlighting use it so far. Debugging uses it as well. Task execution and remote
+   sessions have implementations the window does not use yet.
 
 Quick Example
 --------------
@@ -68,6 +68,8 @@ EditorServices
      - Task runners, registered by where they run
    * - ``remote_transports``
      - Remote session factories, registered by URI scheme
+   * - ``remotes``
+     - The ``RemoteSessionPool``: the remote sessions that are open, one per machine
    * - ``ai_providers``
      - AI providers, registered by name
 
@@ -387,13 +389,64 @@ somewhere else turns the same session into remote debugging. Another adapter is 
 with its own command and launch arguments, registered under a name in
 ``services.debug_adapters``.
 
-Tasks, Remote Sessions and AI Providers
-----------------------------------------
+Remote Sessions
+----------------
+
+A ``RemoteSession`` is one connection to another machine: connect, read and write its files, run
+tasks on it, forward its ports and find its Python interpreters. Nothing in the interface names
+a transport. ``je_editor.adapters.remote`` implements it with the system's ``ssh`` command and
+``build_default_services()`` registers it for ``ssh://`` URIs.
+
+.. code-block:: python
+
+   from je_editor.adapters.default_services import build_default_services
+   from je_editor.core import TaskSpec
+
+   services = build_default_services()
+   session = services.remotes.session_for("ssh://me@build-box/home/me/project")
+   if session.connect():
+       files = session.file_system()
+       for entry in files.list_directory("/home/me/project"):
+           print("dir " if entry.is_directory else "file", entry.name)
+       text = files.read_bytes("/home/me/project/main.py").decode("utf-8")
+       files.write_bytes("/home/me/project/main.py", text.encode("utf-8"))
+
+       task = session.task_runner().create(
+           TaskSpec(("python3", "main.py"), working_directory="/home/me/project"))
+       task.output.subscribe(lambda stream, text: print(stream.value, text, end=""))
+       task.start()
+
+       forward = session.forward_port(5678)      # the remote port 5678, on a free local port
+       print(forward.local_port)
+       print(session.interpreters("/home/me/project"))
+   else:
+       print(session.state().value, session.last_error())
+   services.shutdown()
+
+- ``services.remotes.session_for(uri)`` gives the session of the machine a URI points at, one
+  per machine however many roots or files are on it. It does not connect.
+- ``connect()`` returns ``False`` rather than raising when the machine cannot be reached;
+  ``state()`` is then ``RemoteState.FAILED`` and ``last_error()`` says why. ``reconnect()`` tries
+  again after a lost connection, and ``state_changed`` announces every step.
+- ``task_runner()`` is the same ``TaskRunner`` as the local one. A language server or a debug
+  adapter started through it runs on the remote machine with nothing else changed: a
+  ``DapSession`` given the remote runner debugs a remote program.
+- ``file_system()`` reads, writes, lists and looks up paths. These calls, ``interpreters()`` and
+  ``connect()`` wait for the other side, so call them from a worker thread.
+- ``forward_port(remote_port)`` makes a remote port reachable on this machine and returns a
+  handle with ``local_port``, ``is_open()`` and ``close()``.
+
+The SSH transport never asks a question (``BatchMode``): key-based login has to be set up
+already, as it is for ``ssh`` in a terminal, and ``~/.ssh/config`` applies. The remote machine
+needs ``python3`` or ``python``; every remote operation is that interpreter running one small
+helper, so nothing is installed there and no command is ever assembled in the remote shell.
+
+Tasks and AI Providers
+-----------------------
 
 These are interfaces with their data objects. The implementations live in
 ``je_editor.adapters``, outside this layer: the two AI providers (``openai`` and ``anthropic``,
-see :doc:`ai_assistant`) and a ``TaskRunner`` for this machine, registered as ``local``. Remote
-sessions have no implementation yet; a host or a plugin registers its own.
+see :doc:`ai_assistant`) and a ``TaskRunner`` for this machine, registered as ``local``.
 
 .. list-table::
    :header-rows: 1
@@ -405,9 +458,6 @@ sessions have no implementation yet; a host or a plugin registers its own.
    * - Task execution
      - ``TaskRunner``, ``TaskHandle``
      - ``TaskSpec``, ``TaskState``, ``OutputStream``
-   * - Remote sessions
-     - ``RemoteSession``
-     - ``RemoteState``
    * - AI providers
      - ``AIProvider``
      - ``ChatRequest``, ``ChatMessage``, ``ChatRole``, ``ChatResponse``, ``ModelInfo``,
@@ -419,8 +469,8 @@ sessions have no implementation yet; a host or a plugin registers its own.
   ``output`` and ``finished`` events, then call ``start()``, so no early output is missed.
 - A ``TaskSpec`` with ``binary=True`` delivers output as the bytes that were read and takes
   bytes in ``write()``. Protocols framed in bytes, a debug adapter's among them, need that.
-- ``RemoteSession.task_runner()`` returns the same ``TaskRunner`` interface, so a caller never
-  has to tell where a process runs.
+- ``TaskHandle.close_input()`` closes the process's standard input, for a program that acts
+  only once its input ends.
 - ``AIProvider.complete(request, on_text, cancel)`` blocks until the reply is complete. Call it
   from a worker thread. ``on_text`` receives the reply piece by piece and a ``CancelToken``
   stops it part-way.
