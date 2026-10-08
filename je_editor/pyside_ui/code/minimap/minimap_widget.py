@@ -92,7 +92,8 @@ class MinimapWidget(QWidget):
         :return: 標記種類對應行號（0 起算）/ marker kind -> 0-based line numbers
         """
         editor = self._code_edit
-        diagnostics = sorted({item.line - 1 for item in editor.lint_manager.diagnostics()})
+        diagnostics = sorted(
+            {item.range.start.line - 1 for item in editor.lint_manager.diagnostics()})
         changes = sorted(editor.diff_marker_manager.statuses())
         return {
             "diagnostic": diagnostics,

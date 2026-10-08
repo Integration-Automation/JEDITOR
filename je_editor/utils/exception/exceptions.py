@@ -28,3 +28,7 @@ class JEditorCantFindLanguageException(JEditorException):
 
 class JEditorJsonException(JEditorException):
     pass
+
+
+class JEditorServiceException(JEditorException):
+    pass

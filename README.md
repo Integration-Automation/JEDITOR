@@ -114,7 +114,8 @@ same picker back into command mode.
 `ruff` runs on the **buffer** rather than the file on disk, on a worker thread once typing pauses, so
 unsaved edits are covered and a stale result from a superseded run is discarded. Findings are
 underlined in place and listed in the Problems panel, where **Apply Fixes** applies everything ruff
-can fix by itself.
+can fix by itself. A language server's diagnostics land in the same list, and the panel filters both
+by severity (Error, Warning, Information, Hint) and by source.
 
 <p align="center">
   <img src="image/screenshot-problems-panel.png" alt="Problems panel listing ruff diagnostics"/>
@@ -245,7 +246,7 @@ window never leaves you with dark-theme syntax colours.
 | **Execution** | Run Python scripts (F5), debug mode (F9), shell commands, virtual environment detection |
 | **Code Quality** | YAPF formatting, format on save, PEP8 checking, Ruff linting with a problems panel, language-server diagnostics and quick fixes, pytest panel with tracebacks and coverage, JSON reformatting |
 | **Git** | Branch management, commit history, side-by-side diff viewer, gutter change markers, per-change staging and revert, inline blame, stash, conflict resolution, audit logging |
-| **AI** | OpenAI GPT integration via LangChain, interactive chat widget, configurable models & prompts |
+| **AI** | Chat panel with interchangeable providers: OpenAI-compatible endpoints (LangChain) and Anthropic (streamed), per-provider models, keys & prompts |
 | **Console** | Interactive shell, Jupyter/IPython console, command history, multi-shell support |
 | **Browser** | Embedded web browser, URL navigation, in-page search |
 | **Plugins** | Custom syntax highlighting, UI translations, run configurations, auto-discovery |
@@ -295,7 +296,10 @@ Core dependencies are installed automatically:
 | jedi | Python auto-completion & analysis |
 | ruff | Fast Python linter |
 | gitpython | Git repository operations |
-| langchain_openai + langchain_core | AI/LLM integration |
+| langchain_openai + langchain_core | OpenAI-compatible AI provider |
+| anthropic | Anthropic AI provider |
+| tree-sitter + tree-sitter-python / -javascript / -json | Syntax parsing for highlighting |
+| debugpy | Python debug adapter (Debug Adapter Protocol) |
 | watchdog | File system monitoring |
 | pycodestyle | PEP8 style checking |
 | qtconsole | Jupyter/IPython console widget |
@@ -320,6 +324,25 @@ start_editor()
 
 The editor launches maximized with a dark amber theme by default.
 
+The parts of the editor that are not widgets — the workspace, open documents and diagnostics, plus
+the interfaces for language services, debugging, task execution, remote sessions and AI providers
+— live in `je_editor.core` and need no window:
+
+```python
+from je_editor.core import Diagnostic, EditorServices, Severity, TextRange, Workspace, to_uri
+
+services = EditorServices(Workspace.single_root("my_project"))
+uri = to_uri("my_project/main.py")
+services.diagnostics.publish("ruff", uri, [
+    Diagnostic("`os` imported but unused", TextRange.from_lines(1, 8), Severity.WARNING, code="F401"),
+])
+print(services.diagnostics.counts()[Severity.WARNING])  # 1
+services.shutdown()
+```
+
+This layer is the foundation of the next-generation editor; the editor window does not consume it
+yet. See the *Core Services* page of the [documentation](https://je-editor.readthedocs.io/en/latest/).
+
 ---
 
 ## Feature Details
@@ -327,7 +350,7 @@ The editor launches maximized with a dark amber theme by default.
 ### Code Editing
 
 - **Multi-tab editor** -- Work on multiple files simultaneously with closable tabs.
-- **Syntax highlighting** -- Built-in Python highlighting with extensible plugin support for additional languages.
+- **Syntax highlighting** -- Python, JavaScript and JSON are coloured from a real parse (Tree-sitter) that follows each edit, so function and type names, f-string expressions and multi-line strings come out right. Other languages use keyword tables, and plugins add more.
 - **Auto-completion** -- Context-aware code suggestions powered by Jedi.
 - **Line numbers** -- Displayed alongside the editor with current line highlighting.
 - **Search & Replace** -- Search within the current file, across folders, or project-wide with regex and case-sensitive options. Runs in background threads for large projects.
@@ -365,7 +388,7 @@ The editor launches maximized with a dark amber theme by default.
 ### Code Execution & Debugging
 
 - **Run Python scripts** (F5) -- Execute the current file with real-time output streaming.
-- **Debug mode** (F9) -- Launch the Python debugger for step-through debugging, with breakpoints toggled from the gutter (`Ctrl+F9`).
+- **Debug mode** (F9) -- Debug through the Debug Adapter Protocol (debugpy): a Debug Panel with threads, the call stack, variables you can open, expression evaluation and the program's output; the stopped line is marked in the editor. Breakpoints are toggled from the gutter (`Ctrl+F9`) and can carry a condition, and a program started with `debugpy --listen` can be attached to.
 - **Shell commands** -- Execute arbitrary shell/terminal commands from within the editor.
 - **Virtual environment detection** -- Automatically detects and activates Python virtual environments.
 - **Process management** -- Stop individual or all running processes.
@@ -387,6 +410,7 @@ The editor launches maximized with a dark amber theme by default.
 
 - **Create, open, save** files with standard shortcuts (Ctrl+N, Ctrl+O, Ctrl+S).
 - **Open folders** (Ctrl+K) -- Navigate project directory structures.
+- **Multi-root workspace** -- Add more folders beside the project (File → Add Folder to Workspace). Quick open, the TODO and Problems panels, project search and language servers then cover every folder, and same-named files in different folders stay apart.
 - **Auto-save** -- Automatic periodic file saving to prevent data loss.
 - **Session restore** -- Reopens every file that was open at the last shutdown, not just the last one. Missing, duplicate and already-open files are skipped, the list is capped, and a corrupt or hand-edited settings file can never block startup. Disable by setting `restore_session` to `false` in `.jeditor/user_setting.json`.
 - **Multi-encoding** -- Seamlessly handle UTF-8, GBK, Latin-1, and other encodings with automatic detection.
@@ -405,10 +429,17 @@ The editor launches maximized with a dark amber theme by default.
 
 ### AI Assistant
 
-- **OpenAI models via LangChain** -- Connect to OpenAI's language models.
-- **Interactive chat widget** -- Conversational AI panel within the editor.
-- **Configurable models** -- Set custom API keys, endpoints, model names, and system prompts.
-- **Async messaging** -- Non-blocking AI interaction using a message queue.
+- **Interchangeable providers** -- The chat panel talks to whichever provider is selected: any
+  OpenAI-compatible endpoint through LangChain, or Anthropic through its official SDK. A plugin can
+  register another one without touching the panel.
+- **Conversations, not single prompts** -- Follow-up questions carry the conversation so far; **New
+  chat** starts over.
+- **Streaming and cancelling** -- Anthropic replies appear as they are generated, and **Stop** cancels
+  a request in flight.
+- **Per-provider settings** -- Each provider keeps its own API key, endpoint, model and system prompt.
+  Settings apply to the session and are only written to disk when you tick the box.
+- **Never blocks the window** -- Requests run on a background thread; failures are explained in a
+  dialog and token usage is shown when the provider reports it.
 
 ### Console & REPL
 
@@ -540,6 +571,11 @@ je_editor/
 │   ├── dialog/         Search & replace, shortcuts, snippets, file dialogs
 │   ├── git_ui/         Git client, commit graph, diff viewers
 │   └── main_ui/        Main window, menus, toolbar, panels, settings, AI, console
+├── core/               Service layer, no Qt: workspace, documents, diagnostics, and the
+│                       interfaces for language services, debugging, tasks, remote and AI
+├── adapters/           Implementations of those interfaces, no Qt: the AI providers, the
+│                       Tree-sitter syntax engine, the local task runner and the DAP
+│                       debug session
 ├── code_scan/          Ruff execution and watchdog file monitoring
 ├── git_client/         Git operations (GitPython + git CLI)
 ├── plugins/            Plugin registry and loader
@@ -551,6 +587,9 @@ Features are built in two halves: the algorithm lives in `utils/` with no Qt imp
 manager in `pyside_ui/` wires it to widgets. Folding, for example, is `utils/code_folding/` plus
 `pyside_ui/code/folding/`. That is why most of the behaviour above can be tested without opening a
 window.
+
+`core/` sits between the two: it composes that logic into services a host application can use
+without the JEditor window. A test walks its import graph and fails on any Qt import beneath it.
 
 A module-by-module reference — what every file does, the threading model, the global singletons and
 the settings layout — is kept in **[`architecture_explore.md`](architecture_explore.md)**.
@@ -635,7 +674,7 @@ JEDITOR stores user settings in a `.jeditor/` directory inside the working direc
 | `user_setting.json` | General preferences (font, theme, language, recent files, open tabs, reassigned shortcuts) |
 | `user_color_setting.json` | Editor and output colours, including syntax highlighting |
 | `snippets.json` | Your own snippets, merged over the built-in sets |
-| `ai_config.json` | AI assistant settings — read at startup, never written; create it yourself |
+| `ai_config.json` | AI assistant settings, grouped by provider — written only when you tick saving in the AI settings dialog, since it holds the key as plain text |
 
 Each file is backed up to `<name>.bak` before it is rewritten.
 

@@ -1,6 +1,12 @@
 PySide6==6.11.2
 langchain_openai==1.6.2
 langchain_core
+anthropic==1.11.0
+tree-sitter==0.26.0
+tree-sitter-python==0.25.0
+tree-sitter-javascript==0.25.0
+tree-sitter-json==0.24.8
+debugpy==1.8.22
 ruff
 sphinx
 twine

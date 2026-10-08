@@ -8,7 +8,12 @@ from unittest.mock import MagicMock, patch
 import pytest
 from PySide6.QtWidgets import QApplication
 
-from je_editor.code_scan.ruff_lint import apply_fixes, find_ruff_executable, lint_project
+from je_editor.code_scan.ruff_lint import (
+    RUFF_SOURCE, apply_fixes, find_ruff_executable, lint_project
+)
+from je_editor.core.diagnostics.diagnostic_model import Diagnostic as UnifiedDiagnostic
+from je_editor.core.diagnostics.diagnostic_model import Severity, TextRange
+from je_editor.core.uri.resource_uri import to_uri
 from je_editor.utils.lint.ruff_diagnostics import (
     SEVERITY_ERROR,
     SEVERITY_INFO,
@@ -132,25 +137,144 @@ def _diagnostics() -> list[Diagnostic]:
     ]
 
 
+SERVER = "rust-analyzer"
+
+
+def _server_diagnostics() -> list[UnifiedDiagnostic]:
+    """What a language server reported: one finding at each severity."""
+    return [
+        UnifiedDiagnostic("cannot find value", TextRange.from_lines(4), Severity.ERROR,
+                          source=SERVER, code="E0425"),
+        UnifiedDiagnostic("unused variable", TextRange.from_lines(5), Severity.WARNING,
+                          source=SERVER, code="unused_variables"),
+        UnifiedDiagnostic("consider borrowing", TextRange.from_lines(6), Severity.INFORMATION,
+                          source=SERVER, code="clippy::needless_pass"),
+        UnifiedDiagnostic("could be const", TextRange.from_lines(7), Severity.HINT,
+                          source=SERVER, code="clippy::const"),
+    ]
+
+
+def _choose(combo, value) -> None:
+    combo.setCurrentIndex(combo.findData(value))
+
+
 class TestSeverityFilter:
     def test_everything_is_shown_by_default(self, panel):
-        panel._diagnostics = _diagnostics()
+        panel.set_diagnostics(_diagnostics())
         assert len(panel.visible_diagnostics()) == 3
 
     def test_filtering_to_errors(self, panel):
-        panel._diagnostics = _diagnostics()
-        panel.severity_filter.setCurrentIndex(panel.severity_filter.findData(SEVERITY_ERROR))
+        panel.set_diagnostics(_diagnostics())
+        _choose(panel.severity_filter, int(Severity.ERROR))
         assert [item.code for item in panel.visible_diagnostics()] == ["F401"]
 
     def test_filtering_to_warnings(self, panel):
-        panel._diagnostics = _diagnostics()
-        panel.severity_filter.setCurrentIndex(panel.severity_filter.findData(SEVERITY_WARNING))
+        panel.set_diagnostics(_diagnostics())
+        _choose(panel.severity_filter, int(Severity.WARNING))
         assert [item.code for item in panel.visible_diagnostics()] == ["W291"]
 
     def test_the_tree_follows_the_filter(self, panel):
-        panel._diagnostics = _diagnostics()
-        panel.severity_filter.setCurrentIndex(panel.severity_filter.findData(SEVERITY_INFO))
+        panel.set_diagnostics(_diagnostics())
+        _choose(panel.severity_filter, int(Severity.INFORMATION))
         assert panel.result_tree.topLevelItemCount() == 1
+
+    def test_the_filter_offers_all_four_severities(self, panel):
+        offered = [panel.severity_filter.itemData(index)
+                   for index in range(1, panel.severity_filter.count())]
+        assert offered == [int(severity) for severity in Severity]
+
+    @pytest.mark.parametrize("severity, code", [
+        (Severity.ERROR, "E0425"), (Severity.WARNING, "unused_variables"),
+        (Severity.INFORMATION, "clippy::needless_pass"), (Severity.HINT, "clippy::const"),
+    ])
+    def test_a_server_severity_is_filtered_as_the_server_gave_it(self, panel, severity, code):
+        panel.set_diagnostics(_server_diagnostics())
+        _choose(panel.severity_filter, int(severity))
+        assert [item.code for item in panel.visible_diagnostics()] == [code]
+
+    def test_the_severity_is_named_in_its_column(self, panel):
+        from je_editor.pyside_ui.main_ui.problems_panel.problems_panel_widget import (
+            COLUMN_SEVERITY
+        )
+        panel.set_diagnostics(_server_diagnostics())
+        shown = [panel.result_tree.topLevelItem(row).text(COLUMN_SEVERITY)
+                 for row in range(panel.result_tree.topLevelItemCount())]
+        assert shown == ["Error", "Warning", "Information", "Hint"]
+
+
+class TestSourceFilter:
+    """ruff's findings and a language server's sit in one list and filter alike."""
+
+    @pytest.fixture()
+    def mixed(self, panel):
+        panel.set_diagnostics(_diagnostics() + _server_diagnostics())
+        return panel
+
+    def test_both_sources_are_listed_together(self, mixed):
+        assert [item.source for item in mixed.diagnostics()] == [RUFF_SOURCE] * 3 + [SERVER] * 4
+
+    def test_the_filter_offers_the_sources_that_have_findings(self, mixed):
+        offered = [mixed.source_filter.itemData(index)
+                   for index in range(1, mixed.source_filter.count())]
+        assert offered == sorted([RUFF_SOURCE, SERVER])
+
+    def test_one_source_can_be_picked(self, mixed):
+        _choose(mixed.source_filter, SERVER)
+        assert {item.source for item in mixed.visible_diagnostics()} == {SERVER}
+        assert mixed.result_tree.topLevelItemCount() == 4
+
+    def test_severity_and_source_narrow_together(self, mixed):
+        _choose(mixed.source_filter, SERVER)
+        _choose(mixed.severity_filter, int(Severity.WARNING))
+        assert [item.code for item in mixed.visible_diagnostics()] == ["unused_variables"]
+
+    def test_a_severity_filter_cuts_across_both_sources(self, mixed):
+        _choose(mixed.severity_filter, int(Severity.ERROR))
+        assert [(item.source, item.code) for item in mixed.visible_diagnostics()] == [
+            (RUFF_SOURCE, "F401"), (SERVER, "E0425")]
+
+    def test_the_source_is_named_in_its_column(self, mixed):
+        from je_editor.pyside_ui.main_ui.problems_panel.problems_panel_widget import COLUMN_SOURCE
+        assert mixed.result_tree.topLevelItem(0).text(COLUMN_SOURCE) == RUFF_SOURCE
+
+    def test_a_chosen_source_survives_a_recheck(self, mixed):
+        _choose(mixed.source_filter, SERVER)
+        mixed.set_diagnostics(_diagnostics() + _server_diagnostics())
+        assert mixed.source_filter.currentData() == SERVER
+
+    def test_a_source_that_went_away_falls_back_to_all(self, mixed):
+        _choose(mixed.source_filter, SERVER)
+        mixed.set_diagnostics(_diagnostics())
+        assert mixed.source_filter.currentIndex() == 0
+        assert len(mixed.visible_diagnostics()) == 3
+
+    def test_the_order_does_not_depend_on_the_order_reported(self, panel):
+        panel.set_diagnostics(_server_diagnostics() + _diagnostics())
+        forwards = panel.visible_diagnostics()
+        panel.set_diagnostics(list(reversed(_diagnostics() + _server_diagnostics())))
+        assert panel.visible_diagnostics() == forwards
+
+
+class TestFilesAcrossTheProject:
+    def test_same_named_files_in_two_folders_are_both_listed(self, panel, tmp_path):
+        first, second = tmp_path / "frontend" / "main.py", tmp_path / "backend" / "main.py"
+        panel.set_diagnostics([
+            Diagnostic(line=1, column=1, end_line=1, end_column=2, code="F401", message="a",
+                       file_path=str(first)),
+            Diagnostic(line=1, column=1, end_line=1, end_column=2, code="F401", message="b",
+                       file_path=str(second)),
+        ])
+        assert sorted(item.uri for item in panel.diagnostics()) == sorted(
+            [to_uri(first), to_uri(second)])
+
+    def test_a_finding_in_another_file_opens_that_file(self, panel, tmp_path):
+        target = tmp_path / "pkg" / "module.py"
+        panel.set_diagnostics([Diagnostic(
+            line=3, column=1, end_line=3, end_column=2, code="F401", message="unused",
+            file_path=str(target))])
+        panel.jump_to_diagnostic(panel.diagnostics()[0])
+        panel._main_window.go_to_new_tab.assert_called_once()
+        assert str(panel._main_window.go_to_new_tab.call_args.args[0]) == str(target)
 
 
 class TestProjectScope:

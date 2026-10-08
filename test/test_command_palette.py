@@ -1,9 +1,11 @@
 """Tests for the command palette fuzzy matcher and menu command collector."""
 from __future__ import annotations
 
+import gc
+
 import pytest
 from PySide6.QtGui import QAction
-from PySide6.QtWidgets import QMenu, QMenuBar
+from PySide6.QtWidgets import QMenu, QMenuBar, QWidget
 
 from je_editor.pyside_ui.main_ui.command_palette.command_palette_dialog import (
     CommandPaletteDialog,
@@ -13,6 +15,7 @@ from je_editor.pyside_ui.main_ui.command_palette.menu_command_collector import (
     clean_action_text,
     collect_menu_commands,
 )
+from je_editor.pyside_ui.main_ui.menu.submenu_map import menus_in, submenus_of
 from je_editor.utils.command_palette.fuzzy_matcher import (
     CommandEntry,
     fuzzy_score,
@@ -307,3 +310,58 @@ class TestCommandPaletteDialog:
         dialog._move_selection(1)
         assert dialog.result_list.currentRow() == -1
         dialog.close()
+
+
+class RecordingApplication:
+    """Stands in for the application and notes whether the collector was on when asked for its widgets."""
+
+    def __init__(self, widgets: list) -> None:
+        self._widgets = widgets
+        self.collector_was_on: bool | None = None
+
+    def allWidgets(self) -> list:
+        self.collector_was_on = gc.isenabled()
+        return self._widgets
+
+
+@pytest.mark.usefixtures("qapp")
+class TestWalkingEveryMenu:
+    """
+    Wrapping every widget of the application allocates, an allocation can start a
+    collection, and a collection deletes unreferenced widgets that are in the very
+    list being wrapped. That took the process down, so the collector is held off
+    for the walk.
+    """
+
+    def test_the_collector_is_off_during_the_walk_and_back_on_after(self):
+        menu, other = QMenu(), QWidget()
+        application = RecordingApplication([menu, other])
+        assert gc.isenabled()
+        assert menus_in(application) == [menu]
+        assert (application.collector_was_on, gc.isenabled()) == (False, True)
+
+    def test_a_collector_that_was_off_stays_off(self):
+        gc.disable()
+        try:
+            menus_in(RecordingApplication([]))
+            assert gc.isenabled() is False
+        finally:
+            gc.enable()
+
+    def test_the_collector_comes_back_on_when_the_walk_fails(self):
+        class Failing:
+            def allWidgets(self) -> list:
+                raise RuntimeError("the application is going away")
+
+        with pytest.raises(RuntimeError):
+            menus_in(Failing())
+        assert gc.isenabled()
+
+    def test_a_menu_attached_without_becoming_a_child_is_found(self):
+        menu_bar = QMenuBar()
+        own = menu_bar.addMenu("File")
+        attached = QMenu("Automation")
+        menu_bar.addMenu(attached)
+        table = submenus_of(menu_bar)
+        assert table[attached.menuAction()] is attached
+        assert table[own.menuAction()] is own

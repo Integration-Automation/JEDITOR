@@ -149,6 +149,7 @@ class TestGenericHighlighter:
         for key in (
             "syntax_keyword_color", "syntax_string_color",
             "syntax_comment_color", "syntax_number_color",
+            "syntax_builtin_color", "syntax_self_color", "syntax_function_color",
         ):
             assert actually_color_dict.get(key) is not None
 
@@ -175,11 +176,12 @@ class TestHighlighterSelection:
         editor.reset_highlighter()
         assert isinstance(editor.highlighter, GenericHighlighter)
 
-    def test_a_python_file_keeps_its_own_highlighter(self, editor):
-        from je_editor.pyside_ui.code.syntax.python_syntax import PythonHighlighter
+    def test_a_python_file_is_coloured_by_the_syntax_engine(self, editor):
+        from je_editor.pyside_ui.code.syntax.tree_sitter_highlighter import TreeSitterHighlighter
         editor.current_file = "module.py"
         editor.reset_highlighter()
-        assert isinstance(editor.highlighter, PythonHighlighter)
+        assert isinstance(editor.highlighter, TreeSitterHighlighter)
+        assert editor.highlighter.session.language_id == "python"
 
     def test_an_unknown_suffix_falls_back_to_python(self, editor):
         from je_editor.pyside_ui.code.syntax.python_syntax import PythonHighlighter
@@ -187,8 +189,9 @@ class TestHighlighterSelection:
         editor.reset_highlighter()
         assert isinstance(editor.highlighter, PythonHighlighter)
 
-    def test_a_file_without_a_name_falls_back_to_python(self, editor):
-        from je_editor.pyside_ui.code.syntax.python_syntax import PythonHighlighter
+    def test_a_file_without_a_name_counts_as_python(self, editor):
+        from je_editor.pyside_ui.code.syntax.tree_sitter_highlighter import TreeSitterHighlighter
         editor.current_file = None
         editor.reset_highlighter()
-        assert isinstance(editor.highlighter, PythonHighlighter)
+        assert isinstance(editor.highlighter, TreeSitterHighlighter)
+        assert editor.highlighter.session.language_id == "python"

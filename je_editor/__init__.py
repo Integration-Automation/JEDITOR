@@ -18,6 +18,7 @@ from je_editor.utils.exception.exceptions import JEditorJsonException
 from je_editor.utils.exception.exceptions import JEditorOpenFileException
 from je_editor.utils.exception.exceptions import JEditorRunOnShellException
 from je_editor.utils.exception.exceptions import JEditorSaveFileException
+from je_editor.utils.exception.exceptions import JEditorServiceException
 from je_editor.utils.multi_language.english import english_word_dict
 from je_editor.utils.multi_language.multi_language_wrapper import language_wrapper
 from je_editor.utils.multi_language.traditional_chinese import traditional_chinese_word_dict
@@ -45,7 +46,7 @@ __all__ = [
     "JEditorCantFindLanguageException", "JEditorJsonException", "PythonHighlighter",
     "user_setting_dict", "user_setting_color_dict", "EditorWidget", "MainBrowserWidget",
     "ExecManager", "ShellManager", "traditional_chinese_word_dict", "english_word_dict",
-    "language_wrapper", "jeditor_logger",
+    "language_wrapper", "jeditor_logger", "JEditorServiceException",
     # Plugin API
     "register_programming_language", "get_programming_language_plugin",
     "get_all_programming_language_suffixes",

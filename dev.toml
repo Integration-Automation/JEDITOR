@@ -19,7 +19,10 @@ license = "MIT"
 license-files = ["LICENSE"]
 dependencies = [
     "PySide6==6.11.2", "qt-material", "yapf", "frontengine", "pycodestyle", "jedi",
-    "qtconsole", "langchain_openai==1.6.2", "langchain_core", "pydantic", "watchdog", "ruff", "gitpython>=3.1.59"
+    "qtconsole", "langchain_openai==1.6.2", "langchain_core", "anthropic==1.11.0", "pydantic",
+    "watchdog", "ruff", "gitpython>=3.1.59",
+    "tree-sitter==0.26.0", "tree-sitter-python==0.25.0", "tree-sitter-javascript==0.25.0",
+    "tree-sitter-json==0.24.8", "debugpy==1.8.22"
 ]
 classifiers = [
     "Programming Language :: Python :: 3.10",
@@ -54,7 +57,20 @@ addopts = "--ignore=test/qt_ui"
 # pytest relies on `assert`; exclude test directories to silence B101
 exclude_dirs = ["test", "tests"]
 
+[tool.ruff.lint]
+# ruff 0.16 把預設規則從 118 條擴到 826 條。這裡寫明專案一直在用的那一組，
+# 換 ruff 版本時「ruff check 乾淨」的意思才不會跟著變。
+# ruff 0.16 widened its default rules from 118 to 826. Naming the set this project has always
+# used keeps "ruff check clean" meaning the same thing whichever ruff is installed.
+select = ["E4", "E7", "E9", "F"]
+
 [tool.setuptools.packages]
 # 只收 je_editor：test/ 有 __init__.py，不寫 include 會被一起裝進 site-packages。
 # Ship je_editor only: test/ has an __init__.py and would be installed too without include.
 find = { include = ["je_editor", "je_editor.*"], namespaces = false }
+
+[tool.setuptools.package-data]
+# Tree-sitter 的查詢檔不是 .py，不寫在這裡就不會進 wheel，裝好的編輯器會沒有結構區塊。
+# The Tree-sitter query files are not .py: unlisted, they stay out of the wheel and an installed
+# editor has no structural regions.
+"je_editor.adapters.syntax" = ["queries/*/*.scm"]
