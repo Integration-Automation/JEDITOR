@@ -20,6 +20,9 @@ from urllib.parse import unquote
 HEADER_SEPARATOR = b"\r\n\r\n"
 # 內容長度標頭 / The content-length header
 CONTENT_LENGTH_HEADER = b"Content-Length:"
+# LSP 定義的嚴重度編號：錯誤、警告、資訊、提示
+# The severity numbers LSP defines: error, warning, information, hint
+_LSP_SEVERITIES = (1, 2, 3, 4)
 
 
 def encode_message(payload: dict) -> bytes:
@@ -454,6 +457,8 @@ def _diagnostic_entry(item: object) -> dict | None:
     line, column = _position(span.get("start"))
     end_line, end_column = _position(span.get("end"), line - 1, column - 1)
     code = item.get("code")
+    severity = item.get("severity")
+    source = item.get("source")
     return {
         # LSP 的行列是 0 起算，編輯器用 1 起算
         # LSP counts lines and columns from zero; the editor counts from one
@@ -463,4 +468,9 @@ def _diagnostic_entry(item: object) -> dict | None:
         "end_column": end_column,
         "code": str(code) if isinstance(code, (str, int)) else "",
         "message": message,
+        # 伺服器沒給或給了不認得的嚴重度時為 0，由使用端決定怎麼看待
+        # Zero when the server gave none, or one that is not recognised, leaving
+        # the reading of it to whoever consumes the entry
+        "severity": severity if severity in _LSP_SEVERITIES else 0,
+        "source": source if isinstance(source, str) else "",
     }

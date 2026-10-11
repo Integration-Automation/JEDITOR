@@ -11,10 +11,12 @@ parsing but enough to make the shape of the code readable.
 from __future__ import annotations
 
 import re
+from collections.abc import Sequence
 
 from PySide6.QtCore import QRegularExpression
 from PySide6.QtGui import QSyntaxHighlighter, QTextCharFormat, QTextDocument
 
+from je_editor.pyside_ui.code.syntax.highlight_rules import HighlightRule, apply_rules
 from je_editor.pyside_ui.main_ui.save_settings.user_color_setting_file import actually_color_dict
 from je_editor.utils.syntax.language_rules import LanguageRules, rules_for
 
@@ -58,13 +60,17 @@ class GenericHighlighter(QSyntaxHighlighter):
     A highlighter that colours a document from a language's rules.
     """
 
-    def __init__(self, document: QTextDocument, rules: LanguageRules) -> None:
+    def __init__(self, document: QTextDocument, rules: LanguageRules,
+                 extra_rules: Sequence[HighlightRule] = ()) -> None:
         """
         :param document: 要上色的文件 / the document to highlight
         :param rules: 該語言的規則 / that language's rules
+        :param extra_rules: 疊在語言規則之上的規則，例如插件登記的關鍵字
+            rules laid over the language's own, such as keywords a plugin registered
         """
         super().__init__(document)
         self._rules = rules
+        self._extra_rules = list(extra_rules)
         self._patterns: list[tuple[QRegularExpression, QTextCharFormat]] = []
         if rules.keywords:
             self._patterns.append(
@@ -87,6 +93,9 @@ class GenericHighlighter(QSyntaxHighlighter):
             while matches.hasNext():
                 match = matches.next()
                 self.setFormat(match.capturedStart(), match.capturedLength(), text_format)
+        # 插件的關鍵字排在註解之前：註解裡的字不該被它們上色
+        # Plugin keywords go before the comments, which must not be coloured by them
+        apply_rules(self, text, self._extra_rules)
         self._highlight_line_comment(text)
         self._highlight_block_comment(text)
 
@@ -121,14 +130,16 @@ class GenericHighlighter(QSyntaxHighlighter):
         self.setCurrentBlockState(0)
 
 
-def highlighter_for(document: QTextDocument, suffix: str) -> GenericHighlighter | None:
+def highlighter_for(document: QTextDocument, suffix: str,
+                    extra_rules: Sequence[HighlightRule] = ()) -> GenericHighlighter | None:
     """
     為某個副檔名建立高亮器
     Build a highlighter for a file suffix.
 
     :param document: 要上色的文件 / the document to highlight
     :param suffix: 副檔名（含點）/ the file suffix, dot included
+    :param extra_rules: 疊在語言規則之上的規則 / rules laid over the language's own
     :return: 高亮器，沒有對應規則時為 ``None`` / the highlighter, or ``None``
     """
     rules = rules_for(suffix)
-    return GenericHighlighter(document, rules) if rules is not None else None
+    return GenericHighlighter(document, rules, extra_rules) if rules is not None else None

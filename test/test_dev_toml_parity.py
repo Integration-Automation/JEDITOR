@@ -64,6 +64,16 @@ def test_shipped_files_match():
     assert DEV_FILE["tool"]["setuptools"] == STABLE_FILE["tool"]["setuptools"]
 
 
+def test_the_lint_rules_are_named():
+    # ruff's defaults change between releases (118 rules in 0.15, 826 in 0.16), so "ruff check
+    # clean" only means something while the rule set is written down.
+    assert STABLE_FILE["tool"]["ruff"]["lint"]["select"] == ["E4", "E7", "E9", "F"]
+
+
+def test_lint_rules_match():
+    assert DEV_FILE["tool"]["ruff"] == STABLE_FILE["tool"]["ruff"]
+
+
 def _manifest_commands() -> list[list[str]]:
     """Return the words of each ``MANIFEST.in`` command, comments and blank lines left out."""
     lines = (REPO_ROOT / "MANIFEST.in").read_text(encoding="utf-8").splitlines()

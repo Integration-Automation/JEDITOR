@@ -47,6 +47,11 @@ user_setting.json
      - 上次關閉時開啟的分頁
    * - ``restore_session``
      - 啟動時是否重新開啟這些分頁（預設：``true``）
+   * - ``workspace_roots``
+     - 工作目錄以外，另外加入工作區的資料夾
+   * - ``syntax_engine``
+     - 語法由誰上色： ``tree_sitter`` （預設）會解析 Python、JavaScript 與 JSON；
+       ``classic`` 則每一種語言都用原本以樣式比對的高亮器
    * - ``shortcuts``
      - 使用者改過的快捷鍵；只記錄與預設值不同的項目
 
@@ -71,7 +76,11 @@ user_color_setting.json
      - 輸出面板文字
    * - ``syntax_keyword_color`` / ``syntax_string_color`` /
        ``syntax_comment_color`` / ``syntax_number_color``
-     - 語法高亮
+     - 語法高亮：關鍵字、字串、註解、數字
+   * - ``syntax_function_color`` / ``syntax_builtin_color`` / ``syntax_self_color``
+     - 語法高亮：函式名稱、內建名稱與型別名稱、 ``self`` / ``this``
+   * - ``debug_execution_line_color``
+     - 除錯時程式停下來的那一行
    * - ``diff_added_marker_color`` / ``diff_modified_marker_color`` /
        ``diff_removed_marker_color``
      - 行號區的 Git 變更標記
@@ -98,15 +107,15 @@ user_color_setting.json
 ai_config.json
 ^^^^^^^^^^^^^^^
 
-AI 助手設定（詳見 :doc:`ai_assistant`）：
+AI 助手設定（詳見 :doc:`ai_assistant`），以供應者分組。每個供應者各有：
 
 - API Base URL
 - API 金鑰
 - 模型名稱
-- 系統提示詞範本
+- 系統提示詞
 
-與上面兩個檔案不同，這個檔案只會被讀取、不會被寫入——若希望每次啟動都載入設定，請自行
-建立它。
+另外記錄目前選用的供應者。與上面兩個檔案不同，編輯器預設不會寫入這個檔案——只有在 AI 設定
+對話框勾選存檔時才會寫入，因為裡面的金鑰是明文。您也可以自行建立它。
 
 主題
 -----

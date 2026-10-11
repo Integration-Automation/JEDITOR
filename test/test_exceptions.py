@@ -10,6 +10,7 @@ from je_editor.utils.exception.exceptions import (
     JEditorContentFileException,
     JEditorCantFindLanguageException,
     JEditorJsonException,
+    JEditorServiceException,
 )
 
 
@@ -23,6 +24,7 @@ class TestExceptionHierarchy:
             JEditorContentFileException,
             JEditorCantFindLanguageException,
             JEditorJsonException,
+            JEditorServiceException,
         ):
             assert issubclass(exc_cls, JEditorException)
 

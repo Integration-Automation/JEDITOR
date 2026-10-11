@@ -33,6 +33,9 @@ from je_editor.pyside_ui.code.code_process.code_exec import ExecManager
 # 匯入檔案儲存對話框
 # Import file save dialog
 from je_editor.pyside_ui.dialog.file_dialog.save_file_dialog import choose_file_get_save_file_path
+from je_editor.pyside_ui.main_ui.debug_panel.debug_actions import (
+    attach_to_process, controller_of, edit_breakpoint_condition, start_debugging
+)
 
 # 匯入多語言包裝器
 # Import multi-language wrapper for UI localization
@@ -66,6 +69,22 @@ def set_debug_menu(ui_we_want_to_set: EditorMain) -> None:
     )
     ui_we_want_to_set.debug_menu.addAction(ui_we_want_to_set.debug_menu.show_shell_input)
 
+    # 接上一個等著除錯器的程式 / Attach to a program that waits for a debugger
+    ui_we_want_to_set.debug_menu.attach_action = QAction(
+        language_wrapper.language_word_dict.get("debug_menu_attach"))
+    ui_we_want_to_set.debug_menu.attach_action.triggered.connect(
+        lambda: attach_to_process(ui_we_want_to_set)
+    )
+    ui_we_want_to_set.debug_menu.addAction(ui_we_want_to_set.debug_menu.attach_action)
+
+    # 設定游標那一行中斷點的條件 / Set the condition of the breakpoint on the caret's line
+    ui_we_want_to_set.debug_menu.breakpoint_condition_action = QAction(
+        language_wrapper.language_word_dict.get("debug_menu_breakpoint_condition"))
+    ui_we_want_to_set.debug_menu.breakpoint_condition_action.triggered.connect(
+        lambda: edit_breakpoint_condition(ui_we_want_to_set)
+    )
+    ui_we_want_to_set.debug_menu.addAction(ui_we_want_to_set.debug_menu.breakpoint_condition_action)
+
 
 # 把編輯器上設定的中斷點交給剛啟動的除錯器
 # Hand the breakpoints set in the editor to the debugger that just started
@@ -97,6 +116,16 @@ def run_debugger(ui_we_want_to_set: EditorMain) -> None:
     jeditor_logger.info(f"build_debug_menu.py run_debugger ui_we_want_to_set: {ui_we_want_to_set}")
     widget = ui_we_want_to_set.tab_widget.currentWidget()
     if isinstance(widget, EditorWidget):
+        # 有除錯轉接器就用它；沒有（例如沒裝 debugpy）才退回底下的 pdb 主控台
+        # Use the debug adapter when there is one; the pdb console below is the
+        # fallback for when there is none, as without debugpy
+        controller = controller_of(ui_we_want_to_set)
+        if controller is not None:
+            if controller.is_active():
+                please_close_current_running_messagebox(ui_we_want_to_set)
+            elif choose_file_get_save_file_path(ui_we_want_to_set):
+                start_debugging(ui_we_want_to_set, widget.current_file)
+            return
         # 確保沒有正在執行的除錯器
         # Ensure no debugger is already running
         if widget.exec_python_debugger is None:

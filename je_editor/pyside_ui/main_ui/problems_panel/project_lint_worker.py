@@ -28,19 +28,32 @@ class ProjectLintWorker(QThread):
 
     linted = Signal(object)  # list[Diagnostic]
 
-    def __init__(self, root: str | Path, parent=None) -> None:
+    def __init__(self, root: str | Path | list[str], parent=None) -> None:
         """
-        :param root: 要檢查的專案根目錄 / the project root to check
+        :param root: 要檢查的專案根目錄；工作區有好幾個根目錄時是一份清單
+            the project root to check, or a list of them when the workspace has several
         :param parent: Qt 父物件 / the Qt parent
         """
         super().__init__(parent)
-        self._root = str(root)
+        # 具名執行緒：萬一它在執行中被銷毀，Qt 的中止訊息才說得出是哪一條
+        # A named thread, so Qt's abort message says which one if it is ever
+        # destroyed while still running
+        self.setObjectName("ProjectLintWorker")
+        self._roots = [str(root)] if isinstance(root, (str, Path)) else [str(item) for item in root]
 
     @property
     def root(self) -> str:
-        """這次檢查的目錄 / The directory being checked."""
-        return self._root
+        """這次檢查的第一個目錄 / The first directory being checked."""
+        return self._roots[0] if self._roots else ""
+
+    @property
+    def roots(self) -> list[str]:
+        """這次檢查的所有目錄 / Every directory being checked."""
+        return list(self._roots)
 
     def run(self) -> None:
-        """執行檢查並回報結果 / Lint and report the result."""
-        self.linted.emit(lint_project(self._root))
+        """逐一檢查每個根目錄並回報合併的結果 / Lint each root in turn and report them together."""
+        found = []
+        for root in self._roots:
+            found.extend(lint_project(root))
+        self.linted.emit(found)

@@ -22,6 +22,8 @@ from je_editor.pyside_ui.main_ui.editor.editor_widget_dock import FullEditorWidg
 from je_editor.pyside_ui.main_ui.ipython_widget.ipython_console import IpythonWidget
 from je_editor.pyside_ui.main_ui.outline_panel.outline_panel_widget import OutlinePanelWidget
 from je_editor.pyside_ui.main_ui.problems_panel.problems_panel_widget import ProblemsPanelWidget
+from je_editor.pyside_ui.main_ui.debug_panel.debug_actions import DOCK_NAME as DEBUG_DOCK
+from je_editor.pyside_ui.main_ui.debug_panel.debug_actions import build_debug_panel
 from je_editor.pyside_ui.main_ui.test_panel.test_panel_widget import TestPanelWidget
 from je_editor.pyside_ui.main_ui.todo_panel.todo_panel_widget import TodoPanelWidget
 from je_editor.utils.exception.exceptions import JEditorOpenFileException
@@ -158,6 +160,13 @@ def set_dock_menu(ui_we_want_to_set: EditorMain) -> None:
     )
     ui_we_want_to_set.dock_tools_menu.addAction(ui_we_want_to_set.dock_menu.new_test_panel)
 
+    ui_we_want_to_set.dock_menu.new_debug_panel = QAction(
+        language_wrapper.language_word_dict.get("tab_menu_debug_panel_tab_name"))
+    ui_we_want_to_set.dock_menu.new_debug_panel.triggered.connect(
+        lambda: add_dock_widget(ui_we_want_to_set, DEBUG_DOCK)
+    )
+    ui_we_want_to_set.dock_tools_menu.addAction(ui_we_want_to_set.dock_menu.new_debug_panel)
+
     # === Outline Panel Dock ===
     ui_we_want_to_set.dock_menu.new_outline_panel = QAction(
         language_wrapper.language_word_dict.get("tab_menu_outline_panel_tab_name"))
@@ -214,6 +223,8 @@ def _dock_builders(ui_we_want_to_set: EditorMain) -> dict:
                            lambda: ProblemsPanelWidget(ui_we_want_to_set)),
         "test_panel": ("tab_menu_test_panel_tab_name",
                        lambda: TestPanelWidget(ui_we_want_to_set)),
+        DEBUG_DOCK: ("tab_menu_debug_panel_tab_name",
+                     lambda: build_debug_panel(ui_we_want_to_set)),
     }
 
 
