@@ -62,7 +62,13 @@ JEditor will automatically install the following dependencies:
    * - gitpython
      - Git operations
    * - langchain_openai / langchain_core
-     - AI assistant (LLM integration)
+     - AI assistant: OpenAI-compatible provider
+   * - anthropic
+     - AI assistant: Anthropic provider
+   * - tree-sitter / tree-sitter-python / tree-sitter-javascript / tree-sitter-json
+     - Syntax parsing for highlighting
+   * - debugpy
+     - Python debug adapter (Debug Adapter Protocol)
    * - watchdog
      - File system monitoring
    * - pycodestyle
@@ -101,5 +107,5 @@ When JEditor starts, it creates a ``.jeditor/`` directory in the current working
   reassigned shortcuts
 - ``user_color_setting.json`` — Color scheme for editor and output
 
-Both are created automatically on first launch. A third file, ``ai_config.json``, is read
-if you write it yourself; see :doc:`ai_assistant`.
+Both are created automatically on first launch. A third file, ``ai_config.json``, holds the
+AI assistant's settings and is only written when you ask for it; see :doc:`ai_assistant`.

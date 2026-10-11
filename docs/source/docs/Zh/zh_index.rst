@@ -23,4 +23,5 @@ JEditor 繁體中文使用文件
    configuration
    keyboard_shortcuts
    api_reference
+   core_services
    how_to_extend_using_pyside

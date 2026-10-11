@@ -47,6 +47,11 @@ The main settings file controls editor behavior and appearance:
      - The tabs that were open at the last shutdown
    * - ``restore_session``
      - Whether to reopen those tabs on launch (default: ``true``)
+   * - ``workspace_roots``
+     - The folders added to the workspace beside the working directory
+   * - ``syntax_engine``
+     - What colours the syntax: ``tree_sitter`` (default) parses Python, JavaScript and JSON;
+       ``classic`` uses the earlier pattern-based highlighters for every language
    * - ``shortcuts``
      - Keys the user reassigned; only what differs from a default is stored
 
@@ -71,7 +76,11 @@ Controls the color scheme for the editor and output:
      - Output panel text
    * - ``syntax_keyword_color`` / ``syntax_string_color`` /
        ``syntax_comment_color`` / ``syntax_number_color``
-     - Syntax highlighting
+     - Syntax highlighting: keywords, strings, comments, numbers
+   * - ``syntax_function_color`` / ``syntax_builtin_color`` / ``syntax_self_color``
+     - Syntax highlighting: function names, built-ins and type names, ``self`` / ``this``
+   * - ``debug_execution_line_color``
+     - The line the program being debugged has stopped on
    * - ``diff_added_marker_color`` / ``diff_modified_marker_color`` /
        ``diff_removed_marker_color``
      - Git change markers in the gutter
@@ -98,15 +107,17 @@ falls back to the current theme's value, so a partial file is fine.
 ai_config.json
 ^^^^^^^^^^^^^^^
 
-AI assistant configuration (see :doc:`ai_assistant` for details):
+AI assistant configuration (see :doc:`ai_assistant` for details), grouped by provider.
+Each provider has:
 
 - API base URL
 - API key
 - Model name
-- System prompt template
+- System prompt
 
-Unlike the two files above, this one is read but never written — create it yourself if
-you want the settings loaded on every launch.
+The provider in use is recorded as well. Unlike the two files above, the editor does not
+write this one by default — only when saving is ticked in the AI settings dialog, because
+the key in it is plain text. You can also create it yourself.
 
 Theming
 --------

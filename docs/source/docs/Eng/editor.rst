@@ -51,17 +51,31 @@ JEditor includes an automatic save feature that periodically saves your work:
 Syntax Highlighting
 --------------------
 
-JEditor provides built-in Python syntax highlighting and supports additional languages through plugins.
+JEditor colours Python, JavaScript and JSON from a real parse of the file, other common languages
+from keyword tables, and further languages through plugins.
 
-**Built-in Python Highlighting** includes:
+**Parsed languages** are Python (``.py``, ``.pyw``, ``.pyi``), JavaScript (``.js``, ``.mjs``,
+``.cjs``, ``.jsx``) and JSON (``.json``). They are parsed with Tree-sitter, which gives:
 
-- Keywords (``if``, ``else``, ``for``, ``while``, ``def``, ``class``, etc.)
-- Built-in functions (``print``, ``len``, ``range``, etc.)
-- Strings (single-line and multi-line)
-- Comments
+- Keywords (``if``, ``else``, ``for``, ``while``, ``def``, ``class``, etc.), strings, comments and numbers
+- Function and method names, and class and type names
+- Built-in functions (``print``, ``len``, ``range``, etc.), and ``self`` / ``this``
+- Escape sequences, and the expressions inside f-strings and template strings
+- JSON keys told apart from string values
+- Strings and comments over several lines stay coloured to their end, and opening or closing one
+  recolours every line it affects
 - Decorators
-- Numbers
 - Customizable colors via the color settings
+
+The parse follows each edit and re-reads only what the edit touched. A new tab that has no file
+name yet is coloured as Python. A file larger than 2 MB is left uncoloured.
+
+To go back to the earlier, pattern-based highlighting, set ``"syntax_engine": "classic"`` in
+``.jeditor/user_setting.json`` (see :doc:`configuration`). The editor also falls back to it by
+itself when Tree-sitter or a grammar is not installed.
+
+**Keyword-table languages** are TypeScript, C, C++, Go, Java, Rust, shell, SQL, TOML and YAML:
+keywords, strings, comments and numbers are coloured.
 
 **Plugin-based Language Support:**
 
@@ -72,6 +86,9 @@ Additional languages can be added through the plugin system. Pre-built plugins a
 - Go (``.go``)
 - Java (``.java``)
 - Rust (``.rs``)
+
+Keywords a plugin registers for a suffix are laid over whichever highlighter colours that suffix,
+so a plugin can add its own words to JSON or YAML files too.
 
 See :doc:`plugins` for details on creating language plugins.
 
@@ -129,6 +146,38 @@ When you open a folder (``Ctrl+K``), JEditor displays a file tree on the left si
 - Click on any file to open it in a new editor tab
 - Supports expanding and collapsing directories
 - Scrollable navigation for large projects
+
+Workspace with Several Folders
+-------------------------------
+
+A window works on a *workspace*: the folder you opened, plus any number of folders you add
+beside it. A workspace with a single folder is the ordinary case and behaves exactly as a
+project always has.
+
+- **File → Open Folder** (``Ctrl+K``) switches project. The working directory moves to that
+  folder and the workspace becomes that folder alone.
+- **File → Add Folder to Workspace** puts another folder beside the current project. The
+  working directory does not move.
+- **File → Remove Folder from Workspace** takes an added folder away again. The folder you
+  opened cannot be removed this way; open another folder to change it.
+
+With more than one folder in the workspace:
+
+- A list appears above the file tree to choose which folder the tree shows.
+- **Quick Open** (``Ctrl+P``) lists the files of every folder, each path starting with its
+  folder's name, so two files called ``main.py`` stay apart.
+- The **TODO** panel scans every folder, and **Problems** with **Whole project** ticked checks
+  every folder.
+- **Search in Files** with the project scope searches every folder. Replacing only ever writes
+  to files beneath one of the workspace's folders.
+- A language server is started at the folder a file belongs to, so each project's own
+  configuration is found. Files outside every folder use their own directory, as before.
+
+The added folders are remembered per project, in ``workspace_roots`` of
+``.jeditor/user_setting.json``, and come back the next time that project is opened.
+
+Running programs, the test panel, the terminal and the Git toolbar keep working in the folder
+you opened. Two folders that share a name are told apart by a number: ``src`` and ``src (2)``.
 
 Encoding and Line Endings
 --------------------------

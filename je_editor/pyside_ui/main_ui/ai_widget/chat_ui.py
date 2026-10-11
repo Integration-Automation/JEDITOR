@@ -1,149 +1,321 @@
+"""
+AI 對話面板
+The AI chat panel.
+
+面板只認得「登記表裡的某個供應者」，不認得任何一家的 SDK：送出對話、邊收邊顯示、
+取消與報錯對每個供應者都是同一段程式碼。
+The panel knows a provider from the registry and nobody's SDK: sending a
+conversation, showing the reply as it arrives, cancelling and reporting an error
+are the same code for every provider.
+"""
 from __future__ import annotations
 
-from pathlib import Path
 from typing import TYPE_CHECKING
 
-from PySide6.QtCore import Qt, QTimer
-from PySide6.QtGui import QFontDatabase
-from PySide6.QtWidgets import QWidget, QPlainTextEdit, QScrollArea, QLabel, QComboBox, QGridLayout, QPushButton, \
-    QMessageBox, QSizePolicy, QLineEdit
+from PySide6.QtCore import Qt
+from PySide6.QtGui import QFontDatabase, QTextCursor
+from PySide6.QtWidgets import (
+    QComboBox, QGridLayout, QLabel, QLineEdit, QMessageBox, QPlainTextEdit, QPushButton,
+    QSizePolicy, QWidget
+)
 
+from je_editor.adapters.default_services import build_default_services, reload_ai_settings
+from je_editor.core.ai.ai_provider import AIProvider, ChatResponse
+from je_editor.core.ai.chat_session import ChatSession
+from je_editor.core.services.editor_services import EditorServices
 from je_editor.pyside_ui.dialog.ai_dialog.set_ai_dialog import SetAIDialog
-from je_editor.pyside_ui.main_ui.ai_widget.ai_config import AIConfig, ai_config
-from je_editor.pyside_ui.main_ui.ai_widget.ask_thread import AskThread
-from je_editor.pyside_ui.main_ui.ai_widget.langchain_interface import LangChainInterface
-from je_editor.utils.json.json_file import read_json
+from je_editor.pyside_ui.main_ui.ai_widget.chat_worker import ChatWorker
 from je_editor.utils.multi_language.multi_language_wrapper import language_wrapper
 
 if TYPE_CHECKING:
     from je_editor.pyside_ui.main_ui.main_editor import EditorMain
 
+# 字型大小選單的範圍與預設值 / The range and the default of the font size list
+_FONT_SIZE_MIN = 2
+_FONT_SIZE_MAX = 100
+_FONT_SIZE_STEP = 2
+_DEFAULT_FONT_SIZE = 16
+# 面板的欄數 / How many columns the panel's grid has
+_GRID_COLUMNS = 4
+
+
+def services_for(main_window: object) -> EditorServices:
+    """
+    取得視窗的核心服務；宿主視窗沒有的話就自己建一組
+    The window's core services, or a set of its own when the host window has none.
+
+    :param main_window: 開啟這個面板的視窗 / the window that opened this panel
+    :return: 核心服務 / the core services
+    """
+    services = getattr(main_window, "services", None)
+    return services if isinstance(services, EditorServices) else build_default_services()
+
 
 class ChatUI(QWidget):
+    """
+    與 AI 助理對話的面板
+    The panel for talking to the AI assistant.
+    """
 
-    def __init__(self, main_window: EditorMain) -> None:
+    def __init__(self, main_window: EditorMain | None = None) -> None:
+        """
+        :param main_window: 開啟這個面板的視窗 / the window that opened this panel
+        """
         super().__init__()
-        self.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)  # 關閉視窗時自動釋放資源 / Auto delete on close
+        self.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
         self.main_window = main_window
+        self._services = services_for(main_window)
+        self._session = ChatSession()
+        self._worker: ChatWorker | None = None
+        self.set_ai_config_dialog: SetAIDialog | None = None
+        self._build_widgets()
+        self._lay_out()
+        self.retranslate()
+        self.refresh_providers()
+        self._set_waiting(False)
 
-        # ---------------- Chat Panel 聊天面板 ----------------
-        self.chat_panel = QPlainTextEdit()  # 顯示聊天訊息的文字框 / Text area for chat messages
-        self.chat_panel.setLineWrapMode(self.chat_panel.LineWrapMode.NoWrap)  # 不自動換行 / Disable line wrap
-        self.chat_panel.setReadOnly(True)  # 設為唯讀，避免使用者直接輸入 / Read-only
-        self.chat_panel_scroll_area = QScrollArea()  # 加入滾動區域 / Scroll area for chat panel
-        self.chat_panel_scroll_area.setWidgetResizable(True)
-        self.chat_panel_scroll_area.setViewportMargins(0, 0, 0, 0)
-        self.chat_panel_scroll_area.setWidget(self.chat_panel)
-        self.chat_panel.setFont(QFontDatabase.font(self.font().family(), "", 16))  # 設定字體大小 / Set font size
+    # ---- construction ----------------------------------------------------
 
-        # ---------------- Prompt Input 輸入框 ----------------
-        self.prompt_input = QLineEdit()  # 使用者輸入提示詞 / Input field for prompts
+    def _build_widgets(self) -> None:
+        """建立面板上的元件並接好訊號 / Build the panel's widgets and connect their signals."""
+        self.chat_panel = QPlainTextEdit()
+        self.chat_panel.setReadOnly(True)
+        self.chat_panel.setLineWrapMode(QPlainTextEdit.LineWrapMode.WidgetWidth)
+        self.prompt_input = QLineEdit()
         self.prompt_input.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
-        self.prompt_input.returnPressed.connect(self.call_ai_model)  # 按 Enter 時呼叫 AI / Call AI on Enter
+        self.prompt_input.returnPressed.connect(self.call_ai_model)
 
-        # ---------------- Font Size Combobox 字體大小選單 ----------------
-        self.font_size_label = QLabel(language_wrapper.language_word_dict.get("font_size"))  # 標籤 / Label
-        self.font_size_combobox = QComboBox()  # 下拉選單 / Dropdown for font size
-        for font_size in range(2, 101, 2):  # 提供 2~100 的字體大小選項 / Font size options
+        self.provider_label = QLabel()
+        self.provider_combobox = QComboBox()
+        self.provider_combobox.currentIndexChanged.connect(self._on_provider_changed)
+        self.model_label = QLabel()
+        self.model_combobox = QComboBox()
+        self.model_combobox.setEditable(True)
+
+        self.font_size_combobox = QComboBox()
+        for font_size in range(_FONT_SIZE_MIN, _FONT_SIZE_MAX + 1, _FONT_SIZE_STEP):
             self.font_size_combobox.addItem(str(font_size))
-        self.font_size_combobox.setCurrentText("16")  # 預設字體大小 / Default font size
+        self.font_size_combobox.setCurrentText(str(_DEFAULT_FONT_SIZE))
         self.font_size_combobox.currentTextChanged.connect(self.update_panel_text_size)
+        self.update_panel_text_size()
 
-        # ---------------- Buttons 按鈕 ----------------
-        self.set_ai_config_button = QPushButton(language_wrapper.language_word_dict.get("chat_ui_set_ai_button"))
-        self.set_ai_config_button.clicked.connect(self.set_ai_config)  # 開啟 AI 設定視窗 / Open AI config dialog
+        self.call_ai_model_button = QPushButton()
+        self.call_ai_model_button.clicked.connect(self.call_ai_model)
+        self.stop_button = QPushButton()
+        self.stop_button.clicked.connect(self.stop)
+        self.new_chat_button = QPushButton()
+        self.new_chat_button.clicked.connect(self.new_chat)
+        self.set_ai_config_button = QPushButton()
+        self.set_ai_config_button.clicked.connect(self.set_ai_config)
+        self.load_ai_config_button = QPushButton()
+        self.load_ai_config_button.clicked.connect(self._reload_from_file)
+        self.status_label = QLabel()
 
-        self.load_ai_config_button = QPushButton(language_wrapper.language_word_dict.get("chat_ui_load_ai_button"))
-        self.load_ai_config_button.clicked.connect(
-            lambda: self.load_ai_config(show_load_complete=True))  # 載入設定 / Load config
-
-        self.call_ai_model_button = QPushButton(language_wrapper.language_word_dict.get("chat_ui_call_ai_model_button"))
-        self.call_ai_model_button.clicked.connect(self.call_ai_model)  # 呼叫 AI / Call AI
-
-        # ---------------- Layout 版面配置 ----------------
+    def _lay_out(self) -> None:
+        """把元件排進格線 / Place the widgets in the grid."""
         self.grid_layout = QGridLayout()
-        self.grid_layout.addWidget(self.chat_panel_scroll_area, 0, 0, 1, 4)  # 聊天面板 / Chat panel
-        self.grid_layout.addWidget(self.call_ai_model_button, 1, 0)  # 呼叫 AI 按鈕 / Call AI button
-        self.grid_layout.addWidget(self.font_size_combobox, 1, 1)  # 字體大小選單 / Font size combobox
-        self.grid_layout.addWidget(self.set_ai_config_button, 1, 2)  # 設定 AI 按鈕 / Set AI config button
-        self.grid_layout.addWidget(self.load_ai_config_button, 1, 3)  # 載入設定按鈕 / Load AI config button
-        self.grid_layout.addWidget(self.prompt_input, 2, 0, 1, 4)  # 輸入框 / Prompt input
-
-        # ---------------- Variables 變數 ----------------
-        self.ai_config: AIConfig = ai_config  # AI 設定物件 / AI config object
-        self.lang_chain_interface: LangChainInterface | None = None  # LangChain 介面 / LangChain interface
-        self.set_ai_config_dialog = None  # 設定對話框 / Config dialog
-
-        # ---------------- Timer 計時器 ----------------
-        self.pull_message_timer = QTimer(self)  # 定時檢查訊息佇列 / Timer to pull messages
-        self.pull_message_timer.setInterval(1000)  # 每秒檢查一次 / Check every 1 second
-        self.pull_message_timer.timeout.connect(self.pull_message)
-        self.pull_message_timer.start()
-
-        # ---------------- Set Layout 設定版面 ----------------
+        rows = (
+            (self.provider_label, self.provider_combobox, self.model_label, self.model_combobox),
+            (self.chat_panel,),
+            (self.call_ai_model_button, self.stop_button, self.new_chat_button,
+             self.font_size_combobox),
+            (self.set_ai_config_button, self.load_ai_config_button, self.status_label),
+            (self.prompt_input,),
+        )
+        for row, widgets in enumerate(rows):
+            for column, widget in enumerate(widgets):
+                # 一列裡最後一個元件佔滿剩下的欄 / The last widget of a row takes the columns left
+                span = _GRID_COLUMNS - column if column == len(widgets) - 1 else 1
+                self.grid_layout.addWidget(widget, row, column, 1, span)
         self.setLayout(self.grid_layout)
 
-        # ---------------- Load AI Config 載入 AI 設定 ----------------
-        self.load_ai_config()
+    def retranslate(self) -> None:
+        """
+        換語言後重新標示自己
+        Relabel after the language changes.
 
-    # 更新聊天面板字體大小 / Update chat panel font size
-    def update_panel_text_size(self) -> None:
-        self.chat_panel.setFont(
-            QFontDatabase.font(self.font().family(), "", int(self.font_size_combobox.currentText())))
+        面板握著進行中的對話，所以不能整個拆掉重建。
+        The panel holds the conversation in progress, so it cannot be rebuilt.
+        """
+        word = language_wrapper.language_word_dict
+        self.provider_label.setText(word.get("chat_ui_provider_label"))
+        self.model_label.setText(word.get("chat_ui_model_label"))
+        self.call_ai_model_button.setText(word.get("chat_ui_call_ai_model_button"))
+        self.stop_button.setText(word.get("chat_ui_stop_button"))
+        self.new_chat_button.setText(word.get("chat_ui_new_chat_button"))
+        self.set_ai_config_button.setText(word.get("chat_ui_set_ai_button"))
+        self.load_ai_config_button.setText(word.get("chat_ui_load_ai_button"))
+        if not self._session.is_waiting:
+            self.status_label.setText(word.get("chat_ui_status_ready"))
 
-    # 載入 AI 設定檔 / Load AI configuration file
-    def load_ai_config(self, show_load_complete: bool = False) -> None:
-        ai_config_file = Path.cwd() / ".jeditor" / "ai_config.json"
-        if ai_config_file.exists():
-            json_data: dict = read_json(str(ai_config_file))
-            if json_data:
-                # 確認 AI_model 設定存在且包含必要欄位 / Ensure AI_model config exists with required fields
-                if json_data.get("AI_model") and isinstance(json_data.get("AI_model"), dict):
-                    ai_info: dict = json_data.get("AI_model")
-                    if ai_info.get("ai_base_url") and ai_info.get("chat_model"):
-                        ai_config.choosable_ai.update(json_data)  # 更新全域設定 / Update global config
-                    # 建立 LangChain 介面 / Initialize LangChain interface
-                    self.lang_chain_interface = LangChainInterface(
-                        main_window=self,
-                        api_key=ai_info.get("ai_api_key"),
-                        base_url=ai_info.get("ai_base_url"),
-                        chat_model=ai_info.get("chat_model"),
-                        prompt_template=ai_info.get("prompt_template"),
-                    )
-            if show_load_complete:
-                load_complete = QMessageBox(self)
-                load_complete.setWindowTitle(language_wrapper.language_word_dict.get("load_ai_messagebox_title"))
-                load_complete.setText(language_wrapper.language_word_dict.get("load_ai_messagebox_text"))
-                load_complete.exec()
+    # ---- providers and settings ------------------------------------------
 
-    # 呼叫 AI 模型 / Call AI model
-    def call_ai_model(self) -> None:
-        if isinstance(self.lang_chain_interface, LangChainInterface):
-            # 建立新執行緒處理 AI 請求 / Start a new thread for AI request
-            # Store reference to prevent garbage collection before thread completes
-            self._ask_thread = AskThread(lang_chain_interface=self.lang_chain_interface, prompt=self.prompt_input.text())
-            self._ask_thread.start()
-        else:
-            # 若未正確設定 AI，顯示錯誤訊息 / Show error if AI not configured
-            ai_info = ai_config.choosable_ai.get('AI_model', {})
-            # Mask API key to prevent leaking credentials
-            api_key = ai_info.get('ai_api_key', '')
-            masked_key = f"{api_key[:4]}...{api_key[-4:]}" if api_key and len(api_key) > 8 else "(not set)"
-            QMessageBox.warning(self,
-                                language_wrapper.language_word_dict.get("call_ai_model_error_title"),
-                                f"ai_api_key: {masked_key}, \n"
-                                f"ai_base_url: {ai_info.get('ai_base_url')}, \n"
-                                f"chat_model: {ai_info.get('chat_model')}, \n"
-                                f"prompt_template: {ai_info.get('prompt_template')}")
+    def refresh_providers(self) -> None:
+        """
+        讓供應者選單跟著登記表與設定走
+        Bring the provider list in step with the registry and the settings.
+        """
+        names = self._services.ai_providers.names()
+        active = self._services.ai_settings.active_provider
+        self.provider_combobox.blockSignals(True)
+        try:
+            self.provider_combobox.clear()
+            self.provider_combobox.addItems(names)
+            if active in names:
+                self.provider_combobox.setCurrentText(active)
+        finally:
+            self.provider_combobox.blockSignals(False)
+        self._refresh_models()
 
-    # 從訊息佇列中取出 AI 回覆並顯示 / Pull AI response from queue
-    def pull_message(self) -> None:
-        if not ai_config.message_queue.empty():
-            ai_response = ai_config.message_queue.get_nowait()
-            self.chat_panel.appendPlainText(ai_response)  # 顯示回覆 / Display response
-            self.chat_panel.appendPlainText("\n")
+    def current_provider(self) -> AIProvider | None:
+        """目前選用的供應者，沒有時為 ``None`` / The provider in use, or ``None``."""
+        return self._services.ai_providers.get(self.provider_combobox.currentText())
 
-    # 開啟 AI 設定對話框 / Open AI config dialog
+    def _on_provider_changed(self) -> None:
+        """換了供應者：記下選擇並換上它的模型 / A new provider was picked: note it and show its models."""
+        self._services.ai_settings.active_provider = self.provider_combobox.currentText()
+        self._refresh_models()
+
+    def _refresh_models(self) -> None:
+        """列出目前供應者的模型，並選上設定裡的那一個 / List the provider's models and pick the configured one."""
+        provider = self.current_provider()
+        offered = [model.model_id for model in provider.models()] if provider is not None else []
+        configured = self._services.ai_settings.settings_for(
+            self.provider_combobox.currentText()).model
+        self.model_combobox.clear()
+        self.model_combobox.addItems(offered)
+        self.model_combobox.setCurrentText(configured or (offered[0] if offered else ""))
+
     def set_ai_config(self) -> None:
-        self.set_ai_config_dialog = SetAIDialog()
+        """開啟 AI 設定對話框 / Open the AI settings dialog."""
+        self.set_ai_config_dialog = SetAIDialog(self._services, self.provider_combobox.currentText())
+        self.set_ai_config_dialog.settings_applied.connect(self.refresh_providers)
         self.set_ai_config_dialog.show()
+
+    def _reload_from_file(self) -> None:
+        """從設定檔重新載入，並告訴使用者載入完成 / Reload from the settings file and say so."""
+        self.load_ai_config(show_load_complete=True)
+
+    def load_ai_config(self, show_load_complete: bool = False) -> None:
+        """
+        從設定檔重新載入 AI 設定
+        Load the AI settings from their file again.
+
+        :param show_load_complete: 是否跳出「載入完成」的訊息 / whether to say that loading finished
+        """
+        reload_ai_settings(self._services)
+        self.refresh_providers()
+        if show_load_complete:
+            word = language_wrapper.language_word_dict
+            QMessageBox.information(
+                self, word.get("load_ai_messagebox_title"), word.get("load_ai_messagebox_text"))
+
+    # ---- conversation ----------------------------------------------------
+
+    def update_panel_text_size(self) -> None:
+        """套用選單選的字型大小 / Apply the font size picked in the list."""
+        self.chat_panel.setFont(QFontDatabase.font(
+            self.font().family(), "", int(self.font_size_combobox.currentText())))
+
+    def call_ai_model(self) -> bool:
+        """
+        把輸入框的文字送給目前的供應者
+        Send what is in the input box to the provider in use.
+
+        :return: 是否真的送出了請求 / whether a request was actually sent
+        """
+        word = language_wrapper.language_word_dict
+        provider = self.current_provider()
+        if provider is None:
+            QMessageBox.warning(
+                self, word.get("call_ai_model_error_title"), word.get("chat_ui_no_provider"))
+            return False
+        settings = self._services.ai_settings.settings_for(provider.name)
+        request = self._session.ask(
+            self.prompt_input.text(), self.model_combobox.currentText().strip(),
+            settings.system_prompt)
+        if request is None:
+            return False
+        self._append_line(f"{word.get('chat_ui_you_prefix')}: {request.messages[-1].content}")
+        self._append_line(f"{word.get('chat_ui_assistant_prefix')}: ")
+        self.prompt_input.clear()
+        worker = ChatWorker(provider, request)
+        worker.text_ready.connect(self._on_text)
+        worker.replied.connect(self._on_replied)
+        worker.failed.connect(self._on_failed)
+        self._worker = worker
+        self._set_waiting(True)
+        worker.start_request()
+        return True
+
+    def stop(self) -> None:
+        """取消進行中的請求 / Cancel the request in flight."""
+        if self._worker is not None:
+            self._worker.cancel()
+
+    def new_chat(self) -> None:
+        """丟掉目前的對話，重新開始 / Drop the conversation and start again."""
+        self.stop()
+        self._worker = None
+        self._session.clear()
+        self.chat_panel.clear()
+        self._set_waiting(False)
+
+    def _on_text(self, piece: str) -> None:
+        """把剛收到的一段回覆接在畫面最後 / Add a piece of the reply to the end of what is shown."""
+        if self.sender() is not self._worker:
+            return
+        cursor = self.chat_panel.textCursor()
+        cursor.movePosition(QTextCursor.MoveOperation.End)
+        cursor.insertText(piece)
+        self.chat_panel.setTextCursor(cursor)
+
+    def _on_replied(self, response: ChatResponse) -> None:
+        """回覆完成：記進對話並顯示用量 / The reply is complete: note it and show the usage."""
+        if self.sender() is not self._worker:
+            return
+        word = language_wrapper.language_word_dict
+        self._session.answered(response)
+        self._worker = None
+        self._append_line("")
+        self._set_waiting(False)
+        if response.cancelled:
+            self.status_label.setText(word.get("chat_ui_status_cancelled"))
+        elif response.input_tokens is None or response.output_tokens is None:
+            self.status_label.setText(word.get("chat_ui_status_done"))
+        else:
+            self.status_label.setText(word.get("chat_ui_status_tokens").format(
+                input=response.input_tokens, output=response.output_tokens))
+
+    def _on_failed(self, message: str) -> None:
+        """請求失敗：丟掉那一句並告訴使用者原因 / The request failed: drop the prompt and say why."""
+        if self.sender() is not self._worker:
+            return
+        word = language_wrapper.language_word_dict
+        self._session.failed()
+        self._worker = None
+        self._append_line("")
+        self._set_waiting(False)
+        self.status_label.setText(word.get("chat_ui_status_failed"))
+        QMessageBox.warning(self, word.get("call_ai_model_error_title"), message)
+
+    def _append_line(self, text: str) -> None:
+        """在畫面最後另起一行 / Start a new line at the end of what is shown."""
+        self.chat_panel.appendPlainText(text)
+
+    def _set_waiting(self, waiting: bool) -> None:
+        """依是否在等回覆切換按鈕與狀態文字 / Switch the buttons and the status for waiting or not."""
+        self.call_ai_model_button.setEnabled(not waiting)
+        self.prompt_input.setEnabled(not waiting)
+        self.stop_button.setEnabled(waiting)
+        word = language_wrapper.language_word_dict
+        self.status_label.setText(
+            word.get("chat_ui_status_waiting" if waiting else "chat_ui_status_ready"))
+
+    def closeEvent(self, event) -> None:
+        """關閉前取消還在進行的請求 / Cancel a request still in flight before closing."""
+        self.stop()
+        self._worker = None
+        if self.set_ai_config_dialog is not None:
+            self.set_ai_config_dialog.close()
+        super().closeEvent(event)

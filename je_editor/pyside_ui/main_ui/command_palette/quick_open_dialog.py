@@ -4,7 +4,6 @@ Quick open: fuzzy-search the project tree and open a file.
 """
 from __future__ import annotations
 
-import os
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -14,7 +13,13 @@ from je_editor.pyside_ui.main_ui.command_palette.command_palette_dialog import (
     CommandPaletteDialog
 )
 from je_editor.utils.command_palette.fuzzy_matcher import CommandEntry
-from je_editor.utils.file_scan.file_indexer import build_file_entries, index_project_files
+from je_editor.pyside_ui.main_ui.workspace.workspace_roots import (
+    labelled_root_paths, primary_root_path
+)
+from je_editor.utils.file_scan.file_indexer import build_file_entries
+from je_editor.utils.file_scan.workspace_scan import (
+    FoundFile, LabelledRoot, as_labelled_roots, index_workspace_files
+)
 from je_editor.utils.logging.loggin_instance import jeditor_logger
 from je_editor.utils.multi_language.multi_language_wrapper import language_wrapper
 
@@ -32,19 +37,24 @@ class FileIndexThread(QThread):
     Index project files in the background so a large tree never blocks the UI.
     """
 
-    indexed = Signal(list)  # list[str] of project-relative paths
+    indexed = Signal(list)  # list[str] of the paths to show
 
-    def __init__(self, root: str) -> None:
+    def __init__(self, root: str | list[LabelledRoot]) -> None:
         """
-        :param root: 要索引的專案根目錄 / The project root to index
+        :param root: 要索引的專案根目錄；工作區有好幾個根目錄時是「顯示名稱與路徑」的清單
+            / The project root to index, or each root's label and path when the
+            workspace has several
         """
         super().__init__()
         # 具名執行緒：萬一它在執行中被銷毀，Qt 的中止訊息才說得出是哪一條
         # A named thread, so Qt's abort message says which one if it is ever
         # destroyed while still running
         self.setObjectName("FileIndexThread")
-        self._root = root
+        self._roots = as_labelled_roots(root)
         self._stop_requested = False
+        # 索引結果，含開檔用的完整路徑；在送出 indexed 之前就填好
+        # What the index found, full paths included; filled before indexed is emitted
+        self.found: list[FoundFile] = []
 
     def stop(self) -> None:
         """要求提前結束索引 / Ask the walk to finish early."""
@@ -53,11 +63,13 @@ class FileIndexThread(QThread):
     def run(self) -> None:
         """執行索引並送出結果 / Run the index and emit the result."""
         try:
-            paths = index_project_files(self._root, should_stop=lambda: self._stop_requested)
+            found = index_workspace_files(
+                self._roots, should_stop=lambda: self._stop_requested)
         except OSError as error:
             jeditor_logger.error(f"quick_open_dialog.py index failed: {error!r}")
-            paths = []
-        self.indexed.emit(paths)
+            found = []
+        self.found = found
+        self.indexed.emit([item.display_path for item in found])
 
 
 class QuickOpenDialog(CommandPaletteDialog):
@@ -79,11 +91,12 @@ class QuickOpenDialog(CommandPaletteDialog):
     _command_entries: tuple = ()
 
     def __init__(
-            self, parent, root: str, command_entries: list[CommandEntry],
+            self, parent, root: str | list[LabelledRoot], command_entries: list[CommandEntry],
             main_window=None) -> None:
         """
         :param parent: Qt 父視窗 / The Qt parent widget
-        :param root: 專案根目錄 / The project root being indexed
+        :param root: 專案根目錄，或每個根目錄的顯示名稱與路徑
+            / The project root being indexed, or each root's label and path
         :param command_entries: 指令模式使用的選單指令 / Menu commands for command mode
         :param main_window: 用來開檔的主視窗，``None`` 時沿用 ``parent``
             / The window used to open files; ``None`` reuses ``parent``
@@ -94,7 +107,6 @@ class QuickOpenDialog(CommandPaletteDialog):
             title=word.get("quick_open_title"),
             placeholder=word.get("quick_open_placeholder"),
         )
-        self._root = root
         self._main_window = main_window if main_window is not None else parent
         self._file_entries = []
         self._command_entries = command_entries
@@ -108,9 +120,9 @@ class QuickOpenDialog(CommandPaletteDialog):
         """索引完成後建立項目並套用 / Build entries once indexing finishes."""
         jeditor_logger.info(f"quick_open_dialog.py indexed {len(relative_paths)} files")
         entries = build_file_entries(relative_paths)
+        full_paths = {item.display_path: item.full_path for item in self._index_thread.found}
         for entry in entries:
-            entry.payload = make_file_opener(
-                self._main_window, Path(self._root) / entry.path)
+            entry.payload = make_file_opener(self._main_window, Path(full_paths[entry.path]))
         self._file_entries = entries
         if not self._in_command_mode:
             self.set_commands(entries)
@@ -180,10 +192,7 @@ def resolve_project_root(main_window: EditorMain) -> str:
     :param main_window: 主編輯器視窗 / The main editor window
     :return: 專案根目錄路徑 / The project root path
     """
-    working_dir = getattr(main_window, "working_dir", None)
-    if working_dir and Path(working_dir).is_dir():
-        return str(working_dir)
-    return os.getcwd()
+    return primary_root_path(main_window)
 
 
 def open_quick_open(main_window: EditorMain) -> QuickOpenDialog:
@@ -197,9 +206,9 @@ def open_quick_open(main_window: EditorMain) -> QuickOpenDialog:
     from je_editor.pyside_ui.main_ui.command_palette.menu_command_collector import (
         collect_menu_commands
     )
-    root = resolve_project_root(main_window)
-    jeditor_logger.info(f"quick_open_dialog.py open_quick_open root: {root}")
+    roots = labelled_root_paths(main_window)
+    jeditor_logger.info(f"quick_open_dialog.py open_quick_open roots: {roots}")
     dialog = QuickOpenDialog(
-        main_window, root, collect_menu_commands(getattr(main_window, "menu", None)))
+        main_window, roots, collect_menu_commands(getattr(main_window, "menu", None)))
     dialog.show()
     return dialog

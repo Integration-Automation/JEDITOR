@@ -278,4 +278,11 @@ JEditor defines a hierarchy of custom exceptions:
        JEditorContentFileException,   # File content errors
        JEditorCantFindLanguageException,  # Language not found
        JEditorJsonException,          # JSON parsing errors
+       JEditorServiceException,       # Core service errors
    )
+
+Core Services
+--------------
+
+The workspace, document, diagnostics, language service, debug, task, remote and AI provider
+interfaces live in ``je_editor.core`` and need no window. See :doc:`core_services`.

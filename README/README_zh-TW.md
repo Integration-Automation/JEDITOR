@@ -103,7 +103,7 @@ JEDITOR 是原始 JEditor 專案的完全重寫版本，從零開始重新打造
 
 ### 隨打隨查的靜態分析
 
-`ruff` 檢查的是 **緩衝區** 而非磁碟上的檔案，在停止輸入後於工作執行緒執行，因此未儲存的編輯也會被涵蓋，而被取代的過時結果會被丟棄。檢查結果會就地以底線標示，並列在問題（Problems）面板中，其中的 **Apply Fixes** 會套用 ruff 自己能修的全部內容。
+`ruff` 檢查的是 **緩衝區** 而非磁碟上的檔案，在停止輸入後於工作執行緒執行，因此未儲存的編輯也會被涵蓋，而被取代的過時結果會被丟棄。檢查結果會就地以底線標示，並列在問題（Problems）面板中，其中的 **Apply Fixes** 會套用 ruff 自己能修的全部內容。語言伺服器的診斷也列在同一份清單裡，面板可以依嚴重度（錯誤、警告、資訊、提示）與來源篩選兩者。
 
 <p align="center">
   <img src="../image/screenshot-problems-panel.png" alt="列出 ruff 診斷的問題面板"/>
@@ -212,7 +212,7 @@ TODO 面板會掃描整個專案中的 `TODO`、`FIXME`、`HACK`、`XXX`、`BUG`
 | **執行** | 執行 Python 腳本（F5）、除錯模式（F9）、Shell 指令、虛擬環境偵測 |
 | **程式碼品質** | YAPF 格式化、儲存時格式化、PEP8 檢查、Ruff 靜態分析與問題面板、語言伺服器診斷與快速修正、含 traceback 與覆蓋率的 pytest 面板、JSON 重新格式化 |
 | **Git** | 分支管理、提交歷史、並排差異檢視器、行號區變更標記、逐個變更暫存與還原、行內 blame、擱置（stash）、衝突解決、稽核日誌 |
-| **AI** | 透過 LangChain 整合 OpenAI GPT、互動式聊天面板、可設定模型與提示詞 |
+| **AI** | 可切換供應者的對話面板：OpenAI 相容端點（LangChain）與 Anthropic（串流），各供應者有自己的模型、金鑰與提示詞 |
 | **主控台** | 互動式 Shell、Jupyter/IPython 主控台、指令歷史、多 Shell 支援 |
 | **瀏覽器** | 內嵌網頁瀏覽器、URL 導覽、頁面內搜尋 |
 | **外掛** | 自訂語法高亮、UI 翻譯、執行設定、自動探索 |
@@ -262,7 +262,10 @@ pip install .
 | jedi | Python 自動補全與分析 |
 | ruff | 快速 Python 靜態分析工具 |
 | gitpython | Git 倉庫操作 |
-| langchain_openai + langchain_core | AI/LLM 整合 |
+| langchain_openai + langchain_core | OpenAI 相容的 AI 供應者 |
+| anthropic | Anthropic 的 AI 供應者 |
+| tree-sitter + tree-sitter-python / -javascript / -json | 語法高亮用的語法解析 |
+| debugpy | Python 的除錯轉接器（Debug Adapter Protocol） |
 | watchdog | 檔案系統監控 |
 | pycodestyle | PEP8 風格檢查 |
 | qtconsole | Jupyter/IPython 主控台元件 |
@@ -287,6 +290,22 @@ start_editor()
 
 編輯器預設會以最大化視窗與深色琥珀色主題啟動。
 
+編輯器裡不屬於元件的部分——工作區、開著的文件與診斷，以及語言服務、除錯、工作執行、遠端工作階段與 AI 供應者的介面——都在 `je_editor.core`，不需要視窗就能使用：
+
+```python
+from je_editor.core import Diagnostic, EditorServices, Severity, TextRange, Workspace, to_uri
+
+services = EditorServices(Workspace.single_root("my_project"))
+uri = to_uri("my_project/main.py")
+services.diagnostics.publish("ruff", uri, [
+    Diagnostic("`os` imported but unused", TextRange.from_lines(1, 8), Severity.WARNING, code="F401"),
+])
+print(services.diagnostics.counts()[Severity.WARNING])  # 1
+services.shutdown()
+```
+
+這一層是下一代編輯器的基礎；編輯器視窗目前還沒有改用它。請參閱[文件](https://je-editor.readthedocs.io/en/latest/)中的「核心服務」頁面。
+
 ---
 
 ## 功能詳情
@@ -294,7 +313,7 @@ start_editor()
 ### 程式碼編輯
 
 - **多分頁編輯器** -- 同時處理多個檔案，支援關閉分頁。
-- **語法高亮** -- 內建 Python 語法高亮，可透過外掛擴展支援更多語言。
+- **語法高亮** -- Python、JavaScript 與 JSON 以真正的語法解析（Tree-sitter）上色，並跟著每一次編輯更新，所以函式與型別名稱、f-string 裡的運算式、跨行字串都分得對。其他語言使用關鍵字表，外掛可以再加。
 - **自動補全** -- 由 Jedi 驅動的上下文感知程式碼建議。
 - **行號顯示** -- 編輯器旁顯示行號，並高亮目前行。
 - **搜尋與取代** -- 支援在目前檔案、資料夾或整個專案中搜尋，提供正則表達式與區分大小寫選項。大型專案使用背景執行緒處理。
@@ -332,7 +351,7 @@ start_editor()
 ### 程式執行與除錯
 
 - **執行 Python 腳本**（F5）-- 執行目前檔案並即時串流輸出。
-- **除錯模式**（F9）-- 啟動 Python 除錯器進行逐步除錯，可從行號區切換中斷點（`Ctrl+F9`）。
+- **除錯模式**（F9）-- 透過 Debug Adapter Protocol（debugpy）除錯：除錯面板有執行緒、呼叫堆疊、可展開的變數、運算式求值與程式輸出，停下來的那一行會在編輯器裡標出。中斷點從行號區切換（`Ctrl+F9`），可以加上條件；也可以接上以 `debugpy --listen` 啟動的程式。
 - **Shell 指令** -- 在編輯器內直接執行任意 Shell/終端機指令。
 - **虛擬環境偵測** -- 自動偵測並啟用 Python 虛擬環境。
 - **程序管理** -- 停止單一或所有執行中的程序。
@@ -354,6 +373,7 @@ start_editor()
 
 - **建立、開啟、儲存**檔案，使用標準快捷鍵（Ctrl+N、Ctrl+O、Ctrl+S）。
 - **開啟資料夾**（Ctrl+K）-- 瀏覽專案目錄結構。
+- **多根目錄工作區** -- 在專案旁邊加入更多資料夾（檔案 → 將資料夾加入工作區）。快速開啟、TODO 與問題面板、專案搜尋與語言伺服器都會涵蓋每個資料夾，不同資料夾裡的同名檔案也分得開。
 - **自動儲存** -- 自動定期儲存檔案，防止資料遺失。
 - **工作階段還原** -- 重新開啟上次關閉時所有開著的檔案，而不只是最後一個。不存在、重複與已開啟的檔案會被略過，清單有上限，損壞或手動改過的設定檔也絕不會擋住啟動。可在 `.jeditor/user_setting.json` 中將 `restore_session` 設為 `false` 停用。
 - **多編碼支援** -- 無縫處理 UTF-8、GBK、Latin-1 及其他編碼，具備自動偵測功能。
@@ -372,10 +392,11 @@ start_editor()
 
 ### AI 助手
 
-- **透過 LangChain 連接 OpenAI 模型** -- 連接 OpenAI 的語言模型。
-- **互動式聊天面板** -- 編輯器內的對話式 AI 面板。
-- **可設定模型** -- 設定自訂 API 金鑰、端點、模型名稱與系統提示詞。
-- **非同步訊息** -- 使用訊息佇列實現非阻塞 AI 互動。
+- **可切換的供應者** -- 對話面板與目前選用的供應者對話：透過 LangChain 連接任何 OpenAI 相容的端點，或透過官方 SDK 連接 Anthropic。外掛可以再登記別的供應者，面板不必改。
+- **是對話，不是單句** -- 追問時會帶著到目前為止的對話；**新對話** 重新開始。
+- **串流與取消** -- Anthropic 的回覆會邊產生邊顯示，**停止** 可以取消進行中的請求。
+- **每個供應者各自的設定** -- 每個供應者保管自己的 API 金鑰、端點、模型與系統提示詞。設定只套用在這次執行，勾選之後才會寫入磁碟。
+- **不會卡住視窗** -- 請求在背景執行緒進行；失敗時以對話框說明原因，供應者有回報時會顯示 token 用量。
 
 ### 主控台與 REPL
 
@@ -505,6 +526,10 @@ je_editor/
 │   ├── dialog/         搜尋與取代、快捷鍵、程式碼片段、檔案對話框
 │   ├── git_ui/         Git 用戶端、提交圖、差異檢視器
 │   └── main_ui/        主視窗、選單、工具列、面板、設定、AI、主控台
+├── core/               服務層，不依賴 Qt：工作區、文件、診斷，以及語言服務、
+│                       除錯、工作執行、遠端與 AI 的介面
+├── adapters/           上述介面的實作，不依賴 Qt：AI 供應者、Tree-sitter 語法引擎、
+│                       本機工作執行器與 DAP 除錯工作階段
 ├── code_scan/          Ruff 執行與 watchdog 檔案監控
 ├── git_client/         Git 操作（GitPython + git CLI）
 ├── plugins/            外掛註冊表與載入器
@@ -513,6 +538,8 @@ je_editor/
 ```
 
 功能都拆成兩半來建構：演算法放在 `utils/` 中且不 import Qt，`pyside_ui/` 中的一層輕薄管理器再把它接到元件上。以折疊為例，就是 `utils/code_folding/` 加上 `pyside_ui/code/folding/`。這正是上面大部分行為都能不開視窗就測試的原因。
+
+`core/` 位於兩者之間：它把這些邏輯組成服務，讓宿主程式不必建立 JEditor 視窗就能使用。有一個測試會走訪它的匯入關係，底下只要出現 Qt 的匯入就失敗。
 
 逐模組的參考——每個檔案做什麼、執行緒模型、全域單例與設定布局——記錄在 **[`architecture_explore.md`](../architecture_explore.md)** 中。
 
@@ -593,7 +620,7 @@ JEDITOR 將使用者設定儲存在工作目錄中的 `.jeditor/` 目錄裡：
 | `user_setting.json` | 一般偏好設定（字型、主題、語言、最近開啟的檔案、開啟中的分頁、重新指派過的快捷鍵） |
 | `user_color_setting.json` | 編輯器與輸出的配色，含語法高亮 |
 | `snippets.json` | 您自己的程式碼片段，疊加合併在內建片段集之上 |
-| `ai_config.json` | AI 助手設定——啟動時讀取、從不寫入，需自行建立 |
+| `ai_config.json` | AI 助手設定，以供應者分組——只有在 AI 設定對話框勾選存檔時才會寫入，因為金鑰是明文 |
 
 每個檔案在被重寫前都會備份到 `<name>.bak`。
 

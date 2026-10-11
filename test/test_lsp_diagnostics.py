@@ -6,6 +6,8 @@ from unittest.mock import MagicMock, patch
 import pytest
 from PySide6.QtWidgets import QApplication
 
+from je_editor.core.diagnostics.diagnostic_model import Position, Severity
+from je_editor.core.diagnostics.lsp_diagnostics import from_lsp_entries, from_lsp_entry
 from je_editor.utils.lint.ruff_diagnostics import (
     SYNTAX_ERROR_CODE,
     diagnostic_from_entry,
@@ -39,6 +41,64 @@ class TestServerDiagnosticShape:
 
     def test_entry_without_a_message_is_dropped(self):
         assert diagnostic_entries({"diagnostics": [{"range": {}}]}) == []
+
+    @pytest.mark.parametrize("severity", [1, 2, 3, 4])
+    def test_the_server_severity_is_kept(self, severity):
+        entry = diagnostic_entries({"diagnostics": [{"message": "m", "severity": severity}]})[0]
+        assert entry["severity"] == severity
+
+    @pytest.mark.parametrize("severity", [None, 0, 5, "error"])
+    def test_a_missing_or_unknown_severity_reads_as_zero(self, severity):
+        entry = diagnostic_entries({"diagnostics": [{"message": "m", "severity": severity}]})[0]
+        assert entry["severity"] == 0
+
+    def test_the_server_source_is_kept(self):
+        entry = diagnostic_entries({"diagnostics": [{"message": "m", "source": "clippy"}]})[0]
+        assert entry["source"] == "clippy"
+
+    def test_a_missing_source_reads_as_empty(self):
+        assert diagnostic_entries(SERVER_NOTIFICATION)[0]["source"] == ""
+
+
+class TestConversionToTheUnifiedModel:
+    def _convert(self, **fields):
+        raw = {"range": {"start": {"line": 3, "character": 4}, "end": {"line": 3, "character": 9}},
+               "message": "Cannot find name 'foo'", **fields}
+        return from_lsp_entries(
+            diagnostic_entries({"diagnostics": [raw]}), "file:///app/main.ts", "tsserver")[0]
+
+    @pytest.mark.parametrize("number, expected", [
+        (1, Severity.ERROR), (2, Severity.WARNING), (3, Severity.INFORMATION), (4, Severity.HINT),
+    ])
+    def test_each_severity_keeps_its_own_level(self, number, expected):
+        assert self._convert(severity=number).severity is expected
+
+    def test_a_missing_severity_counts_as_an_error(self):
+        assert self._convert().severity is Severity.ERROR
+
+    def test_the_position_is_one_based(self):
+        converted = self._convert()
+        assert (converted.range.start, converted.range.end) == (Position(4, 5), Position(4, 10))
+
+    def test_the_source_the_server_names_wins(self):
+        assert self._convert(source="eslint").source == "eslint"
+
+    def test_the_server_name_stands_in_for_a_missing_source(self):
+        assert self._convert().source == "tsserver"
+
+    def test_code_message_and_resource_are_carried(self):
+        converted = self._convert(code=2304)
+        assert (converted.code, converted.message, converted.uri) == (
+            "2304", "Cannot find name 'foo'", "file:///app/main.ts")
+
+    @pytest.mark.parametrize("entry", [
+        {"message": "no line"}, {"line": 0, "message": "bad line"}, {"line": 2}, "nonsense", None,
+    ])
+    def test_an_unusable_entry_is_dropped(self, entry):
+        assert from_lsp_entry(entry) is None
+
+    def test_a_batch_that_is_not_a_list_gives_nothing(self):
+        assert from_lsp_entries("nonsense") == []
 
 
 class TestConversionToTheEditorShape:
@@ -103,6 +163,18 @@ class TestEditorShowsServerDiagnostics:
             }]
         })) is True
         assert editor.lint_manager.diagnostics()[0].message == "unused"
+
+    def test_severity_and_source_reach_the_lint_manager(self, editor):
+        editor.setPlainText("const value = foo;\n")
+        editor.apply_server_diagnostics(diagnostic_entries({
+            "diagnostics": [{
+                "range": {"start": {"line": 0, "character": 6},
+                          "end": {"line": 0, "character": 11}},
+                "message": "prefer const", "severity": 4, "source": "eslint",
+            }]
+        }))
+        stored = editor.lint_manager.diagnostics()[0]
+        assert (stored.severity, stored.source) == (Severity.HINT, "eslint")
 
     def test_the_same_diagnostics_twice_change_nothing(self, editor):
         entries = diagnostic_entries(SERVER_NOTIFICATION)

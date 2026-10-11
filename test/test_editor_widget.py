@@ -82,6 +82,22 @@ class TestEditorWidgetModifiedTracking:
         title = editor_widget.tab_manager.tabText(idx)
         assert title.endswith(" *")
 
+    def test_a_highlighter_repainting_is_not_an_edit(self, editor_widget):
+        # Qt sends textChanged when a highlighter repaints, and every highlighter
+        # repaints once after it is attached: an opened file must not look unsaved.
+        editor_widget.code_edit.setPlainText("value = 1")
+        editor_widget.mark_saved()
+        editor_widget.code_edit.reset_highlighter()
+        editor_widget.code_edit.highlighter.rehighlight()
+        QApplication.processEvents()
+        assert editor_widget._is_modified is False
+
+    def test_typing_after_a_repaint_still_counts(self, editor_widget):
+        editor_widget.mark_saved()
+        editor_widget.code_edit.highlighter.rehighlight()
+        editor_widget.code_edit.insertPlainText("x")
+        assert editor_widget._is_modified is True
+
     def test_mark_saved_removes_asterisk(self, editor_widget):
         editor_widget.code_edit.setPlainText("trigger again")
         editor_widget.mark_saved()

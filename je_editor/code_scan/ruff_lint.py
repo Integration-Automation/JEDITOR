@@ -21,6 +21,9 @@ from je_editor.utils.logging.loggin_instance import jeditor_logger
 
 # ruff 執行檔名稱 / The ruff executable's name
 _RUFF_NAME = "ruff.exe" if sys.platform == "win32" else "ruff"
+# 這裡產生的診斷在問題面板上顯示的來源名稱
+# The source name the diagnostics produced here carry in the problems panel
+RUFF_SOURCE = "ruff"
 # 單次檢查的逾時（秒）：ruff 很快，超過就是出了別的問題
 # Timeout for one run: ruff is fast, so exceeding this means something else is wrong
 LINT_TIMEOUT_SECONDS = 20
