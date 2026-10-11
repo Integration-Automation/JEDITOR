@@ -12,6 +12,7 @@ a significantly richer feature set.
 .. toctree::
    :maxdepth: 2
 
+   structured_review
    getting_started
    editor
    code_execution

@@ -644,3 +644,7 @@ JEDITOR 将用户设置存储在工作目录中的 `.jeditor/` 目录里：
 本项目采用 **MIT 许可证**。详见 [LICENSE](../LICENSE)。
 
 Copyright (c) 2021 ~ Now JE-Chen
+
+## 结构化审查
+
+在所选 Python 解释器安装当前 prthinker 包和对应 JEditor 适配器。使用 prthinker 菜单审查已保存文件，结果显示于 Problems，也可以取消正在进行的审查。问题提供 Quick Fix 建议，状态栏显示进度和终止状态。审查使用持续运行的隔离 JSONL 子进程，Git 差异在后台准备。配置和凭证通过环境变量传递；保存或发布前请测试并批准建议。

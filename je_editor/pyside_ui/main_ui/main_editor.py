@@ -582,6 +582,12 @@ class EditorMain(QMainWindow, QtStyleTools):
         Window close event: close all tabs and save user settings
         """
         jeditor_logger.info("EditorMain closeEvent")
+        preparation = getattr(self, "prthinker_preparation", None)
+        if preparation:
+            preparation.cancel()
+        review_session = getattr(self, "prthinker_session", None)
+        if review_session:
+            review_session.close()
         if hasattr(self, '_settings_save_timer'):
             self._settings_save_timer.stop()
         # 必須在關閉分頁前記錄，否則分頁已消失就抓不到開啟中的檔案

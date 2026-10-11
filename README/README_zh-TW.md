@@ -644,3 +644,7 @@ JEDITOR 將使用者設定儲存在工作目錄中的 `.jeditor/` 目錄裡：
 本專案採用 **MIT 授權條款**。詳見 [LICENSE](../LICENSE)。
 
 Copyright (c) 2021 ~ Now JE-Chen
+
+## 結構化審查
+
+在所選 Python 直譯器安裝目前的 prthinker 套件與對應 JEditor 轉接器。使用 prthinker 選單審查已存檔檔案，結果顯示於 Problems，亦可取消進行中的審查。問題提供 Quick Fix 建議，狀態列顯示進度與終止狀態。審查使用持續運作的隔離 JSONL 子行程，Git 差異在背景準備。設定與憑證透過環境變數傳遞；儲存或發布前請測試並核准建議。

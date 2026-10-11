@@ -1,7 +1,7 @@
 # JEditor Architecture
 
 > Short overview for people and agents. Per-module detail lives in [`architecture_explore.md`](architecture_explore.md).
-> Last verified: 2026-09-22 against `509dbfd` on `dev`. §2, §3, §5 and §6 re-checked 2026-10-08 on
+> Last verified: 2026-10-11; structured review integration checked on `feat/prthinker-protocol`.
 > `roadmap/editor-next` when the core service layer was added; §6 against PyBreeze `16214a5`.
 
 ## 1. Purpose
@@ -256,3 +256,7 @@ Update it in the same commit when any of these changes:
 
 Module-level changes belong in `architecture_explore.md` instead. Refresh the "Last verified" line
 whenever you re-check this file.
+
+## Review protocol contract · 2026-10-11
+
+The editors consume prthinker JSONL protocol version 1 through an isolated persistent subprocess. JEditor owns `je_editor.pyside_ui.review.prthinker_actions.review_current_file` and `cancel_review`, asynchronous QProcess I/O and diagnostic conversion; PyBreeze calls these names after saving and passing existing settings through environment variables. Git diff preparation runs outside the GUI thread. Findings become Problems entries with explicit Quick Fixes; cancellation, progress and terminal state are retained. Install the matching JEditor adapter and prthinker in the selected interpreter together.

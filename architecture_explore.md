@@ -1,7 +1,7 @@
 # JEditor 架構導覽 / Architecture Exploration
 
 > 產出時間：2026-08-03　對應版本：`dev` 分支（commit `f17e07a`）；2026-10-08 加入 `core/` 並重算各套件規模。
-> 涵蓋範圍：`je_editor/` 全部 339 個 `.py`（210 個實作模組 + 129 個 `__init__.py`），共 39,286 行。
+> 涵蓋範圍：`je_editor/` 全部 348 個 `.py`（216 個實作模組 + 132 個 `__init__.py`），共 40,548 行。
 > 這份文件記錄「每個模組負責什麼」與「模組之間怎麼串起來」，不是使用手冊（使用說明見 `README.md`、插件說明見 `PLUGIN_GUIDE.md`）。
 
 ---
@@ -640,3 +640,14 @@ Qt 的高亮器重畫時會送出 `textChanged`（不是 `contentsChange`），�
 9. **`pyside_ui/` 底下還有不含 Qt 的模組**：`plugin_browser/github_api.py`、
    `save_settings/user_setting_file.py`、`code/running_process_manager.py` 等本身不匯入 Qt，卻放在 UI 套件裡；
    其中幾個路徑是 PyBreeze 的契約，搬動時要留相容匯入。
+
+## Structured review integration · 2026-10-11
+
+`je_editor/adapters/review/prthinker_diagnostics.py` maps versioned findings into the pure diagnostic store. `je_editor/pyside_ui/review/prthinker_session.py` owns asynchronous QProcess JSONL I/O, terminal state and shutdown cancellation; `prthinker_actions.py` prepares Git/file input on a daemon worker and starts the session on the GUI thread. Plugins menu supplies built-in review/cancel actions; Quick Fix remains an explicit editor action. Qt stays in the UI layer.
+
+| Module | Lines |
+|---|---:|
+| je_editor/pyside_ui/review/prthinker_actions.py | 93 |
+| je_editor/pyside_ui/review/prthinker_session.py | 115 |
+| je_editor/adapters/review/prthinker_diagnostics.py | 58 |
+| je_editor/adapters/review/__init__.py | 1 |

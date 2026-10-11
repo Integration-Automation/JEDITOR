@@ -11,6 +11,7 @@ JEditor 繁體中文使用文件
 .. toctree::
    :maxdepth: 2
 
+   structured_review
    getting_started
    editor
    code_execution

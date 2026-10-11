@@ -92,7 +92,19 @@ def set_plugin_menu(ui_we_want_to_set: EditorMain) -> None:
     ui_we_want_to_set.plugin_menu.addAction(browse_action)
     ui_we_want_to_set.plugin_menu.addSeparator()
 
-    for meta in get_all_plugin_metadata():
+    from je_editor.pyside_ui.review.prthinker_actions import cancel_review, review_current_file
+    metadata = get_all_plugin_metadata()
+    metadata.append({"name": "prthinker", "actions": [
+        ("Review saved file / 審查已存檔檔案", review_current_file),
+        ("Cancel review / 取消審查", cancel_review)]})
+    for meta in metadata:
+        if meta.get("actions"):
+            submenu = ui_we_want_to_set.plugin_menu.addMenu(meta.get("name", "Review"))
+            for label, callback in meta["actions"]:
+                action = QAction(label, submenu)
+                action.triggered.connect(lambda _checked=False, handler=callback: handler(ui_we_want_to_set))
+                submenu.addAction(action)
+            continue
         run_config = meta.get("run_config")
         if run_config is not None:
             _build_run_submenu(ui_we_want_to_set, meta, run_config)
