@@ -1,5 +1,5 @@
 PySide6==6.11.2
-langchain_openai==1.6.7
+langchain_openai==1.7.0
 langchain_core
 anthropic==1.11.0
 tree-sitter==0.26.0
