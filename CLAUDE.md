@@ -33,7 +33,7 @@ so this is a manual check against the files above.
 JEditor is a Python code editor built with PySide6 (Qt), featuring syntax highlighting, code
 formatting, a plugin system, Git integration, and LangChain-powered AI assistance.
 
-- **Language**: Python 3.10+ · **UI**: PySide6 6.11.2 · **Packaging**: pip / setuptools
+- **Language**: Python 3.10+ · **UI**: PySide6 6.12.0 · **Packaging**: pip / setuptools
 - **Testing**: pytest + pytest-qt · **Lint**: ruff, pycodestyle · **Format**: yapf
 
 ```
