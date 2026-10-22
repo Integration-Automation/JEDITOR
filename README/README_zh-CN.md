@@ -63,6 +63,7 @@
 - [配置文件](#配置文件)
 - [文档](#文档)
 - [参与贡献](#参与贡献)
+- [安全](#安全)
 - [许可证](#许可证)
 
 ---
@@ -638,6 +639,10 @@ JEDITOR 将用户设置存储在工作目录中的 `.jeditor/` 目录里：
 欢迎贡献！请在 [GitHub](https://github.com/Integration-Automation/JEDITOR) 上提交 Issue 与 Pull Request。
 
 ---
+
+## 安全
+
+请私下报告漏洞。政策、支持版本与操作者注意事项见 [SECURITY.md](../SECURITY.md)。
 
 ## 许可证
 

@@ -63,6 +63,7 @@
 - [設定檔](#設定檔)
 - [文件](#文件)
 - [參與貢獻](#參與貢獻)
+- [安全性](#安全性)
 - [授權條款](#授權條款)
 
 ---
@@ -638,6 +639,10 @@ JEDITOR 將使用者設定儲存在工作目錄中的 `.jeditor/` 目錄裡：
 歡迎貢獻！請在 [GitHub](https://github.com/Integration-Automation/JEDITOR) 上提交 Issue 與 Pull Request。
 
 ---
+
+## 安全性
+
+漏洞請私下回報。政策、支援版本與操作者注意事項見 [SECURITY.md](../SECURITY.md)。
 
 ## 授權條款
 

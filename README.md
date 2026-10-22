@@ -62,6 +62,7 @@
 - [Configuration](#configuration)
 - [Documentation](#documentation)
 - [Contributing](#contributing)
+- [Security](#security)
 - [License](#license)
 
 ---
@@ -693,6 +694,10 @@ Contributions are welcome. Please feel free to submit issues and pull requests o
 [GitHub](https://github.com/Integration-Automation/JEDITOR).
 
 ---
+
+## Security
+
+Report vulnerabilities privately. The policy, supported versions, and operator notes are in [SECURITY.md](SECURITY.md).
 
 ## License
 
