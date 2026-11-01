@@ -1,4 +1,4 @@
-anthropic==1.14.0
+anthropic==2.1.0
 auto-py-to-exe
 build
 debugpy==1.8.22
