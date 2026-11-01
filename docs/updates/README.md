@@ -58,6 +58,12 @@ In the same commit: delete the item from `progress.md`, add a `#done` entry here
 
 | ID | Date | Title | Tags | Batch |
 |---|---|---|---|---|
+| U-20261101-01 | 2026-11-01 | Patch setuptools and certifi in the publish lock | #bugfix #deps #security #ci | [2026-11](2026-11.md) |
+| U-20261022-05 | 2026-10-22 | 同步 AI SDK 更新與開發版相依設定 | #bugfix #deps #ci | [2026-10](2026-10.md) |
+| U-20261022-04 | 2026-10-22 | Keep dependency metadata aligned | #bugfix #deps #ci | [2026-10](2026-10.md) |
+| U-20261022-03 | 2026-10-22 | Keep dependency metadata aligned | #bugfix #deps #ci | [2026-10](2026-10.md) |
+| U-20261022-02 | 2026-10-22 | Keep dependency metadata aligned | #bugfix #deps #ci | [2026-10](2026-10.md) |
+| U-20261022-01 | 2026-10-22 | Preserve complete dependency locks | #bugfix #deps #ci | [2026-10](2026-10.md) |
 | U-20261008-12 | 2026-10-08 | 藍圖 M4（下）：除錯面板改走 DAP；條件中斷點；接上執行中的程式 | #done #decision #roadmap #debug | [2026-10](2026-10.md) |
 | U-20261008-11 | 2026-10-08 | 藍圖 M4（上）：DAP 除錯服務、本機工作執行器、debugpy 轉接器 | #decision #roadmap #debug | [2026-10](2026-10.md) |
 | U-20261008-10 | 2026-10-08 | M2 的 CI 結果：SonarCloud 兩筆 S5863 改掉；Python 3.10 一次偶發失敗 | #ci #roadmap | [2026-10](2026-10.md) |
@@ -103,5 +109,6 @@ In the same commit: delete the item from `progress.md`, add a `#done` entry here
 
 | File | Period | Entries |
 |---|---|---:|
+| [2026-11.md](2026-11.md) | 2026-11 | 1 |
 | [2026-10.md](2026-10.md) | 2026-10 | 20 |
 | [2026-09.md](2026-09.md) | 2026-09 | 20 |
