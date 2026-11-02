@@ -19,7 +19,7 @@ System Requirements
    * - Raspberry Pi
      - 3B+
    * - Python
-     - 3.10, 3.11, 3.12
+     - 3.11, 3.12
 
 Installation
 -------------

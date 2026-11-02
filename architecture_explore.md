@@ -13,7 +13,7 @@ JEditor 是以 PySide6（Qt for Python）寫成的程式碼編輯器，功能涵
 
 | 項目 | 內容 |
 | --- | --- |
-| 語言 / 版本 | Python 3.10+（CI 測 3.10 ～ 3.14） |
+| 語言 / 版本 | Python 3.11+（CI 測 3.11 ～ 3.14） |
 | UI 框架 | PySide6 6.12.0 + qt-material 主題 |
 | 主要相依 | `jedi`（Python 補全）、`ruff`（診斷）、`yapf` / `pycodestyle`（格式化與檢查）、`gitpython`、`watchdog`、`qtconsole` + `IPython`、`langchain_openai` + `langchain_core`、`anthropic`、`tree-sitter` 與三個文法套件（`tree-sitter-python` / `-javascript` / `-json`）、`debugpy`、`frontengine` |
 | 測試 | pytest + pytest-qt，115 個測試檔、約 21,000 行 |
@@ -586,7 +586,7 @@ Qt 的高亮器重畫時會送出 `textChanged`（不是 `contentsChange`），�
 - `conftest.py` 提供 session 級 `qapp`、`tmp_dir`、`tmp_file`，以及 autouse 的「等工具列背景執行緒結束」fixture；
   `collect_ignore_glob` 排除會真的開視窗的 `start_qt_ui.py` / `extend_test.py`。
 - `pyproject.toml` 設定 `testpaths = ["test"]`、`qt_api = "pyside6"`；bandit 排除測試目錄（pytest 慣用 `assert`）。
-- CI（`.github/workflows/dev.yml`、`stable.yml`）跑 Python 3.10～3.14，單元測試步驟不設 `QT_QPA_PLATFORM=offscreen`。
+- CI（`.github/workflows/dev.yml`、`stable.yml`）跑 Python 3.11～3.14，單元測試步驟不設 `QT_QPA_PLATFORM=offscreen`。
 - 發佈都由 CI 做：`stable.yml` 的 `publish_to_pypi` 在推送到 `main`（或手動執行）後升版、打標籤、上傳 `je_editor`；
   `dev.yml` 的 `publish-dev` 在推送到 `dev`、測試矩陣全過之後，用 `dev.toml` 建置 `je_editor_dev`，
   只有該 commit 仍是 `dev` 的最新一筆、而且 wheel 跟 PyPI 上最新的不同時才上傳。
