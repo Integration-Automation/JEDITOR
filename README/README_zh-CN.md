@@ -231,7 +231,7 @@ TODO 面板会扫描整个项目中的 `TODO`、`FIXME`、`HACK`、`XXX`、`BUG`
 | **macOS** | 10.5 ~ 11 Big Sur |
 | **Linux** | Ubuntu 20.04+ |
 | **Raspberry Pi** | 3B+ |
-| **Python** | 3.10+（已测试 3.10、3.11、3.12） |
+| **Python** | 3.11+（已测试 3.11、3.12） |
 
 ---
 
