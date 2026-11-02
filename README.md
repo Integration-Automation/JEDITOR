@@ -265,7 +265,7 @@ window never leaves you with dark-theme syntax colours.
 | **macOS** | 10.5 ~ 11 Big Sur |
 | **Linux** | Ubuntu 20.04+ |
 | **Raspberry Pi** | 3B+ |
-| **Python** | 3.10+ (tested on 3.10, 3.11, 3.12) |
+| **Python** | 3.11+ (tested on 3.11, 3.12) |
 
 ---
 

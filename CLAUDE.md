@@ -33,7 +33,7 @@ so this is a manual check against the files above.
 JEditor is a Python code editor built with PySide6 (Qt), featuring syntax highlighting, code
 formatting, a plugin system, Git integration, and LangChain-powered AI assistance.
 
-- **Language**: Python 3.10+ · **UI**: PySide6 6.12.0 · **Packaging**: pip / setuptools
+- **Language**: Python 3.11+ · **UI**: PySide6 6.12.0 · **Packaging**: pip / setuptools
 - **Testing**: pytest + pytest-qt · **Lint**: ruff, pycodestyle · **Format**: yapf
 
 ```
@@ -83,8 +83,8 @@ python -m build                        # build je_editor (CI builds je_editor_de
 
 ## CI
 
-- The matrix is **Python 3.10 to 3.14** on Windows. To reproduce a 3.10-only failure locally,
-  use `uv python install 3.10` plus `uv venv`.
+- The matrix is **Python 3.11 to 3.14** on Windows. To reproduce a failure on one of those versions
+  locally, use `uv python install <version>` plus `uv venv`.
 - Watch a run with `gh run watch <run-id> --exit-status`, or `gh pr checks <PR> --watch` for a PR.
 - For analyser detail:
   - Codacy — query

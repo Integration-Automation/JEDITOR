@@ -247,7 +247,7 @@ def test_the_lock_satisfies_build_system_requires(metadata):
     # 重新產生鎖定檔的話，要在這裡失敗，而不是等到發佈工作建置時才失敗。
     # --no-isolation checks build-system.requires instead of installing it, so a floor raised without
     # regenerating the lock (Dependabot edits these files) has to fail here, not in the publish job.
-    tomllib = pytest.importorskip("tomllib")  # stdlib from 3.11; CI also runs 3.10
+    tomllib = pytest.importorskip("tomllib")  # stdlib from 3.11, the supported floor
     with (_ROOT / metadata).open("rb") as handle:
         requires = tomllib.load(handle)["build-system"]["requires"]
     assert requires and [item for item in requires if _unmet_by_the_lock(item)] == []
